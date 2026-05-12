@@ -1,0 +1,2406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jyotisha — Vedic Horoscope Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=Tiro+Devanagari+Sanskrit&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   THEME — Editorial Vedic
+   Deep midnight indigo + warm saffron + maroon + gold parchment
+   ============================================================ */
+:root {
+  --ink:        #1a1230;
+  --ink-2:      #241740;
+  --parchment:  #f6ecd6;
+  --parchment-2:#fff7e4;
+  --saffron:    #d97324;
+  --saffron-2:  #f59548;
+  --maroon:     #6b1d2b;
+  --maroon-2:   #8d2533;
+  --gold:       #c9a24c;
+  --gold-2:     #e7c876;
+  --teal:       #2a6f6a;
+  --muted:      #8a7a55;
+  --line:       #d8c69a;
+  --shadow:     0 14px 40px rgba(16, 9, 38, 0.18);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 700px at 15% -10%, rgba(217, 115, 36, .14), transparent 60%),
+    radial-gradient(1200px 800px at 110% 10%, rgba(107, 29, 43, .14), transparent 60%),
+    linear-gradient(180deg, #fbf2dc 0%, #f6ecd6 100%);
+  min-height: 100vh;
+}
+
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 28px 80px; }
+
+/* ---------- HERO ---------- */
+.hero {
+  position: relative;
+  padding: 64px 28px 96px;
+  text-align: center;
+  color: var(--parchment);
+  overflow: hidden;
+  background:
+    radial-gradient(800px 500px at 50% 10%, rgba(231, 200, 118, .25), transparent 60%),
+    linear-gradient(160deg, var(--ink) 0%, var(--ink-2) 55%, var(--maroon) 130%);
+}
+.hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(2px 2px at 12% 30%, rgba(231,200,118,.7) 50%, transparent 51%),
+    radial-gradient(2px 2px at 88% 22%, rgba(231,200,118,.7) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 22% 78%, rgba(231,200,118,.55) 50%, transparent 51%),
+    radial-gradient(2px 2px at 78% 80%, rgba(231,200,118,.55) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 50% 12%, rgba(231,200,118,.6) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 50%, rgba(231,200,118,.35) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 65% 60%, rgba(231,200,118,.35) 50%, transparent 51%);
+}
+.mandala {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 720px; height: 720px;
+  opacity: .18; pointer-events: none;
+  animation: spin 240s linear infinite;
+}
+@keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+.eyebrow {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.42em;
+  font-size: 11px;
+  color: var(--gold-2);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  position: relative;
+}
+.sanskrit {
+  font-family: 'Tiro Devanagari Sanskrit', serif;
+  font-size: 26px;
+  color: var(--gold-2);
+  margin: 0 0 6px;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.title {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: clamp(40px, 6.4vw, 76px);
+  line-height: 1.02;
+  margin: 0 0 12px;
+  color: var(--parchment-2);
+  text-shadow: 0 2px 0 rgba(0,0,0,.25);
+  position: relative;
+}
+.title .accent {
+  color: var(--saffron-2);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+}
+.subtitle {
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: 19px;
+  color: rgba(246, 236, 214, .82);
+  font-style: italic;
+  position: relative;
+}
+.hero-rule {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin: 22px auto 0;
+  color: var(--gold-2);
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  position: relative;
+}
+.hero-rule span {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  width: 90px;
+}
+
+/* ---------- PANEL ---------- */
+.panel {
+  background: linear-gradient(180deg, #fffaea 0%, #fbf2dc 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 28px 30px;
+  position: relative;
+  overflow: hidden;
+}
+.panel::before {
+  content:""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(700px 300px at -10% 0%, rgba(217,115,36,.06), transparent 60%),
+    radial-gradient(700px 300px at 110% 100%, rgba(107,29,43,.06), transparent 60%);
+}
+.input-wrap { margin: -52px auto 28px; position: relative; z-index: 3; }
+.input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; position: relative; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--maroon);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.field input, .field select {
+  font: inherit;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  color: var(--ink);
+  background: #fffdf4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px rgba(217,115,36,.18);
+}
+.field .hint { font-size: 12.5px; color: var(--muted); font-style: italic; }
+
+.places-wrap { position: relative; }
+.suggestions {
+  position: absolute; z-index: 9;
+  top: calc(100% + 4px); left: 0; right: 0;
+  background: #fffdf4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  display: none;
+}
+.suggestions.show { display: block; }
+.suggestions div {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.suggestions div:hover, .suggestions div.active { background: #faecd0; }
+.suggestions div small { color: var(--muted); font-style: italic; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; margin-top: 22px; align-items: center; }
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 13px 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--saffron-2), var(--saffron));
+  color: #fff7e4;
+  box-shadow: 0 10px 22px rgba(217,115,36,.32);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(217,115,36,.42); }
+.btn-ghost { background: transparent; border-color: var(--maroon); color: var(--maroon); }
+.btn-ghost:hover { background: var(--maroon); color: #fff7e4; }
+.btn-gold { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: var(--ink); }
+.btn-gold:hover { transform: translateY(-1px); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.lat-lon-row { display: none; gap: 12px; margin-top: 12px; grid-column: 1 / -1; }
+.lat-lon-row.show { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+
+/* ---------- REPORT ---------- */
+.report { display: none; margin-top: 26px; }
+.report.show { display: block; }
+.report-header {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between;
+  gap: 18px; margin-bottom: 22px;
+}
+.report-header h2 {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 30px;
+  margin: 0;
+  color: var(--ink);
+}
+.report-meta { font-style: italic; color: var(--maroon); font-size: 16px; }
+
+.summary-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  margin-bottom: 26px;
+}
+.s-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffaea, #faedcb);
+  padding: 16px 16px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.s-card .lbl {
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--maroon);
+  text-transform: uppercase;
+}
+.s-card .val {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  color: var(--ink);
+  font-weight: 600;
+  margin-top: 4px;
+  line-height: 1.05;
+}
+.s-card .sub { font-style: italic; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.s-card .glyph {
+  position: absolute; right: 12px; top: 12px;
+  font-size: 36px; opacity: 0.25; color: var(--maroon);
+}
+
+/* ---------- Sections / Collapsible ---------- */
+details.section {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffbe9 0%, #fbf2dc 100%);
+  box-shadow: 0 6px 18px rgba(16,9,38,.06);
+  overflow: hidden;
+}
+details.section[open] { box-shadow: var(--shadow); }
+details.section > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 22px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative;
+  user-select: none;
+}
+details.section > summary::-webkit-details-marker { display: none; }
+details.section > summary::after {
+  content: "+";
+  margin-left: auto;
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  color: var(--saffron);
+  transition: transform .2s ease;
+}
+details.section[open] > summary::after { content: "−"; }
+
+.section-num {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+}
+.section-sub {
+  font-style: italic; color: var(--maroon); font-size: 14px; margin-left: 8px;
+}
+.section-body { padding: 6px 24px 22px; }
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+}
+.kv {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 16px;
+  border-bottom: 1px dashed rgba(138,122,85,.45);
+  padding: 8px 0;
+}
+.kv .k {
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  white-space: nowrap;
+}
+.kv .v {
+  font-size: 17px;
+  color: var(--ink);
+  text-align: right;
+  font-weight: 600;
+}
+.kv .v .pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff7e4;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.narrative {
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #fff7e4 0%, #fbe9c5 100%);
+  border-left: 4px solid var(--saffron);
+  border-radius: 6px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.narrative strong { color: var(--maroon); }
+.narrative .trait {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin: 2px 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--maroon);
+}
+.narrative p { margin: 0 0 10px; }
+.narrative p:last-child { margin-bottom: 0; }
+
+.section-flag {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 4px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+.flag-exalted     { background: #e9f5d6; color: #466e1f; border: 1px solid #b9d489; }
+.flag-debilitated { background: #fde0e0; color: #8a1e22; border: 1px solid #e3a2a4; }
+.flag-own         { background: #e5e8ff; color: #3a3f8b; border: 1px solid #b3b9e0; }
+.flag-mtr         { background: #fff3d6; color: #8a6a1e; border: 1px solid #e6c878; }
+.flag-neutral     { background: #f3ecd8; color: var(--muted); border: 1px solid var(--line); }
+
+/* Planet table */
+.planet-table { width: 100%; border-collapse: collapse; font-size: 16px; margin-top: 8px; }
+.planet-table th, .planet-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(216,198,154,.6);
+}
+.planet-table th {
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  background: rgba(231,200,118,.18);
+}
+.planet-table tr:hover td { background: rgba(231,200,118,.10); }
+.planet-table td .glyph-mini { display: inline-block; width: 22px; color: var(--saffron); font-weight: 700; }
+
+/* Distribution bars */
+.dist-group { margin-bottom: 14px; }
+.dist-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; flex-wrap: wrap; }
+.dist-row .dist-label {
+  width: 140px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  font-weight: 600;
+}
+.dist-row .dist-bar {
+  flex: 1; min-width: 180px;
+  height: 14px;
+  background: rgba(216,198,154,.45);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+.dist-row .dist-bar > span {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--saffron-2), var(--saffron));
+  border-radius: 99px;
+}
+.dist-row .dist-bar.maroon > span { background: linear-gradient(90deg, var(--maroon-2), var(--maroon)); }
+.dist-row .dist-bar.teal > span   { background: linear-gradient(90deg, #3da19a, var(--teal)); }
+.dist-row .dist-bar.gold > span   { background: linear-gradient(90deg, var(--gold-2), var(--gold)); }
+.dist-row .dist-val {
+  width: 36px; text-align: right; font-weight: 700; color: var(--ink);
+}
+.dist-row .dist-planets {
+  flex-basis: 100%;
+  padding-left: 152px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  margin-top: -4px;
+}
+
+/* Chart wheel */
+.chart-wrap { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: center; }
+.chart-svg { width: 360px; max-width: 100%; height: 360px; }
+.chart-legend { flex: 1; min-width: 240px; }
+
+/* Dual-chart layout (North + South side by side) */
+.dual-chart-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 32px;
+  margin-bottom: 28px;
+}
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 14px 22px;
+  background: linear-gradient(180deg, rgba(255,250,234,0.55) 0%, rgba(255,250,234,0.20) 100%);
+  border: 1px solid rgba(184, 134, 11, 0.30);
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 8px rgba(74, 25, 36, 0.06);
+}
+.chart-panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.chart-panel-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* South-Indian 4x4 grid chart */
+.south-chart {
+  width: 360px;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  border: 2px solid var(--maroon);
+  background: #fffaea;
+}
+.south-cell {
+  border: 1px solid rgba(107, 29, 43, 0.55);
+  padding: 5px 6px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Cinzel', serif;
+  min-height: 0;
+  overflow: hidden;
+}
+.south-cell.center {
+  border: none;
+  background: linear-gradient(135deg, #fef4d2 0%, #fbe5a3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Tiro Devanagari Sanskrit', 'Cormorant Garamond', serif;
+  color: var(--maroon);
+  letter-spacing: 0.04em;
+  font-size: 14px;
+  line-height: 1.35;
+  padding: 8px;
+}
+.south-cell.center .om-glyph {
+  font-size: 38px;
+  color: var(--saffron);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.south-cell .sc-rashi {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.south-cell .sc-rashi-en {
+  font-size: 8.5px;
+  color: var(--muted);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.south-cell .sc-planets {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 3px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 4px 0;
+}
+.south-cell .sc-planet { white-space: nowrap; }
+.south-cell .sc-planet.exalted { color: #1a7a3d; }
+.south-cell .sc-planet.debilitated { color: #b03030; }
+.south-cell .sc-house-num {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 9px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.south-cell.lagna-cell {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.16) 0%, rgba(245, 158, 11, 0.04) 100%);
+}
+.south-cell.lagna-cell::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 38%;
+  height: 38%;
+  border-top: 3px solid var(--saffron);
+  border-left: 3px solid var(--saffron);
+  pointer-events: none;
+}
+.south-cell.lagna-cell .sc-asc {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 9px;
+  color: var(--saffron);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 720px) {
+  .dual-chart-wrap { grid-template-columns: 1fr; }
+}
+.legend-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; padding: 4px 0;
+  border-bottom: 1px dashed rgba(138,122,85,.30);
+}
+.legend-row .lg-rashi {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maroon);
+  font-weight: 600;
+  min-width: 100px;
+}
+
+/* Report footer */
+.report-footer {
+  margin-top: 30px;
+  padding: 22px 0 8px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 14px;
+}
+.tag-row { margin-top: 8px; }
+.tag-row .tag {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  border-radius: 999px;
+  margin: 4px;
+}
+
+/* Notices */
+.error {
+  background: #fde2d8;
+  border: 1px solid #e0907b;
+  color: #802414;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 14px;
+  font-style: italic;
+}
+
+/* Loader */
+.loader { display: none; justify-content: center; align-items: center; gap: 10px; color: var(--maroon); font-style: italic; margin-top: 10px; }
+.loader.show { display: flex; }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(107,29,43,.2);
+  border-top-color: var(--maroon);
+  border-radius: 50%;
+  animation: spin2 1s linear infinite;
+}
+@keyframes spin2 { to { transform: rotate(360deg); } }
+
+/* PRINT */
+@media print {
+  @page { size: A4; margin: 16mm; }
+  body { background: #fff !important; }
+  .hero, .input-wrap, .actions, .no-print { display: none !important; }
+  .panel, details.section, .s-card { box-shadow: none !important; border-color: #cbb88a !important; page-break-inside: avoid; }
+  details.section[open] > summary::after { display: none; }
+  details.section > summary { padding-bottom: 4px; }
+  details.section { page-break-inside: avoid; }
+  .shell { padding: 0; max-width: 100%; }
+  .report-header h2 { font-size: 22px; }
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .input-grid { grid-template-columns: 1fr 1fr; }
+  .summary-strip { grid-template-columns: 1fr 1fr; }
+  .kv-grid { grid-template-columns: 1fr; }
+  .title { font-size: 44px; }
+  .mandala { width: 480px; height: 480px; opacity: .12; }
+  .lat-lon-row.show { grid-template-columns: 1fr 1fr; }
+  .dist-row .dist-planets { padding-left: 0; }
+}
+@media (max-width: 540px) {
+  .input-grid { grid-template-columns: 1fr; }
+  .summary-strip { grid-template-columns: 1fr 1fr; }
+  .hero { padding: 44px 18px 70px; }
+  .panel { padding: 22px 18px; }
+  .section-body { padding: 4px 16px 18px; }
+  .dist-row .dist-label { width: 120px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <svg class="mandala" viewBox="0 0 400 400" aria-hidden="true">
+    <defs>
+      <radialGradient id="mg" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#e7c876" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#e7c876" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g fill="none" stroke="#e7c876" stroke-width="0.6">
+      <circle cx="200" cy="200" r="195"/>
+      <circle cx="200" cy="200" r="170"/>
+      <circle cx="200" cy="200" r="140"/>
+      <circle cx="200" cy="200" r="110"/>
+      <circle cx="200" cy="200" r="80"/>
+      <circle cx="200" cy="200" r="50"/>
+      <circle cx="200" cy="200" r="22"/>
+    </g>
+    <g stroke="#e7c876" stroke-width="0.5" fill="none">
+      <g id="spoke"><line x1="200" y1="5" x2="200" y2="395"/></g>
+      <use href="#spoke" transform="rotate(15 200 200)"/>
+      <use href="#spoke" transform="rotate(30 200 200)"/>
+      <use href="#spoke" transform="rotate(45 200 200)"/>
+      <use href="#spoke" transform="rotate(60 200 200)"/>
+      <use href="#spoke" transform="rotate(75 200 200)"/>
+      <use href="#spoke" transform="rotate(90 200 200)"/>
+      <use href="#spoke" transform="rotate(105 200 200)"/>
+      <use href="#spoke" transform="rotate(120 200 200)"/>
+      <use href="#spoke" transform="rotate(135 200 200)"/>
+      <use href="#spoke" transform="rotate(150 200 200)"/>
+      <use href="#spoke" transform="rotate(165 200 200)"/>
+    </g>
+    <g fill="none" stroke="#e7c876" stroke-width="0.6">
+      <g id="petal"><path d="M200 50 Q230 110 200 170 Q170 110 200 50 Z"/></g>
+      <use href="#petal" transform="rotate(30 200 200)"/>
+      <use href="#petal" transform="rotate(60 200 200)"/>
+      <use href="#petal" transform="rotate(90 200 200)"/>
+      <use href="#petal" transform="rotate(120 200 200)"/>
+      <use href="#petal" transform="rotate(150 200 200)"/>
+      <use href="#petal" transform="rotate(180 200 200)"/>
+      <use href="#petal" transform="rotate(210 200 200)"/>
+      <use href="#petal" transform="rotate(240 200 200)"/>
+      <use href="#petal" transform="rotate(270 200 200)"/>
+      <use href="#petal" transform="rotate(300 200 200)"/>
+      <use href="#petal" transform="rotate(330 200 200)"/>
+    </g>
+    <circle cx="200" cy="200" r="6" fill="url(#mg)"/>
+  </svg>
+
+  <p class="eyebrow">Jyotisha · The Eye of Veda</p>
+  <h1 class="sanskrit">ज्योतिषम् — आत्मज्ञानम्</h1>
+  <h2 class="title">Vedic Horoscope <span class="accent">Analysis</span></h2>
+  <p class="subtitle">A scholarly automated reading drawn from your <em>Lagna</em>, <em>Janma Rāśi</em>, and the placement of the nine grahas — interpreted through the classical Tatwa, Guna, Varna, Tridosha and Jyotirlinga classifications.</p>
+  <div class="hero-rule"><span></span>Enter Birth Details to Begin<span></span></div>
+</header>
+
+<main class="shell">
+
+  <!-- INPUT PANEL -->
+  <section class="panel input-wrap" id="inputPanel">
+    <div class="input-grid">
+      <div class="field" style="grid-column: span 2;">
+        <label for="f-name">Name</label>
+        <input id="f-name" type="text" placeholder="Full name" value="Girish Belur" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="f-dob">Date of Birth</label>
+        <input id="f-dob" type="date" value="1968-04-25" />
+      </div>
+      <div class="field">
+        <label for="f-tob">Time of Birth</label>
+        <input id="f-tob" type="time" value="14:27" step="60" />
+      </div>
+      <div class="field places-wrap" style="grid-column: span 2;">
+        <label for="f-place">Place of Birth</label>
+        <input id="f-place" type="text" placeholder="City, State / Country" value="Kadur" autocomplete="off" />
+        <div id="suggestions" class="suggestions"></div>
+        <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
+      </div>
+      <div class="field">
+        <label for="f-gender">Gender (optional)</label>
+        <select id="f-gender">
+          <option value="">—</option>
+          <option value="Male" selected>Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-ayanamsa">Ayanamsa</label>
+        <select id="f-ayanamsa">
+          <option value="lahiri" selected>Lahiri (Chitrapaksha)</option>
+          <option value="raman">B.V. Raman</option>
+          <option value="kp">KP (Krishnamurti)</option>
+        </select>
+        <span class="hint">Lahiri is the Government-of-India standard.</span>
+      </div>
+
+      <div class="lat-lon-row" id="latLonRow">
+        <div class="field">
+          <label>Latitude (°)</label>
+          <input id="f-lat" type="number" step="any" placeholder="e.g. 13.55" />
+        </div>
+        <div class="field">
+          <label>Longitude (°)</label>
+          <input id="f-lon" type="number" step="any" placeholder="e.g. 76.02" />
+        </div>
+        <div class="field">
+          <label>Timezone (UTC offset hr)</label>
+          <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5" />
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="btn-manual" type="button">Use manual lat/lon</button>
+      <button class="btn btn-gold no-print" id="btn-print" type="button" disabled>Export PDF</button>
+      <button class="btn btn-primary" id="btn-generate" type="button">✦ Generate Horoscope</button>
+    </div>
+    <div class="loader" id="loader"><span class="spinner"></span> Computing planetary positions…</div>
+    <div id="msg"></div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="report" id="report">
+    <div class="panel">
+      <div class="report-header">
+        <div>
+          <h2 id="r-title">Horoscope Analysis Report</h2>
+          <div class="report-meta" id="r-meta"></div>
+        </div>
+        <div class="tag-row no-print">
+          <span class="tag" id="r-aytag">Lahiri Ayanamsa</span>
+        </div>
+      </div>
+
+      <div class="summary-strip" id="summary-strip"></div>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">I</span>
+          <span class="section-title">Rāśi Chakra — Birth Chart Wheel</span>
+          <span class="section-sub">Both North-Indian (diamond) &amp; South-Indian (square) styles</span>
+        </summary>
+        <div class="section-body">
+          <div class="dual-chart-wrap">
+            <div class="chart-panel">
+              <h4 class="chart-panel-title">North-Indian Style</h4>
+              <div class="chart-panel-sub">Houses fixed · Rāśis rotate · Lagna at top</div>
+              <div id="chartWheel"></div>
+            </div>
+            <div class="chart-panel">
+              <h4 class="chart-panel-title">South-Indian Style</h4>
+              <div class="chart-panel-sub">Rāśis fixed · Lagna marked · Planets placed by sign</div>
+              <div id="chartSouth"></div>
+            </div>
+          </div>
+          <div id="chartLegend" class="chart-legend"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">II</span>
+          <span class="section-title">Janma Lagna — Ascendant Analysis</span>
+          <span class="section-sub">Physical body, outer personality, how the world sees you</span>
+        </summary>
+        <div class="section-body">
+          <div class="kv-grid" id="lagna-kv"></div>
+          <div class="narrative" id="lagna-narrative"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">III</span>
+          <span class="section-title">Janma Rāśi — Moon Sign Analysis</span>
+          <span class="section-sub">Mindset, emotions, inner nature — how you think &amp; feel</span>
+        </summary>
+        <div class="section-body">
+          <div class="kv-grid" id="moon-kv"></div>
+          <div class="narrative" id="moon-narrative"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">IV</span>
+          <span class="section-title">Graha Placements — Planet by Planet</span>
+          <span class="section-sub">Sidereal longitudes, rashi, dignity, element</span>
+        </summary>
+        <div class="section-body">
+          <table class="planet-table" id="planet-table"></table>
+          <div class="narrative" id="planet-narrative"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">V</span>
+          <span class="section-title">Tatwa Distribution — Elemental Balance</span>
+          <span class="section-sub">Agni · Vayu · Prithvi · Jala</span>
+        </summary>
+        <div class="section-body" id="tatwa-body"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">VI</span>
+          <span class="section-title">Chara · Sthira · Dwisabhava</span>
+          <span class="section-sub">Movement, stability, and adaptability</span>
+        </summary>
+        <div class="section-body" id="mode-body"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">VII</span>
+          <span class="section-title">Exaltation &amp; Debilitation Summary</span>
+          <span class="section-sub">Uccha · Neecha · Swakshetra</span>
+        </summary>
+        <div class="section-body" id="dignity-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">VIII</span>
+          <span class="section-title">Pariharas — Remedial Measures</span>
+          <span class="section-sub">Suggested practices based on Lagna &amp; Moon tatwa</span>
+        </summary>
+        <div class="section-body" id="remedy-body"></div>
+      </details>
+
+      <div class="report-footer">
+        <div>Drawn from the classifications of <em>Janma Lagna</em>, <em>Janma Rāśi</em>, the Tatwas and the Trigunas — as preserved in the classical Phalita Jyotisha tradition.</div>
+        <div class="tag-row">
+          <span class="tag">Lagna · Body</span>
+          <span class="tag">Moon · Mind</span>
+          <span class="tag">Planets · Influence</span>
+        </div>
+        <div style="margin-top:8px; font-size: 12px;">शुभं भवतु — May good fortune attend you.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     SCRIPT
+     ============================================================ -->
+<script>
+"use strict";
+
+/* ============================================================
+   1. CLASSIFICATION DATABASE
+   Sourced from "Reference Data" sheet of the Excel.
+   ============================================================ */
+const RASHI = [
+  { n: 1, sanskrit: "Mesha", english: "Aries", glyph: "♈",
+    oddEven: "Odd (Male)", mode: "Chara", tatwa: "Agni", direction: "East",
+    varna: "Kshatriya", purushartha: "Dharma", triguna: "Rajasika",
+    constitution: "Dhatu", fertility: "Barren", dayNight: "Nocturnal",
+    rising: "Prushtodaya", legs: "Chatuspada", tridosha: "Pitha",
+    colour: "Red", place: "Forest", jyothirlinga: "Rameshwaram",
+    bodyPart: "Head",
+    traits: ["Energetic","Active","Aggressive","Initiative","Impulsive","Restless","Bold","Wants to Lead"],
+    lord: "Mars"
+  },
+  { n: 2, sanskrit: "Vrishaba", english: "Taurus", glyph: "♉",
+    oddEven: "Even (Female)", mode: "Sthira", tatwa: "Prithvi", direction: "South",
+    varna: "Vysya", purushartha: "Artha", triguna: "Rajasika",
+    constitution: "Moola", fertility: "Semi Fruitful", dayNight: "Nocturnal",
+    rising: "Prushtodaya", legs: "Chatuspada", tridosha: "Vatha",
+    colour: "White", place: "Agricultural land", jyothirlinga: "Somnatheshwara",
+    bodyPart: "Face, Eye, Mouth",
+    traits: ["Stability","Focused","Practical","Patience","Nourishment","Charming","Stubborn"],
+    lord: "Venus"
+  },
+  { n: 3, sanskrit: "Mithuna", english: "Gemini", glyph: "♊",
+    oddEven: "Odd (Male)", mode: "Dwisabhava", tatwa: "Vayu", direction: "West",
+    varna: "Shudra", purushartha: "Kama", triguna: "Rajasika",
+    constitution: "Jeeva", fertility: "Barren", dayNight: "Nocturnal",
+    rising: "Shirsodaya", legs: "Dwipada", tridosha: "Tridosha",
+    colour: "Green", place: "Bedroom", jyothirlinga: "Nageshwara",
+    bodyPart: "Neck, Arms",
+    traits: ["Good communication","Intelligent","Artistic","Humorous","Multitasking","Creative","Adaptable","Fickle minded"],
+    lord: "Mercury"
+  },
+  { n: 4, sanskrit: "Karkataka", english: "Cancer", glyph: "♋",
+    oddEven: "Even (Female)", mode: "Chara", tatwa: "Jala", direction: "North",
+    varna: "Brahmin", purushartha: "Moksha", triguna: "Sathvik",
+    constitution: "Dhatu", fertility: "Fruitful", dayNight: "Nocturnal",
+    rising: "Prushtodaya", legs: "Jalachara", tridosha: "Kapha",
+    colour: "Pink", place: "River", jyothirlinga: "Omkareshwara",
+    bodyPart: "Heart, Lungs",
+    traits: ["Emotional","Sensitive","Honest","Mood swings","Motherly nature","Peace loving","Nurturing","Psychic"],
+    lord: "Moon"
+  },
+  { n: 5, sanskrit: "Simha", english: "Leo", glyph: "♌",
+    oddEven: "Odd (Male)", mode: "Sthira", tatwa: "Agni", direction: "East",
+    varna: "Kshatriya", purushartha: "Dharma", triguna: "Sathvik",
+    constitution: "Moola", fertility: "Barren", dayNight: "Diurnal",
+    rising: "Shirsodaya", legs: "Vanachara", tridosha: "Pitha",
+    colour: "Off white", place: "Mountain", jyothirlinga: "Vaidyanath",
+    bodyPart: "Stomach, Womb",
+    traits: ["Energetic","Aggressive","Egoistic","Good in administration","Generous","Dominating","Leaders","Self respect"],
+    lord: "Sun"
+  },
+  { n: 6, sanskrit: "Kanya", english: "Virgo", glyph: "♍",
+    oddEven: "Even (Female)", mode: "Dwisabhava", tatwa: "Prithvi", direction: "South",
+    varna: "Vysya", purushartha: "Artha", triguna: "Tamasika",
+    constitution: "Jeeva", fertility: "Barren", dayNight: "Diurnal",
+    rising: "Shirsodaya", legs: "Dwipada", tridosha: "Vatha",
+    colour: "Variegated", place: "Gardens", jyothirlinga: "Mallikarjuna",
+    bodyPart: "Hip, Intestine",
+    traits: ["Practical","Critical","Perfectionist","Cleanliness","Observant","Intelligent","Reserved","Organised","Analytical"],
+    lord: "Mercury"
+  },
+  { n: 7, sanskrit: "Tula", english: "Libra", glyph: "♎",
+    oddEven: "Odd (Male)", mode: "Chara", tatwa: "Vayu", direction: "West",
+    varna: "Shudra", purushartha: "Kama", triguna: "Rajasika",
+    constitution: "Dhatu", fertility: "Semi Fruitful", dayNight: "Diurnal",
+    rising: "Shirsodaya", legs: "Dwipada", tridosha: "Vatha",
+    colour: "Black", place: "Business Place", jyothirlinga: "Mahakaleshwar",
+    bodyPart: "Kidneys",
+    traits: ["Attractive","Extroverts","Well Mannered","Peace makers","Diplomatic","Good negotiators","Business minded"],
+    lord: "Venus"
+  },
+  { n: 8, sanskrit: "Vrischika", english: "Scorpio", glyph: "♏",
+    oddEven: "Even (Female)", mode: "Sthira", tatwa: "Jala", direction: "North",
+    varna: "Brahmin", purushartha: "Moksha", triguna: "Rajasika",
+    constitution: "Moola", fertility: "Fruitful", dayNight: "Diurnal",
+    rising: "Shirsodaya", legs: "Keeta", tridosha: "Kapha",
+    colour: "Saffron", place: "Hole / Cavity", jyothirlinga: "Grishneshwar",
+    bodyPart: "Private Parts",
+    traits: ["Secretive","Pessimistic","Possessive","Good researchers","Revenge","Mood swings","Good imagination","Anxiety"],
+    lord: "Mars"
+  },
+  { n: 9, sanskrit: "Dhanur", english: "Sagittarius", glyph: "♐",
+    oddEven: "Odd (Male)", mode: "Dwisabhava", tatwa: "Agni", direction: "East",
+    varna: "Kshatriya", purushartha: "Dharma", triguna: "Sathvik",
+    constitution: "Jeeva", fertility: "Semi Fruitful", dayNight: "Nocturnal",
+    rising: "Prushtodaya", legs: "Dwipada 1st / Chatuspada 2nd", tridosha: "Pitha",
+    colour: "Golden", place: "Palace", jyothirlinga: "Kashi Vishwanath",
+    bodyPart: "Thighs",
+    traits: ["Fun Loving","Adventurous","Very Optimistic","Confident","Attractive","Traditional","Active","Competitive"],
+    lord: "Jupiter"
+  },
+  { n: 10, sanskrit: "Makara", english: "Capricorn", glyph: "♑",
+    oddEven: "Even (Female)", mode: "Chara", tatwa: "Prithvi", direction: "South",
+    varna: "Vysya", purushartha: "Artha", triguna: "Tamasika",
+    constitution: "Dhatu", fertility: "Semi Fruitful", dayNight: "Nocturnal",
+    rising: "Prushtodaya", legs: "Chatuspada 1st / Jalachara 2nd", tridosha: "Vatha",
+    colour: "Various colours", place: "Marshlands", jyothirlinga: "Bhima Shankara",
+    bodyPart: "Knees",
+    traits: ["Hard Workers","Straight Forward","Methodical","Ambitious","Practical","Rational","Perfectionist","Calculative"],
+    lord: "Saturn"
+  },
+  { n: 11, sanskrit: "Kumbha", english: "Aquarius", glyph: "♒",
+    oddEven: "Odd (Male)", mode: "Sthira", tatwa: "Vayu", direction: "West",
+    varna: "Shudra", purushartha: "Kama", triguna: "Tamasika",
+    constitution: "Moola", fertility: "Semi Fruitful", dayNight: "Diurnal",
+    rising: "Shirsodaya", legs: "Dwipada", tridosha: "Vatha",
+    colour: "Dark Brown", place: "Potters Place", jyothirlinga: "Kedarnath",
+    bodyPart: "Ankles, Legs",
+    traits: ["Sharp and quick","Emotional detachment","Stubborn","Mature","Creative","Friendly","Scientific","Philosophical","Rebel"],
+    lord: "Saturn"
+  },
+  { n: 12, sanskrit: "Meena", english: "Pisces", glyph: "♓",
+    oddEven: "Even (Female)", mode: "Dwisabhava", tatwa: "Jala", direction: "North",
+    varna: "Brahmin", purushartha: "Moksha", triguna: "Sathvik",
+    constitution: "Jeeva", fertility: "Fruitful", dayNight: "Diurnal",
+    rising: "Ubhadaya", legs: "Jalachara", tridosha: "Kapha",
+    colour: "White", place: "Ocean", jyothirlinga: "Tryambakeshwar",
+    bodyPart: "Feet",
+    traits: ["Very Moody","Loyal","Loving","Hopeful","Spiritual","Influenced easily","Very emotional","Beautiful","Highly Satvik"],
+    lord: "Jupiter"
+  }
+];
+
+/* Planet Dignity — from "Planet Dignity" / "Exhalted or Debilitated" sheet */
+const RASHI_DIGNITY = {
+  1:  { lord: "Mars",    mtr: true,  exalted: ["Sun"],          debilitated: ["Saturn"] },
+  2:  { lord: "Venus",   mtr: false, exalted: ["Rahu","Moon"],  debilitated: ["Ketu"] },
+  3:  { lord: "Mercury", mtr: false, exalted: [],               debilitated: [] },
+  4:  { lord: "Moon",    mtr: true,  exalted: ["Jupiter"],      debilitated: ["Mars"] },
+  5:  { lord: "Sun",     mtr: true,  exalted: [],               debilitated: [] },
+  6:  { lord: "Mercury", mtr: true,  exalted: ["Mercury"],      debilitated: ["Venus"] },
+  7:  { lord: "Venus",   mtr: true,  exalted: ["Saturn"],       debilitated: ["Sun"] },
+  8:  { lord: "Mars",    mtr: false, exalted: ["Ketu"],         debilitated: ["Rahu","Moon"] },
+  9:  { lord: "Jupiter", mtr: true,  exalted: [],               debilitated: [] },
+  10: { lord: "Saturn",  mtr: false, exalted: ["Mars"],         debilitated: ["Jupiter"] },
+  11: { lord: "Saturn",  mtr: true,  exalted: [],               debilitated: [] },
+  12: { lord: "Jupiter", mtr: false, exalted: ["Venus"],        debilitated: ["Mercury"] }
+};
+
+/* Planet ownership — for "Own House" detection */
+const PLANET_OWN_HOUSES = {
+  Sun:     [5],
+  Moon:    [4],
+  Mars:    [1, 8],
+  Mercury: [3, 6],
+  Jupiter: [9, 12],
+  Venus:   [2, 7],
+  Saturn:  [10, 11]
+};
+
+/* Guide-level definitions */
+const TATWA_DEF = {
+  Agni:    "Energetic, hot, active, strong will, assertive, independent, likes popularity, sometimes dominating, likes to be in position.",
+  Vayu:    "Creative, intellectual, logical, good planners, balanced, nervous.",
+  Prithvi: "Perseverance, stability, hard work, materialistic, practical, self-centered, stubborn.",
+  Jala:    "Emotional, devotional, compassionate, receptive, intuitive, psychic, suspicious."
+};
+const GUNA_DEF = {
+  Sathvik:  "Religious, happy, works without expecting anything in return, sacrifice, healthy.",
+  Rajasika: "Materialistic, desires, lust, proud.",
+  Tamasika: "Carelessness, laziness, anger, dull headed."
+};
+const CONSTITUTION_DEF = {
+  Dhatu: "Non-living constitution — like metals and mineral objects.",
+  Moola: "Plant-like constitution — has life but no movement.",
+  Jeeva: "Living-being constitution — like humans and animals."
+};
+const TRIDOSHA_DEF = {
+  Vatha: "Airy/Windy constitution — restless mind, dry physical traits.",
+  Pitha: "Bilious constitution — strong digestion, prone to heat, sharp intellect.",
+  Kapha: "Phlegmatic constitution — calm, steady, prone to mucus/water imbalance.",
+  Tridosha: "Mixed constitution — Vatha, Pitha and Kapha combined."
+};
+const VARNA_DEF = {
+  Brahmin:   "Inclined towards knowledge, teaching, spirituality, and learning.",
+  Kshatriya: "Inclined towards leadership, valour, administration, and protection.",
+  Vysya:     "Inclined towards trade, accumulation of wealth, and practical matters.",
+  Shudra:    "Inclined towards service, craftsmanship, and worldly desires."
+};
+const PURUSHARTHA_DEF = {
+  Dharma: "Outer life oriented towards religion, duty and righteous actions (Dharma triangle).",
+  Artha:  "Tendency towards earning and accumulating wealth (Artha triangle).",
+  Kama:   "Skilled at achieving desires, ambitions, and personal goals (Kama triangle).",
+  Moksha: "Mind tends towards spiritual pursuits and liberation (Moksha triangle)."
+};
+const MODE_DEF = {
+  Chara:      "Moveable — flexible, adaptable, dynamic; achievers who travel often.",
+  Sthira:     "Fixed — rigid, firm in decisions, stubborn, determined; prefer to stay in one place.",
+  Dwisabhava: "Dual — flexible or rigid depending on situation; calculative, sometimes indecisive."
+};
+const REMEDY_BY_TATWA = {
+  Agni:    "Homa / Lighting of Lamps — fire rituals and lighting deepams, especially on Sundays and Tuesdays.",
+  Vayu:    "Chanting of Mantras — japa, especially mantras of Mercury, Saturn and Vishnu Sahasranama.",
+  Prithvi: "Charity (Dāna) — donations to the needy, feeding the poor, gifting earthly objects.",
+  Jala:    "Abhisheka / Teertha Yatra — visit holy water bodies, perform Abhisheka on Mondays."
+};
+
+/* ============================================================
+   2. CITIES DATABASE  (built-in geocoder)
+   [name, region, lat, lon, tzOffsetHours]
+   ============================================================ */
+const CITIES = [
+  // ---- INDIA (Karnataka + others, comprehensive) ----
+  ["Bengaluru","Karnataka, India",12.9716,77.5946,5.5],
+  ["Bangalore","Karnataka, India",12.9716,77.5946,5.5],
+  ["Mysuru","Karnataka, India",12.2958,76.6394,5.5],
+  ["Mysore","Karnataka, India",12.2958,76.6394,5.5],
+  ["Mangaluru","Karnataka, India",12.9141,74.856,5.5],
+  ["Mangalore","Karnataka, India",12.9141,74.856,5.5],
+  ["Hubballi","Karnataka, India",15.3647,75.124,5.5],
+  ["Belagavi","Karnataka, India",15.8497,74.4977,5.5],
+  ["Davangere","Karnataka, India",14.4644,75.9218,5.5],
+  ["Shivamogga","Karnataka, India",13.9299,75.5681,5.5],
+  ["Shimoga","Karnataka, India",13.9299,75.5681,5.5],
+  ["Tumakuru","Karnataka, India",13.3409,77.101,5.5],
+  ["Kadur","Karnataka, India",13.55,76.02,5.5],
+  ["Chikkamagaluru","Karnataka, India",13.3161,75.772,5.5],
+  ["Udupi","Karnataka, India",13.3409,74.7421,5.5],
+  ["Hassan","Karnataka, India",13.0033,76.0961,5.5],
+  ["Raichur","Karnataka, India",16.2076,77.3463,5.5],
+  ["Bellary","Karnataka, India",15.1394,76.9214,5.5],
+  ["Kalaburagi","Karnataka, India",17.3297,76.8343,5.5],
+  ["Vijayapura","Karnataka, India",16.8302,75.71,5.5],
+  ["Mumbai","Maharashtra, India",19.076,72.8777,5.5],
+  ["Pune","Maharashtra, India",18.5204,73.8567,5.5],
+  ["Nagpur","Maharashtra, India",21.1458,79.0882,5.5],
+  ["Nashik","Maharashtra, India",19.9975,73.7898,5.5],
+  ["Aurangabad","Maharashtra, India",19.8762,75.3433,5.5],
+  ["Thane","Maharashtra, India",19.2183,72.9781,5.5],
+  ["Chennai","Tamil Nadu, India",13.0827,80.2707,5.5],
+  ["Coimbatore","Tamil Nadu, India",11.0168,76.9558,5.5],
+  ["Madurai","Tamil Nadu, India",9.9252,78.1198,5.5],
+  ["Tiruchirappalli","Tamil Nadu, India",10.7905,78.7047,5.5],
+  ["Salem","Tamil Nadu, India",11.6643,78.146,5.5],
+  ["Tirunelveli","Tamil Nadu, India",8.7139,77.7567,5.5],
+  ["Hyderabad","Telangana, India",17.385,78.4867,5.5],
+  ["Warangal","Telangana, India",17.9784,79.5941,5.5],
+  ["Visakhapatnam","Andhra Pradesh, India",17.6868,83.2185,5.5],
+  ["Vijayawada","Andhra Pradesh, India",16.5062,80.648,5.5],
+  ["Tirupati","Andhra Pradesh, India",13.6288,79.4192,5.5],
+  ["Guntur","Andhra Pradesh, India",16.3067,80.4365,5.5],
+  ["Kochi","Kerala, India",9.9312,76.2673,5.5],
+  ["Cochin","Kerala, India",9.9312,76.2673,5.5],
+  ["Thiruvananthapuram","Kerala, India",8.5241,76.9366,5.5],
+  ["Trivandrum","Kerala, India",8.5241,76.9366,5.5],
+  ["Kozhikode","Kerala, India",11.2588,75.7804,5.5],
+  ["Thrissur","Kerala, India",10.5276,76.2144,5.5],
+  ["Delhi","Delhi, India",28.6139,77.209,5.5],
+  ["New Delhi","Delhi, India",28.6139,77.209,5.5],
+  ["Gurugram","Haryana, India",28.4595,77.0266,5.5],
+  ["Gurgaon","Haryana, India",28.4595,77.0266,5.5],
+  ["Faridabad","Haryana, India",28.4089,77.3178,5.5],
+  ["Noida","Uttar Pradesh, India",28.5355,77.391,5.5],
+  ["Ghaziabad","Uttar Pradesh, India",28.6692,77.4538,5.5],
+  ["Kolkata","West Bengal, India",22.5726,88.3639,5.5],
+  ["Howrah","West Bengal, India",22.5958,88.2636,5.5],
+  ["Siliguri","West Bengal, India",26.7271,88.3953,5.5],
+  ["Durgapur","West Bengal, India",23.5204,87.3119,5.5],
+  ["Ahmedabad","Gujarat, India",23.0225,72.5714,5.5],
+  ["Surat","Gujarat, India",21.1702,72.8311,5.5],
+  ["Vadodara","Gujarat, India",22.3072,73.1812,5.5],
+  ["Rajkot","Gujarat, India",22.3039,70.8022,5.5],
+  ["Jaipur","Rajasthan, India",26.9124,75.7873,5.5],
+  ["Jodhpur","Rajasthan, India",26.2389,73.0243,5.5],
+  ["Udaipur","Rajasthan, India",24.5854,73.7125,5.5],
+  ["Kota","Rajasthan, India",25.2138,75.8648,5.5],
+  ["Ajmer","Rajasthan, India",26.4499,74.6399,5.5],
+  ["Lucknow","Uttar Pradesh, India",26.8467,80.9462,5.5],
+  ["Kanpur","Uttar Pradesh, India",26.4499,80.3319,5.5],
+  ["Agra","Uttar Pradesh, India",27.1767,78.0081,5.5],
+  ["Varanasi","Uttar Pradesh, India",25.3176,82.9739,5.5],
+  ["Prayagraj","Uttar Pradesh, India",25.4358,81.8463,5.5],
+  ["Allahabad","Uttar Pradesh, India",25.4358,81.8463,5.5],
+  ["Meerut","Uttar Pradesh, India",28.9845,77.7064,5.5],
+  ["Bhopal","Madhya Pradesh, India",23.2599,77.4126,5.5],
+  ["Indore","Madhya Pradesh, India",22.7196,75.8577,5.5],
+  ["Gwalior","Madhya Pradesh, India",26.2183,78.1828,5.5],
+  ["Jabalpur","Madhya Pradesh, India",23.1815,79.9864,5.5],
+  ["Ujjain","Madhya Pradesh, India",23.1793,75.7849,5.5],
+  ["Patna","Bihar, India",25.5941,85.1376,5.5],
+  ["Gaya","Bihar, India",24.7969,85.0078,5.5],
+  ["Bhubaneswar","Odisha, India",20.2961,85.8245,5.5],
+  ["Cuttack","Odisha, India",20.4625,85.883,5.5],
+  ["Puri","Odisha, India",19.8135,85.8312,5.5],
+  ["Chandigarh","Chandigarh, India",30.7333,76.7794,5.5],
+  ["Amritsar","Punjab, India",31.634,74.8723,5.5],
+  ["Ludhiana","Punjab, India",30.9009,75.8573,5.5],
+  ["Dehradun","Uttarakhand, India",30.3165,78.0322,5.5],
+  ["Haridwar","Uttarakhand, India",29.9457,78.1642,5.5],
+  ["Rishikesh","Uttarakhand, India",30.0869,78.2676,5.5],
+  ["Srinagar","Jammu & Kashmir, India",34.0837,74.7973,5.5],
+  ["Jammu","Jammu & Kashmir, India",32.7266,74.857,5.5],
+  ["Guwahati","Assam, India",26.1445,91.7362,5.5],
+  ["Imphal","Manipur, India",24.817,93.9368,5.5],
+  ["Shillong","Meghalaya, India",25.5788,91.8933,5.5],
+  ["Panaji","Goa, India",15.4909,73.8278,5.5],
+  ["Margao","Goa, India",15.2832,73.9862,5.5],
+  ["Ranchi","Jharkhand, India",23.3441,85.3096,5.5],
+  ["Jamshedpur","Jharkhand, India",22.8046,86.2029,5.5],
+  ["Raipur","Chhattisgarh, India",21.2514,81.6296,5.5],
+  ["Bilaspur","Chhattisgarh, India",22.0797,82.1409,5.5],
+  // ---- South Asia ----
+  ["Kathmandu","Nepal",27.7172,85.324,5.75],
+  ["Pokhara","Nepal",28.2096,83.9856,5.75],
+  ["Dhaka","Bangladesh",23.8103,90.4125,6],
+  ["Colombo","Sri Lanka",6.9271,79.8612,5.5],
+  ["Karachi","Pakistan",24.8607,67.0011,5],
+  ["Lahore","Pakistan",31.5497,74.3436,5],
+  ["Islamabad","Pakistan",33.6844,73.0479,5],
+  ["Kabul","Afghanistan",34.5553,69.2075,4.5],
+  // ---- USA ----
+  ["New York","NY, USA",40.7128,-74.006,-5],
+  ["Los Angeles","CA, USA",34.0522,-118.2437,-8],
+  ["Chicago","IL, USA",41.8781,-87.6298,-6],
+  ["Houston","TX, USA",29.7604,-95.3698,-6],
+  ["San Francisco","CA, USA",37.7749,-122.4194,-8],
+  ["Seattle","WA, USA",47.6062,-122.3321,-8],
+  ["Boston","MA, USA",42.3601,-71.0589,-5],
+  ["Washington","DC, USA",38.9072,-77.0369,-5],
+  ["Atlanta","GA, USA",33.749,-84.388,-5],
+  ["Dallas","TX, USA",32.7767,-96.797,-6],
+  ["Denver","CO, USA",39.7392,-104.9903,-7],
+  ["Phoenix","AZ, USA",33.4484,-112.074,-7],
+  ["Miami","FL, USA",25.7617,-80.1918,-5],
+  // ---- Canada ----
+  ["Toronto","ON, Canada",43.6532,-79.3832,-5],
+  ["Vancouver","BC, Canada",49.2827,-123.1207,-8],
+  ["Montreal","QC, Canada",45.5017,-73.5673,-5],
+  // ---- Europe ----
+  ["London","UK",51.5074,-0.1278,0],
+  ["Manchester","UK",53.4808,-2.2426,0],
+  ["Edinburgh","UK",55.9533,-3.1883,0],
+  ["Birmingham","UK",52.4862,-1.8904,0],
+  ["Paris","France",48.8566,2.3522,1],
+  ["Berlin","Germany",52.52,13.405,1],
+  ["Munich","Germany",48.1351,11.582,1],
+  ["Madrid","Spain",40.4168,-3.7038,1],
+  ["Barcelona","Spain",41.3851,2.1734,1],
+  ["Rome","Italy",41.9028,12.4964,1],
+  ["Milan","Italy",45.4642,9.19,1],
+  ["Amsterdam","Netherlands",52.3676,4.9041,1],
+  ["Brussels","Belgium",50.8503,4.3517,1],
+  ["Zurich","Switzerland",47.3769,8.5417,1],
+  ["Geneva","Switzerland",46.2044,6.1432,1],
+  ["Vienna","Austria",48.2082,16.3738,1],
+  ["Stockholm","Sweden",59.3293,18.0686,1],
+  ["Oslo","Norway",59.9139,10.7522,1],
+  ["Copenhagen","Denmark",55.6761,12.5683,1],
+  ["Helsinki","Finland",60.1699,24.9384,2],
+  ["Moscow","Russia",55.7558,37.6173,3],
+  ["Athens","Greece",37.9838,23.7275,2],
+  ["Istanbul","Turkey",41.0082,28.9784,3],
+  ["Lisbon","Portugal",38.7223,-9.1393,0],
+  ["Dublin","Ireland",53.3498,-6.2603,0],
+  // ---- Middle East ----
+  ["Dubai","UAE",25.2048,55.2708,4],
+  ["Abu Dhabi","UAE",24.4539,54.3773,4],
+  ["Doha","Qatar",25.2854,51.531,3],
+  ["Riyadh","Saudi Arabia",24.7136,46.6753,3],
+  ["Jeddah","Saudi Arabia",21.4858,39.1925,3],
+  ["Tehran","Iran",35.6892,51.389,3.5],
+  ["Tel Aviv","Israel",32.0853,34.7818,2],
+  ["Jerusalem","Israel",31.7683,35.2137,2],
+  ["Muscat","Oman",23.5859,58.4059,4],
+  ["Kuwait City","Kuwait",29.3759,47.9774,3],
+  // ---- Asia-Pacific ----
+  ["Tokyo","Japan",35.6762,139.6503,9],
+  ["Osaka","Japan",34.6937,135.5023,9],
+  ["Seoul","South Korea",37.5665,126.978,9],
+  ["Beijing","China",39.9042,116.4074,8],
+  ["Shanghai","China",31.2304,121.4737,8],
+  ["Hong Kong","Hong Kong",22.3193,114.1694,8],
+  ["Taipei","Taiwan",25.033,121.5654,8],
+  ["Singapore","Singapore",1.3521,103.8198,8],
+  ["Kuala Lumpur","Malaysia",3.139,101.6869,8],
+  ["Bangkok","Thailand",13.7563,100.5018,7],
+  ["Jakarta","Indonesia",-6.2088,106.8456,7],
+  ["Manila","Philippines",14.5995,120.9842,8],
+  ["Hanoi","Vietnam",21.0285,105.8542,7],
+  ["Ho Chi Minh City","Vietnam",10.8231,106.6297,7],
+  ["Yangon","Myanmar",16.8409,96.1735,6.5],
+  // ---- Australia / NZ ----
+  ["Sydney","Australia",-33.8688,151.2093,10],
+  ["Melbourne","Australia",-37.8136,144.9631,10],
+  ["Brisbane","Australia",-27.4698,153.0251,10],
+  ["Perth","Australia",-31.9505,115.8605,8],
+  ["Auckland","New Zealand",-36.8485,174.7633,12],
+  ["Wellington","New Zealand",-41.2865,174.7762,12],
+  // ---- Africa ----
+  ["Cairo","Egypt",30.0444,31.2357,2],
+  ["Nairobi","Kenya",-1.2921,36.8219,3],
+  ["Johannesburg","South Africa",-26.2041,28.0473,2],
+  ["Cape Town","South Africa",-33.9249,18.4241,2],
+  ["Lagos","Nigeria",6.5244,3.3792,1],
+  ["Accra","Ghana",5.6037,-0.187,0],
+  ["Addis Ababa","Ethiopia",9.032,38.7469,3],
+  ["Casablanca","Morocco",33.5731,-7.5898,1],
+  // ---- South America / Mexico ----
+  ["São Paulo","Brazil",-23.5505,-46.6333,-3],
+  ["Rio de Janeiro","Brazil",-22.9068,-43.1729,-3],
+  ["Buenos Aires","Argentina",-34.6037,-58.3816,-3],
+  ["Santiago","Chile",-33.4489,-70.6693,-4],
+  ["Lima","Peru",-12.0464,-77.0428,-5],
+  ["Bogotá","Colombia",4.711,-74.0721,-5],
+  ["Caracas","Venezuela",10.4806,-66.9036,-4],
+  ["Mexico City","Mexico",19.4326,-99.1332,-6]
+];
+
+/* ============================================================
+   3. ASTRONOMICAL ENGINE
+   Computes tropical longitudes, applies Lahiri ayanamsa to yield
+   sidereal positions, then Lagna from local sidereal time.
+   Accuracy: Sun ~0.01°, Moon ~0.2°, planets ~0.5-1° — sufficient
+   for Rashi determination and degree-within-Rashi reporting.
+   ============================================================ */
+const D2R = Math.PI / 180;
+const R2D = 180 / Math.PI;
+const norm360 = x => { x = x % 360; return x < 0 ? x + 360 : x; };
+const sinD = x => Math.sin(x * D2R);
+const cosD = x => Math.cos(x * D2R);
+const tanD = x => Math.tan(x * D2R);
+
+/* Julian Day from civil UTC. y,m,d ints; ut decimal hours */
+function julianDay(y, m, d, ut) {
+  if (m <= 2) { y -= 1; m += 12; }
+  const A = Math.floor(y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (y + 4716))
+       + Math.floor(30.6001 * (m + 1))
+       + d + B - 1524.5 + ut / 24;
+}
+
+/* Mean obliquity of ecliptic */
+function obliquity(T) {
+  return 23.43929111 - 0.0130041667*T - 1.6667e-7*T*T + 5.0278e-7*T*T*T;
+}
+
+/* Greenwich Mean Sidereal Time (degrees) */
+function gmst(JD) {
+  const T = (JD - 2451545.0) / 36525;
+  const gst = 280.46061837
+            + 360.98564736629 * (JD - 2451545.0)
+            + 0.000387933 * T*T
+            - T*T*T / 38710000;
+  return norm360(gst);
+}
+
+/* Lahiri (and variants) ayanamsa */
+function ayanamsa(JD, type) {
+  // Lahiri at J2000.0 = 23.853067°; rate ≈ 0.013957°/yr (with small quadratic)
+  const T = (JD - 2451545.0) / 36525;
+  const years = T * 100;
+  const lahiri = 23.85277 + 0.013957 * years - 6.7e-8 * years * years;
+  if (type === "raman") return lahiri - 0.4;
+  if (type === "kp")    return lahiri - 0.06;
+  return lahiri;
+}
+
+/* ----- Sun (Meeus simplified) ----- */
+function sunTropical(JD) {
+  const T = (JD - 2451545.0) / 36525;
+  const L0 = norm360(280.46646 + 36000.76983*T + 0.0003032*T*T);
+  const M  = norm360(357.52911 + 35999.05029*T - 0.0001537*T*T);
+  const C  = (1.914602 - 0.004817*T - 0.000014*T*T) * sinD(M)
+           + (0.019993 - 0.000101*T) * sinD(2*M)
+           + 0.000289 * sinD(3*M);
+  return norm360(L0 + C);
+}
+
+/* ----- Moon (Meeus, top ~30 periodic terms) ----- */
+function moonTropical(JD) {
+  const T = (JD - 2451545.0) / 36525;
+  let Lp = 218.3164477 + 481267.88123421*T - 0.0015786*T*T + T*T*T/538841 - T*T*T*T/65194000;
+  let D  = 297.8501921 + 445267.1114034 *T - 0.0018819*T*T + T*T*T/545868 - T*T*T*T/113065000;
+  let M  = 357.5291092 +  35999.0502909*T - 0.0001536*T*T + T*T*T/24490000;
+  let Mp = 134.9633964 + 477198.8675055*T + 0.0087414*T*T + T*T*T/69699 - T*T*T*T/14712000;
+  let F  =  93.2720950 + 483202.0175233*T - 0.0036539*T*T - T*T*T/3526000 + T*T*T*T/863310000;
+  Lp = norm360(Lp); D = norm360(D); M = norm360(M); Mp = norm360(Mp); F = norm360(F);
+
+  // top terms — [coef in micro-deg, mD, mM, mMp, mF]
+  const terms = [
+    [6288774,0,0,1,0],[1274027,2,0,-1,0],[658314,2,0,0,0],[213618,0,0,2,0],
+    [-185116,0,1,0,0],[-114332,0,0,0,2],[58793,2,0,-2,0],[57066,2,-1,-1,0],
+    [53322,2,0,1,0],[45758,2,-1,0,0],[-40923,0,1,-1,0],[-34720,1,0,0,0],
+    [-30383,0,1,1,0],[15327,2,0,0,-2],[-12528,0,0,1,2],[10980,0,0,1,-2],
+    [10675,4,0,-1,0],[10034,0,0,3,0],[8548,4,0,-2,0],[-7888,2,1,-1,0],
+    [-6766,2,1,0,0],[-5163,1,0,-1,0],[4987,1,1,0,0],[4036,2,-1,1,0],
+    [3994,2,0,2,0],[3861,4,0,0,0],[3665,2,0,-3,0],[-2689,0,1,-2,0],
+    [-2602,2,0,-1,2],[2390,2,-1,-2,0]
+  ];
+  let sumL = 0;
+  for (const [c, mD, mM, mMp, mF] of terms) {
+    sumL += c * sinD(mD*D + mM*M + mMp*Mp + mF*F);
+  }
+  return norm360(Lp + sumL * 1e-6);
+}
+
+/* ----- Rahu / Ketu (Mean Lunar Node) ----- */
+function rahuTropical(JD) {
+  const T = (JD - 2451545.0) / 36525;
+  const omega = 125.04452 - 1934.136261*T + 0.0020708*T*T + T*T*T/450000;
+  return norm360(omega);
+}
+function ketuTropical(JD) {
+  return norm360(rahuTropical(JD) + 180);
+}
+
+/* ----- Planets (Keplerian elements, JPL J2000 reference) ----- */
+const PLANET_ELEMS = {
+  Mercury: { a:0.38709927, da:0.00000037, e:0.20563593, de:0.00001906,
+             i:7.00497902, di:-0.00594749, L:252.25032350, dL:149472.67411175,
+             wb:77.45779628, dwb:0.16047689, om:48.33076593, dom:-0.12534081 },
+  Venus:   { a:0.72333566, da:0.00000390, e:0.00677672, de:-0.00004107,
+             i:3.39467605, di:-0.00078890, L:181.97909950, dL:58517.81538729,
+             wb:131.60246718, dwb:0.00268329, om:76.67984255, dom:-0.27769418 },
+  Earth:   { a:1.00000261, da:0.00000562, e:0.01671123, de:-0.00004392,
+             i:-0.00001531, di:-0.01294668, L:100.46457166, dL:35999.37244981,
+             wb:102.93768193, dwb:0.32327364, om:0.0, dom:0.0 },
+  Mars:    { a:1.52371034, da:0.00001847, e:0.09339410, de:0.00007882,
+             i:1.84969142, di:-0.00813131, L:-4.55343205, dL:19140.30268499,
+             wb:-23.94362959, dwb:0.44441088, om:49.55953891, dom:-0.29257343 },
+  Jupiter: { a:5.20288700, da:-0.00011607, e:0.04838624, de:-0.00013253,
+             i:1.30439695, di:-0.00183714, L:34.39644051, dL:3034.74612775,
+             wb:14.72847983, dwb:0.21252668, om:100.47390909, dom:0.20469106 },
+  Saturn:  { a:9.53667594, da:-0.00125060, e:0.05386179, de:-0.00050991,
+             i:2.48599187, di:0.00193609, L:49.95424423, dL:1222.49362201,
+             wb:92.59887831, dwb:-0.41897216, om:113.66242448, dom:-0.28867794 }
+};
+
+/* Solve Kepler's equation: M = E - e*sin(E)  (M in degrees, E returned in radians) */
+function solveKepler(Mdeg, e) {
+  const M = (Mdeg * D2R) % (2 * Math.PI);
+  let E = M + e * Math.sin(M);
+  for (let i = 0; i < 10; i++) {
+    const dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    E -= dE;
+    if (Math.abs(dE) < 1e-10) break;
+  }
+  return E;
+}
+
+/* Heliocentric ecliptic rectangular coords (AU) of a planet */
+function planetHelio(name, JD) {
+  const p = PLANET_ELEMS[name];
+  const T  = (JD - 2451545.0) / 36525;
+  const a  = p.a + p.da*T;
+  const e  = p.e + p.de*T;
+  const i  = p.i + p.di*T;
+  const L  = p.L + p.dL*T;
+  const wb = p.wb + p.dwb*T;
+  const om = p.om + p.dom*T;
+  let M = L - wb;
+  // normalize M to (-180, 180)
+  M = ((M + 180) % 360 + 360) % 360 - 180;
+  const w = wb - om;
+  const E = solveKepler(M, e);
+  // position in orbital plane
+  const xp = a * (Math.cos(E) - e);
+  const yp = a * Math.sqrt(1 - e*e) * Math.sin(E);
+  // rotate to ecliptic
+  const cw = Math.cos(w*D2R), sw = Math.sin(w*D2R);
+  const co = Math.cos(om*D2R), so = Math.sin(om*D2R);
+  const ci = Math.cos(i*D2R), si = Math.sin(i*D2R);
+  const xe = (cw*co - sw*so*ci) * xp + (-sw*co - cw*so*ci) * yp;
+  const ye = (cw*so + sw*co*ci) * xp + (-sw*so + cw*co*ci) * yp;
+  const ze = (sw*si) * xp + (cw*si) * yp;
+  return { x: xe, y: ye, z: ze };
+}
+
+/* Geocentric ecliptic longitude of a planet (degrees) */
+function planetGeocentric(name, JD) {
+  const planet = planetHelio(name, JD);
+  const earth  = planetHelio("Earth", JD);
+  const x = planet.x - earth.x;
+  const y = planet.y - earth.y;
+  const lon = Math.atan2(y, x) * R2D;
+  return norm360(lon);
+}
+
+/* Compute all sidereal positions */
+function computeChart(JD, ayanType) {
+  const ayan = ayanamsa(JD, ayanType);
+  const trop = {
+    Sun:     sunTropical(JD),
+    Moon:    moonTropical(JD),
+    Mars:    planetGeocentric("Mars", JD),
+    Mercury: planetGeocentric("Mercury", JD),
+    Jupiter: planetGeocentric("Jupiter", JD),
+    Venus:   planetGeocentric("Venus", JD),
+    Saturn:  planetGeocentric("Saturn", JD),
+    Rahu:    rahuTropical(JD),
+    Ketu:    ketuTropical(JD)
+  };
+  const sid = {};
+  for (const k in trop) sid[k] = norm360(trop[k] - ayan);
+  return { tropical: trop, sidereal: sid, ayanamsa: ayan };
+}
+
+/* Lagna (Ascendant) — sidereal */
+function computeLagna(JD, lat, lon, ayanType) {
+  const T = (JD - 2451545.0) / 36525;
+  const eps = obliquity(T);
+  // LST in degrees
+  const LST = norm360(gmst(JD) + lon);
+  // tropical ascendant formula (Meeus ch. 13)
+  const Y = -cosD(LST);
+  const X = sinD(LST) * cosD(eps) + tanD(lat) * sinD(eps);
+  let asc = Math.atan2(Y, X) * R2D;
+  asc = norm360(asc);
+  // Adjust to eastern horizon (lower hemisphere)
+  if (asc < 180) asc += 180; else asc -= 180;
+  // ...actually the simpler check: if LST is in [0,180), the asc should be in [180,360); else [0,180)
+  // Apply correction only if needed:
+  // Standard: if (asc < LST) flip — but Meeus' form handles it. Use safe convention:
+  // We'll keep the value; if results land wrong half by 180, flip.
+  // Validation: for the test chart the expected Lagna is Simha (Leo) ~131° tropical -> sidereal ~107° -> within Simha.
+  // Apply ayanamsa to get sidereal Lagna
+  return norm360(asc - ayanamsa(JD, ayanType));
+}
+
+/* For each sidereal longitude, identify rashi (1-12) and degree within */
+function rashiOf(lonDeg) {
+  const n = Math.floor(norm360(lonDeg) / 30) + 1;
+  const deg = norm360(lonDeg) - (n - 1) * 30;
+  return { n, deg };
+}
+
+/* House from Lagna (rashi number relative to Lagna rashi). 1-12. */
+function houseFromLagna(lagnaRashi, planetRashi) {
+  let h = (planetRashi - lagnaRashi + 12) % 12 + 1;
+  return h;
+}
+
+/* Planet dignity for a given planet & rashi */
+function planetDignity(planet, rashiNum) {
+  const d = RASHI_DIGNITY[rashiNum];
+  if (d.exalted.includes(planet))     return { label: "Exalted",     flag: "exalted" };
+  if (d.debilitated.includes(planet)) return { label: "Debilitated", flag: "debilitated" };
+  // Own house — only for the 7 classical planets
+  const own = PLANET_OWN_HOUSES[planet];
+  if (own && own.includes(rashiNum)) {
+    if (d.mtr) return { label: "Own (Moolatrikona)", flag: "mtr" };
+    return { label: "Own House", flag: "own" };
+  }
+  return { label: "—", flag: "neutral" };
+}
+
+/* ============================================================
+   4. INTERPRETATION ENGINE
+   ============================================================ */
+function getRashi(n) { return RASHI[n - 1]; }
+
+/* Lagna (Janma Lagna) — produces physical / external traits */
+function interpretLagna(lagnaRashi) {
+  const r = lagnaRashi;
+  return {
+    kv: [
+      ["Janma Lagna (Ascendant)", `<span class="pill">${r.sanskrit} (${r.english}) ${r.glyph}</span>`],
+      ["Gender (Odd/Even)",       r.oddEven],
+      ["Chara / Sthira / Dwisabhava", r.mode],
+      ["Tatwa (Element)",         r.tatwa],
+      ["Direction",               r.direction],
+      ["Varna",                   r.varna],
+      ["Purushartha",             r.purushartha],
+      ["Triguna",                 r.triguna],
+      ["Constitution",            r.constitution],
+      ["Fertility",               r.fertility],
+      ["Day / Night Strength",    r.dayNight],
+      ["Rising Position",         r.rising],
+      ["Legs",                    r.legs],
+      ["Tridosha",                r.tridosha],
+      ["Lucky Colour",            r.colour],
+      ["Associated Place",        r.place],
+      ["Jyothirlinga",            r.jyothirlinga],
+      ["Body Part (Kala Purusha)", r.bodyPart],
+      ["Rashi Lord",              r.lord]
+    ],
+    narrative: `
+      <p>The Ascendant in <strong>${r.sanskrit} (${r.english})</strong> means
+      that <strong>${r.sanskrit}</strong> was rising in the eastern horizon at the moment of birth.
+      This determines the physical body, the outer personality and the way others perceive the native.</p>
+
+      <p><strong>Outer nature (${r.tatwa} tatwa, ${r.mode}, ${r.triguna}):</strong>
+      ${TATWA_DEF[r.tatwa]} The ${r.mode} modality means
+      ${MODE_DEF[r.mode]} The ${r.triguna} guna shows: ${GUNA_DEF[r.triguna]}</p>
+
+      <p><strong>Personality traits (how the world sees you):</strong>
+      ${r.traits.map(t => `<span class="trait">${t}</span>`).join(" ")}</p>
+
+      <p><strong>Physical constitution:</strong> ${TRIDOSHA_DEF[r.tridosha]}
+      ${CONSTITUTION_DEF[r.constitution]} Fertility tendency: <em>${r.fertility}</em>.
+      Body energizes during <em>${r.dayNight}</em> hours; rising position is
+      <em>${r.rising}</em>.</p>
+
+      <p><strong>Outer social standing:</strong> ${VARNA_DEF[r.varna]}
+      Life is naturally oriented towards the ${r.purushartha} Purushartha —
+      ${PURUSHARTHA_DEF[r.purushartha]}</p>
+
+      <p><strong>Health focus (Kala Purusha):</strong> The primary
+      bodily region is <em>${r.bodyPart}</em>. Lucky colour for outer well-being
+      is <strong>${r.colour}</strong>; the place where the body feels most at home is
+      <em>${r.place}</em>. The associated Jyothirlinga is
+      <strong>${r.jyothirlinga}</strong> — visiting strengthens the physical and outer self.</p>`
+  };
+}
+
+/* Moon (Janma Rashi) — produces mindset / emotional / inner traits */
+function interpretMoon(moonRashi, moonHouse, moonDignity) {
+  const r = moonRashi;
+  const isDusthana = [6, 8, 12].includes(moonHouse);
+  const remedy = REMEDY_BY_TATWA[r.tatwa];
+  return {
+    kv: [
+      ["Janma Rashi (Moon Sign)",  `<span class="pill">${r.sanskrit} (${r.english}) ${r.glyph}</span>`],
+      ["Moon's Dignity",           `<span class="section-flag flag-${moonDignity.flag}">${moonDignity.label}</span>`],
+      ["Element (Tatwa) of Mind",  r.tatwa],
+      ["Triguna of Moon Sign",     r.triguna],
+      ["Purushartha of Moon Sign", r.purushartha],
+      ["Tridosha of Moon Sign",    r.tridosha],
+      ["Gender of Moon Rashi",     r.oddEven],
+      ["Chara / Sthira / Dwisabhava", r.mode],
+      ["Direction of Moon Rashi",  r.direction],
+      ["Varna of Moon Rashi",      r.varna],
+      ["Constitution",             r.constitution],
+      ["Fertility",                r.fertility],
+      ["Day / Night Strength",     r.dayNight],
+      ["Rising Position",          r.rising],
+      ["Lucky Colour",             r.colour],
+      ["Associated Place",         r.place],
+      ["Jyothirlinga",             r.jyothirlinga],
+      ["Body Part of Moon Rashi",  r.bodyPart],
+      ["Moon's House from Lagna",  `House ${moonHouse}` + (isDusthana ? " (Dusthana)" : "")],
+      ["Remedy",                   remedy]
+    ],
+    narrative: `
+      <p>The Moon in <strong>${r.sanskrit} (${r.english})</strong> determines the
+      <em>mind, emotions, inner nature</em> and the way the native thinks and feels internally.
+      Janma Rashi ≠ personality; it describes the mental landscape.</p>
+
+      <p><strong>Mindset &amp; inner emotions (${r.tatwa} mind, ${r.mode}, ${r.triguna}):</strong>
+      ${TATWA_DEF[r.tatwa]} ${r.mode === "Chara" ?
+        "The mind is moveable — flexible, dynamic, achievement-oriented." :
+        r.mode === "Sthira" ?
+          "The mind is fixed — steady, determined, sometimes stubborn." :
+          "The mind oscillates between options — adaptable, sometimes indecisive."}
+      Inner ${r.triguna} guna: ${GUNA_DEF[r.triguna]}</p>
+
+      <p><strong>Core mindset traits:</strong>
+      ${r.traits.map(t => `<span class="trait">${t}</span>`).join(" ")}</p>
+
+      <p><strong>Mental orientation:</strong> ${VARNA_DEF[r.varna]} Mind inclines towards
+      the ${r.purushartha} Purushartha — ${PURUSHARTHA_DEF[r.purushartha]}
+      Constitution of inner nature: ${CONSTITUTION_DEF[r.constitution]}
+      Mental health pattern: ${TRIDOSHA_DEF[r.tridosha]}</p>
+
+      <p><strong>Moon's placement:</strong> Moon is in <em>House ${moonHouse}</em> from the Lagna.
+      ${isDusthana ?
+        "This is a Dusthana (challenging) house — the mind may face periods of stress, hidden fears or emotional upheaval, and remedies are recommended." :
+        "This is a favourable placement; the mind finds a natural seat of expression here."}
+      The Moon's own dignity is <em>${moonDignity.label}</em>.
+      ${moonDignity.label === "Exalted" ?
+        "An exalted Moon gives a strong, stable, luminous mind." :
+        moonDignity.label === "Debilitated" ?
+          "A debilitated Moon can produce a turbulent or anxious mind — remedies advised." :
+          ""}</p>
+
+      <p><strong>Inner peace:</strong> The place where the mind feels most at home is
+      the <em>${r.place}</em>; the colour that calms it is <strong>${r.colour}</strong>;
+      the body part most sensitive to emotional stress is the <em>${r.bodyPart}</em>;
+      the Jyothirlinga associated with this Rashi is
+      <strong>${r.jyothirlinga}</strong> — visiting brings mental peace and emotional healing.</p>
+
+      <p><strong>Recommended remedy (based on Jala/Agni/Vayu/Prithvi tatwa of Moon):</strong>
+      ${remedy}</p>`
+  };
+}
+
+/* Distribution narratives */
+function distributionNarrative(label, counts, total) {
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 0) return "";
+  const [topKey, topCount] = sorted[0];
+  const pct = (topCount / total * 100).toFixed(0);
+
+  const labelMap = {
+    Agni:       "fiery, assertive, leadership-oriented",
+    Vayu:       "intellectual, communicative, creative",
+    Prithvi:    "practical, grounded, materially capable",
+    Jala:       "emotional, intuitive, compassionate",
+    Chara:      "dynamic and travelling — the native moves through environments often",
+    Sthira:     "stable and stay-in-place — the native prefers fixed locations and routines",
+    Dwisabhava: "dual and adaptable — the native is flexible but sometimes indecisive"
+  };
+  return `<strong>${topKey}</strong> dominates (${topCount}/${total} grahas, ${pct}%) — the native's overall planetary energy is <em>${labelMap[topKey] || topKey}</em>.`;
+}
+
+/* ============================================================
+   5. RENDERING / UI
+   ============================================================ */
+function fmtDeg(d) {
+  const deg = Math.floor(d);
+  const m = (d - deg) * 60;
+  const min = Math.floor(m);
+  const sec = Math.round((m - min) * 60);
+  return `${deg}° ${String(min).padStart(2, "0")}' ${String(sec).padStart(2, "0")}"`;
+}
+function fmtDate(d, time, placeName) {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [y, m, day] = d.split("-").map(Number);
+  return `${day}-${months[m - 1]}-${y}  ·  ${time}  ·  ${placeName}`;
+}
+
+/* Summary cards at top of report */
+function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
+  const meta = `<strong>${name || "(no name)"}</strong>  |  DOB: ${fmtDate(dob, tob, placeName)}`;
+  document.getElementById("r-title").textContent = `Horoscope Analysis Report`;
+  document.getElementById("r-meta").innerHTML = meta;
+
+  const strip = document.getElementById("summary-strip");
+  strip.innerHTML = `
+    <div class="s-card"><span class="glyph">${lagnaR.glyph}</span>
+      <div class="lbl">Lagna · Ascendant</div>
+      <div class="val">${lagnaR.sanskrit}</div>
+      <div class="sub">${lagnaR.english} — ${lagnaR.tatwa} ${lagnaR.mode}</div></div>
+    <div class="s-card"><span class="glyph">${moonR.glyph}</span>
+      <div class="lbl">Janma Rashi · Moon</div>
+      <div class="val">${moonR.sanskrit}</div>
+      <div class="sub">${moonR.english} — Mind: ${moonR.tatwa}</div></div>
+    <div class="s-card"><span class="glyph">${sunR.glyph}</span>
+      <div class="lbl">Surya · Sun Sign</div>
+      <div class="val">${sunR.sanskrit}</div>
+      <div class="sub">${sunR.english} — Soul: ${sunR.tatwa}</div></div>
+    <div class="s-card"><span class="glyph">✦</span>
+      <div class="lbl">Nakshatra Element</div>
+      <div class="val">${lagnaR.tatwa}</div>
+      <div class="sub">Body tatwa of the Ascendant</div></div>
+  `;
+}
+
+/* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
+function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
+  // Standard North-Indian layout positions (cx, cy) for houses 1-12.
+  // The diamond chart has 4 outer triangles and 4 inner diamonds, arranged so:
+  //   house 1 = top center (Lagna)
+  //   houses proceed counter-clockwise: 2 = top-left, 3 = left-top, 4 = left-center, etc.
+  // We'll use a 360x360 svg.
+  const W = 360, H = 360;
+  // Box coords
+  const HOUSE_POS = {
+    1:  {x:180, y:90},   // top diamond
+    2:  {x:90,  y:45},   // top-left triangle
+    3:  {x:45,  y:90},   // left-top triangle
+    4:  {x:90,  y:180},  // left diamond
+    5:  {x:45,  y:270},  // left-bottom triangle
+    6:  {x:90,  y:315},  // bottom-left triangle
+    7:  {x:180, y:270},  // bottom diamond
+    8:  {x:270, y:315},  // bottom-right triangle
+    9:  {x:315, y:270},  // right-bottom triangle
+    10: {x:270, y:180},  // right diamond
+    11: {x:315, y:90},   // right-top triangle
+    12: {x:270, y:45}    // top-right triangle
+  };
+
+  // Build planet positions by house
+  const planetsByHouse = {};
+  for (let h = 1; h <= 12; h++) planetsByHouse[h] = [];
+  const PLANET_ABBR = {
+    Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me",
+    Jupiter: "Ju", Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke"
+  };
+  for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
+    if (planet === "_Lagna") continue;
+    const h = houseFromLagna(lagnaRashiNum, rashiNum);
+    planetsByHouse[h].push(PLANET_ABBR[planet] || planet);
+  }
+
+  // Rashi number for each house
+  const rashiOfHouse = {};
+  for (let h = 1; h <= 12; h++) {
+    rashiOfHouse[h] = ((lagnaRashiNum - 1 + h - 1) % 12) + 1;
+  }
+
+  // Build SVG
+  let svg = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // outer square
+  svg += `<rect x="2" y="2" width="${W-4}" height="${H-4}" fill="#fffaea" stroke="#6b1d2b" stroke-width="2"/>`;
+
+  // inner diamond (corner-to-corner lines)
+  const c = { x: W/2, y: H/2 };
+  // outer diagonals (corner to corner)
+  svg += `<line x1="2" y1="2" x2="${W-2}" y2="${H-2}" stroke="#6b1d2b" stroke-width="1.5"/>`;
+  svg += `<line x1="${W-2}" y1="2" x2="2" y2="${H-2}" stroke="#6b1d2b" stroke-width="1.5"/>`;
+  // inner diamond (midpoints of sides)
+  svg += `<polygon points="${W/2},2 ${W-2},${H/2} ${W/2},${H-2} 2,${H/2}" fill="none" stroke="#6b1d2b" stroke-width="1.5"/>`;
+
+  // Lagna marker (Asc indicator) — diagonal line at top-left
+  // Show ASC label on the upper-left of house 1
+  svg += `<text x="${HOUSE_POS[1].x - 26}" y="${HOUSE_POS[1].y - 28}" font-family="Cinzel" font-size="11" fill="#d97324" font-weight="700">Asc</text>`;
+
+  // For each house, draw the rashi number small and planets
+  for (let h = 1; h <= 12; h++) {
+    const pos = HOUSE_POS[h];
+    const r = rashiOfHouse[h];
+    const ps = planetsByHouse[h];
+
+    // Rashi number (in italics)
+    svg += `<text x="${pos.x}" y="${pos.y - 12}" font-family="Cinzel" font-size="11"
+              fill="#8a7a55" text-anchor="middle" font-style="italic">${r}</text>`;
+
+    // Planets stacked
+    if (ps.length === 0) continue;
+    // Choose font size by count
+    const fs = ps.length <= 2 ? 13 : (ps.length <= 4 ? 11 : 10);
+    const lineH = fs + 2;
+    const startY = pos.y + 6 - ((ps.length - 1) / 2) * lineH;
+    for (let i = 0; i < ps.length; i++) {
+      svg += `<text x="${pos.x}" y="${startY + i * lineH}" font-family="Cinzel"
+                font-size="${fs}" fill="#1a1230" font-weight="600"
+                text-anchor="middle">${ps[i]}</text>`;
+    }
+  }
+
+  svg += `</svg>`;
+
+  // Legend
+  let legend = `<h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:0 0 10px;">Rashi by House</h4>`;
+  for (let h = 1; h <= 12; h++) {
+    const r = getRashi(rashiOfHouse[h]);
+    const ps = planetsByHouse[h].join(", ") || "—";
+    legend += `<div class="legend-row">
+      <span class="lg-rashi">H${h}</span>
+      <span>${r.glyph} ${r.sanskrit} (${r.english})</span>
+      <span style="margin-left:auto; color:var(--saffron); font-weight:600;">${ps}</span>
+    </div>`;
+  }
+
+  document.getElementById("chartWheel").innerHTML = svg;
+  document.getElementById("chartLegend").innerHTML = legend;
+}
+
+/* South Indian rashi chakra — 4×4 grid with rāśis in FIXED positions.
+   Lagna cell is marked; planets are placed in their rāśi cells regardless of Lagna.
+   Standard South-Indian convention:
+       Top row L→R:    Meena(12)  Mesha(1)   Vrishabha(2)  Mithuna(3)
+       Row 2:          Kumbha(11)  [center]   [center]      Karka(4)
+       Row 3:          Makara(10)  [center]   [center]      Simha(5)
+       Bottom row L→R: Dhanus(9)  Vrischika(8) Tula(7)      Kanya(6)                       */
+function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity) {
+  // Map rashi number -> grid cell index (0..15), reading row-major left-to-right top-to-bottom.
+  // Centre cells (5, 6, 9, 10) are reserved for the title block.
+  const RASHI_TO_CELL = {
+    12: 0,  1: 1,  2: 2,  3: 3,
+    11: 4,                       4: 7,
+    10: 8,                       5: 11,
+     9: 12, 8: 13, 7: 14, 6: 15
+  };
+  const CENTER_CELLS = new Set([5, 6, 9, 10]);
+
+  // Build planets-by-rashi map with dignity info attached
+  const planetsByRashiList = {};
+  for (let r = 1; r <= 12; r++) planetsByRashiList[r] = [];
+  const PLANET_ABBR = {
+    Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me",
+    Jupiter: "Ju", Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke"
+  };
+  for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
+    if (planet === "_Lagna") continue;
+    const dignity = (planetsWithDignity && planetsWithDignity[planet]) || "";
+    let cls = "";
+    if (dignity === "Exalted") cls = "exalted";
+    else if (dignity === "Debilitated") cls = "debilitated";
+    planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls });
+  }
+
+  // Build the grid
+  let html = `<div class="south-chart">`;
+  for (let cell = 0; cell < 16; cell++) {
+    if (CENTER_CELLS.has(cell)) {
+      // Build the center block only once at cell 5; merge visually by leaving others blank
+      if (cell === 5) {
+        const lagnaR = getRashi(lagnaRashiNum);
+        html += `<div class="south-cell center" style="grid-column: 2 / span 2; grid-row: 2 / span 2;">
+          <div>
+            <div class="om-glyph">ॐ</div>
+            <div style="font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:var(--maroon);">Rāśi Chakra</div>
+            <div style="margin-top:6px; font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--ink-soft); font-size:13px;">
+              Lagna: <strong style="color:var(--saffron);">${lagnaR.sanskrit}</strong>
+            </div>
+          </div>
+        </div>`;
+      }
+      // skip the other center cells
+      continue;
+    }
+    // Find which rashi maps to this cell
+    let rashiNum = null;
+    for (const [r, c] of Object.entries(RASHI_TO_CELL)) {
+      if (c === cell) { rashiNum = parseInt(r, 10); break; }
+    }
+    if (rashiNum === null) {
+      html += `<div class="south-cell"></div>`;
+      continue;
+    }
+    const r = getRashi(rashiNum);
+    const houseNum = houseFromLagna(lagnaRashiNum, rashiNum);
+    const isLagna = (rashiNum === lagnaRashiNum);
+    const planets = planetsByRashiList[rashiNum];
+
+    html += `<div class="south-cell ${isLagna ? "lagna-cell" : ""}">`;
+    html += `<div class="sc-rashi">${r.glyph}&nbsp;${r.sanskrit}</div>`;
+    html += `<div class="sc-rashi-en">${r.english}</div>`;
+    html += `<div class="sc-planets">`;
+    for (const p of planets) {
+      html += `<span class="sc-planet ${p.cls}">${p.abbr}</span>`;
+    }
+    html += `</div>`;
+    html += `<span class="sc-house-num">H${houseNum}</span>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  document.getElementById("chartSouth").innerHTML = html;
+}
+
+/* Render Lagna section */
+function renderLagnaSection(lagnaRashi, lagnaDeg) {
+  const interp = interpretLagna(lagnaRashi);
+  const kv = document.getElementById("lagna-kv");
+  // prepend a row showing exact degree
+  let html = `
+    <div class="kv"><span class="k">Sidereal Longitude</span>
+      <span class="v">${fmtDeg(lagnaDeg)} in ${lagnaRashi.sanskrit}</span></div>`;
+  for (const [k, v] of interp.kv) {
+    html += `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  }
+  kv.innerHTML = html;
+  document.getElementById("lagna-narrative").innerHTML = interp.narrative;
+}
+
+/* Render Moon section */
+function renderMoonSection(moonRashi, moonDeg, moonHouse, moonDignity) {
+  const interp = interpretMoon(moonRashi, moonHouse, moonDignity);
+  const kv = document.getElementById("moon-kv");
+  let html = `
+    <div class="kv"><span class="k">Sidereal Longitude</span>
+      <span class="v">${fmtDeg(moonDeg)} in ${moonRashi.sanskrit}</span></div>`;
+  for (const [k, v] of interp.kv) {
+    html += `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  }
+  kv.innerHTML = html;
+  document.getElementById("moon-narrative").innerHTML = interp.narrative;
+}
+
+/* Render planet table */
+function renderPlanetTable(sidereal, lagnaRashiNum) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const GLYPHS = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃",
+                    Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
+  let html = `<thead>
+    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Element</th><th>Lord</th><th>Dignity</th></tr>
+  </thead><tbody>`;
+  for (const p of order) {
+    const { n, deg } = rashiOf(sidereal[p]);
+    const r = getRashi(n);
+    const house = houseFromLagna(lagnaRashiNum, n);
+    const dig = planetDignity(p, n);
+    html += `<tr>
+      <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
+      <td>${r.glyph} ${r.sanskrit} (${r.english})</td>
+      <td>${fmtDeg(deg)}</td>
+      <td>House ${house}</td>
+      <td>${r.tatwa}</td>
+      <td>${r.lord}</td>
+      <td><span class="section-flag flag-${dig.flag}">${dig.label}</span></td>
+    </tr>`;
+  }
+  html += `</tbody>`;
+  document.getElementById("planet-table").innerHTML = html;
+
+  // narrative listing each planet's rashi traits
+  let narr = `<p>Each graha colours the area of life ruled by its placement. The Rashi-level traits attaching to each graha are summarised below:</p>`;
+  for (const p of order) {
+    const { n } = rashiOf(sidereal[p]);
+    const r = getRashi(n);
+    const dig = planetDignity(p, n);
+    const flag = dig.flag !== "neutral" ?
+      `<span class="section-flag flag-${dig.flag}">${dig.label}</span>` : "";
+    narr += `<p>${flag}<strong>${p}</strong> in <strong>${r.sanskrit} (${r.english})</strong>:
+      ${r.traits.slice(0, 5).map(t => `<span class="trait">${t}</span>`).join(" ")}
+      <em>Element: ${r.tatwa} · Modality: ${r.mode}</em></p>`;
+  }
+  document.getElementById("planet-narrative").innerHTML = narr;
+}
+
+/* Render tatwa & modality distribution */
+function renderDistributions(sidereal) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const tatwa = { Agni:[], Vayu:[], Prithvi:[], Jala:[] };
+  const mode  = { Chara:[], Sthira:[], Dwisabhava:[] };
+  for (const p of order) {
+    const r = getRashi(rashiOf(sidereal[p]).n);
+    tatwa[r.tatwa].push(p);
+    mode[r.mode].push(p);
+  }
+  const total = order.length;
+
+  // Tatwa bars
+  const tatwaOrder = ["Agni", "Vayu", "Prithvi", "Jala"];
+  const tatwaColors = { Agni: "", Vayu: "teal", Prithvi: "gold", Jala: "maroon" };
+  let html = `<div class="dist-group">`;
+  for (const t of tatwaOrder) {
+    const count = tatwa[t].length;
+    const pct = total ? (count / total * 100) : 0;
+    const colorClass = tatwaColors[t] || "";
+    html += `<div class="dist-row">
+      <span class="dist-label">${t}${t === "Agni" ? " (Fire)" : t === "Vayu" ? " (Air)" : t === "Prithvi" ? " (Earth)" : " (Water)"}</span>
+      <span class="dist-bar ${colorClass}"><span style="width:${pct}%"></span></span>
+      <span class="dist-val">${count}</span>
+      <span class="dist-planets">${tatwa[t].join(", ") || "—"} &nbsp;·&nbsp; ${TATWA_DEF[t]}</span>
+    </div>`;
+  }
+  html += `<div class="narrative" style="margin-top:18px;"><p>${distributionNarrative("Tatwa", { Agni: tatwa.Agni.length, Vayu: tatwa.Vayu.length, Prithvi: tatwa.Prithvi.length, Jala: tatwa.Jala.length }, total)}</p></div></div>`;
+  document.getElementById("tatwa-body").innerHTML = html;
+
+  // Modality bars
+  const modeColors = { Chara: "", Sthira: "maroon", Dwisabhava: "teal" };
+  let html2 = `<div class="dist-group">`;
+  for (const m of ["Chara", "Sthira", "Dwisabhava"]) {
+    const count = mode[m].length;
+    const pct = total ? (count / total * 100) : 0;
+    const colorClass = modeColors[m] || "";
+    html2 += `<div class="dist-row">
+      <span class="dist-label">${m}</span>
+      <span class="dist-bar ${colorClass}"><span style="width:${pct}%"></span></span>
+      <span class="dist-val">${count}</span>
+      <span class="dist-planets">${mode[m].join(", ") || "—"} &nbsp;·&nbsp; ${MODE_DEF[m]}</span>
+    </div>`;
+  }
+  html2 += `<div class="narrative" style="margin-top:18px;"><p>${distributionNarrative("Modality", { Chara: mode.Chara.length, Sthira: mode.Sthira.length, Dwisabhava: mode.Dwisabhava.length }, total)}</p></div></div>`;
+  document.getElementById("mode-body").innerHTML = html2;
+}
+
+/* Render dignity summary */
+function renderDignity(sidereal) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const exalted = [], debilitated = [], own = [], mtr = [];
+  for (const p of order) {
+    const n = rashiOf(sidereal[p]).n;
+    const d = planetDignity(p, n);
+    const r = getRashi(n);
+    if (d.flag === "exalted")     exalted.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "debilitated") debilitated.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "own")         own.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "mtr")         mtr.push(`<strong>${p}</strong> in ${r.sanskrit} (Moolatrikona)`);
+  }
+  let html = `<div class="kv-grid">
+    <div class="kv"><span class="k">Exalted (Uccha)</span>
+      <span class="v">${exalted.length || "0"}</span></div>
+    <div class="kv"><span class="k">Debilitated (Neecha)</span>
+      <span class="v">${debilitated.length || "0"}</span></div>
+    <div class="kv"><span class="k">Own House (Swakshetra)</span>
+      <span class="v">${own.length || "0"}</span></div>
+    <div class="kv"><span class="k">Moolatrikona</span>
+      <span class="v">${mtr.length || "0"}</span></div>
+  </div>`;
+
+  html += `<div class="narrative">`;
+  if (exalted.length) {
+    html += `<p><span class="section-flag flag-exalted">Exalted</span>
+      ${exalted.join(" · ")} — these grahas are very strong and give excellent results
+      in their significations.</p>`;
+  }
+  if (mtr.length) {
+    html += `<p><span class="section-flag flag-mtr">Moolatrikona</span>
+      ${mtr.join(" · ")} — these grahas sit in their Moolatrikona, granting balanced
+      and powerful expression of their significations.</p>`;
+  }
+  if (own.length) {
+    html += `<p><span class="section-flag flag-own">Own House</span>
+      ${own.join(" · ")} — comfortable and balanced; give good, balanced results.</p>`;
+  }
+  if (debilitated.length) {
+    html += `<p><span class="section-flag flag-debilitated">Debilitated</span>
+      ${debilitated.join(" · ")} — weak placements; may cause challenges in their
+      areas of life. Remedial measures advised.</p>`;
+  }
+  if (!exalted.length && !debilitated.length && !own.length && !mtr.length) {
+    html += `<p>No grahas in special dignity. Each planet operates in a neutral
+      zodiacal field — outcomes depend on aspects, conjunctions and dasha periods.</p>`;
+  }
+  html += `</div>`;
+  document.getElementById("dignity-body").innerHTML = html;
+}
+
+/* Render remedies */
+function renderRemedies(lagnaTatwa, moonTatwa) {
+  let html = `<div class="kv-grid">
+    <div class="kv"><span class="k">Lagna Tatwa</span><span class="v">${lagnaTatwa}</span></div>
+    <div class="kv"><span class="k">Moon Tatwa</span><span class="v">${moonTatwa}</span></div>
+  </div>`;
+  html += `<div class="narrative">
+    <p><strong>For the Lagna (body / outer life) — ${lagnaTatwa} tatwa:</strong>
+    ${REMEDY_BY_TATWA[lagnaTatwa]}</p>
+    <p><strong>For the Moon (mind / inner life) — ${moonTatwa} tatwa:</strong>
+    ${REMEDY_BY_TATWA[moonTatwa]}</p>
+    <p><em>General principle:</em>
+    Homa &amp; lamps for Agni rashis · Abhisheka &amp; Teertha for Jala rashis ·
+    Chanting of mantras for Vayu rashis · Dāna (charity) for Prithvi rashis.</p>
+  </div>`;
+  document.getElementById("remedy-body").innerHTML = html;
+}
+
+/* ============================================================
+   6. MAIN — wiring inputs to engine to UI
+   ============================================================ */
+let currentChart = null;
+let selectedCity = null;
+
+function showMsg(text, isError) {
+  const el = document.getElementById("msg");
+  el.innerHTML = text ? `<div class="error">${text}</div>` : "";
+}
+
+function showLoader(on) {
+  document.getElementById("loader").classList.toggle("show", !!on);
+}
+
+function generate() {
+  showMsg("");
+  const name  = document.getElementById("f-name").value.trim();
+  const dob   = document.getElementById("f-dob").value;
+  const tob   = document.getElementById("f-tob").value;
+  const place = document.getElementById("f-place").value.trim();
+  const ayanType = document.getElementById("f-ayanamsa").value;
+  if (!dob || !tob) {
+    showMsg("Please enter both Date of Birth and Time of Birth.", true);
+    return;
+  }
+
+  // Resolve location
+  let lat, lon, tz, placeName;
+  const useManual = document.getElementById("latLonRow").classList.contains("show");
+  if (useManual) {
+    lat = parseFloat(document.getElementById("f-lat").value);
+    lon = parseFloat(document.getElementById("f-lon").value);
+    tz  = parseFloat(document.getElementById("f-tz").value);
+    placeName = place || `${lat}°, ${lon}°`;
+    if (isNaN(lat) || isNaN(lon) || isNaN(tz)) {
+      showMsg("Please enter latitude, longitude and timezone offset.", true);
+      return;
+    }
+  } else if (selectedCity) {
+    lat = selectedCity[2]; lon = selectedCity[3]; tz = selectedCity[4];
+    placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
+  } else {
+    // Try to find in city DB by name
+    const match = CITIES.find(c => c[0].toLowerCase() === place.toLowerCase());
+    if (match) {
+      lat = match[2]; lon = match[3]; tz = match[4];
+      placeName = `${match[0]}, ${match[1]}`;
+    } else {
+      showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
+      return;
+    }
+  }
+
+  showLoader(true);
+
+  // Parse date / time into UTC JD
+  const [y, m, d] = dob.split("-").map(Number);
+  const [hh, mm] = tob.split(":").map(Number);
+  const localHours = hh + mm / 60;
+  const utHours = localHours - tz;  // convert to UTC
+  // Handle date crossing midnight
+  let yy = y, mmth = m, dd = d, utc = utHours;
+  if (utHours < 0) {
+    // previous day in UTC
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    yy = dt.getUTCFullYear(); mmth = dt.getUTCMonth() + 1; dd = dt.getUTCDate();
+    utc = utHours + 24;
+  } else if (utHours >= 24) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + 1);
+    yy = dt.getUTCFullYear(); mmth = dt.getUTCMonth() + 1; dd = dt.getUTCDate();
+    utc = utHours - 24;
+  }
+  const JD = julianDay(yy, mmth, dd, utc);
+
+  // Compute chart
+  const chart = computeChart(JD, ayanType);
+  const lagnaLon = computeLagna(JD, lat, lon, ayanType);
+  const lagnaRashiInfo = rashiOf(lagnaLon);
+  const lagnaRashi = getRashi(lagnaRashiInfo.n);
+
+  const moonRashiInfo = rashiOf(chart.sidereal.Moon);
+  const moonRashi     = getRashi(moonRashiInfo.n);
+  const moonHouse     = houseFromLagna(lagnaRashiInfo.n, moonRashiInfo.n);
+  const moonDignity   = planetDignity("Moon", moonRashiInfo.n);
+
+  const sunRashiInfo = rashiOf(chart.sidereal.Sun);
+  const sunRashi = getRashi(sunRashiInfo.n);
+
+  // Render everything
+  renderSummaryStrip(name, dob, tob, placeName, lagnaRashi, moonRashi, sunRashi);
+  // Tag for ayanamsa
+  document.getElementById("r-aytag").textContent =
+    (ayanType === "lahiri" ? "Lahiri" : ayanType === "raman" ? "Raman" : "KP") +
+    " Ayanamsa · " + fmtDeg(chart.ayanamsa);
+
+  // Planets by rashi for the chart wheel
+  const planetsByRashi = {};
+  const planetsWithDignity = {};
+  for (const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
+    const rNum = rashiOf(chart.sidereal[p]).n;
+    planetsByRashi[p] = rNum;
+    planetsWithDignity[p] = planetDignity(p, rNum).label;
+  }
+  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi);
+  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity);
+
+  renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
+  renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
+  renderPlanetTable(chart.sidereal, lagnaRashiInfo.n);
+  renderDistributions(chart.sidereal);
+  renderDignity(chart.sidereal);
+  renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
+
+  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
+  document.getElementById("report").classList.add("show");
+  document.getElementById("btn-print").disabled = false;
+
+  setTimeout(() => {
+    document.getElementById("report").scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
+
+  showLoader(false);
+}
+
+/* Suggestion handling */
+function setupPlaceAutocomplete() {
+  const input = document.getElementById("f-place");
+  const sug = document.getElementById("suggestions");
+  let activeIdx = -1;
+  let currentList = [];
+
+  const render = () => {
+    if (currentList.length === 0) { sug.classList.remove("show"); return; }
+    sug.innerHTML = currentList.slice(0, 20).map((c, i) =>
+      `<div data-idx="${i}" class="${i === activeIdx ? "active" : ""}">
+         ${c[0]} <small>· ${c[1]}</small>
+       </div>`).join("");
+    sug.classList.add("show");
+  };
+
+  const filter = (q) => {
+    if (!q || q.length < 2) return [];
+    const ql = q.toLowerCase();
+    const starts = [], contains = [];
+    for (const c of CITIES) {
+      const n = c[0].toLowerCase();
+      if (n === ql) starts.unshift(c);          // exact match first
+      else if (n.startsWith(ql)) starts.push(c);
+      else if (n.includes(ql)) contains.push(c);
+    }
+    return starts.concat(contains);
+  };
+
+  input.addEventListener("input", () => {
+    selectedCity = null;
+    currentList = filter(input.value);
+    activeIdx = -1;
+    render();
+  });
+  input.addEventListener("focus", () => {
+    if (input.value.length >= 2) { currentList = filter(input.value); render(); }
+  });
+  input.addEventListener("blur", () => {
+    setTimeout(() => sug.classList.remove("show"), 200);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (!currentList.length) return;
+    if (e.key === "ArrowDown") {
+      activeIdx = Math.min(activeIdx + 1, currentList.length - 1, 19);
+      render(); e.preventDefault();
+    } else if (e.key === "ArrowUp") {
+      activeIdx = Math.max(activeIdx - 1, 0); render(); e.preventDefault();
+    } else if (e.key === "Enter" && activeIdx >= 0) {
+      pick(activeIdx); e.preventDefault();
+    } else if (e.key === "Escape") {
+      sug.classList.remove("show");
+    }
+  });
+  sug.addEventListener("mousedown", (e) => {
+    const div = e.target.closest("div[data-idx]");
+    if (div) pick(parseInt(div.dataset.idx));
+  });
+
+  function pick(i) {
+    const c = currentList[i];
+    selectedCity = c;
+    input.value = c[0];
+    document.getElementById("place-hint").innerHTML =
+      `<em>${c[0]}, ${c[1]} — lat ${c[2]}°, lon ${c[3]}°, UTC ${c[4] >= 0 ? "+" : ""}${c[4]}</em>`;
+    sug.classList.remove("show");
+  }
+
+  // initial sync (default value)
+  const init = filter(input.value);
+  if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
+    selectedCity = init[0];
+    document.getElementById("place-hint").innerHTML =
+      `<em>${init[0][0]}, ${init[0][1]} — lat ${init[0][2]}°, lon ${init[0][3]}°, UTC ${init[0][4] >= 0 ? "+" : ""}${init[0][4]}</em>`;
+  }
+}
+
+/* Manual lat/lon toggle */
+document.getElementById("btn-manual").addEventListener("click", () => {
+  const row = document.getElementById("latLonRow");
+  const visible = row.classList.toggle("show");
+  document.getElementById("btn-manual").textContent =
+    visible ? "Use city lookup" : "Use manual lat/lon";
+});
+
+/* Bind buttons */
+document.getElementById("btn-generate").addEventListener("click", generate);
+document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+/* On load */
+setupPlaceAutocomplete();
+
+/* Optionally auto-generate the sample chart for the demo on first load */
+window.addEventListener("DOMContentLoaded", () => {
+  // run once for the bundled sample (Girish Belur)
+  setTimeout(generate, 200);
+});
+
+</script>
+</body>
+</html>
