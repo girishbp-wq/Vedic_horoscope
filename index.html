@@ -421,6 +421,12 @@ details.section[open] > summary::after { content: "−"; }
 }
 .planet-table tr:hover td { background: rgba(231,200,118,.10); }
 .planet-table td .glyph-mini { display: inline-block; width: 22px; color: var(--saffron); font-weight: 700; }
+.deva { font-size: 19px; color: var(--maroon); font-weight: 600; line-height: 1.5;
+        font-family: 'Noto Sans Devanagari','Nirmala UI','Mangal',serif; }
+.deva-roman { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.mantra-deva { font-size: 17px; color: var(--maroon); font-weight: 600;
+               font-family: 'Noto Sans Devanagari','Nirmala UI','Mangal',serif; }
+.akshara-note { font-size: 12.5px; color: var(--muted); margin-top: 12px; font-style: italic; }
 
 /* Distribution bars */
 .dist-group { margin-bottom: 14px; }
@@ -702,43 +708,6 @@ details.section[open] > summary::after { content: "−"; }
   .section-body { padding: 4px 16px 18px; }
   .dist-row .dist-label { width: 120px; font-size: 10px; }
 }
-
-/* ---- Statistics row (Tatwa / Mode / Dignity) ---- */
-.stat-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
-  margin: 12px 0 16px;
-}
-.stat-box {
-  background: linear-gradient(180deg, var(--parchment-2), var(--parchment));
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px 10px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(16, 9, 38, 0.06);
-}
-.stat-num {
-  font-family: 'Cinzel', serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--maroon);
-  line-height: 1.1;
-}
-.stat-lbl {
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-/* ---- Messages ---- */
-.msg { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; font-size: 15px; }
-.msg-info { background: #eef4ff; color: #2a3b6f; border: 1px solid #b9c8e8; }
-.msg-error { background: #fde0e0; color: #8a1e22; border: 1px solid #e3a2a4; }
-
 </style>
 </head>
 <body>
@@ -806,21 +775,21 @@ details.section[open] > summary::after { content: "−"; }
     <div class="input-grid">
       <div class="field" style="grid-column: span 2;">
         <label for="f-name">Name</label>
-        <input id="f-name" type="text" placeholder="e.g. Girish Belur" autocomplete="off" />
+        <input id="f-name" type="text" placeholder="e.g. Aarav Sharma" autocomplete="off" />
       </div>
       <div class="field">
         <label for="f-dob">Date of Birth</label>
-        <input id="f-dob" type="date" placeholder="e.g. 1968-04-25" />
-        <span class="hint">Format: YYYY-MM-DD (e.g. 1968-04-25)</span>
+        <input id="f-dob" type="date" />
+        <span class="hint">Format: YYYY-MM-DD — e.g. 1995-08-15</span>
       </div>
       <div class="field">
         <label for="f-tob">Time of Birth</label>
         <input id="f-tob" type="time" step="60" />
-        <span class="hint">24-hour clock (e.g. 14:27 for 2:27 PM)</span>
+        <span class="hint">24-hour clock — e.g. 09:45 (9:45 AM) or 21:30 (9:30 PM)</span>
       </div>
       <div class="field places-wrap" style="grid-column: span 2;">
         <label for="f-place">Place of Birth</label>
-        <input id="f-place" type="text" placeholder="e.g. Kadur, Karnataka, India" autocomplete="off" />
+        <input id="f-place" type="text" placeholder="e.g. Mumbai, Maharashtra, India" autocomplete="off" />
         <div id="suggestions" class="suggestions"></div>
         <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
       </div>
@@ -846,18 +815,15 @@ details.section[open] > summary::after { content: "−"; }
       <div class="lat-lon-row" id="latLonRow">
         <div class="field">
           <label>Latitude (°)</label>
-          <input id="f-lat" type="number" step="any" placeholder="e.g. 13.55 (Kadur)" />
-          <span class="hint">Decimal degrees, North = +, South = −</span>
+          <input id="f-lat" type="number" step="any" placeholder="e.g. 19.08" />
         </div>
         <div class="field">
           <label>Longitude (°)</label>
-          <input id="f-lon" type="number" step="any" placeholder="e.g. 76.02 (Kadur)" />
-          <span class="hint">Decimal degrees, East = +, West = −</span>
+          <input id="f-lon" type="number" step="any" placeholder="e.g. 72.88" />
         </div>
         <div class="field">
           <label>Timezone (UTC offset hr)</label>
-          <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5 (IST)" />
-          <span class="hint">UTC offset in hours (IST = 5.5)</span>
+          <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5" />
         </div>
       </div>
     </div>
@@ -933,7 +899,6 @@ details.section[open] > summary::after { content: "−"; }
         </div>
       </details>
 
-
       <details class="section" open>
         <summary>
           <span class="section-num">III·b</span>
@@ -945,6 +910,7 @@ details.section[open] > summary::after { content: "−"; }
           <div class="narrative" id="tithi-narrative"></div>
         </div>
       </details>
+
       <details class="section" open>
         <summary>
           <span class="section-num">IV</span>
@@ -984,7 +950,6 @@ details.section[open] > summary::after { content: "−"; }
         <div class="section-body" id="dignity-body"></div>
       </details>
 
-
       <details class="section" open>
         <summary>
           <span class="section-num">VII·b</span>
@@ -999,6 +964,7 @@ details.section[open] > summary::after { content: "−"; }
           <div class="narrative" id="kuja-verdict"></div>
         </div>
       </details>
+
       <details class="section">
         <summary>
           <span class="section-num">VIII</span>
@@ -1006,6 +972,15 @@ details.section[open] > summary::after { content: "−"; }
           <span class="section-sub">Suggested practices based on Lagna &amp; Moon tatwa</span>
         </summary>
         <div class="section-body" id="remedy-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">IX</span>
+          <span class="section-title">Graha Aksharas &amp; Beejakshari Mantras</span>
+          <span class="section-sub">Sound syllables &amp; seed-mantra of each graha</span>
+        </summary>
+        <div class="section-body" id="akshara-body"></div>
       </details>
 
       <div class="report-footer">
@@ -1991,69 +1966,262 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
   };
   const CENTER_CELLS = new Set([5, 6, 9, 10]);
 
-
-  // Build SVG for 4×4 South-Indian grid
-  const W = 360, H = 360;
-  const cell = 90;
-  const planetsByHouse = {};
-  for (let r = 1; r <= 12; r++) planetsByHouse[r] = [];
+  // Build planets-by-rashi map with dignity info attached
+  const planetsByRashiList = {};
+  for (let r = 1; r <= 12; r++) planetsByRashiList[r] = [];
   const PLANET_ABBR = {
     Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me",
     Jupiter: "Ju", Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke"
   };
   for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
     if (planet === "_Lagna") continue;
-    planetsByHouse[rashiNum].push(PLANET_ABBR[planet] || planet);
+    const dignity = (planetsWithDignity && planetsWithDignity[planet]) || "";
+    let cls = "";
+    if (dignity === "Exalted") cls = "exalted";
+    else if (dignity === "Debilitated") cls = "debilitated";
+    planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls });
   }
 
-  let svg = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect x="2" y="2" width="${W-4}" height="${H-4}" fill="#fffaea" stroke="#6b1d2b" stroke-width="2"/>`;
-
-  // grid lines
-  for (let i = 1; i < 4; i++) {
-    svg += `<line x1="${i*cell}" y1="2" x2="${i*cell}" y2="${H-2}" stroke="#6b1d2b" stroke-width="1"/>`;
-    svg += `<line x1="2" y1="${i*cell}" x2="${W-2}" y2="${i*cell}" stroke="#6b1d2b" stroke-width="1"/>`;
-  }
-
-  // For each rashi cell, draw rashi name and planets
-  for (const [rashiStr, idx] of Object.entries(RASHI_TO_CELL)) {
-    const rashiNum = parseInt(rashiStr, 10);
-    const col = idx % 4, row = Math.floor(idx / 4);
-    const cx = col * cell + cell / 2;
-    const cy = row * cell + cell / 2;
+  // Build the grid
+  let html = `<div class="south-chart">`;
+  for (let cell = 0; cell < 16; cell++) {
+    if (CENTER_CELLS.has(cell)) {
+      // Build the center block only once at cell 5; merge visually by leaving others blank
+      if (cell === 5) {
+        const lagnaR = getRashi(lagnaRashiNum);
+        html += `<div class="south-cell center" style="grid-column: 2 / span 2; grid-row: 2 / span 2;">
+          <div>
+            <div class="om-glyph">ॐ</div>
+            <div style="font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.22em; text-transform:uppercase; color:var(--maroon);">Rāśi Chakra</div>
+            <div style="margin-top:6px; font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--muted); font-size:13px;">
+              Lagna: <strong style="color:var(--saffron);">${lagnaR.sanskrit}</strong>
+            </div>
+          </div>
+        </div>`;
+      }
+      // skip the other center cells
+      continue;
+    }
+    // Find which rashi maps to this cell
+    let rashiNum = null;
+    for (const [r, c] of Object.entries(RASHI_TO_CELL)) {
+      if (c === cell) { rashiNum = parseInt(r, 10); break; }
+    }
+    if (rashiNum === null) {
+      html += `<div class="south-cell"></div>`;
+      continue;
+    }
     const r = getRashi(rashiNum);
-    const ps = planetsByHouse[rashiNum];
+    const houseNum = houseFromLagna(lagnaRashiNum, rashiNum);
+    const isLagna = (rashiNum === lagnaRashiNum);
+    const planets = planetsByRashiList[rashiNum];
 
-    // Lagna highlight
-    if (rashiNum === lagnaRashiNum) {
-      svg += `<rect x="${col*cell+2}" y="${row*cell+2}" width="${cell-4}" height="${cell-4}" fill="rgba(217,115,36,0.12)" stroke="#d97324" stroke-width="2"/>`;
-      svg += `<text x="${cx}" y="${row*cell+14}" font-family="Cinzel" font-size="9" fill="#d97324" text-anchor="middle" font-weight="700">ASC</text>`;
+    html += `<div class="south-cell ${isLagna ? "lagna-cell" : ""}">`;
+    html += `<div class="sc-rashi">${r.glyph}&nbsp;${r.sanskrit}</div>`;
+    html += `<div class="sc-rashi-en">${r.english}</div>`;
+    html += `<div class="sc-planets">`;
+    for (const p of planets) {
+      html += `<span class="sc-planet ${p.cls}">${p.abbr}</span>`;
     }
-
-    // Rashi name
-    svg += `<text x="${cx}" y="${row*cell+26}" font-family="Cinzel" font-size="10" fill="#8a7a55" text-anchor="middle" font-style="italic">${r.sanskrit}</text>`;
-
-    // Planets stacked
-    if (ps.length === 0) continue;
-    const fs = ps.length <= 2 ? 12 : (ps.length <= 4 ? 10 : 9);
-    const lineH = fs + 2;
-    const startY = cy + 8 - ((ps.length - 1) / 2) * lineH;
-    for (let i = 0; i < ps.length; i++) {
-      svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="Cinzel" font-size="${fs}" fill="#1a1230" font-weight="600" text-anchor="middle">${ps[i]}</text>`;
-    }
+    html += `</div>`;
+    html += `<span class="sc-house-num">H${houseNum}</span>`;
+    html += `</div>`;
   }
+  html += `</div>`;
 
-  // Center title block
-  svg += `<rect x="${cell}" y="${cell}" width="${cell*2}" height="${cell*2}" fill="#fbf2dc" stroke="#6b1d2b" stroke-width="1.5"/>`;
-  svg += `<text x="${W/2}" y="${H/2 - 6}" font-family="Cinzel" font-size="13" fill="#6b1d2b" text-anchor="middle" font-weight="700">RĀŚI</text>`;
-  svg += `<text x="${W/2}" y="${H/2 + 14}" font-family="Cinzel" font-size="10" fill="#8a7a55" text-anchor="middle">South-Indian</text>`;
+  document.getElementById("chartSouth").innerHTML = html;
+}
 
-  svg += `</svg>`;
-  document.getElementById("chartSouth").innerHTML = svg;
+/* Render Lagna section */
+function renderLagnaSection(lagnaRashi, lagnaDeg) {
+  const interp = interpretLagna(lagnaRashi);
+  const kv = document.getElementById("lagna-kv");
+  // prepend a row showing exact degree
+  let html = `
+    <div class="kv"><span class="k">Sidereal Longitude</span>
+      <span class="v">${fmtDeg(lagnaDeg)} in ${lagnaRashi.sanskrit}</span></div>`;
+  for (const [k, v] of interp.kv) {
+    html += `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  }
+  kv.innerHTML = html;
+  document.getElementById("lagna-narrative").innerHTML = interp.narrative;
+}
+
+/* Render Moon section */
+function renderMoonSection(moonRashi, moonDeg, moonHouse, moonDignity) {
+  const interp = interpretMoon(moonRashi, moonHouse, moonDignity);
+  const kv = document.getElementById("moon-kv");
+  let html = `
+    <div class="kv"><span class="k">Sidereal Longitude</span>
+      <span class="v">${fmtDeg(moonDeg)} in ${moonRashi.sanskrit}</span></div>`;
+  for (const [k, v] of interp.kv) {
+    html += `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  }
+  kv.innerHTML = html;
+  document.getElementById("moon-narrative").innerHTML = interp.narrative;
+}
+
+/* Render planet table */
+function renderPlanetTable(sidereal, lagnaRashiNum) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const GLYPHS = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃",
+                    Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
+  let html = `<thead>
+    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Element</th><th>Lord</th><th>Dignity</th></tr>
+  </thead><tbody>`;
+  for (const p of order) {
+    const { n, deg } = rashiOf(sidereal[p]);
+    const r = getRashi(n);
+    const house = houseFromLagna(lagnaRashiNum, n);
+    const dig = planetDignity(p, n);
+    html += `<tr>
+      <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
+      <td>${r.glyph} ${r.sanskrit} (${r.english})</td>
+      <td>${fmtDeg(deg)}</td>
+      <td>House ${house}</td>
+      <td>${r.tatwa}</td>
+      <td>${r.lord}</td>
+      <td><span class="section-flag flag-${dig.flag}">${dig.label}</span></td>
+    </tr>`;
+  }
+  html += `</tbody>`;
+  document.getElementById("planet-table").innerHTML = html;
+
+  // narrative listing each planet's rashi traits
+  let narr = `<p>Each graha colours the area of life ruled by its placement. The Rashi-level traits attaching to each graha are summarised below:</p>`;
+  for (const p of order) {
+    const { n } = rashiOf(sidereal[p]);
+    const r = getRashi(n);
+    const dig = planetDignity(p, n);
+    const flag = dig.flag !== "neutral" ?
+      `<span class="section-flag flag-${dig.flag}">${dig.label}</span>` : "";
+    narr += `<p>${flag}<strong>${p}</strong> in <strong>${r.sanskrit} (${r.english})</strong>:
+      ${r.traits.slice(0, 5).map(t => `<span class="trait">${t}</span>`).join(" ")}
+      <em>Element: ${r.tatwa} · Modality: ${r.mode}</em></p>`;
+  }
+  document.getElementById("planet-narrative").innerHTML = narr;
+}
+
+/* Render tatwa & modality distribution */
+function renderDistributions(sidereal) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const tatwa = { Agni:[], Vayu:[], Prithvi:[], Jala:[] };
+  const mode  = { Chara:[], Sthira:[], Dwisabhava:[] };
+  for (const p of order) {
+    const r = getRashi(rashiOf(sidereal[p]).n);
+    tatwa[r.tatwa].push(p);
+    mode[r.mode].push(p);
+  }
+  const total = order.length;
+
+  // Tatwa bars
+  const tatwaOrder = ["Agni", "Vayu", "Prithvi", "Jala"];
+  const tatwaColors = { Agni: "", Vayu: "teal", Prithvi: "gold", Jala: "maroon" };
+  let html = `<div class="dist-group">`;
+  for (const t of tatwaOrder) {
+    const count = tatwa[t].length;
+    const pct = total ? (count / total * 100) : 0;
+    const colorClass = tatwaColors[t] || "";
+    html += `<div class="dist-row">
+      <span class="dist-label">${t}${t === "Agni" ? " (Fire)" : t === "Vayu" ? " (Air)" : t === "Prithvi" ? " (Earth)" : " (Water)"}</span>
+      <span class="dist-bar ${colorClass}"><span style="width:${pct}%"></span></span>
+      <span class="dist-val">${count}</span>
+      <span class="dist-planets">${tatwa[t].join(", ") || "—"} &nbsp;·&nbsp; ${TATWA_DEF[t]}</span>
+    </div>`;
+  }
+  html += `<div class="narrative" style="margin-top:18px;"><p>${distributionNarrative("Tatwa", { Agni: tatwa.Agni.length, Vayu: tatwa.Vayu.length, Prithvi: tatwa.Prithvi.length, Jala: tatwa.Jala.length }, total)}</p></div></div>`;
+  document.getElementById("tatwa-body").innerHTML = html;
+
+  // Modality bars
+  const modeColors = { Chara: "", Sthira: "maroon", Dwisabhava: "teal" };
+  let html2 = `<div class="dist-group">`;
+  for (const m of ["Chara", "Sthira", "Dwisabhava"]) {
+    const count = mode[m].length;
+    const pct = total ? (count / total * 100) : 0;
+    const colorClass = modeColors[m] || "";
+    html2 += `<div class="dist-row">
+      <span class="dist-label">${m}</span>
+      <span class="dist-bar ${colorClass}"><span style="width:${pct}%"></span></span>
+      <span class="dist-val">${count}</span>
+      <span class="dist-planets">${mode[m].join(", ") || "—"} &nbsp;·&nbsp; ${MODE_DEF[m]}</span>
+    </div>`;
+  }
+  html2 += `<div class="narrative" style="margin-top:18px;"><p>${distributionNarrative("Modality", { Chara: mode.Chara.length, Sthira: mode.Sthira.length, Dwisabhava: mode.Dwisabhava.length }, total)}</p></div></div>`;
+  document.getElementById("mode-body").innerHTML = html2;
+}
+
+/* Render dignity summary */
+function renderDignity(sidereal) {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const exalted = [], debilitated = [], own = [], mtr = [];
+  for (const p of order) {
+    const n = rashiOf(sidereal[p]).n;
+    const d = planetDignity(p, n);
+    const r = getRashi(n);
+    if (d.flag === "exalted")     exalted.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "debilitated") debilitated.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "own")         own.push(`<strong>${p}</strong> in ${r.sanskrit}`);
+    if (d.flag === "mtr")         mtr.push(`<strong>${p}</strong> in ${r.sanskrit} (Moolatrikona)`);
+  }
+  let html = `<div class="kv-grid">
+    <div class="kv"><span class="k">Exalted (Uccha)</span>
+      <span class="v">${exalted.length || "0"}</span></div>
+    <div class="kv"><span class="k">Debilitated (Neecha)</span>
+      <span class="v">${debilitated.length || "0"}</span></div>
+    <div class="kv"><span class="k">Own House (Swakshetra)</span>
+      <span class="v">${own.length || "0"}</span></div>
+    <div class="kv"><span class="k">Moolatrikona</span>
+      <span class="v">${mtr.length || "0"}</span></div>
+  </div>`;
+
+  html += `<div class="narrative">`;
+  if (exalted.length) {
+    html += `<p><span class="section-flag flag-exalted">Exalted</span>
+      ${exalted.join(" · ")} — these grahas are very strong and give excellent results
+      in their significations.</p>`;
+  }
+  if (mtr.length) {
+    html += `<p><span class="section-flag flag-mtr">Moolatrikona</span>
+      ${mtr.join(" · ")} — these grahas sit in their Moolatrikona, granting balanced
+      and powerful expression of their significations.</p>`;
+  }
+  if (own.length) {
+    html += `<p><span class="section-flag flag-own">Own House</span>
+      ${own.join(" · ")} — comfortable and balanced; give good, balanced results.</p>`;
+  }
+  if (debilitated.length) {
+    html += `<p><span class="section-flag flag-debilitated">Debilitated</span>
+      ${debilitated.join(" · ")} — weak placements; may cause challenges in their
+      areas of life. Remedial measures advised.</p>`;
+  }
+  if (!exalted.length && !debilitated.length && !own.length && !mtr.length) {
+    html += `<p>No grahas in special dignity. Each planet operates in a neutral
+      zodiacal field — outcomes depend on aspects, conjunctions and dasha periods.</p>`;
+  }
+  html += `</div>`;
+  document.getElementById("dignity-body").innerHTML = html;
+}
+
+/* Render remedies */
+function renderRemedies(lagnaTatwa, moonTatwa) {
+  let html = `<div class="kv-grid">
+    <div class="kv"><span class="k">Lagna Tatwa</span><span class="v">${lagnaTatwa}</span></div>
+    <div class="kv"><span class="k">Moon Tatwa</span><span class="v">${moonTatwa}</span></div>
+  </div>`;
+  html += `<div class="narrative">
+    <p><strong>For the Lagna (body / outer life) — ${lagnaTatwa} tatwa:</strong>
+    ${REMEDY_BY_TATWA[lagnaTatwa]}</p>
+    <p><strong>For the Moon (mind / inner life) — ${moonTatwa} tatwa:</strong>
+    ${REMEDY_BY_TATWA[moonTatwa]}</p>
+    <p><em>General principle:</em>
+    Homa &amp; lamps for Agni rashis · Abhisheka &amp; Teertha for Jala rashis ·
+    Chanting of mantras for Vayu rashis · Dāna (charity) for Prithvi rashis.</p>
+  </div>`;
+  document.getElementById("remedy-body").innerHTML = html;
 }
 
 /* ============================================================
-   6. TITHI / PAKSHA CALCULATOR  (from Excel "Tithi" sheet)
+   TITHI / PAKSHA — lunar day at birth
    A tithi = every 12° of Moon ahead of Sun. 30 tithis per lunar month.
    ============================================================ */
 const TITHI_NAMES = [
@@ -2063,15 +2231,14 @@ const TITHI_NAMES = [
 ];
 
 function computeTithi(sunLon, moonLon) {
-  let sep = norm360(moonLon - sunLon);  // 0–360°
-  const tithiNum = Math.floor(sep / 12) + 1;          // 1–30
-  const inHalf   = ((tithiNum - 1) % 15) + 1;         // 1–15 within paksha
+  let sep = norm360(moonLon - sunLon);
+  const tithiNum = Math.floor(sep / 12) + 1;
+  const inHalf   = ((tithiNum - 1) % 15) + 1;
   let tithiName  = TITHI_NAMES[inHalf - 1];
   if (tithiNum === 15) tithiName = "Purnima";
   if (tithiNum === 30) tithiName = "Amavasya";
   const paksha = tithiNum <= 15 ? "Shukla Paksha (Waxing) — Strong, Benefic"
-                                 : "Krishna Paksha (Waning) — Weak, Malefic";
-  // Strength window
+                                : "Krishna Paksha (Waning) — Weak, Malefic";
   const isStrong = tithiNum >= 1 && tithiNum <= 15;
   const isWeakAshtamiToAmavasya = tithiNum >= 23 && tithiNum <= 30;
   let strength = isStrong
@@ -2079,24 +2246,41 @@ function computeTithi(sunLon, moonLon) {
     : isWeakAshtamiToAmavasya
       ? "Weak window (Ashtami → Amavasya in Krishna Paksha)"
       : "Moderate (Krishna Paksha Pratipada → Saptami)";
+  return { sep, tithiNum, tithiName, paksha, strength, remedyAdvised: !isStrong };
+}
 
-  return { sep, tithiNum, tithiName, paksha, strength,
-           remedyAdvised: !isStrong };
+function renderTithiSection(sidereal) {
+  const tithi = computeTithi(sidereal.Sun, sidereal.Moon);
+  const tkv = [
+    ["Sun longitude (sidereal)",  `${sidereal.Sun.toFixed(2)}°`],
+    ["Moon longitude (sidereal)", `${sidereal.Moon.toFixed(2)}°`],
+    ["Moon − Sun separation",     `${tithi.sep.toFixed(2)}°`],
+    ["Tithi number (1–30)",       tithi.tithiNum],
+    ["Tithi name",                tithi.tithiName],
+    ["Paksha",                    tithi.paksha],
+    ["Moon strength window",      tithi.strength]
+  ];
+  document.getElementById("tithi-kv").innerHTML = tkv.map(([k,v]) =>
+    `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  document.getElementById("tithi-narrative").innerHTML = `
+    <p>A tithi is the lunar day — formed every 12° of angular separation
+    between the Moon and the Sun. There are 30 tithis in a lunar month:
+    15 in <strong>Shukla Paksha</strong> (waxing, 0°–180°) and
+    15 in <strong>Krishna Paksha</strong> (waning, 180°–360°).</p>
+    <p>${tithi.remedyAdvised
+        ? "Moon is in the weaker Krishna Paksha window — strengthen the Moon via mantra (Hare Rama / Hare Krishna), respect the mother and elderly women, and never waste food."
+        : "Moon is in the stronger Shukla Paksha window — emotionally stable and benefic."}</p>`;
 }
 
 /* ============================================================
-   7. KUJA DOSHA (MANGALIK) ANALYSIS
+   KUJA DOSHA (MANGALIK) ANALYSIS
    Reference points: Lagna (strongest), Venus, Moon (weakest).
    Dosha houses: 2, 4, 7, 8, 12. Severity highest in 7th/8th from Lagna.
    ============================================================ */
 const KUJA_HOUSES = new Set([2, 4, 7, 8, 12]);
 
-function houseFromRashi(refRashi, planetRashi) {
-  return ((planetRashi - refRashi + 12) % 12) + 1;
-}
-
-function kujaFromReference(label, refRashi, marsRashi, severityWeight) {
-  const h = houseFromRashi(refRashi, marsRashi);
+function kujaFromReference(label, refRashi, marsRashi) {
+  const h = houseFromLagna(refRashi, marsRashi);   // same formula as house-from-reference
   const has = KUJA_HOUSES.has(h);
   let severity = "—";
   if (has) {
@@ -2111,16 +2295,21 @@ function kujaFromReference(label, refRashi, marsRashi, severityWeight) {
   return { label, refRashi, marsHouse: h, present: has, severity };
 }
 
-function kujaCancellation(lagnaRashi, marsRashi, marsDignity, ageYears) {
+function ageYears(dobISO) {
+  if (!dobISO) return null;
+  const dob = new Date(dobISO + "T00:00:00Z");
+  const now = new Date();
+  return (now - dob) / (1000 * 60 * 60 * 24 * 365.2425);
+}
+
+function kujaCancellation(lagnaRashi, marsRashi, marsDignity, age) {
   const out = [];
-  // Rule 1: Mars in own house / exaltation / friend's house
   const cancelled1 = ["Own House","Own (Moolatrikona)","Exalted"].includes(marsDignity.label);
   out.push({
     rule: "1. Mars in own house, exaltation, or friend's house",
     status: cancelled1 ? "✅ Cancelled" : "ℹ Check manually",
     note: `Mars Dignity: ${marsDignity.label}`
   });
-  // Rule 2: Karkataka(4) or Simha(5) Lagna
   const cancelled2 = (lagnaRashi === 4 || lagnaRashi === 5);
   const lagnaName = getRashi(lagnaRashi).sanskrit;
   out.push({
@@ -2128,377 +2317,333 @@ function kujaCancellation(lagnaRashi, marsRashi, marsDignity, ageYears) {
     status: cancelled2 ? "✅ Cancelled" : "— Not applicable",
     note: `Lagna: ${lagnaName} — ${cancelled2 ? "Karkataka/Simha natives have no Kuja Dosha." : "Lagna is not Karkataka/Simha."}`
   });
-  // Rule 3: manual (Mars conjoined/aspected by Saturn, certain nakshatras, marriage between mangaliks)
   out.push({
     rule: "3. Other cancellation factors (manual check)",
     status: "ℹ Check manually",
     note: "Also cancelled if: (a) Mars conjoined/aspected by Saturn; (b) Born in Ashwini, Mrigashira, Punarvasu, Pushya, Ashlesha, Uttara, Swati, Anuradha, Shravana, Uttara Bhadra, Revathi nakshatras; (c) Marriage between two Mangalik individuals."
   });
-  // Rule 4: age > 28
-  const cancelled4 = ageYears !== null && ageYears >= 28;
+  const cancelled4 = age !== null && age >= 28;
   out.push({
     rule: "4. Native is older than 28 years",
-    status: ageYears === null ? "— Age unknown" : (cancelled4 ? "✅ Reduced" : "— Not yet"),
-    note: ageYears === null ? "Age cannot be calculated." : `Current age: ${ageYears.toFixed(1)} years. Kuja Dosha reduces in intensity after 28 years of age.`
+    status: age === null ? "— Age unknown" : (cancelled4 ? "✅ Reduced" : "— Not yet"),
+    note: age === null ? "Age cannot be calculated." : `Current age: ${age.toFixed(1)} years. Kuja Dosha reduces in intensity after 28 years of age.`
   });
   return { rules: out, anyCancelled: (cancelled1 || cancelled2) };
 }
 
-/* ============================================================
-   8. PLANET-BY-PLANET TRAITS  (from Analysis sheet)
-   Uses RASHI[].traits for the personality column.
-   ============================================================ */
-function planetByPlanetRows(planetsByRashi, planetsWithDignity) {
-  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
-  const rows = [];
-  for (const p of order) {
-    const rn = planetsByRashi[p];
-    const r = getRashi(rn);
-    const d = planetsWithDignity[p];
-    rows.push({
-      planet: p,
-      rashiSanskrit: r.sanskrit,
-      rashiEnglish: r.english,
-      glyph: r.glyph,
-      lord: r.lord,
-      dignity: d.label,
-      dignityFlag: d.flag,
-      tatwa: r.tatwa,
-      mode: r.mode,
-      traits: r.traits
-    });
+function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
+  const marsRashi  = planetsByRashi.Mars;
+  const venusRashi = planetsByRashi.Venus;
+  const moonRashi  = planetsByRashi.Moon;
+  const fromLagna = kujaFromReference("Lagna", lagnaRashiNum, marsRashi);
+  const fromVenus = kujaFromReference("Venus", venusRashi,    marsRashi);
+  const fromMoon  = kujaFromReference("Moon",  moonRashi,     marsRashi);
+  const marsDignity = planetDignity("Mars", marsRashi);
+  const age = ageYears(dob);
+  const cancel = kujaCancellation(lagnaRashiNum, marsRashi, marsDignity, age);
+
+  let kjt = `<thead><tr>
+    <th>Reference Point</th><th>Mars House (from Reference)</th><th>Dosha Present?</th><th>Severity</th>
+  </tr></thead><tbody>`;
+  for (const r of [fromLagna, fromVenus, fromMoon]) {
+    kjt += `<tr>
+      <td>From ${r.label}</td>
+      <td>House ${r.marsHouse}</td>
+      <td>${r.present ? "⚠ YES" : "— No"}</td>
+      <td>${r.severity}</td>
+    </tr>`;
   }
-  return rows;
+  kjt += `</tbody>`;
+  document.getElementById("kuja-table").innerHTML = kjt;
+  document.getElementById("kuja-narrative").innerHTML = `
+    <p><strong>Kuja (Mangalik) Dosha</strong> is a Mars-related dosha checked at three reference points —
+    Lagna (strongest), Venus, and Moon (weakest). The dosha houses are
+    <strong>2, 4, 7, 8, 12</strong>; the impact is highest when Mars is in the 7th or 8th from Lagna.</p>`;
+
+  let kct = `<thead><tr><th>Cancellation Rule</th><th>Status</th><th>Note</th></tr></thead><tbody>`;
+  for (const r of cancel.rules) {
+    kct += `<tr><td>${r.rule}</td><td>${r.status}</td><td>${r.note}</td></tr>`;
+  }
+  kct += `</tbody>`;
+  document.getElementById("kuja-cancel").innerHTML = kct;
+
+  const anyPresent = fromLagna.present || fromVenus.present || fromMoon.present;
+  let verdict;
+  if (!anyPresent) {
+    verdict = "✅ No Kuja Dosha detected from any of the three reference points.";
+  } else if (cancel.anyCancelled) {
+    verdict = "✅ Kuja Dosha present but CANCELLED (auto-detected). Verify manual cancellation factors as well.";
+  } else {
+    verdict = "⚠ Kuja Dosha present and not auto-cancelled. Check the manual factors (Saturn aspect, nakshatra, Mangalik partner) before drawing conclusions.";
+  }
+  document.getElementById("kuja-verdict").innerHTML = `<p><strong>Final Verdict:</strong> ${verdict}</p>
+    <p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
 }
 
-/* ============================================================
-   9. GENERATION FLOW
-   ============================================================ */
-function $(id) { return document.getElementById(id); }
+/* Graha Aksharas (sound syllables) & Beejakshari seed-mantras.
+   Source: Classification for Horoscope Analysis (Planet Characteristics sheet),
+   compiled from the session decks. Saturn/Rahu/Ketu covered in later sessions. */
+const GRAHA_REF = {
+  Sun:     { deva: "—",                roman: "(later session)",            mantra: "—" },
+  Moon:    { deva: "य र ल व श ष स ह",  roman: "Ya, Ra, La, Va, Sha, Sha, Sa, Ha",
+             mantra: "ॐ श्रां श्रीं श्रौं सः चन्द्रमसे नमः", mantraRoman: "Om Shraam Shreem Shroum Sah Chandramase Namah" },
+  Mars:    { deva: "क ख ग घ ङ",        roman: "Ka, Kha, Ga, Gha, Nga",
+             mantra: "ॐ क्रां क्रीं क्रौं सः भौमाय नमः", mantraRoman: "Om Kraam Kreem Kroum Sah Bhaumaya Namah" },
+  Mercury: { deva: "त थ द ध न",        roman: "Ta, Tha, Da, Dha, Na",
+             mantra: "ॐ ब्रां ब्रीं ब्रौं सः बुधाय नमः", mantraRoman: "Om Bram Breem Broum Sah Budhaya Namah" },
+  Jupiter: { deva: "त थ द ध न",        roman: "Ta, Tha, Da, Dha, Na",
+             mantra: "ॐ ग्रां ग्रीं ग्रौं सः गुरुवे नमः ॥", mantraRoman: "Om Graam Greem Groum Sah Gurave Namah" },
+  Venus:   { deva: "च छ ज झ ञ",        roman: "Cha, Chha, Ja, Jha, Nya",
+             mantra: "ॐ द्रां द्रीं द्रौं सः शुक्राय नमः ।", mantraRoman: "Om Draam Dreem Droum Sah Shukraya Namah" },
+  Saturn:  { deva: "—",                roman: "(later session)",            mantra: "—" },
+  Rahu:    { deva: "—",                roman: "(later session)",            mantra: "—" },
+  Ketu:    { deva: "—",                roman: "(later session)",            mantra: "—" }
+};
 
-function setMsg(html, type) {
-  const el = $("msg");
-  if (!html) { el.innerHTML = ""; el.className = ""; return; }
-  el.innerHTML = html;
-  el.className = "msg msg-" + (type || "info");
+function renderGrahaReference() {
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const GLYPHS = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃",
+                   Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
+  let html = `<table class="planet-table">
+    <thead><tr><th>Graha</th><th>Aksharas (Letters)</th><th>Beejakshari Mantra</th></tr></thead><tbody>`;
+  for (const p of order) {
+    const g = GRAHA_REF[p];
+    const lettersCell = g.deva === "—"
+      ? `<span class="deva-roman">${g.roman}</span>`
+      : `<span class="deva">${g.deva}</span><span class="deva-roman">${g.roman}</span>`;
+    const mantraCell = g.mantra === "—"
+      ? `<span class="deva-roman">${g.roman === "(later session)" ? "(later session)" : "—"}</span>`
+      : `<span class="mantra-deva">${g.mantra}</span><span class="deva-roman">${g.mantraRoman}</span>`;
+    html += `<tr>
+      <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
+      <td>${lettersCell}</td>
+      <td>${mantraCell}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>
+    <p class="akshara-note">Aksharas are the sound syllables (varga consonants) attributed to each graha — used in
+    naming and in identifying the graha a name resonates with. The Beejakshari is the graha's seed-mantra,
+    chanted to strengthen it. Saturn, Rahu and Ketu are covered in later sessions.</p>`;
+  document.getElementById("akshara-body").innerHTML = html;
+}
+let currentChart = null;
+let selectedCity = null;
+
+function showMsg(text, isError) {
+  const el = document.getElementById("msg");
+  el.innerHTML = text ? `<div class="error">${text}</div>` : "";
 }
 
 function showLoader(on) {
-  $("loader").style.display = on ? "inline-flex" : "none";
-}
-
-function lookupCity(query) {
-  const q = query.trim().toLowerCase();
-  if (q.length < 2) return [];
-  return CITIES
-    .filter(c => c[0].toLowerCase().startsWith(q) || c[0].toLowerCase().includes(q))
-    .slice(0, 10);
-}
-
-function hookPlaceAutocomplete() {
-  const input = $("f-place");
-  const box = $("suggestions");
-  input.addEventListener("input", () => {
-    const list = lookupCity(input.value);
-    if (list.length === 0) { box.innerHTML = ""; box.style.display = "none"; return; }
-    box.innerHTML = list.map(c =>
-      `<div class="sugg" data-name="${c[0]}" data-region="${c[1]}" data-lat="${c[2]}" data-lon="${c[3]}" data-tz="${c[4]}">
-        <strong>${c[0]}</strong> <span style="color:var(--muted);">${c[1]}</span>
-      </div>`).join("");
-    box.style.display = "block";
-  });
-  box.addEventListener("click", e => {
-    const item = e.target.closest(".sugg"); if (!item) return;
-    input.value = item.dataset.name;
-    $("f-lat").value = item.dataset.lat;
-    $("f-lon").value = item.dataset.lon;
-    $("f-tz").value = item.dataset.tz;
-    box.innerHTML = ""; box.style.display = "none";
-    input.dataset.region = item.dataset.region;
-  });
-  document.addEventListener("click", e => {
-    if (!e.target.closest(".places-wrap")) { box.innerHTML = ""; box.style.display = "none"; }
-  });
-}
-
-function hookManualButton() {
-  $("btn-manual").addEventListener("click", () => {
-    const row = $("latLonRow");
-    row.style.display = row.style.display === "grid" ? "none" : "grid";
-  });
-}
-
-function readForm() {
-  const name = $("f-name").value.trim();
-  const dob  = $("f-dob").value;
-  const tob  = $("f-tob").value;
-  const place = $("f-place").value.trim();
-  const gender = $("f-gender").value;
-  const ayan = $("f-ayanamsa").value;
-  let lat = parseFloat($("f-lat").value);
-  let lon = parseFloat($("f-lon").value);
-  let tz  = parseFloat($("f-tz").value);
-
-  // Resolve from cities database if lat/lon empty
-  if ((isNaN(lat) || isNaN(lon) || isNaN(tz)) && place) {
-    const hits = lookupCity(place);
-    if (hits.length > 0) {
-      lat = hits[0][2]; lon = hits[0][3]; tz = hits[0][4];
-    }
-  }
-  return { name, dob, tob, place, gender, ayan, lat, lon, tz };
-}
-
-function validateForm(f) {
-  const errs = [];
-  if (!f.dob) errs.push("Date of birth is required.");
-  if (!f.tob) errs.push("Time of birth is required.");
-  if (!f.place) errs.push("Place of birth is required.");
-  if (isNaN(f.lat) || isNaN(f.lon) || isNaN(f.tz))
-    errs.push("Latitude, Longitude and Timezone are required (use a city from the suggestions, or enter manually).");
-  return errs;
-}
-
-function ageYears(dobISO) {
-  if (!dobISO) return null;
-  const dob = new Date(dobISO + "T00:00:00Z");
-  const now = new Date();
-  const ms = now - dob;
-  return ms / (1000 * 60 * 60 * 24 * 365.2425);
+  document.getElementById("loader").classList.toggle("show", !!on);
 }
 
 function generate() {
-  setMsg("");
-  const f = readForm();
-  const errs = validateForm(f);
-  if (errs.length) {
-    setMsg("⚠ " + errs.join(" "), "error");
+  showMsg("");
+  const name  = document.getElementById("f-name").value.trim();
+  const dob   = document.getElementById("f-dob").value;
+  const tob   = document.getElementById("f-tob").value;
+  const place = document.getElementById("f-place").value.trim();
+  const ayanType = document.getElementById("f-ayanamsa").value;
+  if (!dob || !tob) {
+    showMsg("Please enter both Date of Birth and Time of Birth.", true);
     return;
   }
+
+  // Resolve location
+  let lat, lon, tz, placeName;
+  const useManual = document.getElementById("latLonRow").classList.contains("show");
+  if (useManual) {
+    lat = parseFloat(document.getElementById("f-lat").value);
+    lon = parseFloat(document.getElementById("f-lon").value);
+    tz  = parseFloat(document.getElementById("f-tz").value);
+    placeName = place || `${lat}°, ${lon}°`;
+    if (isNaN(lat) || isNaN(lon) || isNaN(tz)) {
+      showMsg("Please enter latitude, longitude and timezone offset.", true);
+      return;
+    }
+  } else if (selectedCity) {
+    lat = selectedCity[2]; lon = selectedCity[3]; tz = selectedCity[4];
+    placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
+  } else {
+    // Try to find in city DB by name
+    const match = CITIES.find(c => c[0].toLowerCase() === place.toLowerCase());
+    if (match) {
+      lat = match[2]; lon = match[3]; tz = match[4];
+      placeName = `${match[0]}, ${match[1]}`;
+    } else {
+      showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
+      return;
+    }
+  }
+
   showLoader(true);
 
+  // Parse date / time into UTC JD
+  const [y, m, d] = dob.split("-").map(Number);
+  const [hh, mm] = tob.split(":").map(Number);
+  const localHours = hh + mm / 60;
+  const utHours = localHours - tz;  // convert to UTC
+  // Handle date crossing midnight
+  let yy = y, mmth = m, dd = d, utc = utHours;
+  if (utHours < 0) {
+    // previous day in UTC
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    yy = dt.getUTCFullYear(); mmth = dt.getUTCMonth() + 1; dd = dt.getUTCDate();
+    utc = utHours + 24;
+  } else if (utHours >= 24) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + 1);
+    yy = dt.getUTCFullYear(); mmth = dt.getUTCMonth() + 1; dd = dt.getUTCDate();
+    utc = utHours - 24;
+  }
+  const JD = julianDay(yy, mmth, dd, utc);
+
+  // Compute chart
+  const chart = computeChart(JD, ayanType);
+  const lagnaLon = computeLagna(JD, lat, lon, ayanType);
+  const lagnaRashiInfo = rashiOf(lagnaLon);
+  const lagnaRashi = getRashi(lagnaRashiInfo.n);
+
+  const moonRashiInfo = rashiOf(chart.sidereal.Moon);
+  const moonRashi     = getRashi(moonRashiInfo.n);
+  const moonHouse     = houseFromLagna(lagnaRashiInfo.n, moonRashiInfo.n);
+  const moonDignity   = planetDignity("Moon", moonRashiInfo.n);
+
+  const sunRashiInfo = rashiOf(chart.sidereal.Sun);
+  const sunRashi = getRashi(sunRashiInfo.n);
+
+  // Render everything
+  renderSummaryStrip(name, dob, tob, placeName, lagnaRashi, moonRashi, sunRashi);
+  // Tag for ayanamsa
+  document.getElementById("r-aytag").textContent =
+    (ayanType === "lahiri" ? "Lahiri" : ayanType === "raman" ? "Raman" : "KP") +
+    " Ayanamsa · " + fmtDeg(chart.ayanamsa);
+
+  // Planets by rashi for the chart wheel
+  const planetsByRashi = {};
+  const planetsWithDignity = {};
+  for (const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
+    const rNum = rashiOf(chart.sidereal[p]).n;
+    planetsByRashi[p] = rNum;
+    planetsWithDignity[p] = planetDignity(p, rNum).label;
+  }
+  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi);
+  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity);
+
+  renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
+  renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
+  renderTithiSection(chart.sidereal);
+  renderPlanetTable(chart.sidereal, lagnaRashiInfo.n);
+  renderDistributions(chart.sidereal);
+  renderDignity(chart.sidereal);
+  renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
+  renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
+  renderGrahaReference();
+
+  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
+  document.getElementById("report").classList.add("show");
+  document.getElementById("btn-print").disabled = false;
+
   setTimeout(() => {
-    try {
-      // Parse DOB / TOB → UT
-      const [Y, M, D] = f.dob.split("-").map(Number);
-      const [hh, mm]  = f.tob.split(":").map(Number);
-      const ut = hh + mm/60 - f.tz;
-      const JD = julianDay(Y, M, D, ut);
+    document.getElementById("report").scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
 
-      // Compute chart
-      const ch = computeChart(JD, f.ayan);
-      const lagnaLon = computeLagna(JD, f.lat, f.lon, f.ayan);
-      const lagnaRashi = rashiOf(lagnaLon).n;
+  showLoader(false);
+}
 
-      // Build planetsByRashi and dignity maps
-      const planetsByRashi = { _Lagna: lagnaRashi };
-      const planetsWithDignity = {};
-      const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
-      for (const p of order) {
-        const lon = ch.sidereal[p];
-        const rn = rashiOf(lon).n;
-        planetsByRashi[p] = rn;
-        planetsWithDignity[p] = planetDignity(p, rn);
-      }
+/* Suggestion handling */
+function setupPlaceAutocomplete() {
+  const input = document.getElementById("f-place");
+  const sug = document.getElementById("suggestions");
+  let activeIdx = -1;
+  let currentList = [];
 
-      // Render header strip
-      const placeFull = ($("f-place").dataset.region)
-        ? `${f.place} (${$("f-place").dataset.region})`
-        : f.place;
-      renderSummaryStrip(f.name, f.dob, f.tob, placeFull,
-        getRashi(lagnaRashi), getRashi(planetsByRashi.Moon), getRashi(planetsByRashi.Sun));
-      $("r-aytag").textContent = (f.ayan === "lahiri" ? "Lahiri" : f.ayan === "raman" ? "B.V. Raman" : "KP") + " Ayanamsa";
+  const render = () => {
+    if (currentList.length === 0) { sug.classList.remove("show"); return; }
+    sug.innerHTML = currentList.slice(0, 20).map((c, i) =>
+      `<div data-idx="${i}" class="${i === activeIdx ? "active" : ""}">
+         ${c[0]} <small>· ${c[1]}</small>
+       </div>`).join("");
+    sug.classList.add("show");
+  };
 
-      // Render charts
-      renderNorthIndianChart(lagnaRashi, planetsByRashi);
-      renderSouthIndianChart(lagnaRashi, planetsByRashi, planetsWithDignity);
-
-      // Lagna analysis (Section II)
-      const lagnaR = getRashi(lagnaRashi);
-      const lagnaIntp = interpretLagna(lagnaR);
-      $("lagna-kv").innerHTML = lagnaIntp.kv.map(([k,v]) =>
-        `<div class="kv-k">${k}</div><div class="kv-v">${v}</div>`).join("");
-      $("lagna-narrative").innerHTML = lagnaIntp.narrative;
-
-      // Moon analysis (Section III)
-      const moonR = getRashi(planetsByRashi.Moon);
-      const moonHouse = houseFromLagna(lagnaRashi, planetsByRashi.Moon);
-      const moonIntp = interpretMoon(moonR, moonHouse, planetsWithDignity.Moon);
-      $("moon-kv").innerHTML = moonIntp.kv.map(([k,v]) =>
-        `<div class="kv-k">${k}</div><div class="kv-v">${v}</div>`).join("");
-      $("moon-narrative").innerHTML = moonIntp.narrative;
-
-      // Tithi & Paksha (Section III·b)
-      const tithi = computeTithi(ch.sidereal.Sun, ch.sidereal.Moon);
-      const tkv = [
-        ["Sun longitude (sidereal)",   `${ch.sidereal.Sun.toFixed(2)}°`],
-        ["Moon longitude (sidereal)",  `${ch.sidereal.Moon.toFixed(2)}°`],
-        ["Moon − Sun separation",      `${tithi.sep.toFixed(2)}°`],
-        ["Tithi number (1–30)",        tithi.tithiNum],
-        ["Tithi name",                 tithi.tithiName],
-        ["Paksha",                     tithi.paksha],
-        ["Moon strength window",       tithi.strength]
-      ];
-      $("tithi-kv").innerHTML = tkv.map(([k,v]) =>
-        `<div class="kv-k">${k}</div><div class="kv-v">${v}</div>`).join("");
-      $("tithi-narrative").innerHTML = `
-        <p>A tithi is the lunar day — formed every 12° of angular separation
-        between the Moon and the Sun. There are 30 tithis in a lunar month:
-        15 in <strong>Shukla Paksha</strong> (waxing, 0°–180°) and
-        15 in <strong>Krishna Paksha</strong> (waning, 180°–360°).</p>
-        <p>${tithi.remedyAdvised
-            ? "Moon is in the weaker Krishna Paksha window — strengthen the Moon via mantra (Hare Rama / Hare Krishna), respect the mother and elderly women, and never waste food."
-            : "Moon is in the stronger Shukla Paksha window — emotionally stable and benefic."}</p>`;
-
-      // Planet by Planet (Section IV) — with traits
-      const ppRows = planetByPlanetRows(planetsByRashi, planetsWithDignity);
-      let pt = `<thead><tr>
-        <th>Planet</th><th>Rashi</th><th>Lord</th><th>Dignity</th>
-        <th>Tatwa</th><th>Mode</th><th>Personality Traits (of Rashi)</th>
-      </tr></thead><tbody>`;
-      for (const r of ppRows) {
-        const traitChips = r.traits.map(t => `<span class="trait">${t}</span>`).join(" ");
-        pt += `<tr>
-          <td><strong>${r.planet}</strong></td>
-          <td>${r.glyph} ${r.rashiSanskrit} (${r.rashiEnglish})</td>
-          <td>${r.lord}</td>
-          <td><span class="section-flag flag-${r.dignityFlag}">${r.dignity}</span></td>
-          <td>${r.tatwa}</td>
-          <td>${r.mode}</td>
-          <td>${traitChips}</td>
-        </tr>`;
-      }
-      pt += `</tbody>`;
-      $("planet-table").innerHTML = pt;
-      $("planet-narrative").innerHTML = `<p>Each planet's behaviour is coloured by the Rashi (sign) it occupies — taking on that Rashi's element, mode and personality. Dignity flags show whether the planet is in its own house, exaltation, debilitation, or neutral.</p>`;
-
-      // Tatwa distribution (Section V) and Mode (VI), Dignity (VII)
-      const tatwaCount = { Agni: 0, Vayu: 0, Prithvi: 0, Jala: 0 };
-      const modeCount  = { Chara: 0, Sthira: 0, Dwisabhava: 0 };
-      let exCount = 0, debCount = 0, ownCount = 0;
-      for (const p of order) {
-        const r = getRashi(planetsByRashi[p]);
-        tatwaCount[r.tatwa]++;
-        modeCount[r.mode]++;
-        const d = planetsWithDignity[p];
-        if (d.flag === "exalted") exCount++;
-        if (d.flag === "debilitated") debCount++;
-        if (d.flag === "own" || d.flag === "mtr") ownCount++;
-      }
-      $("tatwa-body").innerHTML = `
-        <div class="stat-row">
-          ${Object.entries(tatwaCount).map(([k,v]) =>
-            `<div class="stat-box"><div class="stat-num">${v}</div><div class="stat-lbl">${k}</div></div>`).join("")}
-        </div>
-        <p>${distributionNarrative("Tatwa", tatwaCount, 9)}</p>`;
-
-      $("mode-body").innerHTML = `
-        <div class="stat-row">
-          ${Object.entries(modeCount).map(([k,v]) =>
-            `<div class="stat-box"><div class="stat-num">${v}</div><div class="stat-lbl">${k}</div></div>`).join("")}
-        </div>
-        <p>${distributionNarrative("Mode", modeCount, 9)}</p>`;
-
-      $("dignity-body").innerHTML = `
-        <div class="stat-row">
-          <div class="stat-box"><div class="stat-num">${exCount}</div><div class="stat-lbl">Exalted</div></div>
-          <div class="stat-box"><div class="stat-num">${debCount}</div><div class="stat-lbl">Debilitated</div></div>
-          <div class="stat-box"><div class="stat-num">${ownCount}</div><div class="stat-lbl">Own / MTR</div></div>
-        </div>
-        <p><strong>${exCount}</strong> exalted planet(s) give excellent results in their significations.
-        <strong>${debCount}</strong> debilitated planet(s) are weak. <strong>${ownCount}</strong> planet(s) in their own house deliver balanced, comfortable results.</p>`;
-
-      // Kuja Dosha (Section VII·b)
-      const marsRashi = planetsByRashi.Mars;
-      const venusRashi = planetsByRashi.Venus;
-      const moonRashi  = planetsByRashi.Moon;
-      const fromLagna = kujaFromReference("Lagna", lagnaRashi,  marsRashi, 3);
-      const fromVenus = kujaFromReference("Venus", venusRashi,  marsRashi, 2);
-      const fromMoon  = kujaFromReference("Moon",  moonRashi,   marsRashi, 1);
-      const age = ageYears(f.dob);
-      const cancel = kujaCancellation(lagnaRashi, marsRashi, planetsWithDignity.Mars, age);
-
-      let kjt = `<thead><tr>
-        <th>Reference Point</th><th>Mars House (from Reference)</th><th>Dosha Present?</th><th>Severity</th>
-      </tr></thead><tbody>`;
-      for (const r of [fromLagna, fromVenus, fromMoon]) {
-        kjt += `<tr>
-          <td>From ${r.label}</td>
-          <td>${r.marsHouse}</td>
-          <td>${r.present ? "⚠ YES" : "— No"}</td>
-          <td>${r.severity}</td>
-        </tr>`;
-      }
-      kjt += `</tbody>`;
-      $("kuja-table").innerHTML = kjt;
-      $("kuja-narrative").innerHTML = `
-        <p><strong>Kuja (Mangalik) Dosha</strong> is a Mars-related dosha checked at three reference points —
-        Lagna (strongest), Venus, and Moon (weakest). The dosha houses are
-        <strong>2, 4, 7, 8, 12</strong>; the impact is highest when Mars is in the 7th or 8th from Lagna.</p>`;
-
-      let kct = `<thead><tr><th>Cancellation Rule</th><th>Status</th><th>Note</th></tr></thead><tbody>`;
-      for (const r of cancel.rules) {
-        kct += `<tr><td>${r.rule}</td><td>${r.status}</td><td>${r.note}</td></tr>`;
-      }
-      kct += `</tbody>`;
-      $("kuja-cancel").innerHTML = kct;
-
-      const anyPresent = fromLagna.present || fromVenus.present || fromMoon.present;
-      let verdict;
-      if (!anyPresent) {
-        verdict = "✅ No Kuja Dosha detected from any of the three reference points.";
-      } else if (cancel.anyCancelled) {
-        verdict = "✅ Kuja Dosha present but CANCELLED (auto-detected). Verify manual cancellation factors as well.";
-      } else {
-        verdict = "⚠ Kuja Dosha present and not auto-cancelled. Check the manual factors (Saturn aspect, nakshatra, Mangalik partner) before drawing conclusions.";
-      }
-      $("kuja-verdict").innerHTML = `<p><strong>Final Verdict:</strong> ${verdict}</p>
-        <p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
-
-      // Pariharas / Remedies (Section VIII)
-      const lagnaRemedy  = REMEDY_BY_TATWA[lagnaR.tatwa];
-      const moonRemedy   = REMEDY_BY_TATWA[moonR.tatwa];
-      const moonAfflicted = tithi.remedyAdvised || planetsWithDignity.Moon.flag === "debilitated";
-      let rem = `<h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:0 0 10px;">Lagna Tatwa Remedy (${lagnaR.tatwa})</h4>
-        <p>${lagnaRemedy}</p>
-        <h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:14px 0 10px;">Moon Tatwa Remedy (${moonR.tatwa})</h4>
-        <p>${moonRemedy}</p>`;
-      if (moonAfflicted) {
-        rem += `<h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:14px 0 10px;">Moon Affliction Remedy</h4>
-          <p>Chant the Hare Rama / Hare Krishna mahamantra for stress relief, mental clarity and emotional balance. Honour your mother and elderly women. Never waste food.</p>`;
-      }
-      if (anyPresent && !cancel.anyCancelled) {
-        rem += `<h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:14px 0 10px;">Kuja Dosha Remedies</h4>
-          <p>Worship Subramanya Swamy and visit Hanuman temple on Tuesdays and Saturdays. Recite the Kuja mantra ("Om Saravanaya Bhava"), "Om Hanumate Namaha", or Hanuman Chalisa. Fast on Tuesdays. Donate Toor Dal and red-coloured cloth on Tuesdays. Increase patience and discipline. In severe cases — Kuja Shanti, Navagraha Shanti, or Khumba Vivaha.</p>`;
-      }
-      $("remedy-body").innerHTML = rem;
-
-      // Show report
-      $("report").style.display = "block";
-      $("btn-print").disabled = false;
-      window.scrollTo({ top: $("report").offsetTop - 20, behavior: "smooth" });
-    } catch (err) {
-      console.error(err);
-      setMsg("⚠ Error: " + err.message, "error");
-    } finally {
-      showLoader(false);
+  const filter = (q) => {
+    if (!q || q.length < 2) return [];
+    const ql = q.toLowerCase();
+    const starts = [], contains = [];
+    for (const c of CITIES) {
+      const n = c[0].toLowerCase();
+      if (n === ql) starts.unshift(c);          // exact match first
+      else if (n.startsWith(ql)) starts.push(c);
+      else if (n.includes(ql)) contains.push(c);
     }
-  }, 100);
+    return starts.concat(contains);
+  };
+
+  input.addEventListener("input", () => {
+    selectedCity = null;
+    currentList = filter(input.value);
+    activeIdx = -1;
+    render();
+  });
+  input.addEventListener("focus", () => {
+    if (input.value.length >= 2) { currentList = filter(input.value); render(); }
+  });
+  input.addEventListener("blur", () => {
+    setTimeout(() => sug.classList.remove("show"), 200);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (!currentList.length) return;
+    if (e.key === "ArrowDown") {
+      activeIdx = Math.min(activeIdx + 1, currentList.length - 1, 19);
+      render(); e.preventDefault();
+    } else if (e.key === "ArrowUp") {
+      activeIdx = Math.max(activeIdx - 1, 0); render(); e.preventDefault();
+    } else if (e.key === "Enter" && activeIdx >= 0) {
+      pick(activeIdx); e.preventDefault();
+    } else if (e.key === "Escape") {
+      sug.classList.remove("show");
+    }
+  });
+  sug.addEventListener("mousedown", (e) => {
+    const div = e.target.closest("div[data-idx]");
+    if (div) pick(parseInt(div.dataset.idx));
+  });
+
+  function pick(i) {
+    const c = currentList[i];
+    selectedCity = c;
+    input.value = c[0];
+    document.getElementById("place-hint").innerHTML =
+      `<em>${c[0]}, ${c[1]} — lat ${c[2]}°, lon ${c[3]}°, UTC ${c[4] >= 0 ? "+" : ""}${c[4]}</em>`;
+    sug.classList.remove("show");
+  }
+
+  // initial sync (default value)
+  const init = filter(input.value);
+  if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
+    selectedCity = init[0];
+    document.getElementById("place-hint").innerHTML =
+      `<em>${init[0][0]}, ${init[0][1]} — lat ${init[0][2]}°, lon ${init[0][3]}°, UTC ${init[0][4] >= 0 ? "+" : ""}${init[0][4]}</em>`;
+  }
 }
 
-function hookGenerate() {
-  $("btn-generate").addEventListener("click", generate);
-  $("btn-print").addEventListener("click", () => window.print());
-}
-
-/* ============================================================
-   10. INIT
-   ============================================================ */
-document.addEventListener("DOMContentLoaded", () => {
-  hookPlaceAutocomplete();
-  hookManualButton();
-  hookGenerate();
+/* Manual lat/lon toggle */
+document.getElementById("btn-manual").addEventListener("click", () => {
+  const row = document.getElementById("latLonRow");
+  const visible = row.classList.toggle("show");
+  document.getElementById("btn-manual").textContent =
+    visible ? "Use city lookup" : "Use manual lat/lon";
 });
+
+/* Bind buttons */
+document.getElementById("btn-generate").addEventListener("click", generate);
+document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+/* On load */
+setupPlaceAutocomplete();
 
 </script>
 </body>
