@@ -925,6 +925,19 @@ details.section[open] > summary::after { content: "−"; }
 
       <details class="section" open>
         <summary>
+          <span class="section-num">IV·b</span>
+          <span class="section-title">Graha Drishti — Aspects &amp; Mutual Aspects</span>
+          <span class="section-sub">Which planets &amp; houses each graha influences (special + mutual aspects)</span>
+        </summary>
+        <div class="section-body">
+          <table class="planet-table" id="aspect-table"></table>
+          <div class="narrative" id="aspect-mutual"></div>
+          <div class="narrative" id="aspect-narrative"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">V</span>
           <span class="section-title">Tatwa Distribution — Elemental Balance</span>
           <span class="section-sub">Agni · Vayu · Prithvi · Jala</span>
@@ -962,6 +975,18 @@ details.section[open] > summary::after { content: "−"; }
           <h4 style="font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--maroon); margin:18px 0 8px;">Cancellation Checks</h4>
           <table class="planet-table" id="kuja-cancel"></table>
           <div class="narrative" id="kuja-verdict"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">VII·c</span>
+          <span class="section-title">Sade Sati &amp; Saturn Transit</span>
+          <span class="section-sub">Current Saturn transit relative to your natal Moon (live)</span>
+        </summary>
+        <div class="section-body">
+          <div class="kv-grid" id="sade-kv"></div>
+          <div class="narrative" id="sade-narrative"></div>
         </div>
       </details>
 
@@ -1640,17 +1665,46 @@ function houseFromLagna(lagnaRashi, planetRashi) {
   return h;
 }
 
-/* Planet dignity for a given planet & rashi */
-function planetDignity(planet, rashiNum) {
+/* Deep exalt/debil degrees + Moolatrikona ranges (Session 10, Table III) */
+const DIGNITY_DEG = {
+  Sun:     { exR:1,  exD:10, deR:7,  deD:10, mtR:5,  mt:[0,20] },
+  Moon:    { exR:2,  exD:3,  deR:8,  deD:3,  mtR:2,  mt:[3,30] },
+  Mars:    { exR:10, exD:28, deR:4,  deD:28, mtR:1,  mt:[0,12] },
+  Mercury: { exR:6,  exD:15, deR:12, deD:15, mtR:6,  mt:[15,20] },
+  Jupiter: { exR:4,  exD:5,  deR:10, deD:5,  mtR:9,  mt:[0,10] },
+  Venus:   { exR:12, exD:27, deR:6,  deD:27, mtR:7,  mt:[0,15] },
+  Saturn:  { exR:7,  exD:20, deR:1,  deD:20, mtR:11, mt:[0,20] }
+};
+
+/* Planet dignity for a given planet & rashi.
+   deg (0-30 within the rashi) is optional; when supplied, refines
+   Moolatrikona vs Own House by degree and flags Deep Exalt/Debil points. */
+function planetDignity(planet, rashiNum, deg) {
   const d = RASHI_DIGNITY[rashiNum];
-  if (d.exalted.includes(planet))     return { label: "Exalted",     flag: "exalted" };
-  if (d.debilitated.includes(planet)) return { label: "Debilitated", flag: "debilitated" };
-  // Own house — only for the 7 classical planets
+  const dd = DIGNITY_DEG[planet];
+  const near = (a, b) => (deg != null) && Math.abs(deg - b) <= 1.0;
+  if (d.exalted.includes(planet)) {
+    if (dd && rashiNum === dd.exR && near(deg, dd.exD))
+      return { label: "Deep Exalted", flag: "exalted" };
+    return { label: "Exalted", flag: "exalted" };
+  }
+  if (d.debilitated.includes(planet)) {
+    if (dd && rashiNum === dd.deR && near(deg, dd.deD))
+      return { label: "Deep Debilitated", flag: "debilitated" };
+    return { label: "Debilitated", flag: "debilitated" };
+  }
   const own = PLANET_OWN_HOUSES[planet];
   if (own && own.includes(rashiNum)) {
-    if (d.mtr) return { label: "Own (Moolatrikona)", flag: "mtr" };
+    // Moolatrikona only within its degree range in the MT rashi; else plain Own House
+    if (dd && rashiNum === dd.mtR) {
+      if (deg == null || (deg >= dd.mt[0] && deg <= dd.mt[1]))
+        return { label: "Own (Moolatrikona)", flag: "mtr" };
+    }
     return { label: "Own House", flag: "own" };
   }
+  // Moon's Moolatrikona sits in Vrishabha (its exaltation sign), 3°–30°
+  if (planet === "Moon" && rashiNum === 2 && deg != null && deg > 3)
+    return { label: "Own (Moolatrikona)", flag: "mtr" };
   return { label: "—", flag: "neutral" };
 }
 
@@ -2073,7 +2127,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum) {
     const { n, deg } = rashiOf(sidereal[p]);
     const r = getRashi(n);
     const house = houseFromLagna(lagnaRashiNum, n);
-    const dig = planetDignity(p, n);
+    const dig = planetDignity(p, n, deg);
     html += `<tr>
       <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
       <td>${r.glyph} ${r.sanskrit} (${r.english})</td>
@@ -2081,7 +2135,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum) {
       <td>House ${house}</td>
       <td>${r.tatwa}</td>
       <td>${r.lord}</td>
-      <td><span class="section-flag flag-${dig.flag}">${dig.label}</span></td>
+      <td><span class="section-flag flag-${dig.flag}">${dig.label}</span>${isCombust(p, sidereal)?` <span class="section-flag flag-debilitated">Combust ${sunGap(p, sidereal).toFixed(1)}°</span>`:''}</td>
     </tr>`;
   }
   html += `</tbody>`;
@@ -2090,9 +2144,9 @@ function renderPlanetTable(sidereal, lagnaRashiNum) {
   // narrative listing each planet's rashi traits
   let narr = `<p>Each graha colours the area of life ruled by its placement. The Rashi-level traits attaching to each graha are summarised below:</p>`;
   for (const p of order) {
-    const { n } = rashiOf(sidereal[p]);
+    const { n, deg } = rashiOf(sidereal[p]);
     const r = getRashi(n);
-    const dig = planetDignity(p, n);
+    const dig = planetDignity(p, n, deg);
     const flag = dig.flag !== "neutral" ?
       `<span class="section-flag flag-${dig.flag}">${dig.label}</span>` : "";
     narr += `<p>${flag}<strong>${p}</strong> in <strong>${r.sanskrit} (${r.english})</strong>:
@@ -2155,8 +2209,9 @@ function renderDignity(sidereal) {
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const exalted = [], debilitated = [], own = [], mtr = [];
   for (const p of order) {
-    const n = rashiOf(sidereal[p]).n;
-    const d = planetDignity(p, n);
+    const ri = rashiOf(sidereal[p]);
+    const n = ri.n;
+    const d = planetDignity(p, n, ri.deg);
     const r = getRashi(n);
     if (d.flag === "exalted")     exalted.push(`<strong>${p}</strong> in ${r.sanskrit}`);
     if (d.flag === "debilitated") debilitated.push(`<strong>${p}</strong> in ${r.sanskrit}`);
@@ -2380,6 +2435,97 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
     <p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
 }
 
+/* ============================================================
+   GRAHA DRISHTI — Special Aspects & Mutual Aspects (Session 10)
+   Every graha aspects the 7th. Special: Mars 4·7·8, Jupiter 5·7·9,
+   Saturn 3·7·10. Rahu/Ketu given 5·7·9 per common convention.
+   ============================================================ */
+const SPECIAL_ASPECTS = {
+  Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
+  Mars:[4,7,8], Jupiter:[5,7,9], Saturn:[3,7,10],
+  Rahu:[5,7,9], Ketu:[5,7,9]
+};
+const GLYPH9 = { Sun:"☉",Moon:"☾",Mars:"♂",Mercury:"☿",Jupiter:"♃",Venus:"♀",Saturn:"♄",Rahu:"☊",Ketu:"☋" };
+function aspectedRashi(fromRashi, aspectHouse){ return ((fromRashi-1)+(aspectHouse-1))%12+1; }
+function ord(n){ const s=["th","st","nd","rd"], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+
+function renderAspectsSection(planetsByRashi){
+  const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const aspects={}, inRashi={};
+  for(const p of order){
+    aspects[p]=SPECIAL_ASPECTS[p].map(h=>({house:h, rashi:aspectedRashi(planetsByRashi[p],h)}));
+    (inRashi[planetsByRashi[p]] = inRashi[planetsByRashi[p]] || []).push(p);
+  }
+  let t=`<thead><tr><th>Planet (Rashi)</th><th>Special Aspects</th><th>Aspected Rashis</th><th>Planets Aspected</th></tr></thead><tbody>`;
+  for(const p of order){
+    const asp=aspects[p];
+    const aspRashiStr=asp.map(a=>`${ord(a.house)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
+    const hit=[];
+    for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${ord(a.house)})`);
+    t+=`<tr><td><span class="glyph-mini">${GLYPH9[p]}</span><strong>${p}</strong> · ${getRashi(planetsByRashi[p]).sanskrit}</td>
+      <td>${SPECIAL_ASPECTS[p].join(", ")}</td><td>${aspRashiStr}</td>
+      <td>${hit.length?hit.join(", "):"—"}</td></tr>`;
+  }
+  t+=`</tbody>`;
+  document.getElementById("aspect-table").innerHTML=t;
+
+  const aspSet={};
+  for(const p of order) aspSet[p]=new Set(aspects[p].map(a=>a.rashi));
+  const mutual=[];
+  for(let i=0;i<order.length;i++)for(let j=i+1;j<order.length;j++){
+    const p=order[i], q=order[j];
+    if(planetsByRashi[p]===planetsByRashi[q]) continue;
+    if(aspSet[p].has(planetsByRashi[q]) && aspSet[q].has(planetsByRashi[p]))
+      mutual.push(`${GLYPH9[p]} <strong>${p}</strong> ⇄ <strong>${q}</strong> ${GLYPH9[q]}`);
+  }
+  document.getElementById("aspect-mutual").innerHTML = mutual.length
+    ? `<p><strong>Mutual aspects</strong> — both planets see each other, a strong reinforcing link:</p><p>${mutual.join(" &nbsp;·&nbsp; ")}</p>`
+    : `<p>No mutual aspects in this chart.</p>`;
+  document.getElementById("aspect-narrative").innerHTML =
+    `<p>A planet's aspect (Drishti) casts its influence onto the aspected house or planet. Every graha aspects the 7th; the special aspects are <strong>Mars 4·7·8</strong>, <strong>Jupiter 5·7·9</strong> and <strong>Saturn 3·7·10</strong>. Rahu/Ketu are given 5·7·9 by many schools (shown for reference).</p>`;
+}
+
+/* ============================================================
+   SADE SATI & SATURN TRANSIT (Session 10 transcript)
+   Saturn ~2½ yrs/rashi. Sade Sati = Saturn in 12/1/2 from natal Moon
+   (7½ yrs). Ashtama Shani = 8th. Ardha Ashtama (Kantaka) = 4th.
+   ============================================================ */
+function renderSadeSatiSection(moonRashiNum, ayanType){
+  const now=new Date();
+  const jdNow=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
+                        now.getUTCHours()+now.getUTCMinutes()/60);
+  const satRashi=rashiOf(computeChart(jdNow,ayanType).sidereal.Saturn).n;
+  const h=houseFromLagna(moonRashiNum, satRashi);
+  let status, detail;
+  if([12,1,2].includes(h)){
+    const phase = h===12?"Rising phase (first ~2½ yrs)":h===1?"Peak phase (middle ~2½ yrs)":"Setting phase (last ~2½ yrs)";
+    status=`⚠ SADE SATI — ${phase}`;
+    detail="Saturn is transiting the 12th, 1st or 2nd from your natal Moon — the 7½-year Sade Sati. A demanding period of hard lessons, responsibility and maturation. With sincere effort and remedies it becomes a time of growth, not just difficulty.";
+  } else if(h===8){ status="⚠ ASHTAMA SHANI (~2½ yrs)"; detail="Saturn transits the 8th from your natal Moon — a challenging ~2½-year period; take care of health, finances and avoid risks."; }
+  else if(h===4){ status="⚠ ARDHA ASHTAMA SHANI / KANTAKA (~2½ yrs)"; detail="Saturn transits the 4th from your natal Moon (Ardha-Ashtama, 'half Sade Sati') — ~2½ years of domestic, property and mental pressure."; }
+  else { status="✅ No Sade Sati / Ashtama Shani at present"; detail=`Saturn is in the ${h}th from your natal Moon — outside the stressful transit houses (12, 1, 2 for Sade Sati; 8 and 4 for Ashtama/Ardha-Ashtama).`; }
+  const kv=[
+    ["Saturn's current transit Rashi", getRashi(satRashi).sanskrit],
+    ["Your natal Moon Rashi",          getRashi(moonRashiNum).sanskrit],
+    ["Saturn's house from natal Moon", ord(h)],
+    ["Status",                         status]
+  ];
+  document.getElementById("sade-kv").innerHTML=kv.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  document.getElementById("sade-narrative").innerHTML=
+    `<p>${detail}</p><p style="font-size:13px;color:var(--muted);">Saturn spends ~2½ years per rashi (≈30 years per zodiac). Sade Sati spans the 7½ years while Saturn crosses the 12th, 1st and 2nd from the natal Moon. This is a live transit computed for today (${now.toISOString().slice(0,10)}), so it changes over time. Remedy: truthfulness, keeping promises, punctuality, serving the elderly and needy, and Shani/Hanuman worship.</p>`;
+}
+
+/* Combustion (Astangata) — planet too close to the Sun.
+   Course convention: within ±5° of the Sun (tight orb, as taught in session:
+   Venus at 6° and Mercury at 10° were treated as having "escaped"). */
+const COMBUST_ORB = 5;
+const COMBUST_PLANETS = new Set(["Moon","Mars","Mercury","Jupiter","Venus","Saturn"]);
+function sunGap(planet, sidereal){ let d=Math.abs(norm360(sidereal[planet]-sidereal.Sun)); return d>180?360-d:d; }
+function isCombust(planet, sidereal){
+  if(!COMBUST_PLANETS.has(planet)) return false;
+  return sunGap(planet, sidereal) <= COMBUST_ORB;
+}
+
 /* Graha Aksharas (sound syllables) & Beejakshari seed-mantras.
    Source: Classification for Horoscope Analysis (Planet Characteristics sheet),
    compiled from the session decks. Saturn/Rahu/Ketu covered in later sessions. */
@@ -2395,7 +2541,8 @@ const GRAHA_REF = {
              mantra: "ॐ ग्रां ग्रीं ग्रौं सः गुरुवे नमः ॥", mantraRoman: "Om Graam Greem Groum Sah Gurave Namah" },
   Venus:   { deva: "च छ ज झ ञ",        roman: "Cha, Chha, Ja, Jha, Nya",
              mantra: "ॐ द्रां द्रीं द्रौं सः शुक्राय नमः ।", mantraRoman: "Om Draam Dreem Droum Sah Shukraya Namah" },
-  Saturn:  { deva: "—",                roman: "(later session)",            mantra: "—" },
+  Saturn:  { deva: "प फ ब भ म",        roman: "Pa, Pha, Ba, Bha, Ma",
+             mantra: "ॐ प्रां प्रीं प्रौं सः शनैश्चराय नमः", mantraRoman: "Om Praam Preem Proum Sah Shanaishcharaya Namah" },
   Rahu:    { deva: "—",                roman: "(later session)",            mantra: "—" },
   Ketu:    { deva: "—",                roman: "(later session)",            mantra: "—" }
 };
@@ -2423,7 +2570,7 @@ function renderGrahaReference() {
   html += `</tbody></table>
     <p class="akshara-note">Aksharas are the sound syllables (varga consonants) attributed to each graha — used in
     naming and in identifying the graha a name resonates with. The Beejakshari is the graha's seed-mantra,
-    chanted to strengthen it. Saturn, Rahu and Ketu are covered in later sessions.</p>`;
+    chanted to strengthen it. Rahu and Ketu are covered in later sessions.</p>`;
   document.getElementById("akshara-body").innerHTML = html;
 }
 let currentChart = null;
@@ -2536,9 +2683,11 @@ function generate() {
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
   renderTithiSection(chart.sidereal);
   renderPlanetTable(chart.sidereal, lagnaRashiInfo.n);
+  renderAspectsSection(planetsByRashi);
   renderDistributions(chart.sidereal);
   renderDignity(chart.sidereal);
   renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
+  renderSadeSatiSection(moonRashiInfo.n, ayanType);
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
   renderGrahaReference();
 
