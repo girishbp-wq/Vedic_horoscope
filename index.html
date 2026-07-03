@@ -403,6 +403,10 @@ details.section[open] > summary::after { content: "−"; }
 .flag-own         { background: #e5e8ff; color: #3a3f8b; border: 1px solid #b3b9e0; }
 .flag-mtr         { background: #fff3d6; color: #8a6a1e; border: 1px solid #e6c878; }
 .flag-neutral     { background: #f3ecd8; color: var(--muted); border: 1px solid var(--line); }
+.flag-friend      { background: #dff2ec; color: #1f6e5e; border: 1px solid #a5d8c9; }
+.flag-enemy       { background: #f6e3d4; color: #8a4a1e; border: 1px solid #e0b48f; }
+.flag-retro       { background: #efe4f5; color: #6a2f8a; border: 1px solid #cbaede; }
+.dig-note         { display:block; font-size:11.5px; color: var(--muted); margin-top:3px; }
 
 /* Planet table */
 .planet-table { width: 100%; border-collapse: collapse; font-size: 16px; margin-top: 8px; }
@@ -1679,33 +1683,73 @@ const DIGNITY_DEG = {
 /* Planet dignity for a given planet & rashi.
    deg (0-30 within the rashi) is optional; when supplied, refines
    Moolatrikona vs Own House by degree and flags Deep Exalt/Debil points. */
+/* Natural planetary friendships (Naisargika Maitri, BPHS) */
+const NATURAL_FRIENDS = {
+  Sun:     { friend:["Moon","Mars","Jupiter"],           enemy:["Venus","Saturn"] },
+  Moon:    { friend:["Sun","Mercury"],                   enemy:[] },
+  Mars:    { friend:["Sun","Moon","Jupiter"],            enemy:["Mercury"] },
+  Mercury: { friend:["Sun","Venus"],                     enemy:["Moon"] },
+  Jupiter: { friend:["Sun","Moon","Mars"],               enemy:["Mercury","Venus"] },
+  Venus:   { friend:["Mercury","Saturn"],                enemy:["Sun","Moon"] },
+  Saturn:  { friend:["Mercury","Venus"],                 enemy:["Sun","Moon","Mars"] }
+};
+function naturalRelation(planet, lord){
+  const nf = NATURAL_FRIENDS[planet];
+  if(!nf || planet===lord) return null;
+  if(nf.friend.includes(lord)) return "friend";
+  if(nf.enemy.includes(lord))  return "enemy";
+  return "neutral";
+}
+
 function planetDignity(planet, rashiNum, deg) {
-  const d = RASHI_DIGNITY[rashiNum];
+  const d  = RASHI_DIGNITY[rashiNum];
   const dd = DIGNITY_DEG[planet];
-  const near = (a, b) => (deg != null) && Math.abs(deg - b) <= 1.0;
+  const own = PLANET_OWN_HOUSES[planet] || [];
+  const isMTsign  = dd && rashiNum === dd.mtR;
+  const inMTrange = isMTsign && (deg == null || (deg >= dd.mt[0] && deg <= dd.mt[1]));
+  const near = (a,b) => (deg != null) && Math.abs(deg - b) <= 1.0;
+
+  // Exaltation. For Moon & Mercury the exaltation sign is ALSO their MT sign,
+  // so exaltation only holds up to the deep-exalt degree; beyond that fall through.
   if (d.exalted.includes(planet)) {
-    if (dd && rashiNum === dd.exR && near(deg, dd.exD))
-      return { label: "Deep Exalted", flag: "exalted" };
-    return { label: "Exalted", flag: "exalted" };
+    const overlapsMT = isMTsign && deg != null && deg > dd.exD;
+    if (!overlapsMT) {
+      if (dd && rashiNum === dd.exR && near(deg, dd.exD))
+        return { label:"Deep Exalted", flag:"exalted", bala:100, note: dd?`deep exaltation ${dd.exD}°`:"" };
+      return { label:"Exalted", flag:"exalted", bala:100, note: dd?`exaltation sign · deep ${dd.exD}°`:"" };
+    }
   }
   if (d.debilitated.includes(planet)) {
     if (dd && rashiNum === dd.deR && near(deg, dd.deD))
-      return { label: "Deep Debilitated", flag: "debilitated" };
-    return { label: "Debilitated", flag: "debilitated" };
+      return { label:"Deep Debilitated", flag:"debilitated", bala:0, note: dd?`deep debilitation ${dd.deD}°`:"" };
+    return { label:"Debilitated", flag:"debilitated", bala:0, note: dd?`debilitation sign · deep ${dd.deD}°`:"" };
   }
-  const own = PLANET_OWN_HOUSES[planet];
-  if (own && own.includes(rashiNum)) {
-    // Moolatrikona only within its degree range in the MT rashi; else plain Own House
-    if (dd && rashiNum === dd.mtR) {
-      if (deg == null || (deg >= dd.mt[0] && deg <= dd.mt[1]))
-        return { label: "Own (Moolatrikona)", flag: "mtr" };
-    }
-    return { label: "Own House", flag: "own" };
+  if (inMTrange) return { label:"Own (Moolatrikona)", flag:"mtr", bala:75, note: dd?`MT ${dd.mt[0]}–${dd.mt[1]}°`:"" };
+  if (own.includes(rashiNum)) {
+    const note = isMTsign && dd ? `Own ${dd.mt[1]}–30° · MT ${dd.mt[0]}–${dd.mt[1]}°` : "own sign";
+    return { label:"Own House", flag:"own", bala:50, note };
   }
-  // Moon's Moolatrikona sits in Vrishabha (its exaltation sign), 3°–30°
-  if (planet === "Moon" && rashiNum === 2 && deg != null && deg > 3)
-    return { label: "Own (Moolatrikona)", flag: "mtr" };
-  return { label: "—", flag: "neutral" };
+  // Friend / Neutral / Enemy (7 classical planets only)
+  const rel = naturalRelation(planet, d.lord);
+  if (rel === "friend")  return { label:"Friend's House",  flag:"friend",  bala:25,   note:`lord ${d.lord} — friend` };
+  if (rel === "neutral") return { label:"Neutral House",   flag:"neutral", bala:12.5, note:`lord ${d.lord} — neutral` };
+  if (rel === "enemy")   return { label:"Enemy's House",   flag:"enemy",   bala:0,    note:`lord ${d.lord} — enemy` };
+  return { label:"—", flag:"neutral", bala:null, note:"" };
+}
+
+/* Retrograde (Vakra): compare sidereal longitude across ~1 day.
+   Sun & Moon never retrograde; Rahu/Ketu (mean nodes) always retrograde. */
+function retrogradeSet(JD, ayanType){
+  const a = computeChart(JD, ayanType).sidereal;
+  const b = computeChart(JD + 1, ayanType).sidereal;
+  const set = new Set();
+  for (const p of ["Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
+    let delta = b[p] - a[p];
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    if (delta < 0) set.add(p);
+  }
+  return set;
 }
 
 /* ============================================================
@@ -2116,26 +2160,30 @@ function renderMoonSection(moonRashi, moonDeg, moonHouse, moonDignity) {
 }
 
 /* Render planet table */
-function renderPlanetTable(sidereal, lagnaRashiNum) {
+function renderPlanetTable(sidereal, lagnaRashiNum, retroSet) {
+  retroSet = retroSet || new Set();
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const GLYPHS = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃",
                     Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
+  const balaStr = b => b==null ? "" : ` · ${b % 1 === 0 ? b : b.toFixed(1)}%`;
   let html = `<thead>
-    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Element</th><th>Lord</th><th>Dignity</th></tr>
+    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Lord</th><th>Dignity · Sthana Bala</th></tr>
   </thead><tbody>`;
   for (const p of order) {
     const { n, deg } = rashiOf(sidereal[p]);
     const r = getRashi(n);
     const house = houseFromLagna(lagnaRashiNum, n);
     const dig = planetDignity(p, n, deg);
+    const retro = retroSet.has(p) ? ` <span class="section-flag flag-retro">℞ Retro</span>` : "";
+    const combust = isCombust(p, sidereal) ? ` <span class="section-flag flag-debilitated">Combust ${sunGap(p, sidereal).toFixed(1)}°</span>` : "";
     html += `<tr>
       <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
       <td>${r.glyph} ${r.sanskrit} (${r.english})</td>
-      <td>${fmtDeg(deg)}</td>
+      <td>${fmtDeg(deg)}${retro}</td>
       <td>House ${house}</td>
-      <td>${r.tatwa}</td>
       <td>${r.lord}</td>
-      <td><span class="section-flag flag-${dig.flag}">${dig.label}</span>${isCombust(p, sidereal)?` <span class="section-flag flag-debilitated">Combust ${sunGap(p, sidereal).toFixed(1)}°</span>`:''}</td>
+      <td><span class="section-flag flag-${dig.flag}">${dig.label}${balaStr(dig.bala)}</span>${combust}
+        ${dig.note ? `<span class="dig-note">${dig.note}</span>` : ""}</td>
     </tr>`;
   }
   html += `</tbody>`;
@@ -2204,54 +2252,71 @@ function renderDistributions(sidereal) {
   document.getElementById("mode-body").innerHTML = html2;
 }
 
-/* Render dignity summary */
-function renderDignity(sidereal) {
+/* Render dignity summary + Sthana Bala tiers + Neecha Bhanga */
+function renderDignity(sidereal, lagnaRashiNum, moonRashiNum) {
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
-  const exalted = [], debilitated = [], own = [], mtr = [];
+  const buckets = { exalted:[], debilitated:[], mtr:[], own:[], friend:[], neutral:[], enemy:[] };
+  const byRashi = {};
   for (const p of order) {
-    const ri = rashiOf(sidereal[p]);
-    const n = ri.n;
-    const d = planetDignity(p, n, ri.deg);
-    const r = getRashi(n);
-    if (d.flag === "exalted")     exalted.push(`<strong>${p}</strong> in ${r.sanskrit}`);
-    if (d.flag === "debilitated") debilitated.push(`<strong>${p}</strong> in ${r.sanskrit}`);
-    if (d.flag === "own")         own.push(`<strong>${p}</strong> in ${r.sanskrit}`);
-    if (d.flag === "mtr")         mtr.push(`<strong>${p}</strong> in ${r.sanskrit} (Moolatrikona)`);
+    const ri = rashiOf(sidereal[p]); byRashi[p] = ri.n;
+    const d = planetDignity(p, ri.n, ri.deg);
+    const r = getRashi(ri.n);
+    const tag = `<strong>${p}</strong> in ${r.sanskrit}`;
+    if (buckets[d.flag]) buckets[d.flag].push(tag);
   }
   let html = `<div class="kv-grid">
-    <div class="kv"><span class="k">Exalted (Uccha)</span>
-      <span class="v">${exalted.length || "0"}</span></div>
-    <div class="kv"><span class="k">Debilitated (Neecha)</span>
-      <span class="v">${debilitated.length || "0"}</span></div>
-    <div class="kv"><span class="k">Own House (Swakshetra)</span>
-      <span class="v">${own.length || "0"}</span></div>
-    <div class="kv"><span class="k">Moolatrikona</span>
-      <span class="v">${mtr.length || "0"}</span></div>
-  </div>`;
+    <div class="kv"><span class="k">Exalted · 100%</span><span class="v">${buckets.exalted.length}</span></div>
+    <div class="kv"><span class="k">Moolatrikona · 75%</span><span class="v">${buckets.mtr.length}</span></div>
+    <div class="kv"><span class="k">Own House · 50%</span><span class="v">${buckets.own.length}</span></div>
+    <div class="kv"><span class="k">Friend's House · 25%</span><span class="v">${buckets.friend.length}</span></div>
+    <div class="kv"><span class="k">Neutral · 12.5%</span><span class="v">${buckets.neutral.length}</span></div>
+    <div class="kv"><span class="k">Enemy's House · 0%</span><span class="v">${buckets.enemy.length}</span></div>
+    <div class="kv"><span class="k">Debilitated · 0%</span><span class="v">${buckets.debilitated.length}</span></div>
+  </div><div class="narrative">`;
+  const line = (flag, cls, name, tail) => buckets[flag].length
+    ? `<p><span class="section-flag flag-${cls}">${name}</span> ${buckets[flag].join(" · ")} — ${tail}</p>` : "";
+  html += line("exalted","exalted","Exalted","very strong; excellent results (Sthana Bala 100%).");
+  html += line("mtr","mtr","Moolatrikona","powerful, balanced expression (75%).");
+  html += line("own","own","Own House","comfortable and stable (50%).");
+  html += line("friend","friend","Friend's House","supported by a friendly lord (25%).");
+  html += line("neutral","neutral","Neutral House","middling results, lord is neutral (12.5%).");
+  html += line("enemy","enemy","Enemy's House","strained; lord is an enemy (0%).");
+  html += line("debilitated","debilitated","Debilitated","weak; challenges likely unless cancelled — see Neecha Bhanga below (0%).");
+  html += `</div>`;
 
-  html += `<div class="narrative">`;
-  if (exalted.length) {
-    html += `<p><span class="section-flag flag-exalted">Exalted</span>
-      ${exalted.join(" · ")} — these grahas are very strong and give excellent results
-      in their significations.</p>`;
-  }
-  if (mtr.length) {
-    html += `<p><span class="section-flag flag-mtr">Moolatrikona</span>
-      ${mtr.join(" · ")} — these grahas sit in their Moolatrikona, granting balanced
-      and powerful expression of their significations.</p>`;
-  }
-  if (own.length) {
-    html += `<p><span class="section-flag flag-own">Own House</span>
-      ${own.join(" · ")} — comfortable and balanced; give good, balanced results.</p>`;
-  }
-  if (debilitated.length) {
-    html += `<p><span class="section-flag flag-debilitated">Debilitated</span>
-      ${debilitated.join(" · ")} — weak placements; may cause challenges in their
-      areas of life. Remedial measures advised.</p>`;
-  }
-  if (!exalted.length && !debilitated.length && !own.length && !mtr.length) {
-    html += `<p>No grahas in special dignity. Each planet operates in a neutral
-      zodiacal field — outcomes depend on aspects, conjunctions and dasha periods.</p>`;
+  // ---- Neecha Bhanga (debilitation cancellation) ----
+  const debil = order.filter(p => planetDignity(p, byRashi[p], rashiOf(sidereal[p]).deg).flag === "debilitated");
+  const kendra = (ref, tgt) => [1,4,7,10].includes(houseFromLagna(ref, tgt));
+  const exaltPlanetOf = s => Object.keys(DIGNITY_DEG).find(pl => DIGNITY_DEG[pl].exR === s);
+  const aspectsRashi = (pl, fromR, tgtR) => (SPECIAL_ASPECTS[pl]||[7]).some(h => aspectedRashi(fromR,h)===tgtR);
+
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">Neecha Bhanga — Debilitation Cancellation</h4><div class="narrative">`;
+  if (!debil.length) {
+    html += `<p>No debilitated grahas in this chart — Neecha Bhanga does not apply.</p>`;
+  } else {
+    for (const p of debil) {
+      const S = byRashi[p];
+      const dispositor = getRashi(S).lord;
+      const exaltPl = exaltPlanetOf(S);
+      const dispR = byRashi[dispositor];
+      const exaltR = exaltPl ? byRashi[exaltPl] : null;
+      const checks = [];
+      const r1 = kendra(lagnaRashiNum, dispR) || kendra(moonRashiNum, dispR);
+      checks.push([`Dispositor ${dispositor} in a kendra from Lagna or Moon`, r1]);
+      let r2 = false;
+      if (exaltPl) { r2 = kendra(lagnaRashiNum, exaltR) || kendra(moonRashiNum, exaltR);
+        checks.push([`${exaltPl} (exalts in ${getRashi(S).sanskrit}) in a kendra from Lagna or Moon`, r2]); }
+      const conj = dispR === S;
+      const asp  = aspectsRashi(dispositor, dispR, S) || (exaltPl && aspectsRashi(exaltPl, exaltR, S));
+      const r3 = conj || asp;
+      checks.push([`${p} conjunct or aspected by its dispositor/exaltation-lord`, r3]);
+      const cancelled = checks.some(c => c[1]);
+      html += `<p><strong>${p}</strong> (debilitated in ${getRashi(S).sanskrit}) — ${cancelled
+        ? `<span class="section-flag flag-exalted">Neecha Bhanga present</span> the debilitation is cancelled; can even give a Raja-Yoga-like uplift.`
+        : `<span class="section-flag flag-debilitated">Not cancelled</span> remains weak; remedies advised.`}</p><ul style="margin:4px 0 10px 18px;font-size:13px;color:var(--muted);">`;
+      for (const [txt, val] of checks) html += `<li>${val ? "✅" : "—"} ${txt}</li>`;
+      html += `</ul>`;
+    }
   }
   html += `</div>`;
   document.getElementById("dignity-body").innerHTML = html;
@@ -2682,10 +2747,11 @@ function generate() {
   renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
   renderTithiSection(chart.sidereal);
-  renderPlanetTable(chart.sidereal, lagnaRashiInfo.n);
+  const retroSet = retrogradeSet(JD, ayanType);
+  renderPlanetTable(chart.sidereal, lagnaRashiInfo.n, retroSet);
   renderAspectsSection(planetsByRashi);
   renderDistributions(chart.sidereal);
-  renderDignity(chart.sidereal);
+  renderDignity(chart.sidereal, lagnaRashiInfo.n, moonRashiInfo.n);
   renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
   renderSadeSatiSection(moonRashiInfo.n, ayanType);
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
