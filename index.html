@@ -2595,7 +2595,8 @@ function isCombust(planet, sidereal){
    Source: Classification for Horoscope Analysis (Planet Characteristics sheet),
    compiled from the session decks. Saturn/Rahu/Ketu covered in later sessions. */
 const GRAHA_REF = {
-  Sun:     { deva: "—",                roman: "(later session)",            mantra: "—" },
+  Sun:     { deva: "अ आ इ ई उ ऊ ए ऐ ओ औ",  roman: "a, ā, i, ī, u, ū, e, ai, o, au",
+             mantra: "ॐ हां हीं हौं सः सूर्याय नमः", mantraRoman: "Om Haam Heem Houm Sah Suryaya Namah" },
   Moon:    { deva: "य र ल व श ष स ह",  roman: "Ya, Ra, La, Va, Sha, Sha, Sa, Ha",
              mantra: "ॐ श्रां श्रीं श्रौं सः चन्द्रमसे नमः", mantraRoman: "Om Shraam Shreem Shroum Sah Chandramase Namah" },
   Mars:    { deva: "क ख ग घ ङ",        roman: "Ka, Kha, Ga, Gha, Nga",
@@ -2608,8 +2609,8 @@ const GRAHA_REF = {
              mantra: "ॐ द्रां द्रीं द्रौं सः शुक्राय नमः ।", mantraRoman: "Om Draam Dreem Droum Sah Shukraya Namah" },
   Saturn:  { deva: "प फ ब भ म",        roman: "Pa, Pha, Ba, Bha, Ma",
              mantra: "ॐ प्रां प्रीं प्रौं सः शनैश्चराय नमः", mantraRoman: "Om Praam Preem Proum Sah Shanaishcharaya Namah" },
-  Rahu:    { deva: "—",                roman: "(later session)",            mantra: "—" },
-  Ketu:    { deva: "—",                roman: "(later session)",            mantra: "—" }
+  Rahu:    { deva: "—",                roman: "N/A",                        mantra: "—", mantraRoman: "N/A" },
+  Ketu:    { deva: "—",                roman: "N/A",                        mantra: "—", mantraRoman: "N/A" }
 };
 
 function renderGrahaReference() {
@@ -2624,7 +2625,7 @@ function renderGrahaReference() {
       ? `<span class="deva-roman">${g.roman}</span>`
       : `<span class="deva">${g.deva}</span><span class="deva-roman">${g.roman}</span>`;
     const mantraCell = g.mantra === "—"
-      ? `<span class="deva-roman">${g.roman === "(later session)" ? "(later session)" : "—"}</span>`
+      ? `<span class="deva-roman">${g.mantraRoman || (g.roman === "(later session)" ? "(later session)" : "—")}</span>`
       : `<span class="mantra-deva">${g.mantra}</span><span class="deva-roman">${g.mantraRoman}</span>`;
     html += `<tr>
       <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
@@ -2635,7 +2636,7 @@ function renderGrahaReference() {
   html += `</tbody></table>
     <p class="akshara-note">Aksharas are the sound syllables (varga consonants) attributed to each graha — used in
     naming and in identifying the graha a name resonates with. The Beejakshari is the graha's seed-mantra,
-    chanted to strengthen it. Rahu and Ketu are covered in later sessions.</p>`;
+    chanted to strengthen it. Rahu and Ketu (shadow grahas) have no assigned aksharas or beejakshari mantra (N/A).</p>`;
   document.getElementById("akshara-body").innerHTML = html;
 }
 let currentChart = null;
