@@ -683,15 +683,56 @@ details.section[open] > summary::after { content: "−"; }
 
 /* PRINT */
 @media print {
-  @page { size: A4; margin: 16mm; }
-  body { background: #fff !important; }
-  .hero, .input-wrap, .actions, .no-print { display: none !important; }
-  .panel, details.section, .s-card { box-shadow: none !important; border-color: #cbb88a !important; page-break-inside: avoid; }
-  details.section[open] > summary::after { display: none; }
-  details.section > summary { padding-bottom: 4px; }
-  details.section { page-break-inside: avoid; }
-  .shell { padding: 0; max-width: 100%; }
-  .report-header h2 { font-size: 22px; }
+  @page { size: A4; margin: 13mm; }
+  /* Print colors (bars, flags, backgrounds, table headers) */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html, body { background: #fff !important; }
+  .hero, .input-wrap, .actions, .no-print, .mandala { display: none !important; }
+  .report { display: block !important; margin-top: 0; }
+  .shell { padding: 0 !important; max-width: 100% !important; }
+
+  .report-header h2 { font-size: 21px; }
+  .report-meta { font-size: 12.5px; }
+
+  /* Summary cards: 4-up, compact, kept together */
+  .summary-strip { grid-template-columns: repeat(4, 1fr) !important; gap: 8px; page-break-inside: avoid; }
+  .s-card { padding: 10px 10px 9px; border-radius: 8px; }
+  .s-card .val { font-size: 16px; }
+  .s-card .glyph { font-size: 24px; }
+
+  /* Charts fit two-across on A4 without overflow */
+  .dual-chart-wrap { grid-template-columns: 1fr 1fr !important; gap: 14px; page-break-inside: avoid; }
+  .chart-panel { padding: 10px 8px 12px; page-break-inside: avoid; }
+  .chart-svg  { width: 100% !important; max-width: 300px !important; height: auto !important; }
+  .south-chart { width: 100% !important; max-width: 300px !important; }
+
+  /* Sections */
+  .panel, details.section, .s-card { box-shadow: none !important; border-color: #cbb88a !important; }
+  details.section { margin: 10px 0; page-break-inside: auto; }
+  details.section > summary { padding: 10px 14px; page-break-after: avoid; }
+  details.section > summary::after { display: none !important; }
+  .section-body { padding: 4px 14px 12px; }
+  .section-title { font-size: 15px; }
+  .section-sub { font-size: 12px; }
+
+  /* Keep small blocks from splitting across pages */
+  .kv-grid, .dist-row, .narrative, .chart-legend, .recipe { page-break-inside: avoid; }
+  h4 { page-break-after: avoid; }
+
+  /* Tables: compact and never split a row; repeat header on each page */
+  .planet-table { font-size: 10.5px; page-break-inside: auto; }
+  .planet-table th, .planet-table td { padding: 5px 6px; }
+  .planet-table thead { display: table-header-group; }
+  .planet-table tr { page-break-inside: avoid; }
+  .dig-note { font-size: 9.5px; }
+  .section-flag { font-size: 9.5px; padding: 1px 5px; }
+
+  /* Devanagari sizing for print */
+  .deva, .mantra-deva { font-size: 13px; }
+  .deva-roman { font-size: 10px; }
 }
 
 /* Mobile */
@@ -2857,6 +2898,20 @@ document.getElementById("btn-manual").addEventListener("click", () => {
 /* Bind buttons */
 document.getElementById("btn-generate").addEventListener("click", generate);
 document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+/* Expand every section for the PDF, then restore state afterwards */
+window.addEventListener("beforeprint", () => {
+  document.querySelectorAll("details.section").forEach(d => {
+    d.dataset._wasOpen = d.open ? "1" : "0";
+    d.open = true;
+  });
+});
+window.addEventListener("afterprint", () => {
+  document.querySelectorAll("details.section").forEach(d => {
+    if (d.dataset._wasOpen === "0") d.open = false;
+    delete d.dataset._wasOpen;
+  });
+});
 
 /* On load */
 setupPlaceAutocomplete();
