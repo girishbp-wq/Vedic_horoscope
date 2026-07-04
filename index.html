@@ -852,7 +852,7 @@ details.section[open] > summary::after { content: "−"; }
         <select id="f-ayanamsa">
           <option value="lahiri" selected>Lahiri (Chitrapaksha)</option>
           <option value="raman">B.V. Raman</option>
-          <option value="kp">KP (Krishnamurti)</option>
+          <option value="kp">KP-New (Krishnamurti)</option>
         </select>
         <span class="hint">Lahiri is the Government-of-India standard.</span>
       </div>
@@ -1531,7 +1531,12 @@ function ayanamsa(JD, type) {
   const years = T * 100;
   const lahiri = 23.85277 + 0.013957 * years - 6.7e-8 * years * years;
   if (type === "raman") return lahiri - 0.4;
-  if (type === "kp")    return lahiri - 0.06;
+  if (type === "kp") {
+    // KP-New (Krishnamurti): tropical & sidereal zodiacs coincide at 291 AD
+    // (KP zero-ayanamsa year); Newcomb precession rate 50.2388475"/yr.
+    const fracYear = 2000.0 + (JD - 2451545.0) / 365.25;
+    return (fracYear - 291.0) * 50.2388475 / 3600.0;
+  }
   return lahiri;
 }
 
@@ -1646,13 +1651,20 @@ function planetHelio(name, JD) {
   return { x: xe, y: ye, z: ze };
 }
 
-/* Geocentric ecliptic longitude of a planet (degrees) */
+/* Geocentric ecliptic longitude of a planet (degrees), referred to the
+   equinox-of-date. planetHelio uses J2000 elements, so we add the accumulated
+   general precession in longitude from J2000 to the date — otherwise every
+   planet reads ~50"/yr too high (e.g. ~0.55° for a 1960 chart), which can push
+   a planet near a sign boundary into the wrong rashi/house. */
 function planetGeocentric(name, JD) {
   const planet = planetHelio(name, JD);
   const earth  = planetHelio("Earth", JD);
   const x = planet.x - earth.x;
   const y = planet.y - earth.y;
-  const lon = Math.atan2(y, x) * R2D;
+  let lon = Math.atan2(y, x) * R2D;
+  const T = (JD - 2451545.0) / 36525;
+  const precession = (5028.796195 * T + 1.1054348 * T * T) / 3600; // degrees
+  lon += precession;
   return norm360(lon);
 }
 
@@ -2770,10 +2782,14 @@ function generate() {
 
   // Render everything
   renderSummaryStrip(name, dob, tob, placeName, lagnaRashi, moonRashi, sunRashi);
-  // Tag for ayanamsa
-  document.getElementById("r-aytag").textContent =
-    (ayanType === "lahiri" ? "Lahiri" : ayanType === "raman" ? "Raman" : "KP") +
-    " Ayanamsa · " + fmtDeg(chart.ayanamsa);
+  // Ayanamsa name + value — shown in the on-screen tag AND the printed meta line
+  const ayanName = ayanType === "lahiri" ? "Lahiri (Chitrapaksha)"
+                 : ayanType === "raman"  ? "B.V. Raman"
+                 : "KP-New (Krishnamurti)";
+  const ayanVal = fmtDeg(chart.ayanamsa);
+  document.getElementById("r-aytag").textContent = ayanName + " · " + ayanVal;
+  const metaEl = document.getElementById("r-meta");
+  metaEl.innerHTML += `&nbsp; · &nbsp;Ayanamsa: ${ayanName} ${ayanVal}`;
 
   // Planets by rashi for the chart wheel
   const planetsByRashi = {};
