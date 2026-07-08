@@ -406,6 +406,11 @@ details.section[open] > summary::after { content: "−"; }
 .flag-friend      { background: #dff2ec; color: #1f6e5e; border: 1px solid #a5d8c9; }
 .flag-enemy       { background: #f6e3d4; color: #8a4a1e; border: 1px solid #e0b48f; }
 .flag-retro       { background: #efe4f5; color: #6a2f8a; border: 1px solid #cbaede; }
+/* Deep Exaltation / Deep Debilitation — darker + bolder than the regular state
+   so the strongest and weakest points stand out (matches the workbook key). */
+.flag-deep                    { font-weight: 800; }
+.flag-exalted.flag-deep       { background: #cfe8a6; color: #2f5210; border-color: #8fbf5e; }
+.flag-debilitated.flag-deep   { background: #f6c9c9; color: #5f1114; border-color: #d98a8c; }
 .dig-note         { display:block; font-size:11.5px; color: var(--muted); margin-top:3px; }
 
 /* Planet table */
@@ -1872,7 +1877,7 @@ function interpretMoon(moonRashi, moonHouse, moonDignity) {
   return {
     kv: [
       ["Janma Rashi (Moon Sign)",  `<span class="pill">${r.sanskrit} (${r.english}) ${r.glyph}</span>`],
-      ["Moon's Dignity",           `<span class="section-flag flag-${moonDignity.flag}">${moonDignity.label}</span>`],
+      ["Moon's Dignity",           `<span class="section-flag flag-${moonDignity.flag}${moonDignity.label.startsWith('Deep') ? ' flag-deep' : ''}">${moonDignity.label}</span>`],
       ["Element (Tatwa) of Mind",  r.tatwa],
       ["Triguna of Moon Sign",     r.triguna],
       ["Purushartha of Moon Sign", r.purushartha],
@@ -2235,7 +2240,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum, retroSet) {
       <td>${fmtDeg(deg)}${retro}</td>
       <td>House ${house}</td>
       <td>${r.lord}</td>
-      <td><span class="section-flag flag-${dig.flag}">${dig.label}${balaStr(dig.bala)}</span>${combust}
+      <td><span class="section-flag flag-${dig.flag}${dig.label.startsWith('Deep') ? ' flag-deep' : ''}">${dig.label}${balaStr(dig.bala)}</span>${combust}
         ${dig.note ? `<span class="dig-note">${dig.note}</span>` : ""}</td>
     </tr>`;
   }
@@ -2249,7 +2254,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum, retroSet) {
     const r = getRashi(n);
     const dig = planetDignity(p, n, deg);
     const flag = dig.flag !== "neutral" ?
-      `<span class="section-flag flag-${dig.flag}">${dig.label}</span>` : "";
+      `<span class="section-flag flag-${dig.flag}${dig.label.startsWith('Deep') ? ' flag-deep' : ''}">${dig.label}</span>` : "";
     narr += `<p>${flag}<strong>${p}</strong> in <strong>${r.sanskrit} (${r.english})</strong>:
       ${r.traits.slice(0, 5).map(t => `<span class="trait">${t}</span>`).join(" ")}
       <em>Element: ${r.tatwa} · Modality: ${r.mode}</em></p>`;
