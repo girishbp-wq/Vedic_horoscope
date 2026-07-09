@@ -1040,6 +1040,15 @@ details.section[open] > summary::after { content: "−"; }
         </div>
       </details>
 
+      <details class="section" open>
+        <summary>
+          <span class="section-num">VII·d</span>
+          <span class="section-title">Saturn Combinations &amp; Remedies</span>
+          <span class="section-sub">Punarphoo (Shani&ndash;Chandra), Sun&ndash;Saturn &amp; Saturn&ndash;Mars, with remedies (Session 11)</span>
+        </summary>
+        <div class="section-body" id="punarphoo-body"></div>
+      </details>
+
       <details class="section">
         <summary>
           <span class="section-num">VIII</span>
@@ -2635,8 +2644,104 @@ function renderSadeSatiSection(moonRashiNum, ayanType){
   ];
   document.getElementById("sade-kv").innerHTML=kv.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
   document.getElementById("sade-narrative").innerHTML=
-    `<p>${detail}</p><p style="font-size:13px;color:var(--muted);">Saturn spends ~2½ years per rashi (≈30 years per zodiac). Sade Sati spans the 7½ years while Saturn crosses the 12th, 1st and 2nd from the natal Moon. This is a live transit computed for today (${now.toISOString().slice(0,10)}), so it changes over time. Remedy: truthfulness, keeping promises, punctuality, serving the elderly and needy, and Shani/Hanuman worship.</p>`;
+    `<p>${detail}</p><p style="font-size:13px;color:var(--muted);">Saturn spends ~2½ years per rashi (≈30 years per zodiac). Sade Sati spans the 7½ years while Saturn crosses the 12th, 1st and 2nd from the natal Moon. This is a live transit computed for today (${now.toISOString().slice(0,10)}), so it changes over time. Saturn entered Meena (Pisces) on 29 Mar 2025. Conduct &amp; remedies (Session 11): stay humble and egoless, be honest, disciplined and hardworking, do selfless service to the underprivileged, the elderly and the differently-abled, and worship Lord Shiva (Saturn's presiding deity) — chanting <em>Om Namah Shivaya</em> is beneficial.</p>`;
 }
+
+/* Session 11 — Saturn combinations (Punarphoo, Sun–Saturn, Saturn–Mars) + remedies.
+   Whole-sign special aspects: Saturn 3/7/10, Mars 4/7/8, Jupiter 5/7/9, others 7. */
+const PLANET_ASPECTS = { Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
+                         Saturn:[3,7,10], Mars:[4,7,8], Jupiter:[5,7,9] };
+function grahaAspects(planet, fromR, toR){
+  return (PLANET_ASPECTS[planet]||[7]).includes(houseFromLagna(fromR, toR));
+}
+
+const PUNARPHOO_REMEDIES = [
+  "Perform Milk Abhisheka to Lord Chandramouleeswara (Shiva) regularly on Mondays.",
+  "Perform Rudra Abhisheka to Lord Shiva (Shani = Ishwaramsha) for at least 5 consecutive Mondays in a temple.",
+  "Chant \u201cOm Namah Shivaya\u201d 108 times and do a milk abhisheka to a Shivalinga at home on Mondays and Saturdays.",
+  "Chant the Maha Mrityunjaya Mantra 108 times on Mondays.",
+  "Visit a Hanuman temple on Saturdays; fast on Mondays or Saturdays if your health permits.",
+  "Meditate daily and practise pranayama.",
+  "Donate rice to the poor on Saturdays (rice is of the Moon; the poor are of Saturn).",
+  "Donate curd-rice to devotees on Mondays at a Goddess temple, or on Saturdays at a Hanuman temple — distribute it after sunset.",
+  "Donate milk, and clothes to the poor, handicapped or elderly.",
+  "For women: wear silver anklets (payal / kejje) — Saturn rules the feet, silver is of the Moon.",
+  "Take a spoonful of curd before beginning any auspicious activity (fermented food is of Saturn).",
+  "Wash your legs in paddy-field / muddy water (Saturn = feet, legs, dirt; Moon = water).",
+  "Eat the previous day's rice (tangala anna) — Saturn is of the cold and stale, the Moon of rice.",
+  "Do service to, and take the blessings of, your mother and elderly women.",
+  "Eat from a silver plate and drink water from a silver tumbler.",
+  "If the Moon is weak (debilitated / Krishna Paksha), keep a \u201cGratitude Diary\u201d, thanking for every help received — to soften the fault-finding tendency."
+];
+const PUNARPHOO_EFFECTS = "Postponement or obstruction of marriage; unhappiness and misunderstanding in relationships; a logical, calculative, fault-finding temperament (they make good critics and do well in quality control); results come only after hard tests, though the hurdles are not permanent; fear, anxiety, depression or melancholy — worse when Saturn aspects a waning Moon; frequent job changes and a preference for one's own business; worry over the mother or a troublesome mother-in-law; gastric, digestive or breathing complaints, cracked teeth or calcium deficiency. Such natives are often slow learners yet good achievers and social workers.";
+const SUN_SATURN_EFFECT_M = "A strained relationship between father and son, or separation between them (Sun = father, Saturn = son).";
+const SUN_SATURN_EFFECT_F = "In a female chart the effect is reversed — the native is usually very close to her father.";
+const SATURN_MARS_EFFECT = "Harassment, tension or quarrels in the profession; disputes with brothers or blood relatives; hard physical work with little reward; frequent leg injuries, fractures or accident-proneness and decayed teeth; a leaning toward old property / real estate, or technical, dental or uniformed (police/security) work. In a female chart the husband may dwell on the past or be lazy, and servants may dominate and be short-tempered.";
+
+function detectPunarphoo(moonR, satR){
+  const reasons=[];
+  const h = houseFromLagna(satR, moonR); // Moon's whole-sign house counted from Saturn
+  if(moonR===satR) reasons.push("Saturn\u2013Moon conjunction (both in the same rashi)");
+  if(h===7) reasons.push("Mutual 7th aspect (Saturn and Moon in opposition)");
+  if(h===3) reasons.push("Saturn's special 3rd aspect falls on the Moon");
+  if(h===10) reasons.push("Saturn's special 10th aspect falls on the Moon");
+  if(moonR===10||moonR===11) reasons.push(`Moon occupies Saturn's rashi (${getRashi(moonR).english})`);
+  if(satR===4) reasons.push("Saturn occupies the Moon's rashi (Cancer)");
+  return { present: reasons.length>0, reasons };
+}
+function detectSunSaturn(sunR, satR){
+  const reasons=[];
+  if(sunR===satR) reasons.push("Sun\u2013Saturn conjunction (both in the same rashi)");
+  if(grahaAspects("Saturn", satR, sunR)) reasons.push("Saturn aspects the Sun");
+  if(houseFromLagna(sunR,satR)===7) reasons.push("Sun and Saturn in mutual (7th) aspect");
+  return { present: reasons.length>0, reasons:[...new Set(reasons)] };
+}
+function detectSaturnMars(marsR, satR){
+  const reasons=[];
+  if(marsR===satR) reasons.push("Saturn\u2013Mars conjunction (both in the same rashi)");
+  if(grahaAspects("Saturn",satR,marsR) && grahaAspects("Mars",marsR,satR))
+    reasons.push("Saturn and Mars in mutual aspect (special drishti)");
+  if((satR===1||satR===8) && (marsR===10||marsR===11))
+    reasons.push("Rashi Parivartana (Saturn in Mars's rashi, Mars in Saturn's rashi)");
+  return { present: reasons.length>0, reasons };
+}
+
+function comboBlock(title, det, effect){
+  if(det.present){
+    return `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">${title}</h4>
+      <p><span class="section-flag flag-debilitated">⚠ Present</span></p>
+      <p>Formed by:</p><ul>${det.reasons.map(r=>`<li>${r}</li>`).join("")}</ul>
+      <p class="dig-note">${effect}</p>`;
+  }
+  return `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">${title}</h4>
+    <p><span class="section-flag flag-friend">Not present</span></p>`;
+}
+
+function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRashiNum, gender){
+  const pp = detectPunarphoo(moonRashiNum, satRashiNum);
+  let html;
+  if(pp.present){
+    html = `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Punarphoo Dosha (Shani&ndash;Chandra)</h4>
+      <p><span class="section-flag flag-debilitated flag-deep">⚠ Present</span></p>
+      <p>Formed by:</p><ul>${pp.reasons.map(r=>`<li>${r}</li>`).join("")}</ul>
+      <p class="dig-note">${PUNARPHOO_EFFECTS}</p>
+      <h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:14px 0 8px;">Suggested Remedies</h4>
+      <ul>${PUNARPHOO_REMEDIES.map(r=>`<li>${r}</li>`).join("")}</ul>
+      <p style="font-size:13px;color:var(--muted);">Nakshatra-based formations (Saturn in the Moon's nakshatra, or the Moon in Saturn's nakshatra) are not yet evaluated and will be added with nakshatra support.</p>`;
+  } else {
+    html = `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Punarphoo Dosha (Shani&ndash;Chandra)</h4>
+      <p><span class="section-flag flag-friend">Not present</span> — no Saturn&ndash;Moon conjunction, opposition, 3rd/10th aspect, or sign exchange.
+      <span style="font-size:13px;color:var(--muted);"> (Nakshatra-based checks pending.)</span></p>`;
+  }
+  // Sun–Saturn (father–son) — gender-sensitive effect
+  const isFemale = (gender||"").toString().trim().toLowerCase().startsWith("f");
+  html += comboBlock("Sun&ndash;Saturn (father&ndash;son)", detectSunSaturn(sunRashiNum, satRashiNum),
+                     isFemale ? SUN_SATURN_EFFECT_F : SUN_SATURN_EFFECT_M);
+  // Saturn–Mars
+  html += comboBlock("Saturn&ndash;Mars combination", detectSaturnMars(marsRashiNum, satRashiNum), SATURN_MARS_EFFECT);
+  document.getElementById("punarphoo-body").innerHTML = html;
+}
+
 
 /* Combustion (Astangata) — planet too close to the Sun.
    Course convention: within ±5° of the Sun (tight orb, as taught in session:
@@ -2817,6 +2922,9 @@ function generate() {
   renderDignity(chart.sidereal, lagnaRashiInfo.n, moonRashiInfo.n);
   renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
   renderSadeSatiSection(moonRashiInfo.n, ayanType);
+  renderPunarphooSection(moonRashiInfo.n, rashiOf(chart.sidereal.Saturn).n,
+                         sunRashiInfo.n, rashiOf(chart.sidereal.Mars).n,
+                         (document.getElementById("f-gender") || {}).value || "");
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
   renderGrahaReference();
 
