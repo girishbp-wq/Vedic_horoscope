@@ -864,12 +864,12 @@ details.section[open] > summary::after { content: "−"; }
 
       <div class="lat-lon-row" id="latLonRow">
         <div class="field">
-          <label>Latitude (°)</label>
-          <input id="f-lat" type="number" step="any" placeholder="e.g. 19.08" />
+          <label>Latitude</label>
+          <input id="f-lat" type="text" placeholder="e.g. 13:56:40 N or 19.08" />
         </div>
         <div class="field">
-          <label>Longitude (°)</label>
-          <input id="f-lon" type="number" step="any" placeholder="e.g. 72.88" />
+          <label>Longitude</label>
+          <input id="f-lon" type="text" placeholder="e.g. 76:37:2 E or 72.88" />
         </div>
         <div class="field">
           <label>Timezone (UTC offset hr)</label>
@@ -2814,6 +2814,44 @@ function showLoader(on) {
   document.getElementById("loader").classList.toggle("show", !!on);
 }
 
+/* Parse a latitude/longitude entered as sexagesimal "D:M:S N/S/E/W"
+   (e.g. "13:56:40 N", "76:37:2 E") or as a signed/hemisphere decimal
+   (e.g. "19.08", "-19.08", "19.08 S"). Returns decimal degrees or NaN.
+   South and West are negative. Also tolerates °, ', " and spaces as separators. */
+function parseCoordinate(raw, kind){
+  if (raw == null) return NaN;
+  let s = String(raw).trim();
+  if (!s) return NaN;
+  let sign = 1;
+  const hemi = s.match(/[NSEW]/i);
+  if (hemi){
+    const h = hemi[0].toUpperCase();
+    if (h === "S" || h === "W") sign = -1;
+    s = s.replace(/[NSEW]/ig, " ").trim();
+  }
+  if (/^-/.test(s)){ sign = -1; s = s.replace(/^-/, "").trim(); }
+  const parts = s.split(/[:°'"\s]+/).filter(x => x !== "");
+  if (parts.length === 0) return NaN;
+  const nums = parts.map(Number);
+  if (nums.some(n => Number.isNaN(n))) return NaN;
+  const deg = (nums[0] || 0) + (nums[1] || 0) / 60 + (nums[2] || 0) / 3600;
+  return sign * deg;
+}
+
+/* Format a decimal degree back to "D:M:S N/E" for display. */
+function fmtCoord(dec, kind){
+  const pos = dec >= 0;
+  const hemi = kind === "lat" ? (pos ? "N" : "S") : (pos ? "E" : "W");
+  let v = Math.abs(dec);
+  let d = Math.floor(v);
+  let mF = (v - d) * 60;
+  let mi = Math.floor(mF);
+  let se = Math.round((mF - mi) * 60);
+  if (se === 60){ se = 0; mi += 1; }
+  if (mi === 60){ mi = 0; d += 1; }
+  return `${d}:${String(mi).padStart(2,"0")}:${String(se).padStart(2,"0")} ${hemi}`;
+}
+
 function generate() {
   showMsg("");
   const name  = document.getElementById("f-name").value.trim();
@@ -2830,14 +2868,18 @@ function generate() {
   let lat, lon, tz, placeName;
   const useManual = document.getElementById("latLonRow").classList.contains("show");
   if (useManual) {
-    lat = parseFloat(document.getElementById("f-lat").value);
-    lon = parseFloat(document.getElementById("f-lon").value);
+    lat = parseCoordinate(document.getElementById("f-lat").value, "lat");
+    lon = parseCoordinate(document.getElementById("f-lon").value, "lon");
     tz  = parseFloat(document.getElementById("f-tz").value);
-    placeName = place || `${lat}°, ${lon}°`;
     if (isNaN(lat) || isNaN(lon) || isNaN(tz)) {
-      showMsg("Please enter latitude, longitude and timezone offset.", true);
+      showMsg("Please enter latitude and longitude (e.g. 13:56:40 N and 76:37:2 E, or decimals like 19.08) and a UTC offset.", true);
       return;
     }
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      showMsg("Latitude must be within 90° and longitude within 180°. Check the values entered.", true);
+      return;
+    }
+    placeName = place || `${fmtCoord(lat, "lat")}, ${fmtCoord(lon, "lon")}`;
   } else if (selectedCity) {
     lat = selectedCity[2]; lon = selectedCity[3]; tz = selectedCity[4];
     placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
