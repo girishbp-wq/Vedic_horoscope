@@ -834,7 +834,7 @@ details.section[open] > summary::after { content: "−"; }
       </div>
       <div class="field">
         <label for="f-tob">Time of Birth</label>
-        <input id="f-tob" type="time" step="60" />
+        <input id="f-tob" type="time" step="1" />
         <span class="hint">24-hour clock — e.g. 09:45 (9:45 AM) or 21:30 (9:30 PM)</span>
       </div>
       <div class="field places-wrap" style="grid-column: span 2;">
@@ -1730,6 +1730,29 @@ function rashiOf(lonDeg) {
   return { n, deg };
 }
 
+/* 27 nakshatras of 13°20' each; each split into 4 padas of 3°20'.
+   Returns {index (1-27), name, pada (1-4), degIn (deg within the nakshatra),
+   lord (Vimshottari dasha lord)}. Pure function of the sidereal longitude. */
+const NAKSHATRAS = [
+  ["Ashwini","Ketu"], ["Bharani","Venus"], ["Krittika","Sun"], ["Rohini","Moon"],
+  ["Mrigashira","Mars"], ["Ardra","Rahu"], ["Punarvasu","Jupiter"], ["Pushya","Saturn"],
+  ["Ashlesha","Mercury"], ["Magha","Ketu"], ["Purva Phalguni","Venus"], ["Uttara Phalguni","Sun"],
+  ["Hasta","Moon"], ["Chitra","Mars"], ["Swati","Rahu"], ["Vishakha","Jupiter"],
+  ["Anuradha","Saturn"], ["Jyeshtha","Mercury"], ["Mula","Ketu"], ["Purva Ashadha","Venus"],
+  ["Uttara Ashadha","Sun"], ["Shravana","Moon"], ["Dhanishta","Mars"], ["Shatabhisha","Rahu"],
+  ["Purva Bhadrapada","Jupiter"], ["Uttara Bhadrapada","Saturn"], ["Revati","Mercury"]
+];
+const NAK_SIZE = 360 / 27;          // 13.3333° per nakshatra
+const PADA_SIZE = NAK_SIZE / 4;     // 3.3333° per pada
+function nakshatraOf(lonDeg) {
+  const L = norm360(lonDeg);
+  const idx = Math.floor(L / NAK_SIZE);          // 0-26
+  const degIn = L - idx * NAK_SIZE;
+  const pada = Math.floor(degIn / PADA_SIZE) + 1; // 1-4
+  const [name, lord] = NAKSHATRAS[idx];
+  return { index: idx + 1, name, pada, degIn, lord };
+}
+
 /* House from Lagna (rashi number relative to Lagna rashi). 1-12. */
 function houseFromLagna(lagnaRashi, planetRashi) {
   let h = (planetRashi - lagnaRashi + 12) % 12 + 1;
@@ -2234,11 +2257,12 @@ function renderPlanetTable(sidereal, lagnaRashiNum, retroSet) {
                     Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
   const balaStr = b => b==null ? "" : ` · ${b % 1 === 0 ? b : b.toFixed(1)}%`;
   let html = `<thead>
-    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Lord</th><th>Dignity · Sthana Bala</th></tr>
+    <tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>Nakshatra (Pada)</th><th>House</th><th>Lord</th><th>Dignity · Sthana Bala</th></tr>
   </thead><tbody>`;
   for (const p of order) {
     const { n, deg } = rashiOf(sidereal[p]);
     const r = getRashi(n);
+    const nak = nakshatraOf(sidereal[p]);
     const house = houseFromLagna(lagnaRashiNum, n);
     const dig = planetDignity(p, n, deg);
     const retro = retroSet.has(p) ? ` <span class="section-flag flag-retro">℞ Retro</span>` : "";
@@ -2247,6 +2271,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum, retroSet) {
       <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
       <td>${r.glyph} ${r.sanskrit} (${r.english})</td>
       <td>${fmtDeg(deg)}${retro}</td>
+      <td>${nak.name} <span style="color:var(--muted)">(pada ${nak.pada})</span></td>
       <td>House ${house}</td>
       <td>${r.lord}</td>
       <td><span class="section-flag flag-${dig.flag}${dig.label.startsWith('Deep') ? ' flag-deep' : ''}">${dig.label}${balaStr(dig.bala)}</span>${combust}
@@ -2899,8 +2924,8 @@ function generate() {
 
   // Parse date / time into UTC JD
   const [y, m, d] = dob.split("-").map(Number);
-  const [hh, mm] = tob.split(":").map(Number);
-  const localHours = hh + mm / 60;
+  const [hh, mm, ss] = tob.split(":").map(Number);
+  const localHours = hh + mm / 60 + (ss || 0) / 3600;
   const utHours = localHours - tz;  // convert to UTC
   // Handle date crossing midnight
   let yy = y, mmth = m, dd = d, utc = utHours;
