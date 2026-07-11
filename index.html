@@ -981,6 +981,7 @@ details.section[open] > summary::after { content: "−"; }
         </summary>
         <div class="section-body">
           <table class="planet-table" id="aspect-table"></table>
+          <div class="narrative" id="aspect-influence"></div>
           <div class="narrative" id="aspect-mutual"></div>
           <div class="narrative" id="aspect-narrative"></div>
         </div>
@@ -2603,6 +2604,39 @@ const SPECIAL_ASPECTS = {
   Rahu:[5,7,9], Ketu:[5,7,9]
 };
 const GLYPH9 = { Sun:"☉",Moon:"☾",Mars:"♂",Mercury:"☿",Jupiter:"♃",Venus:"♀",Saturn:"♄",Rahu:"☊",Ketu:"☋" };
+
+/* Karakatwas (significations). `qualities` = what an ASPECTING planet imparts;
+   `signifies` = what an ASPECTED planet stands for. Blending the two gives the
+   influence reading (Session 9: "Jup = wisdom, noble; Mars = younger coborn,
+   so the younger coborn is a noble and wise person"). */
+const KARAKATWAS = {
+  Sun:     { qualities:"authority, confidence and a commanding nature",
+             signifies:"the father, the soul, health and status" },
+  Moon:    { qualities:"emotion, nurture and a receptive mind",
+             signifies:"the mother, the mind and emotions" },
+  Mars:    { qualities:"energy, courage and aggression",
+             signifies:"the younger co-born (sibling), courage, land and property" },
+  Mercury: { qualities:"intellect, analysis and communication",
+             signifies:"speech, intellect, education and business" },
+  Jupiter: { qualities:"wisdom, nobility, expansion and good fortune",
+             signifies:"children, wealth, the guru and dharma" },
+  Venus:   { qualities:"refinement, charm and a taste for comfort",
+             signifies:"the spouse, marriage, vehicles and the arts" },
+  Saturn:  { qualities:"discipline, delay, hard work and detachment",
+             signifies:"longevity, profession, servants and the elderly" },
+  Rahu:    { qualities:"obsession, amplification and unconventionality",
+             signifies:"foreign matters, sudden gains and illusion" },
+  Ketu:    { qualities:"detachment, spirituality and sudden severance",
+             signifies:"moksha, mysticism and past-life karma" }
+};
+
+/* Build the plain-English influence reading for an aspect. */
+function aspectReading(aspecting, aspected, house){
+  const A = KARAKATWAS[aspecting], B = KARAKATWAS[aspected];
+  if(!A || !B) return "";
+  return `<strong>${aspecting}</strong> (${A.qualities}) casts its ${ord(house)} aspect on <strong>${aspected}</strong> (${B.signifies}) — so ${B.signifies} come under the influence of ${A.qualities}.`;
+}
+
 function aspectedRashi(fromRashi, aspectHouse){ return ((fromRashi-1)+(aspectHouse-1))%12+1; }
 function ord(n){ const s=["th","st","nd","rd"], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 
@@ -2619,12 +2653,35 @@ function renderAspectsSection(planetsByRashi){
     const aspRashiStr=asp.map(a=>`${ord(a.house)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
     const hit=[];
     for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${ord(a.house)})`);
-    t+=`<tr><td><span class="glyph-mini">${GLYPH9[p]}</span><strong>${p}</strong> · ${getRashi(planetsByRashi[p]).sanskrit}</td>
+    const jupTag = p==="Jupiter" ? ` <span class="section-flag flag-exalted flag-deep">Aspect &gt; placement</span>` : "";
+    t+=`<tr><td><span class="glyph-mini">${GLYPH9[p]}</span><strong>${p}</strong> · ${getRashi(planetsByRashi[p]).sanskrit}${jupTag}</td>
       <td>${SPECIAL_ASPECTS[p].join(", ")}</td><td>${aspRashiStr}</td>
       <td>${hit.length?hit.join(", "):"—"}</td></tr>`;
   }
   t+=`</tbody>`;
   document.getElementById("aspect-table").innerHTML=t;
+
+  /* Influence readings — blend the aspecting planet's qualities with the
+     aspected planet's karakatwas. Jupiter's are listed first and highlighted,
+     since its aspect is held to be more powerful than its placement. */
+  const readings=[];
+  for(const p of order){
+    for(const a of aspects[p]){
+      for(const q of (inRashi[a.rashi]||[])){
+        if(q===p) continue;
+        const txt = aspectReading(p, q, a.house);
+        if(txt) readings.push({ p, html: txt });
+      }
+    }
+  }
+  readings.sort((x,y)=> (x.p==="Jupiter"?0:1) - (y.p==="Jupiter"?0:1));
+  const infl = document.getElementById("aspect-influence");
+  if(infl){
+    infl.innerHTML = readings.length
+      ? `<p><strong>Influence on karakatwas</strong> — an aspect casts the aspecting planet's nature onto whatever the aspected planet signifies:</p>
+         <ul>${readings.map(r=>`<li${r.p==="Jupiter"?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
+      : `<p>No planet-to-planet aspects in this chart (aspects still fall on the rashis listed above).</p>`;
+  }
 
   const aspSet={};
   for(const p of order) aspSet[p]=new Set(aspects[p].map(a=>a.rashi));
@@ -2639,7 +2696,8 @@ function renderAspectsSection(planetsByRashi){
     ? `<p><strong>Mutual aspects</strong> — both planets see each other, a strong reinforcing link:</p><p>${mutual.join(" &nbsp;·&nbsp; ")}</p>`
     : `<p>No mutual aspects in this chart.</p>`;
   document.getElementById("aspect-narrative").innerHTML =
-    `<p>A planet's aspect (Drishti) casts its influence onto the aspected house or planet. Every graha aspects the 7th; the special aspects are <strong>Mars 4·7·8</strong>, <strong>Jupiter 5·7·9</strong> and <strong>Saturn 3·7·10</strong>. Rahu/Ketu are given 5·7·9 by many schools (shown for reference).</p>`;
+    `<p>A planet's aspect (Drishti) casts its influence onto the aspected house or planet. The seeing planet is the <em>aspecting</em> planet; the one receiving it is the <em>aspected</em> planet, and the aspect influences its karakatwas. Every graha aspects the 7th; the special aspects are <strong>Mars 4·7·8</strong>, <strong>Jupiter 5·7·9</strong> and <strong>Saturn 3·7·10</strong>. Rahu/Ketu are given 5·7·9 by many schools (shown for reference).</p>
+     <p><strong>Jupiter's aspect is more powerful than its placement</strong> — so wherever Guru's 5th, 7th or 9th aspect falls, it carries more weight than the sign Jupiter merely sits in. Its aspects are highlighted below.</p>`;
 }
 
 /* ============================================================
