@@ -1031,6 +1031,15 @@ details.section[open] > summary::after { content: "−"; }
 
       <details class="section" open>
         <summary>
+          <span class="section-num">VII·b2</span>
+          <span class="section-title">Gurubala (Jupiter Transit)</span>
+          <span class="section-sub">Divine grace &mdash; transit Jupiter in 2/5/7/9/11 from your natal Moon (live)</span>
+        </summary>
+        <div class="section-body" id="gurubala-body"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">VII·c</span>
           <span class="section-title">Sade Sati &amp; Saturn Transit</span>
           <span class="section-sub">Current Saturn transit relative to your natal Moon (live)</span>
@@ -2705,6 +2714,34 @@ function renderAspectsSection(planetsByRashi){
    Saturn ~2½ yrs/rashi. Sade Sati = Saturn in 12/1/2 from natal Moon
    (7½ yrs). Ashtama Shani = 8th. Ardha Ashtama (Kantaka) = 4th.
    ============================================================ */
+/* GURUBALA — transit Jupiter in the 2nd, 5th, 7th, 9th or 11th from the natal
+   Moon (Janma Rashi). A period of divine grace (Daiva Bala); the best window for
+   auspicious functions, marriage above all. */
+const GURUBALA_HOUSES = [2,5,7,9,11];
+function renderGurubalaSection(moonRashiNum, ayanType){
+  const now=new Date();
+  const jdNow=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
+                        now.getUTCHours()+now.getUTCMinutes()/60);
+  const jupRashi=rashiOf(computeChart(jdNow,ayanType).sidereal.Jupiter).n;
+  const h=houseFromLagna(moonRashiNum, jupRashi);
+  const on=GURUBALA_HOUSES.includes(h);
+  const kv=[
+    ["Janma Rashi (natal Moon)", getRashi(moonRashiNum).sanskrit+" ("+getRashi(moonRashiNum).english+")"],
+    ["Transit Jupiter", getRashi(jupRashi).sanskrit+" ("+getRashi(jupRashi).english+")"],
+    ["House from Moon", `${h} — Gurubala houses are 2, 5, 7, 9, 11`],
+    ["Status", on ? `<span class="section-flag flag-exalted flag-deep">✅ GURUBALA ACTIVE</span>`
+                  : `<span class="section-flag flag-neutral">Not active</span>`]
+  ];
+  const detail = on
+    ? `<p>Transit Jupiter is in the <strong>${h}${h===2?"nd":h===5||h===7||h===9?"th":"th"} house from your natal Moon</strong>, so <strong>Gurubala is running</strong>. This is a period of God's grace — you are under the influence of <em>Daiva Bala</em>, and it is a very good time to perform auspicious functions (marriage, housewarming, new ventures).</p>
+       <p>In experience, suitors come knocking at the door to get married when there is Gurubala in the girl's chart — and vice versa. Gurubala is an opportunity given by God, and it should be harnessed.</p>`
+    : `<p>Transit Jupiter is in the ${h}th house from your natal Moon, which is outside the Gurubala houses (2, 5, 7, 9, 11). Auspicious functions are better timed for when Jupiter moves into one of those houses.</p>
+       <p style="font-size:13px;color:var(--muted);">Jupiter spends roughly a year in each rashi, so this changes over time.</p>`;
+  document.getElementById("gurubala-body").innerHTML =
+    `<div class="kv-grid">${kv.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("")}</div>
+     <div class="narrative">${detail}</div>`;
+}
+
 function renderSadeSatiSection(moonRashiNum, ayanType){
   const now=new Date();
   const jdNow=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
@@ -3046,6 +3083,7 @@ function generate() {
   renderDistributions(chart.sidereal);
   renderDignity(chart.sidereal, lagnaRashiInfo.n, moonRashiInfo.n);
   renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
+  renderGurubalaSection(moonRashiInfo.n, ayanType);
   renderSadeSatiSection(moonRashiInfo.n, ayanType);
   renderPunarphooSection(moonRashiInfo.n, rashiOf(chart.sidereal.Saturn).n,
                          sunRashiInfo.n, rashiOf(chart.sidereal.Mars).n,
