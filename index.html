@@ -2473,7 +2473,10 @@ function computeTithi(sunLon, moonLon) {
 
 function renderTithiSection(sidereal) {
   const tithi = computeTithi(sidereal.Sun, sidereal.Moon);
+  const sunR = rashiOf(sidereal.Sun).n;
+  const ayana = [10,11,12,1,2,3].includes(sunR) ? "Uttarayana (northward course)" : "Dakshinayana (southward course)";
   const tkv = [
+    ["Ayana (born in)",           ayana],
     ["Sun longitude (sidereal)",  `${sidereal.Sun.toFixed(2)}°`],
     ["Moon longitude (sidereal)", `${sidereal.Moon.toFixed(2)}°`],
     ["Moon − Sun separation",     `${tithi.sep.toFixed(2)}°`],
@@ -2798,7 +2801,7 @@ const SUN_SATURN_EFFECT_M = "A strained relationship between father and son, or 
 const SUN_SATURN_EFFECT_F = "In a female chart the effect is reversed — the native is usually very close to her father.";
 const SATURN_MARS_EFFECT = "Harassment, tension or quarrels in the profession; disputes with brothers or blood relatives; hard physical work with little reward; frequent leg injuries, fractures or accident-proneness and decayed teeth; a leaning toward old property / real estate, or technical, dental or uniformed (police/security) work. In a female chart the husband may dwell on the past or be lazy, and servants may dominate and be short-tempered.";
 
-function detectPunarphoo(moonR, satR){
+function detectPunarphoo(moonR, satR, moonNakLord, satNakLord){
   const reasons=[];
   const h = houseFromLagna(satR, moonR); // Moon's whole-sign house counted from Saturn
   if(moonR===satR) reasons.push("Saturn\u2013Moon conjunction (both in the same rashi)");
@@ -2807,6 +2810,9 @@ function detectPunarphoo(moonR, satR){
   if(h===10) reasons.push("Saturn's special 10th aspect falls on the Moon");
   if(moonR===10||moonR===11) reasons.push(`Moon occupies Saturn's rashi (${getRashi(moonR).english})`);
   if(satR===4) reasons.push("Saturn occupies the Moon's rashi (Cancer)");
+  // Nakshatra-based formations (Session 11, rules 6 & 7)
+  if(satNakLord==="Moon") reasons.push("Saturn falls in a Moon-ruled nakshatra (Rohini/Hasta/Shravana)");
+  if(moonNakLord==="Saturn") reasons.push("Moon falls in a Saturn-ruled nakshatra (Pushya/Anuradha/Uttara Bhadrapada)");
   return { present: reasons.length>0, reasons };
 }
 function detectSunSaturn(sunR, satR){
@@ -2826,6 +2832,23 @@ function detectSaturnMars(marsR, satR){
   return { present: reasons.length>0, reasons };
 }
 
+/* Parivartana Yoga — two grahas in each other's rashi (mutual sign exchange).
+   Rahu/Ketu own no rashi and take no part. */
+const PARIVARTANA_NOTE = "Parivartana (Rashi exchange): two planets occupy each other's rashi. Each then supports the other's house, and the two behave as though conjoined — linking the affairs of both houses for the whole life.";
+function detectParivartana(planetsByRashi){
+  const own = PLANET_OWN_HOUSES || {};
+  const names = Object.keys(planetsByRashi).filter(p=>own[p]);
+  const out=[];
+  for(let i=0;i<names.length;i++) for(let j=i+1;j<names.length;j++){
+    const a=names[i], b=names[j];
+    if(own[b].includes(planetsByRashi[a]) && own[a].includes(planetsByRashi[b])){
+      out.push({a,b,
+        text:`<strong>${a}</strong> is in ${getRashi(planetsByRashi[a]).english} (owned by ${b}) while <strong>${b}</strong> is in ${getRashi(planetsByRashi[b]).english} (owned by ${a}) — a mutual exchange.`});
+    }
+  }
+  return out;
+}
+
 function comboBlock(title, det, effect){
   if(det.present){
     return `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">${title}</h4>
@@ -2837,8 +2860,8 @@ function comboBlock(title, det, effect){
     <p><span class="section-flag flag-friend">Not present</span></p>`;
 }
 
-function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRashiNum, gender){
-  const pp = detectPunarphoo(moonRashiNum, satRashiNum);
+function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRashiNum, gender, planetsByRashi, moonNakLord, satNakLord){
+  const pp = detectPunarphoo(moonRashiNum, satRashiNum, moonNakLord, satNakLord);
   let html;
   if(pp.present){
     html = `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Punarphoo Dosha (Shani&ndash;Chandra)</h4>
@@ -2847,11 +2870,11 @@ function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRash
       <p class="dig-note">${PUNARPHOO_EFFECTS}</p>
       <h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:14px 0 8px;">Suggested Remedies</h4>
       <ul>${PUNARPHOO_REMEDIES.map(r=>`<li>${r}</li>`).join("")}</ul>
-      <p style="font-size:13px;color:var(--muted);">Nakshatra-based formations (Saturn in the Moon's nakshatra, or the Moon in Saturn's nakshatra) are not yet evaluated and will be added with nakshatra support.</p>`;
+`;
   } else {
     html = `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Punarphoo Dosha (Shani&ndash;Chandra)</h4>
       <p><span class="section-flag flag-friend">Not present</span> — no Saturn&ndash;Moon conjunction, opposition, 3rd/10th aspect, or sign exchange.
-      <span style="font-size:13px;color:var(--muted);"> (Nakshatra-based checks pending.)</span></p>`;
+</p>`;
   }
   // Sun–Saturn (father–son) — gender-sensitive effect
   const isFemale = (gender||"").toString().trim().toLowerCase().startsWith("f");
@@ -2859,6 +2882,16 @@ function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRash
                      isFemale ? SUN_SATURN_EFFECT_F : SUN_SATURN_EFFECT_M);
   // Saturn–Mars
   html += comboBlock("Saturn&ndash;Mars combination", detectSaturnMars(marsRashiNum, satRashiNum), SATURN_MARS_EFFECT);
+
+  // Parivartana Yoga — any two planets in each other's rashi
+  const pv = detectParivartana(planetsByRashi || {});
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">Parivartana Yoga (Rashi Exchange)</h4>`;
+  html += pv.length
+    ? `<p><span class="section-flag flag-exalted flag-deep">⚠ Present</span></p>
+       <ul>${pv.map(x=>`<li>${x.text}</li>`).join("")}</ul>
+       <p class="dig-note">${PARIVARTANA_NOTE}</p>`
+    : `<p><span class="section-flag flag-friend">Not present</span> — no two planets occupy each other's rashi.</p>`;
+
   document.getElementById("punarphoo-body").innerHTML = html;
 }
 
@@ -2867,7 +2900,7 @@ function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRash
    Course convention: within ±5° of the Sun (tight orb, as taught in session:
    Venus at 6° and Mercury at 10° were treated as having "escaped"). */
 const COMBUST_ORB = 5;
-const COMBUST_PLANETS = new Set(["Moon","Mars","Mercury","Jupiter","Venus","Saturn"]);
+const COMBUST_PLANETS = new Set(["Mars","Mercury","Jupiter","Venus","Saturn"]); // Session 12: only the 5 Tara grahas combust — Moon never does
 function sunGap(planet, sidereal){ let d=Math.abs(norm360(sidereal[planet]-sidereal.Sun)); return d>180?360-d:d; }
 function isCombust(planet, sidereal){
   if(!COMBUST_PLANETS.has(planet)) return false;
@@ -2896,6 +2929,100 @@ const GRAHA_REF = {
   Ketu:    { deva: "—",                roman: "N/A",                        mantra: "—", mantraRoman: "N/A" }
 };
 
+/* Per-graha reference attributes taken from the course decks (Sessions 9 & 10
+   panels: Day / Metal / Gemstone / Dhanya / Gothra / Dasavathara / Masa /
+   Stotram / Pushkara). Verified verbatim for Jupiter, Venus and Saturn from the
+   slide panels; the remaining grahas are marked "—" until their session slides
+   are supplied, rather than guessed. */
+const GRAHA_ATTRS = {
+  Sun:     { day:"Sunday",    metal:"Copper", dhanya:"Wheat", gothra:"Kashyapa", avatar:"Rama",
+             masa:"Magha Masa, Shukla Saptami", stotram:"Aditya Hrudayam", gem:"Ruby",
+             transit:"1 month in each rashi" },
+  Moon:    { day:"Monday",    metal:"Lead", dhanya:"Rice", gothra:"Atreya", avatar:"Krishna",
+             masa:"Karthika Masa, Shukla Pournami", stotram:"Soundarya Lahari", gem:"Pearl",
+             transit:"~2.25 days in each rashi" },
+  Mars:    { day:"Tuesday",   metal:"Copper", dhanya:"Toor dhal", gothra:"Bharadwaja", avatar:"Narasimha",
+             masa:"Shravana Masa, Shukla Trayodashi", stotram:"Skanda Sashti Kavacham", gem:"Red Coral" },
+  Mercury: { day:"Wednesday", metal:"—", dhanya:"—", gothra:"Atreya", avatar:"Buddha (Balarama)",
+             masa:"Jyeshta Masa, Krishna Ekadashi", stotram:"—", gem:"Emerald" },
+  Jupiter: { day:"Thursday",  metal:"Gold", dhanya:"Bengal gram", gothra:"Angirasa",
+             avatar:"Vamana", masa:"Vaishaka Masa, Shukla Ekadashi",
+             stotram:"Dakshina Murthy Stotram (parayana)",
+             gem:"Yellow Sapphire (Kanaka Pushyaraga)",
+             portfolio:"Deva Guru (Minister)", tatwa:"Akasha", triguna:"Sathwik", varna:"Brahmana",
+             colour:"Yellow", taste:"Sweet", direction:"North east", tridosha:"Vatha",
+             season:"Hemantha Ritu", gender:"Male", tree:"Peepal (Aswath vruksha), coconut, apple",
+             transit:"1 year in each rashi", pregnancy:"3rd month", wife:"Tara", number:"3" },
+  Venus:   { day:"Friday",    metal:"Silver", dhanya:"Cow gram (Avarebele)", gothra:"Bhargava",
+             avatar:"Parashurama", masa:"Chaitra Masa, Shukla Ekadashi",
+             stotram:"Ashta Lakshmi Stotram", gem:"Diamond",
+             portfolio:"Asura Guru (Shukracharya)", tatwa:"Jala", triguna:"Rajasik", varna:"Brahmin",
+             colour:"Silky white", taste:"Sour", direction:"South east", tridosha:"Kapha",
+             season:"Vasantha Ritu (spring)", gender:"Female", tree:"Fig (Audumbara), white lotus",
+             transit:"25–27 days in each rashi", pregnancy:"1st month", wife:"Sukeerthi", number:"6" },
+  Saturn:  { day:"Saturday",  metal:"Iron", dhanya:"Black Til", gothra:"Kashyapa",
+             avatar:"Koorma (Tortoise)", masa:"Jyeshta Masa, Krishna Paksha Amavasya",
+             stotram:"Rudra Suktam / Hanuman Chalisa", gem:"Blue Sapphire",
+             portfolio:"Servants", tatwa:"Vayu", triguna:"Tamasik", varna:"Sudra",
+             colour:"Dark blue or black", taste:"Astringent", direction:"West", tridosha:"Vatha",
+             season:"Shishira Ritu (winter)", gender:"Eunuch", tree:"Banni tree",
+             transit:"2.5 years (30 months) in each rashi", pregnancy:"6th month",
+             wife:"Jyeshta devi", number:"8" },
+  Rahu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Hessonite (Gomedha)" },
+  Ketu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Cat's Eye (Vaidurya)" }
+};
+
+/* Course "Ready Reckoner" (Session 10): Sanskrit karaka terms + key word. */
+const GRAHA_KARAKA = {
+  Sun:     { karaka:"Atma karaka, Arogya karaka, Pitru karaka", keyword:"Permanent; Vertical" },
+  Moon:    { karaka:"Mano karaka, Matru karaka", keyword:"Change, Container, Nourishment" },
+  Mars:    { karaka:"Shakti karaka, Bratru karaka, Bhoomi karaka", keyword:"Protection" },
+  Mercury: { karaka:"Budhi karaka, Vidya karaka, Matula karaka", keyword:"Connection" },
+  Jupiter: { karaka:"Gnana karaka, Dhana karaka, Putra karaka, Jeeva karaka", keyword:"Auspiciousness" },
+  Venus:   { karaka:"Kalatra karaka, Bhoga karaka, Vahana karaka", keyword:"Pleasant" },
+  Saturn:  { karaka:"Karma karaka, Ayus karaka, Roga karaka, Dukha karaka", keyword:"Paramparic (ancestral / old)" },
+  Rahu:    { karaka:"\u2014", keyword:"\u2014" },
+  Ketu:    { karaka:"\u2014", keyword:"\u2014" }
+};
+
+/* "Tip of the Day" remedies to strengthen a graha (Sessions 9 & 10 decks). */
+const GRAHA_REMEDIES = {
+  Jupiter: ["Donate turmeric in a temple for 8 days.",
+            "Visit temples regularly.",
+            "Serve saints and gurus, and do charity to Brahmins.",
+            "Wear clean yellow clothes on Thursdays.",
+            "Donate yellow items — turmeric, chana dal, bananas, saffron or yellow cloth — to the needy."],
+  Venus:   ["Feed cows on Fridays.",
+            "Men should be clean shaven.",
+            "Keep the kitchen neat and clean.",
+            "Take good care of your wife.",
+            "Respect ladies.",
+            "Keep your house and surroundings neat and clean."],
+  Saturn:  ["Be truthful.",
+            "Keep your promises.",
+            "Respect time and be punctual.",
+            "Fulfil your responsibilities.",
+            "Earn through honest means.",
+            "Avoid harming or exploiting others."]
+};
+const SATURN_GREATEST_REMEDY = "This conduct is considered the greatest remedy for Saturn.";
+
+/* Exaltation / debilitation observations (Session 10 deck). */
+const DIGNITY_OBSERVATIONS = [
+  "A planet's debilitation sign is the 7th from its exaltation sign — exactly 180° from its deep exaltation point.",
+  "The Moon is the only planet whose Moolatrikona sign does not fall in its own sign (MT = Vrishabha, own = Karkataka).",
+  "If a planet is exalted in a sign, another planet is debilitated in that same sign (e.g. Venus is exalted in Meena, where Mercury is debilitated).",
+  "One or another planet is exalted or debilitated in all four Chara rashis: Mesha (Sun exalted, Saturn debilitated), Karkataka (Jupiter exalted, Mars debilitated), Tula (Saturn exalted, Sun debilitated), Makara (Mars exalted, Jupiter debilitated)."
+];
+
+/* Pushkara — Jupiter's transit nourishes one of the 12 sacred rivers (Session 9).
+   "Pushkara" = one who nourishes or purifies. Lasts ~12 days at the start of the
+   transit and ~12 days at the end. */
+const PUSHKARA_RIVERS = {
+  1:"Ganga", 2:"Narmada", 3:"Saraswati", 4:"Yamuna", 5:"Godavari", 6:"Krishna",
+  7:"Kaveri", 8:"Bhima", 9:"Tapti", 10:"Tungabhadra", 11:"Sindhu", 12:"Pranhita"
+};
+
 function renderGrahaReference() {
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const GLYPHS = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃",
@@ -2920,8 +3047,163 @@ function renderGrahaReference() {
     <p class="akshara-note">Aksharas are the sound syllables (varga consonants) attributed to each graha — used in
     naming and in identifying the graha a name resonates with. The Beejakshari is the graha's seed-mantra,
     chanted to strengthen it. Rahu and Ketu (shadow grahas) have no assigned aksharas or beejakshari mantra (N/A).</p>`;
+
+  /* Attribute panel from the course decks (Sessions 9 & 10). */
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Graha Attributes</h4>
+    <table class="planet-table">
+    <thead><tr><th>Graha</th><th>Karaka (Ready Reckoner)</th><th>Key word</th><th>Day</th><th>Metal</th><th>Gemstone</th><th>Dhanya (grain)</th><th>Gothra</th><th>Dasavathara</th><th>Masa</th><th>Stotram</th><th>Transit per rashi</th></tr></thead><tbody>`;
+  for (const p of order) {
+    const a = GRAHA_ATTRS[p] || {};
+    const k = GRAHA_KARAKA[p] || {};
+    html += `<tr>
+      <td><span class="glyph-mini">${GLYPHS[p]}</span><strong>${p}</strong></td>
+      <td>${k.karaka||"—"}</td><td>${k.keyword||"—"}</td>
+      <td>${a.day||"—"}</td><td>${a.metal||"—"}</td><td>${a.gem||"—"}</td>
+      <td>${a.dhanya||"—"}</td><td>${a.gothra||"—"}</td><td>${a.avatar||"—"}</td>
+      <td>${a.masa||"—"}</td><td>${a.stotram||"—"}</td><td>${a.transit||"—"}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>
+    <p class="akshara-note">Attributes as given in the course decks. Entries shown as &ldquo;—&rdquo; are for grahas whose
+    attribute slides have not yet been supplied; they are left blank rather than guessed.</p>`;
+
+  /* Pushkara — live from the current Jupiter transit. */
+  const nowP = new Date();
+  const jdP = julianDay(nowP.getUTCFullYear(), nowP.getUTCMonth()+1, nowP.getUTCDate(), 0);
+  const jupR = rashiOf(computeChart(jdP, "lahiri").sidereal.Jupiter).n;
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Pushkara (Jupiter Transit)</h4>
+    <p><em>Pushkara</em> means &ldquo;one who nourishes or purifies&rdquo;. As Jupiter moves through each rashi it gives
+    the corresponding river its nourishing power, celebrated as Pushkara — generally for 12 days at the beginning of the
+    transit and 12 days at the end.</p>
+    <p>Jupiter is presently in <strong>${getRashi(jupR).sanskrit} (${getRashi(jupR).english})</strong>, so the river in
+    Pushkara is <strong>${PUSHKARA_RIVERS[jupR] || "—"}</strong>.</p>`;
+
+  /* Exaltation / debilitation observations (Session 10). */
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Exaltation &amp; Debilitation — Observations</h4>
+    <ul>${DIGNITY_OBSERVATIONS.map(o=>`<li>${o}</li>`).join("")}</ul>`;
+
+  /* "Tip of the Day" remedies to strengthen a graha. */
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Remedies to Strengthen a Graha</h4>`;
+  for (const p of ["Jupiter","Venus","Saturn"]) {
+    html += `<p style="margin:10px 0 4px;"><strong>${p}</strong></p>
+      <ul>${GRAHA_REMEDIES[p].map(r=>`<li>${r}</li>`).join("")}</ul>`;
+    if (p==="Saturn") html += `<p class="dig-note">${SATURN_GREATEST_REMEDY}</p>`;
+  }
+  html += `<p class="akshara-note">Remedies are given in the course decks for Jupiter, Venus and Saturn; other grahas will be added as their session slides are supplied.</p>`;
   document.getElementById("akshara-body").innerHTML = html;
 }
+
+/* ============================================================
+   SESSION 12 — planet classification, benefic/malefic, Mukkuta
+   validity, retrograde significance, jyotirlinga remedies.
+   ============================================================ */
+const PLANET_APPEARANCE = {
+  Sun:"Luminary (Mandala graha)", Moon:"Luminary (Mandala graha)",
+  Mercury:"Tara graha", Venus:"Tara graha", Mars:"Tara graha",
+  Jupiter:"Tara graha", Saturn:"Tara graha",
+  Rahu:"Chaya graha (shadow)", Ketu:"Chaya graha (shadow)"
+};
+const PLANET_REVOLUTION = {
+  Sun:"12 months", Moon:"27 days", Mercury:"88 days", Venus:"225 days",
+  Mars:"687 days", Jupiter:"12 years", Saturn:"30 years", Rahu:"—", Ketu:"—"
+};
+const BENEFIC_FIXED12 = new Set(["Jupiter","Venus"]);
+const MALEFIC_FIXED12 = new Set(["Sun","Mars","Saturn","Rahu","Ketu"]);
+const RETRO_GENERAL12 = "A retrograde (Vakri) planet marks a signification the soul ignored in a past life; it now repeats life-lessons until they are mastered. Retrogrades are STRONGER (the planet is nearer the Earth) and give unconventional results — in bits and pieces, in installments (to and fro) — with an adamant nature in the planet's significations. Sun and Moon never retrograde; Rahu and Ketu always do.";
+const RETRO_TRANSIT_CAUTION12 = "During a transit retrograde, review, revise, reconsider and revisit the past before acting. E.g. when transit Mercury is retrograde, do not sign a contract or document, and avoid buying a phone or computer; back up your digital files.";
+const RETRO_DIGNITY_RULE12 = "A planet retrograde in its EXALTATION sign loses some power to help; retrograde in its DEBILITATION sign it gains power — a form of Neecha Bhanga (Raja Yoga) that cancels the debilitation.";
+const RETRO_EFFECTS12 = {
+  Mars:"Great power the native may not know how to use; watch the metabolism; unconventional logic; the lesson is self-control and channelling energy, not aggression.",
+  Mercury:"Speaks too much or too little; brilliant but struggles to express, and writes very neatly; the lesson is to listen first and then communicate clearly.",
+  Jupiter:"Questions every belief and never knows when to stop advising; must study deeply to turn knowledge into genuine wisdom; may undervalue gurus.",
+  Venus:"Chooses unusual alliances and finds it hard to express love; the lesson is to become emotionally complete and to love oneself first.",
+  Saturn:"Either a compulsive workaholic or work-averse; success comes slowly but is very stable; the lesson is patience, discipline and earned responsibility."
+};
+const SAPTA_CHIRANJEEVI12 = "Ashwatthama, Bali, Vyasa, Hanuman, Vibhishana, Kripacharya, Parashurama";
+const GRAHA_ORDER12 = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+
+function classifyBenefics12(planetsByRashi, moonShukla){
+  const byR = {};
+  for (const [p, rn] of Object.entries(planetsByRashi)) { (byR[rn] = byR[rn] || []).push(p); }
+  const out = {};
+  for (const p of GRAHA_ORDER12) {
+    const rn = planetsByRashi[p];
+    if (BENEFIC_FIXED12.has(p)) out[p] = ["Benefic","natural benefic (Shubha)"];
+    else if (MALEFIC_FIXED12.has(p)) out[p] = ["Malefic","natural malefic (Papa)"];
+    else if (p === "Moon") out[p] = moonShukla ? ["Benefic","waxing Moon — Shukla Paksha"] : ["Malefic","waning Moon — Krishna Paksha"];
+    else if (p === "Mercury") {
+      const comp = (byR[rn] || []).filter(x => x !== "Mercury");
+      const mal = comp.filter(c => MALEFIC_FIXED12.has(c) || (c === "Moon" && !moonShukla));
+      out[p] = mal.length ? ["Malefic","conjunct malefic(s): " + mal.join(", ")]
+             : comp.length ? ["Benefic","conjunct benefic(s): " + comp.join(", ")]
+             : ["Benefic","unassociated — benefic nature"];
+    }
+  }
+  return out;
+}
+function exaltRashiOf12(planet){ for (let rn=1; rn<=12; rn++){ if (RASHI_DIGNITY[rn].exalted.includes(planet)) return rn; } return null; }
+
+function renderSession12(sidereal, planetsByRashi, retroSet){
+  retroSet = retroSet || new Set();
+  const tithi = computeTithi(sidereal.Sun, sidereal.Moon);
+  const moonShukla = tithi.tithiNum <= 15;
+  const nat = classifyBenefics12(planetsByRashi, moonShukla);
+  let html = `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Planet Classification (Session 12)</h4>
+    <table class="planet-table"><thead><tr><th>Graha</th><th>Appearance</th><th>Benefic / Malefic</th><th>Revolution</th><th>Basis</th></tr></thead><tbody>`;
+  for (const p of GRAHA_ORDER12) {
+    const [n, reason] = nat[p] || ["—",""];
+    html += `<tr><td><strong>${p}</strong></td><td>${PLANET_APPEARANCE[p]}</td><td>${n}</td><td>${PLANET_REVOLUTION[p]}</td><td>${reason}</td></tr>`;
+  }
+  html += `</tbody></table>`;
+  const sep = (a,b) => { let d = Math.abs(a-b) % 12; return Math.min(d, 12-d); };
+  const sunR = rashiOf(sidereal.Sun).n, merR = rashiOf(sidereal.Mercury).n, venR = rashiOf(sidereal.Venus).n;
+  const ms = sep(sunR, merR), vs = sep(sunR, venR), ok = ms <= 1 && vs <= 2;
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Horoscope Validity — Mukkuta Grahas</h4>
+    <p>Mercury is ${ms} sign(s) from the Sun (max 1) → ${ms<=1?"OK":"INVALID"}; Venus is ${vs} sign(s) from the Sun (max 2) → ${vs<=2?"OK":"INVALID"}.</p>
+    <p class="dig-note">${ok ? "Sun–Mercury–Venus spacing is valid." : "INVALID spacing — Mercury must be within 1 sign and Venus within 2 signs of the Sun; re-check the birth data."}</p>`;
+  const retros = GRAHA_ORDER12.filter(p => retroSet.has(p) && RETRO_EFFECTS12[p]);
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Retrograde (Vakri) — Karmic Significance</h4><p>${RETRO_GENERAL12}</p>`;
+  if (retros.length) {
+    html += `<ul>`;
+    for (const p of retros) {
+      const dg = planetDignity(p, planetsByRashi[p], null);
+      let extra = "";
+      if (dg.flag === "debilitated") extra = " <em>→ Neecha Bhanga Raja Yoga (debilitation cancelled, gains power).</em>";
+      else if (dg.flag === "exalted") extra = " <em>→ retrograde in exaltation loses some power to help.</em>";
+      html += `<li><strong>${p} (℞)</strong>: ${RETRO_EFFECTS12[p]}${extra}</li>`;
+    }
+    html += `</ul><p class="dig-note">${RETRO_DIGNITY_RULE12}</p>`;
+  } else {
+    html += `<p class="dig-note">No retrograde star-planets in this chart (Rahu/Ketu are always retrograde).</p>`;
+  }
+  html += `<p class="dig-note">${RETRO_TRANSIT_CAUTION12}</p>`;
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Jyotirlinga Remedies (Session 12)</h4>`;
+  let any = false, list = "";
+  for (const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]) {
+    const dg = planetDignity(p, planetsByRashi[p], null);
+    if (dg.flag === "debilitated") {
+      const exr = exaltRashiOf12(p);
+      if (exr) { any = true; list += `<li><strong>${p}</strong> is debilitated → visit <strong>${RASHI[exr-1].jyothirlinga}</strong> (jyotirlinga of ${getRashi(exr).english}, where ${p} is exalted).</li>`; }
+    }
+  }
+  html += any ? `<ul>${list}</ul>` : `<p>No debilitated planets — no strengthening jyotirlinga visit indicated.</p>`;
+  const moonNak = nakshatraOf(sidereal.Moon);
+  const janmaN = rashiOf(sidereal.Moon).n;
+  html += `<p>By your Janma Rashi (${getRashi(janmaN).english}), your jyotirlinga is <strong>${RASHI[janmaN-1].jyothirlinga}</strong>. Janma Nakshatra: <strong>${moonNak.name}</strong> — the Sanatana birthday falls when the Moon returns to ${moonNak.name} each year.</p>`;
+  html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Birthday — the Sanatana Way (Session 12)</h4><ul>
+    <li>Celebrate according to your Janma Nakshatra (when the Moon returns to ${moonNak.name}).</li>
+    <li>Take a head bath in the morning and wear new clothes.</li>
+    <li>Light a lamp in the pooja room and pray to your Kula Devata.</li>
+    <li>Chant the names of the Sapta Chiranjeevis and pray for a healthy, long life.</li>
+    <li>Facing East, drink unboiled (raw) milk with a little black til (sesame) and jaggery.</li>
+    <li>Take the blessings of your elders and parents; feed cows and do some charity.</li>
+    <li>Never cut the cake at midnight — do it in the morning.</li>
+    <li>Never blow out a candle — light a lamp instead (we never blow out Agni).</li>
+  </ul><p class="akshara-note">Sapta Chiranjeevi: ${SAPTA_CHIRANJEEVI12}.</p>`;
+  const el = document.getElementById("akshara-body");
+  if (el) el.insertAdjacentHTML("beforeend", html);
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -3087,9 +3369,13 @@ function generate() {
   renderSadeSatiSection(moonRashiInfo.n, ayanType);
   renderPunarphooSection(moonRashiInfo.n, rashiOf(chart.sidereal.Saturn).n,
                          sunRashiInfo.n, rashiOf(chart.sidereal.Mars).n,
-                         (document.getElementById("f-gender") || {}).value || "");
+                         (document.getElementById("f-gender") || {}).value || "",
+                         planetsByRashi,
+                         nakshatraOf(chart.sidereal.Moon).lord,
+                         nakshatraOf(chart.sidereal.Saturn).lord);
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
   renderGrahaReference();
+  renderSession12(chart.sidereal, planetsByRashi, retroSet);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
   document.getElementById("report").classList.add("show");
