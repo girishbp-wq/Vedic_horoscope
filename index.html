@@ -2631,7 +2631,8 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
 const SPECIAL_ASPECTS = {
   Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
   Mars:[4,7,8], Jupiter:[5,7,9], Saturn:[3,7,10],
-  Rahu:[5,7,9], Ketu:[5,7,9]
+  // Session 13: Rahu & Ketu aspect 2nd/5th/9th ANTI-CLOCKWISE (no 7th) = forward houses 12,9,5
+  Rahu:[5,9,12], Ketu:[5,9,12]
 };
 const GLYPH9 = { Sun:"☉",Moon:"☾",Mars:"♂",Mercury:"☿",Jupiter:"♃",Venus:"♀",Saturn:"♄",Rahu:"☊",Ketu:"☋" };
 
@@ -2986,8 +2987,8 @@ const GRAHA_ATTRS = {
              season:"Shishira Ritu (winter)", gender:"Eunuch", tree:"Banni tree",
              transit:"2.5 years (30 months) in each rashi", pregnancy:"6th month",
              wife:"Jyeshta devi", number:"8" },
-  Rahu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Hessonite (Gomedha)" },
-  Ketu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Cat's Eye (Vaidurya)" }
+  Rahu:    { day:"—", metal:"Graphite (black lead)", dhanya:"Urad dal", gothra:"Paitheenasa", avatar:"Varaha (Boar)", masa:"Bhadrapada Masa, Shukla Poornami", stotram:"Durga Kavacham", gem:"Hessonite (Gomedha)", transit:"1.5 years in each rashi" },
+  Ketu:    { day:"—", metal:"Mica", dhanya:"Horse gram", gothra:"—", avatar:"—", masa:"—", stotram:"Ganesha Stotram", gem:"Cat's Eye (Vaidurya)", transit:"1.5 years in each rashi" }
 };
 
 /* Course "Ready Reckoner" (Session 10): Sanskrit karaka terms + key word. */
@@ -2999,8 +3000,8 @@ const GRAHA_KARAKA = {
   Jupiter: { karaka:"Gnana karaka, Dhana karaka, Putra karaka, Jeeva karaka", keyword:"Auspiciousness" },
   Venus:   { karaka:"Kalatra karaka, Bhoga karaka, Vahana karaka", keyword:"Pleasant" },
   Saturn:  { karaka:"Karma karaka, Ayus karaka, Roga karaka, Dukha karaka", keyword:"Paramparic (ancestral / old)" },
-  Rahu:    { karaka:"\u2014", keyword:"\u2014" },
-  Ketu:    { karaka:"\u2014", keyword:"\u2014" }
+  Rahu:    { karaka:"Shanivat Rahu (behaves like Saturn)", keyword:"Maya, materialistic" },
+  Ketu:    { karaka:"Kujavat Ketu (behaves like Mars); Moksha karaka", keyword:"Separation, inwards" }
 };
 
 /* "Tip of the Day" remedies to strengthen a graha (Sessions 9 & 10 decks). */
@@ -3222,6 +3223,60 @@ function renderSession12(sidereal, planetsByRashi, retroSet){
   if (el) el.insertAdjacentHTML("beforeend", html);
 }
 
+
+/* ============================================================
+   SESSION 13 — Rahu & Ketu (shadow grahas): nature, aspects, contrast
+   ============================================================ */
+const RK_TRAITS = [
+  "Both are natural malefics (Papa grahas) and shadow grahas — nodes, not solid planets.",
+  "Always 180° apart, in exactly opposite rashis, and always move together as a pair.",
+  "Always retrograde — moving anti-clockwise, from 30° down to 0° of a rashi.",
+  "They own no rashi; they treat whichever rashi they occupy as their own house.",
+  "They aspect the 2nd, 5th and 9th houses counted ANTI-CLOCKWISE — no 7th aspect.",
+  "If Rahu connects to a planet (aspect/conjunction), Ketu will not connect to that same planet.",
+  "They do NOT harm a retrograde planet they are connected with (result turns favourable).",
+  "Shanivat Rahu — behaves like Saturn; Kujavat Ketu — behaves like Mars."
+];
+const RK_CONTRAST = [
+  ["Nature","Head of the snake — it bites","Tail of the snake — it ties"],
+  ["Orientation","Materialistic","Spiritualistic"],
+  ["Scale","Big / expansionist / abundance","Small / contracting / scarcity"],
+  ["Means","Illegal, unethical (scams, gambling)","Legal (through court) and ethical"],
+  ["Harm","Physical damage, pain, sickness (undiagnosable)","Mental stress; detachment"],
+  ["Effect","Fear, illusion (Maya), black magic","Detachment (vairagya); fault-finder"],
+  ["Ancestry","Paternal grandfather / ancestors","Maternal grandfather"],
+  ["Religion","Muslims, Sikhs","Christians, Buddhists, Jains"],
+  ["Substances","Poisons, chemicals, alcohol","Threads, ropes, wires, pipes, nets"],
+  ["Tech","X-ray, electronics, photography","Wi-Fi, astrology, intuition"],
+  ["Change","Sudden rise or fall","Gradual rise or fall"],
+  ["Behaves like","Shanivat Rahu — like Saturn","Kujavat Ketu — like Mars"],
+  ["Deity","Goddess Durga","Lord Ganesha"]
+];
+function rkAspectTargets(rahuN){
+  const tgt=(f,h)=>((f-1+h-1)%12)+1;
+  const ketuN=((rahuN+6-1)%12)+1;
+  return {
+    rahu:[12,9,5].map(h=>getRashi(tgt(rahuN,h)).english),
+    ketu:[12,9,5].map(h=>getRashi(tgt(ketuN,h)).english)
+  };
+}
+function renderSession13(sidereal){
+  const rahuN=rashiOf(sidereal.Rahu).n, ketuN=rashiOf(sidereal.Ketu).n;
+  const at=rkAspectTargets(rahuN);
+  let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu &amp; Ketu — the Shadow Grahas (Session 13)</h4>
+    <p><b>Rahu</b> in ${getRashi(rahuN).english}, <b>Ketu</b> in ${getRashi(ketuN).english} — always opposite, always retrograde.</p>
+    <p class="dig-note">They aspect the 2nd, 5th &amp; 9th houses counted <b>anti-clockwise</b> (no 7th aspect). &nbsp;
+      Rahu aspects: <b>${at.rahu.join(", ")}</b>. Ketu aspects: <b>${at.ketu.join(", ")}</b>.</p>
+    <ul>${RK_TRAITS.map(t=>`<li>${t}</li>`).join("")}</ul>
+    <div class="table-scroll"><table class="planet-table attr-table">
+      <thead><tr><th>Aspect</th><th>Rahu</th><th>Ketu</th></tr></thead><tbody>
+      ${RK_CONTRAST.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}
+      </tbody></table></div>
+    <p class="akshara-note">Mythology: after the Samudra Manthana the asura Svarabhanu drank the amrutha; Sun and Moon exposed him and Vishnu (as Mohini) beheaded him — the head became Rahu, the body Ketu, which is why the nodes eclipse the Sun and Moon.</p>`;
+  const el=document.getElementById("akshara-body");
+  if(el) el.insertAdjacentHTML("beforeend", html);
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -3394,6 +3449,7 @@ function generate() {
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
   renderGrahaReference();
   renderSession12(chart.sidereal, planetsByRashi, retroSet);
+  renderSession13(chart.sidereal);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
   document.getElementById("report").classList.add("show");
