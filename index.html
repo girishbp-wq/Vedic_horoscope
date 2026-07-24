@@ -2662,10 +2662,13 @@ const KARAKATWAS = {
 };
 
 /* Build the plain-English influence reading for an aspect. */
+const RK_DISP = {12:2, 9:5, 5:9};
+function dispAspHouse(planet, h){ return (planet==="Rahu"||planet==="Ketu") ? (RK_DISP[h]||h) : h; }
 function aspectReading(aspecting, aspected, house){
   const A = KARAKATWAS[aspecting], B = KARAKATWAS[aspected];
   if(!A || !B) return "";
-  return `<strong>${aspecting}</strong> (${A.qualities}) casts its ${ord(house)} aspect on <strong>${aspected}</strong> (${B.signifies}) — so ${B.signifies} come under the influence of ${A.qualities}.`;
+  const anti = (aspecting==="Rahu"||aspecting==="Ketu") ? " (anti-clockwise)" : "";
+  return `<strong>${aspecting}</strong> (${A.qualities}) casts its ${ord(house)}${anti} aspect on <strong>${aspected}</strong> (${B.signifies}) — so ${B.signifies} come under the influence of ${A.qualities}.`;
 }
 
 function aspectedRashi(fromRashi, aspectHouse){ return ((fromRashi-1)+(aspectHouse-1))%12+1; }
@@ -2675,18 +2678,19 @@ function renderAspectsSection(planetsByRashi){
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const aspects={}, inRashi={};
   for(const p of order){
-    aspects[p]=SPECIAL_ASPECTS[p].map(h=>({house:h, rashi:aspectedRashi(planetsByRashi[p],h)}));
+    aspects[p]=SPECIAL_ASPECTS[p].map(h=>({house:h, disp:dispAspHouse(p,h), rashi:aspectedRashi(planetsByRashi[p],h)}));
     (inRashi[planetsByRashi[p]] = inRashi[planetsByRashi[p]] || []).push(p);
   }
   let t=`<thead><tr><th>Planet (Rashi)</th><th>Special Aspects</th><th>Aspected Rashis</th><th>Planets Aspected</th></tr></thead><tbody>`;
   for(const p of order){
     const asp=aspects[p];
-    const aspRashiStr=asp.map(a=>`${ord(a.house)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
+    const aspRashiStr=asp.map(a=>`${ord(a.disp)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
     const hit=[];
-    for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${ord(a.house)})`);
+    for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${ord(a.disp)})`);
     const jupTag = p==="Jupiter" ? ` <span class="section-flag flag-exalted flag-deep">Aspect &gt; placement</span>` : "";
+    const aspListStr = (p==="Rahu"||p==="Ketu") ? "2, 5, 9 (anti-clockwise)" : SPECIAL_ASPECTS[p].join(", ");
     t+=`<tr><td><span class="glyph-mini">${GLYPH9[p]}</span><strong>${p}</strong> · ${getRashi(planetsByRashi[p]).sanskrit}${jupTag}</td>
-      <td>${SPECIAL_ASPECTS[p].join(", ")}</td><td>${aspRashiStr}</td>
+      <td>${aspListStr}</td><td>${aspRashiStr}</td>
       <td>${hit.length?hit.join(", "):"—"}</td></tr>`;
   }
   t+=`</tbody>`;
@@ -2700,7 +2704,7 @@ function renderAspectsSection(planetsByRashi){
     for(const a of aspects[p]){
       for(const q of (inRashi[a.rashi]||[])){
         if(q===p) continue;
-        const txt = aspectReading(p, q, a.house);
+        const txt = aspectReading(p, q, a.disp);
         if(txt) readings.push({ p, html: txt });
       }
     }
@@ -2792,7 +2796,8 @@ function renderSadeSatiSection(moonRashiNum, ayanType){
 /* Session 11 — Saturn combinations (Punarphoo, Sun–Saturn, Saturn–Mars) + remedies.
    Whole-sign special aspects: Saturn 3/7/10, Mars 4/7/8, Jupiter 5/7/9, others 7. */
 const PLANET_ASPECTS = { Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
-                         Saturn:[3,7,10], Mars:[4,7,8], Jupiter:[5,7,9] };
+                         Saturn:[3,7,10], Mars:[4,7,8], Jupiter:[5,7,9],
+                         Rahu:[5,9,12], Ketu:[5,9,12] };
 function grahaAspects(planet, fromR, toR){
   return (PLANET_ASPECTS[planet]||[7]).includes(houseFromLagna(fromR, toR));
 }
@@ -3266,7 +3271,7 @@ function renderSession13(sidereal){
   let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu &amp; Ketu — the Shadow Grahas (Session 13)</h4>
     <p><b>Rahu</b> in ${getRashi(rahuN).english}, <b>Ketu</b> in ${getRashi(ketuN).english} — always opposite, always retrograde.</p>
     <p class="dig-note">They aspect the 2nd, 5th &amp; 9th houses counted <b>anti-clockwise</b> (no 7th aspect). &nbsp;
-      Rahu aspects: <b>${at.rahu.join(", ")}</b>. Ketu aspects: <b>${at.ketu.join(", ")}</b>.</p>
+      Rahu aspects: <b>2nd → ${at.rahu[0]}, 5th → ${at.rahu[1]}, 9th → ${at.rahu[2]}</b>. Ketu aspects: <b>2nd → ${at.ketu[0]}, 5th → ${at.ketu[1]}, 9th → ${at.ketu[2]}</b>.</p>
     <ul>${RK_TRAITS.map(t=>`<li>${t}</li>`).join("")}</ul>
     <div class="table-scroll"><table class="planet-table attr-table">
       <thead><tr><th>Aspect</th><th>Rahu</th><th>Ketu</th></tr></thead><tbody>
