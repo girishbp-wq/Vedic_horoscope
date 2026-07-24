@@ -3302,6 +3302,37 @@ function renderFullKarakatwas(){
   if(el) el.insertAdjacentHTML("beforeend", html);
 }
 
+
+/* ============================================================
+   COMBUSTION (Astangata) effects — Session 6
+   ============================================================ */
+const COMBUSTION_SUN_NOTE = "Sun = Ego. A combust planet loses its lustre and strength, and its significations get \u2018filled with ego\u2019.";
+const COMBUSTION_EFFECTS = {
+  Moon:["Mind","The mind is filled with ego, so the person cannot think with clarity."],
+  Mars:["Stamina","Makes the person feel they can beat anyone in the world, in a real fight or with words."],
+  Mercury:["Intellect","The person feels he is the most intelligent."],
+  Jupiter:["Wisdom","The person feels he knows everything — that there is no need of a Guru, God or any guidance."],
+  Venus:["Comforts","A lot of unnecessary expenditure on comforts, sexual pleasures, love and entertainment."],
+  Saturn:["Work","The person postpones things, thinking they can finish just in time even if they start late (procrastination)."]
+};
+function renderCombustion(sidereal){
+  const order=["Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+  const combust=order.filter(p=>isCombust(p, sidereal));
+  let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Combustion (Astangata) — Session 6</h4><p class="dig-note">${COMBUSTION_SUN_NOTE}</p>`;
+  if(combust.length){
+    html+=`<ul>`;
+    for(const p of combust){
+      const g=sunGap(p,sidereal), e=COMBUSTION_EFFECTS[p];
+      html+=`<li><strong>${p}</strong> is COMBUST (${g.toFixed(1)}° from the Sun) — ${p} = ${e[0]}: ${e[1]}</li>`;
+    }
+    html+=`</ul>`;
+  } else {
+    html+=`<p>No graha is combust (none within 5° of the Sun).</p>`;
+  }
+  const el=document.getElementById("akshara-body");
+  if(el) el.insertAdjacentHTML("beforeend", html);
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -3476,6 +3507,7 @@ function generate() {
   renderSession12(chart.sidereal, planetsByRashi, retroSet);
   renderSession13(chart.sidereal);
   renderFullKarakatwas();
+  renderCombustion(chart.sidereal);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
   document.getElementById("report").classList.add("show");
