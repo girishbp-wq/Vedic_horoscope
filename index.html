@@ -2063,7 +2063,8 @@ function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
 }
 
 /* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
-function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
+function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
+  retroSet = retroSet || new Set();
   // Standard North-Indian layout positions (cx, cy) for houses 1-12.
   // The diamond chart has 4 outer triangles and 4 inner diamonds, arranged so:
   //   house 1 = top center (Lagna)
@@ -2096,7 +2097,7 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
   for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
     if (planet === "_Lagna") continue;
     const h = houseFromLagna(lagnaRashiNum, rashiNum);
-    planetsByHouse[h].push(PLANET_ABBR[planet] || planet);
+    planetsByHouse[h].push((PLANET_ABBR[planet] || planet) + (retroSet.has(planet) ? " (R)" : ""));
   }
 
   // Rashi number for each house
@@ -2171,7 +2172,8 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
        Row 2:          Kumbha(11)  [center]   [center]      Karka(4)
        Row 3:          Makara(10)  [center]   [center]      Simha(5)
        Bottom row L→R: Dhanus(9)  Vrischika(8) Tula(7)      Kanya(6)                       */
-function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity) {
+function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, retroSet) {
+  retroSet = retroSet || new Set();
   // Map rashi number -> grid cell index (0..15), reading row-major left-to-right top-to-bottom.
   // Centre cells (5, 6, 9, 10) are reserved for the title block.
   const RASHI_TO_CELL = {
@@ -2195,7 +2197,7 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     let cls = "";
     if (dignity === "Exalted") cls = "exalted";
     else if (dignity === "Debilitated") cls = "debilitated";
-    planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls });
+    planetsByRashiList[rashiNum].push({ abbr: (PLANET_ABBR[planet] || planet) + (retroSet.has(planet) ? " (R)" : ""), cls });
   }
 
   // Build the grid
@@ -3482,13 +3484,13 @@ function generate() {
     planetsByRashi[p] = rNum;
     planetsWithDignity[p] = planetDignity(p, rNum).label;
   }
-  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi);
-  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity);
+  const retroSet = retrogradeSet(JD, ayanType);
+  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, retroSet);
+  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity, retroSet);
 
   renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
   renderTithiSection(chart.sidereal);
-  const retroSet = retrogradeSet(JD, ayanType);
   renderPlanetTable(chart.sidereal, lagnaRashiInfo.n, retroSet);
   renderAspectsSection(planetsByRashi);
   renderDistributions(chart.sidereal);
