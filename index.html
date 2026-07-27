@@ -2534,6 +2534,7 @@ function renderTithiSection(sidereal) {
   const ayana = [10,11,12,1,2,3].includes(sunR) ? "Uttarayana (northward course)" : "Dakshinayana (southward course)";
   const tkv = [
     ["Ayana (born in)",           ayana],
+    ["Solar month (Masa)",        getRashi(sunR).sanskrit + " Masa"],
     ["Sun longitude (sidereal)",  `${sidereal.Sun.toFixed(2)}°`],
     ["Moon longitude (sidereal)", `${sidereal.Moon.toFixed(2)}°`],
     ["Moon − Sun separation",     `${tithi.sep.toFixed(2)}°`],
