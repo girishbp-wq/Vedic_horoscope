@@ -686,6 +686,11 @@ details.section[open] > summary::after { content: "−"; }
 }
 @keyframes spin2 { to { transform: rotate(360deg); } }
 
+.report-tabs { display:flex; gap:8px; margin:8px 0 20px; }
+.rtab { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.15em; text-transform:uppercase; padding:8px 18px; border:1px solid var(--gold); border-radius:999px; color:var(--maroon); background:transparent; cursor:pointer; }
+.rtab.active { background:var(--maroon); color:#fff; border-color:var(--maroon); }
+.rtab.no-print { }
+
 /* Wide attribute / classification tables — compact + horizontally scrollable */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; max-width: 100%; }
 .attr-table { font-size: 12px; }
@@ -918,6 +923,12 @@ details.section[open] > summary::after { content: "−"; }
         </div>
       </div>
 
+      <div class="report-tabs no-print">
+        <button class="rtab active" id="rtab-birth" type="button">Birth Chart</button>
+        <button class="rtab" id="rtab-transit" type="button">Transit Chart</button>
+      </div>
+
+      <div id="birthPane">
       <div class="summary-strip" id="summary-strip"></div>
 
       <details class="section" open>
@@ -1094,6 +1105,31 @@ details.section[open] > summary::after { content: "−"; }
         </summary>
         <div class="section-body" id="akshara-body"></div>
       </details>
+
+      </div><!-- /birthPane -->
+
+      <div id="transitPane" style="display:none;">
+        <div class="no-print" style="display:flex;gap:12px;align-items:center;margin:4px 0 16px;flex-wrap:wrap;">
+          <label style="font-size:13px;color:var(--muted);">Transit date&nbsp;
+            <input type="date" id="transit-date" style="padding:6px 8px;border:1px solid var(--gold);border-radius:6px;"></label>
+          <button class="btn btn-ghost" id="btn-transit" type="button">Update transit</button>
+        </div>
+        <div class="report-meta" id="transit-meta"></div>
+        <div class="dual-chart-wrap" style="margin-top:12px;">
+          <div class="chart-panel">
+            <h4 class="chart-panel-title">South-Indian Style · Transit</h4>
+            <div class="chart-panel-sub">Rāśis fixed · natal Lagna marked · transit planets by sign</div>
+            <div id="transit-chartSouth"></div>
+          </div>
+          <div class="chart-panel">
+            <h4 class="chart-panel-title">Transit Positions (Gochara)</h4>
+            <div class="chart-panel-sub">Degree · nakshatra · house from natal Lagna / Moon</div>
+            <div class="table-scroll"><table class="planet-table attr-table" id="transit-positions"></table></div>
+          </div>
+        </div>
+        <h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Transit → Natal Aspects (Vedic drishti)</h4>
+        <div class="narrative" id="transit-aspects"></div>
+      </div>
 
       <div class="report-footer">
         <div>Drawn from the classifications of <em>Janma Lagna</em>, <em>Janma Rāśi</em>, the Tatwas and the Trigunas — as preserved in the classical Phalita Jyotisha tradition.</div>
@@ -2172,7 +2208,8 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
        Row 2:          Kumbha(11)  [center]   [center]      Karka(4)
        Row 3:          Makara(10)  [center]   [center]      Simha(5)
        Bottom row L→R: Dhanus(9)  Vrischika(8) Tula(7)      Kanya(6)                       */
-function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, retroSet) {
+function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, retroSet, targetId) {
+  targetId = targetId || "chartSouth";
   retroSet = retroSet || new Set();
   // Map rashi number -> grid cell index (0..15), reading row-major left-to-right top-to-bottom.
   // Centre cells (5, 6, 9, 10) are reserved for the title block.
@@ -2247,7 +2284,7 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
   }
   html += `</div>`;
 
-  document.getElementById("chartSouth").innerHTML = html;
+  document.getElementById(targetId).innerHTML = html;
 }
 
 /* Render Lagna section */
@@ -3378,6 +3415,80 @@ function renderRashiClassifications(planetsByRashi, lagnaN){
   if(el) el.insertAdjacentHTML("beforeend", html);
 }
 
+
+/* ============================================================
+   TRANSIT (Gochara) tab — transit chart + transit→natal Vedic aspects
+   ============================================================ */
+function renderTransit(dateStr){
+  if(!currentChart || !currentChart.natalPBR) return;
+  const natalPBR = currentChart.natalPBR, lagnaN = currentChart.lagnaN,
+        moonN = currentChart.moonN, ayanType = currentChart.ayanType;
+  let y,m,d;
+  if(dateStr){ const p=dateStr.split("-").map(Number); y=p[0]; m=p[1]; d=p[2]; }
+  else { const t=new Date(); y=t.getFullYear(); m=t.getMonth()+1; d=t.getDate(); }
+  // For TODAY use the live current instant ("now"); for any other date use 12:00 UT.
+  const nowD = new Date();
+  const isToday = (y===nowD.getFullYear() && m===nowD.getMonth()+1 && d===nowD.getDate());
+  let jd, timeLabel;
+  if(isToday){
+    const utH = nowD.getUTCHours() + nowD.getUTCMinutes()/60 + nowD.getUTCSeconds()/3600;
+    jd = julianDay(nowD.getUTCFullYear(), nowD.getUTCMonth()+1, nowD.getUTCDate(), utH);
+    timeLabel = "now, " + String(nowD.getUTCHours()).padStart(2,"0")+":"+String(nowD.getUTCMinutes()).padStart(2,"0")+" UT";
+  } else {
+    jd = julianDay(y,m,d,12);
+    timeLabel = "12:00 UT";
+  }
+  const trSid = computeChart(jd, ayanType).sidereal;
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const trPBR = {}; for(const p of order) trPBR[p] = rashiOf(trSid[p]).n;
+  const trRetro = retrogradeSet(jd, ayanType);
+  renderSouthIndianChart(lagnaN, trPBR, {}, trRetro, "transit-chartSouth");
+  const pad=n=>String(n).padStart(2,"0");
+  document.getElementById("transit-meta").innerHTML =
+    `Transit for <strong>${y}-${pad(m)}-${pad(d)}</strong> (${timeLabel}) · sidereal ${ayanType} · built-in ephemeris. `+
+    `Houses are counted from the natal Lagna (${getRashi(lagnaN).sanskrit}) and the natal Moon (${getRashi(moonN).sanskrit}).`;
+
+  // positions table
+  let pt=`<thead><tr><th>Graha</th><th>Rashi</th><th>Degree</th><th>Nakshatra</th><th>H · Lagna</th><th>H · Moon</th><th>R</th></tr></thead><tbody>`;
+  for(const p of order){
+    const rn=trPBR[p], nk=nakshatraOf(trSid[p]);
+    pt+=`<tr><td><strong>${p}</strong></td><td>${getRashi(rn).english}</td><td>${fmtDeg(rashiOf(trSid[p]).deg)}</td>`+
+        `<td>${nk.name} (${nk.pada})</td><td>${houseFromLagna(lagnaN,rn)}</td><td>${houseFromLagna(moonN,rn)}</td>`+
+        `<td>${trRetro.has(p)?"R":""}</td></tr>`;
+  }
+  pt+=`</tbody>`;
+  document.getElementById("transit-positions").innerHTML=pt;
+
+  // transit → natal Vedic aspects
+  const rows=[];
+  for(const t of order){
+    for(const h of (SPECIAL_ASPECTS[t]||[7])){
+      const tgt=aspectedRashi(trPBR[t], h);
+      const disp=dispAspHouse(t, h);
+      const anti=(t==="Rahu"||t==="Ketu")?" anti-clockwise":"";
+      for(const n of order){
+        if(natalPBR[n]===tgt){
+          rows.push({t, jup:t==="Jupiter",
+            html:`Transit <strong>${t}</strong> casts its ${ord(disp)}${anti} aspect on natal <strong>${n}</strong> (${getRashi(tgt).english}).`});
+        }
+      }
+    }
+  }
+  rows.sort((a,b)=>(a.jup?0:1)-(b.jup?0:1));
+  document.getElementById("transit-aspects").innerHTML = rows.length
+    ? `<ul>${rows.map(r=>`<li${r.jup?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
+    : `<p>No transit planet currently aspects a natal planet.</p>`;
+}
+function showReportTab(which){
+  const b=document.getElementById("birthPane"), t=document.getElementById("transitPane");
+  if(b) b.style.display = which==="transit"?"none":"";
+  if(t) t.style.display = which==="transit"?"":"none";
+  const rb=document.getElementById("rtab-birth"), rt=document.getElementById("rtab-transit");
+  if(rb) rb.classList.toggle("active", which!=="transit");
+  if(rt) rt.classList.toggle("active", which==="transit");
+  if(which==="transit"){ const td=document.getElementById("transit-date"); renderTransit(td?td.value:null); }
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -3555,9 +3666,12 @@ function generate() {
   renderCombustion(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
 
-  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
+  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
+    natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
   document.getElementById("report").classList.add("show");
   document.getElementById("btn-print").disabled = false;
+  (function(){ const t=new Date(); const iso=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+    const td=document.getElementById("transit-date"); if(td && !td.value) td.value=iso; showReportTab("birth"); })();
 
   setTimeout(() => {
     document.getElementById("report").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3668,6 +3782,10 @@ document.getElementById("btn-manual").addEventListener("click", () => {
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 document.getElementById("btn-generate").addEventListener("click", generate);
+document.getElementById("rtab-birth").addEventListener("click", ()=>showReportTab("birth"));
+document.getElementById("rtab-transit").addEventListener("click", ()=>showReportTab("transit"));
+document.getElementById("btn-transit").addEventListener("click", ()=>renderTransit(document.getElementById("transit-date").value));
+document.getElementById("transit-date").addEventListener("change", ()=>renderTransit(document.getElementById("transit-date").value));
 document.getElementById("btn-print").addEventListener("click", () => window.print());
 
 /* Expand every section for the PDF, then restore state afterwards */
