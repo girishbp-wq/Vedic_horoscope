@@ -861,9 +861,9 @@ details.section[open] > summary::after { content: "−"; }
       </div>
       <div class="field places-wrap" style="grid-column: span 2;">
         <label for="f-place">Place of Birth</label>
-        <input id="f-place" type="text" placeholder="e.g. Mumbai, Maharashtra, India" autocomplete="off" />
+        <input id="f-place" type="text" placeholder="Type any town/city, e.g. Kadur or Hyderabad, India" autocomplete="off" />
         <div id="suggestions" class="suggestions"></div>
-        <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
+        <span class="hint" id="place-hint">Type any place (worldwide) — resolves to real coordinates &amp; timezone; falls back to the built-in list offline.</span>
       </div>
       <div class="field">
         <label for="f-gender">Gender (optional)</label>
@@ -3491,6 +3491,7 @@ function showReportTab(which){
 
 let currentChart = null;
 let selectedCity = null;
+let selectedTz = null;
 
 function showMsg(text, isError) {
   const el = document.getElementById("msg");
@@ -3539,7 +3540,7 @@ function fmtCoord(dec, kind){
   return `${d}:${String(mi).padStart(2,"0")}:${String(se).padStart(2,"0")} ${hemi}`;
 }
 
-function generate() {
+async function generate() {
   showMsg("");
   const name  = document.getElementById("f-name").value.trim();
   const dob   = document.getElementById("f-dob").value;
@@ -3568,16 +3569,36 @@ function generate() {
     }
     placeName = place || `${fmtCoord(lat, "lat")}, ${fmtCoord(lon, "lon")}`;
   } else if (selectedCity) {
-    lat = selectedCity[2]; lon = selectedCity[3]; tz = selectedCity[4];
+    lat = selectedCity[2]; lon = selectedCity[3];
+    tz = selectedTz ? ianaOffsetHours(selectedTz, dob) : selectedCity[4];
+    if (isNaN(tz)) tz = selectedCity[4];
     placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
   } else {
-    // Try to find in city DB by name
+    // Try the built-in list by name first
     const match = CITIES.find(c => c[0].toLowerCase() === place.toLowerCase());
     if (match) {
       lat = match[2]; lon = match[3]; tz = match[4];
       placeName = `${match[0]}, ${match[1]}`;
+    } else if (place) {
+      // Free-text: geocode it live on submit (Open-Meteo) and use the top hit
+      showLoader(true);
+      let list = [];
+      try { list = await geocodePlace(place); } catch (e) { list = builtinMatches(place); }
+      showLoader(false);
+      if (list.length) {
+        const c = list[0];
+        lat = +c.lat; lon = +c.lon;
+        tz = c.iana ? ianaOffsetHours(c.iana, dob) : (c.tz != null ? c.tz : 0);
+        if (isNaN(tz)) tz = 0;
+        placeName = c.name + (c.region ? ", " + c.region : "");
+        document.getElementById("place-hint").innerHTML =
+          `<em>Resolved: ${placeName} — lat ${lat.toFixed(4)}°, lon ${lon.toFixed(4)}°, UTC ${tz>=0?"+":""}${tz}${c.iana?" ("+c.iana+")":""}</em>`;
+      } else {
+        showMsg(`Couldn't resolve the place "${place}". Pick one from the dropdown, or click "Use manual lat/lon".`, true);
+        return;
+      }
     } else {
-      showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
+      showMsg(`Please enter a place of birth (or use manual lat/lon).`, true);
       return;
     }
   }
@@ -3681,79 +3702,92 @@ function generate() {
 }
 
 /* Suggestion handling */
-function setupPlaceAutocomplete() {
+/* ---------- Geocoding: free text -> real place -> coordinates + timezone ----------
+   Live geocoder (Open-Meteo — free, no API key, CORS-enabled) with the built-in
+   CITIES list as an offline fallback. Selecting/So resolving a place fills the
+   latitude, longitude and the UTC offset. The offset is derived from the place's
+   IANA timezone at the BIRTH DATE, so the browser's timezone database applies the
+   correct historical DST / zone rules for that date. */
+function ianaOffsetHours(tz, dateISO){
+  try{
+    const base = (dateISO && /^\d{4}-\d{2}-\d{2}$/.test(dateISO)) ? dateISO : "2000-01-01";
+    const d   = new Date(base + "T12:00:00Z");
+    const loc = new Date(d.toLocaleString("en-US", { timeZone: tz }));
+    const utc = new Date(d.toLocaleString("en-US", { timeZone: "UTC" }));
+    return Math.round(((loc - utc) / 3600000) * 4) / 4;    // nearest quarter hour
+  }catch(e){ return NaN; }
+}
+async function geocodePlace(q){
+  const url = "https://geocoding-api.open-meteo.com/v1/search?count=8&language=en&format=json&name=" + encodeURIComponent(q);
+  const r = await fetch(url);
+  if(!r.ok) throw new Error("geocode http " + r.status);
+  const j = await r.json();
+  return (j.results || []).map(x => ({
+    name: x.name,
+    region: [x.admin1, x.country].filter(Boolean).join(", "),
+    lat: x.latitude, lon: x.longitude, iana: x.timezone || null, source: "web"
+  }));
+}
+function builtinMatches(q){
+  const ql = q.toLowerCase(); const starts=[], contains=[];
+  for(const c of CITIES){
+    const n = c[0].toLowerCase();
+    const it = { name:c[0], region:c[1], lat:c[2], lon:c[3], iana:null, tz:c[4], source:"local" };
+    if(n===ql) starts.unshift(it); else if(n.startsWith(ql)) starts.push(it); else if(n.includes(ql)) contains.push(it);
+  }
+  return starts.concat(contains);
+}
+
+function setupPlaceAutocomplete(){
   const input = document.getElementById("f-place");
-  const sug = document.getElementById("suggestions");
-  let activeIdx = -1;
-  let currentList = [];
+  const sug   = document.getElementById("suggestions");
+  let activeIdx = -1, currentList = [], seq = 0, tmr = null;
 
   const render = () => {
-    if (currentList.length === 0) { sug.classList.remove("show"); return; }
-    sug.innerHTML = currentList.slice(0, 20).map((c, i) =>
-      `<div data-idx="${i}" class="${i === activeIdx ? "active" : ""}">
-         ${c[0]} <small>· ${c[1]}</small>
-       </div>`).join("");
+    if(!currentList.length){ sug.classList.remove("show"); return; }
+    sug.innerHTML = currentList.slice(0,20).map((c,i) =>
+      `<div data-idx="${i}" class="${i===activeIdx?"active":""}">${c.name} <small>· ${c.region||""}${c.source==="local"?" · offline":""}</small></div>`).join("");
     sug.classList.add("show");
   };
 
-  const filter = (q) => {
-    if (!q || q.length < 2) return [];
-    const ql = q.toLowerCase();
-    const starts = [], contains = [];
-    for (const c of CITIES) {
-      const n = c[0].toLowerCase();
-      if (n === ql) starts.unshift(c);          // exact match first
-      else if (n.startsWith(ql)) starts.push(c);
-      else if (n.includes(ql)) contains.push(c);
-    }
-    return starts.concat(contains);
-  };
-
-  input.addEventListener("input", () => {
-    selectedCity = null;
-    currentList = filter(input.value);
-    activeIdx = -1;
-    render();
-  });
-  input.addEventListener("focus", () => {
-    if (input.value.length >= 2) { currentList = filter(input.value); render(); }
-  });
-  input.addEventListener("blur", () => {
-    setTimeout(() => sug.classList.remove("show"), 200);
-  });
-  input.addEventListener("keydown", (e) => {
-    if (!currentList.length) return;
-    if (e.key === "ArrowDown") {
-      activeIdx = Math.min(activeIdx + 1, currentList.length - 1, 19);
-      render(); e.preventDefault();
-    } else if (e.key === "ArrowUp") {
-      activeIdx = Math.max(activeIdx - 1, 0); render(); e.preventDefault();
-    } else if (e.key === "Enter" && activeIdx >= 0) {
-      pick(activeIdx); e.preventDefault();
-    } else if (e.key === "Escape") {
-      sug.classList.remove("show");
-    }
-  });
-  sug.addEventListener("mousedown", (e) => {
-    const div = e.target.closest("div[data-idx]");
-    if (div) pick(parseInt(div.dataset.idx));
-  });
-
-  function pick(i) {
-    const c = currentList[i];
-    selectedCity = c;
-    input.value = c[0];
-    document.getElementById("place-hint").innerHTML =
-      `<em>${c[0]}, ${c[1]} — lat ${c[2]}°, lon ${c[3]}°, UTC ${c[4] >= 0 ? "+" : ""}${c[4]}</em>`;
-    sug.classList.remove("show");
+  async function search(q){
+    if(!q || q.length<2){ currentList=[]; render(); return; }
+    const my = ++seq;
+    let list = [];
+    try{ list = await geocodePlace(q); }catch(e){ list = []; }
+    if(my !== seq) return;                       // a newer keystroke superseded this
+    if(!list.length) list = builtinMatches(q);   // offline / no web hit -> local list
+    currentList = list; activeIdx = -1; render();
   }
 
-  // initial sync (default value)
-  const init = filter(input.value);
-  if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
-    selectedCity = init[0];
+  input.addEventListener("input", () => {
+    selectedCity = null; selectedTz = null;
+    clearTimeout(tmr); const q = input.value.trim();
+    tmr = setTimeout(() => search(q), 320);      // debounce web requests
+  });
+  input.addEventListener("focus", () => { const q=input.value.trim(); if(q.length>=2) search(q); });
+  input.addEventListener("blur",  () => setTimeout(() => sug.classList.remove("show"), 200));
+  input.addEventListener("keydown", (e) => {
+    if(!currentList.length) return;
+    if(e.key==="ArrowDown"){ activeIdx=Math.min(activeIdx+1,currentList.length-1,19); render(); e.preventDefault(); }
+    else if(e.key==="ArrowUp"){ activeIdx=Math.max(activeIdx-1,0); render(); e.preventDefault(); }
+    else if(e.key==="Enter" && activeIdx>=0){ pick(activeIdx); e.preventDefault(); }
+    else if(e.key==="Escape"){ sug.classList.remove("show"); }
+  });
+  sug.addEventListener("mousedown", (e) => { const div=e.target.closest("div[data-idx]"); if(div) pick(parseInt(div.dataset.idx)); });
+
+  function pick(i){
+    const c = currentList[i]; if(!c) return;
+    const dob = (document.getElementById("f-dob")||{}).value || "";
+    let tz = c.tz;
+    if(c.iana){ const o = ianaOffsetHours(c.iana, dob); if(!isNaN(o)) tz = o; }
+    if(tz === undefined || tz === null || isNaN(tz)) tz = 0;
+    selectedCity = [c.name, c.region, c.lat, c.lon, tz];
+    selectedTz   = c.iana || null;
+    input.value  = c.name;
     document.getElementById("place-hint").innerHTML =
-      `<em>${init[0][0]}, ${init[0][1]} — lat ${init[0][2]}°, lon ${init[0][3]}°, UTC ${init[0][4] >= 0 ? "+" : ""}${init[0][4]}</em>`;
+      `<em>${c.name}${c.region?", "+c.region:""} — lat ${(+c.lat).toFixed(4)}°, lon ${(+c.lon).toFixed(4)}°, UTC ${tz>=0?"+":""}${tz}${c.iana?" ("+c.iana+")":""}</em>`;
+    sug.classList.remove("show");
   }
 }
 
