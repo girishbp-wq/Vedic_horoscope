@@ -3493,6 +3493,48 @@ function showReportTab(which){
   if(which==="transit"){ const td=document.getElementById("transit-date"); renderTransit(td?td.value:null); }
 }
 
+
+/* ============================================================
+   SESSION 14 — Rahu combinations with the seven planets.
+   A combination forms by conjunction, by Rahu's 2/5/9 anti-clockwise
+   aspect on the planet, or by the planet's aspect on Rahu.
+   ============================================================ */
+const RAHU_COMBOS = {"Sun": {"name": "Sun–Rahu (Grahan-affected Sun)", "implication": "Rahu amplifies the ego and distorts the Sun's significations: a strong drive to succeed, obsession with name, fame and status, and a tendency to challenge authority and tradition. Physically strong and drawn to powerful, influential people, with a big ego and little sympathy for others' pain. Rahu 'sucks up' the Sun's physical energy — yet a powerfully placed Sun (Aries/Leo) still lets the native enjoy its positivity, while conjunction in Libra (the Sun's fall) drains the energy and leaves little motivation.", "remedy": "Surya Namaskar daily; respect the father and fatherly figures; drink water from a copper vessel at dawn; chant or listen to Aditya Hrudayam; offer water to the Sun on Sundays; rise early."}, "Moon": {"name": "Moon–Rahu (Grahan / Chandra-Rahu)", "implication": "Strong imagination but also paranormal experiences, disturbing dreams, insomnia and mental unrest; multiple heart-breaks; difficulty with elders and female relatives. Rahu=huge & Moon=food → a voracious appetite that is hard to control, with a risk of food poisoning; Rahu=illusion & Moon=mind → hallucination or illusory fear; the mother may face recurring ill-health.", "remedy": "Ocean bath (samudra snana) at holy places such as Rameshwaram; feed elderly women on three consecutive Amavasyas; pray to Goddess Durga and offer rice as prasadam at a Durga temple on Fridays; care for and honour the mother and elders."}, "Mars": {"name": "Mars–Rahu (Volcano combination)", "implication": "A 'volcano' — excessive, often directionless aggression, an inflated ego and at times sadistic thinking, in a strong-willed nature that stops at nothing to reach its goal. Great self-control over thought, word and deed is essential; in the extreme it is seen with instigators of conflict and revolutionary figures. It stays more controlled only when Mars is debilitated, retrograde or combust.", "remedy": "Channel the energy through sport, exercise, martial arts and meditation; worship Hanuman / Subramanya; practise restraint and think before acting."}, "Mercury": {"name": "Mercury–Rahu (amplified intellect)", "implication": "Rahu amplifies Mercury into an exceptionally sharp, highly intelligent mind — brilliant analytical and problem-solving ability, unconventional out-of-the-box thinking, and excellent communication and persuasion (a natural salesman who could 'sell a comb to a bald man'). The shadow side is over-cleverness, manipulation, or scattered/nervous thinking if Mercury is afflicted.", "remedy": "Pray to Maha Vishnu; chant or listen to Vishnu Sahasranama; visit a Vishnu temple on Wednesdays and offer Tulsi; pray to Goddess Durga; donate notebooks/stationery to poor children."}, "Jupiter": {"name": "Jupiter–Rahu (Guru Chandala Yoga)", "implication": "Guru Chandala Yoga — Jupiter (wisdom, tradition, guru, dharma) meets Rahu (ambition, foreign influence, breaking of tradition). The native questions beliefs and traditions and may feel he alone is knowledgeable; it can bring sickness or bodily pain, or highly unconventional, eccentric behaviour. With a well-placed Jupiter, though, it grants extraordinary intelligence and research ability.", "remedy": "Do 16 pradakshinas of the Peepal (Ashwattha) tree at sunrise daily for 48 days; study and respect genuine wisdom; associate respectfully with people of other faiths."}, "Venus": {"name": "Venus–Rahu", "implication": "Excellent for performers — actors, writers, singers, dancers, musicians — but tends to skin allergies. In relationships the native struggles to find the right partner, often leaving suitable people and making wrong choices; as Venus governs the sexual drive, this combination can bring excessive, sometimes uncontrollable, desire.", "remedy": "Keep the house and surroundings clean; wear clean, washed clothes; men stay clean-shaven; pray to Mahalakshmi and visit a Lakshmi temple on Fridays; chant the Lakshmi Ashtottaram; light a diya daily; use a pleasant fragrance."}, "Saturn": {"name": "Saturn–Rahu (Shaapit / Cursed Yoga)", "implication": "Shaapit (Cursed) Yoga — a life marked by struggle, disappointment, frustration and sorrow. The native is forced to face karmic results (good and bad) that little can modify, and the combination damages the good significations of the house they jointly occupy — unless that house's lord is well placed.", "remedy": "Worship Lord Shiva — Abhishekam with water and milk on the Shivalinga on Mondays and Saturdays, chanting 'Om Namah Shivaya'; do silent, mindful Panchakshari japa; do not keep footwear in front of the main door."}};
+const HUMAN_FACE_PLANETS = {"Hair": "Ketu", "Forehead": "Mercury", "Eyebrows": "Mars", "Right eye": "Sun", "Left eye": "Moon", "Nose": "Jupiter", "Cheeks": "Venus", "Moustache": "Ketu", "Beard": "Ketu", "Mouth / lips": "Rahu", "Chin": "Saturn", "Neck": "Mercury"};
+const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Namaha' 108 times; recite the Durga Kavacham.", "Visit Durga temples on Fridays or on Rahu nakshatra days (Ardra, Swati, Shatabhisha); light lemon lamps during Rahu Kaalam.", "Perform a Chandika Homam in a temple if the affliction is severe.", "Put dhoopam (incense) in the house on Saturdays (Rahu = smoke).", "Offer Boondhi to beggars; associate with and help people of other faiths / the underprivileged.", "Go to Sri Kalahasti and perform the Rahu–Ketu pooja.", "Offer urad-dal (Rahu) vada to Hanuman on Saturdays; do pradakshina at a snake-hill / Nagara Kallu.", "For a critical affliction, perform Rudrabhisheka and Maha Mrityunjaya / Ayush homa."];
+const RAHU_ITEMS = "Rahu items: Muslim associations, smoke, peacock feather, glittering items, covered items.";
+function renderRahuCombinations(planetsByRashi){
+  const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+  const rr=planetsByRashi.Rahu;
+  const hd=(a,b)=>((b-a)%12+12)%12+1;                 // whole-sign house of b from a
+  const rows=[];
+  for(const p of order){
+    const pr=planetsByRashi[p]; if(pr==null) continue;
+    const conjunct=(pr===rr);
+    const rahuSeesP=[5,9,12].includes(hd(rr,pr));
+    const pSeesRahu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,rr));
+    if(conjunct||rahuSeesP||pSeesRahu){
+      const how=conjunct?"conjunction":((rahuSeesP&&pSeesRahu)?"mutual aspect":"aspect");
+      rows.push(Object.assign({how:how}, RAHU_COMBOS[p]));
+    }
+  }
+  let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu Combinations (Session 14)</h4>`;
+  if(rows.length){
+    html+=rows.map(r=>`<div style="margin:0 0 14px;">
+      <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
+      <p style="margin:0 0 4px;">${r.implication}</p>
+      <p class="dig-note" style="margin:0;"><strong>Remedy:</strong> ${r.remedy}</p></div>`).join("");
+  } else {
+    html+=`<p>Rahu is not combined (by conjunction or aspect) with any of the seven planets in this chart.</p>`;
+  }
+  html+=`<p class="akshara-note">Ketu combinations are taught in the next session and are not yet included.</p>`;
+  html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">General Rahu Remedies</h4><ul>${RAHU_GENERAL_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  html+=`<p class="akshara-note">${RAHU_ITEMS}</p>`;
+  html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Kaala-Purusha Face — planet of each feature</h4><p class="akshara-note">${Object.entries(HUMAN_FACE_PLANETS).map(function(e){return e[0]+": <b>"+e[1]+"</b>";}).join(" · ")}</p>`;
+  const el=document.getElementById("akshara-body");
+  if(el) el.insertAdjacentHTML("beforeend", html);
+}
+
 let currentChart = null;
 let selectedCity = null;
 let selectedTz = null;
@@ -3690,6 +3732,7 @@ async function generate() {
   renderFullKarakatwas();
   renderCombustion(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
+  renderRahuCombinations(planetsByRashi);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
     natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
