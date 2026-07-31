@@ -3503,9 +3503,10 @@ const RAHU_COMBOS = {"Sun": {"name": "Sun–Rahu (Grahan-affected Sun)", "implic
 const HUMAN_FACE_PLANETS = {"Hair": "Ketu", "Forehead": "Mercury", "Eyebrows": "Mars", "Right eye": "Sun", "Left eye": "Moon", "Nose": "Jupiter", "Cheeks": "Venus", "Moustache": "Ketu", "Beard": "Ketu", "Mouth / lips": "Rahu", "Chin": "Saturn", "Neck": "Mercury"};
 const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Namaha' 108 times; recite the Durga Kavacham.", "Visit Durga temples on Fridays or on Rahu nakshatra days (Ardra, Swati, Shatabhisha); light lemon lamps during Rahu Kaalam.", "Perform a Chandika Homam in a temple if the affliction is severe.", "Put dhoopam (incense) in the house on Saturdays (Rahu = smoke).", "Offer Boondhi to beggars; associate with and help people of other faiths / the underprivileged.", "Go to Sri Kalahasti and perform the Rahu–Ketu pooja.", "Offer urad-dal (Rahu) vada to Hanuman on Saturdays; do pradakshina at a snake-hill / Nagara Kallu.", "For a critical affliction, perform Rudrabhisheka and Maha Mrityunjaya / Ayush homa."];
 const RAHU_ITEMS = "Rahu items: Muslim associations, smoke, peacock feather, glittering items, covered items.";
-function renderRahuCombinations(planetsByRashi){
+function renderRahuCombinations(planetsByRashi, sidereal){
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
   const rr=planetsByRashi.Rahu;
+  const rahuDeg = sidereal ? rashiOf(sidereal.Rahu).deg : null;   // deg within its rashi
   const hd=(a,b)=>((b-a)%12+12)%12+1;                 // whole-sign house of b from a
   const rows=[];
   for(const p of order){
@@ -3515,13 +3516,28 @@ function renderRahuCombinations(planetsByRashi){
     const pSeesRahu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,rr));
     if(conjunct||rahuSeesP||pSeesRahu){
       const how=conjunct?"conjunction":((rahuSeesP&&pSeesRahu)?"mutual aspect":"aspect");
-      rows.push(Object.assign({how:how}, RAHU_COMBOS[p]));
+      let phase=null;
+      if(conjunct && rahuDeg!=null){
+        const pd=rashiOf(sidereal[p]).deg;
+        const sep=rahuDeg-pd;                          // Rahu descends (anti-clockwise)
+        if(Math.abs(sep)<=1.0){
+          phase=`near-exact — Rahu ${rahuDeg.toFixed(1)}° is right on ${p} ${pd.toFixed(1)}° (within ${Math.abs(sep).toFixed(1)}°): <b>MAXIMUM effect</b>.`;
+        } else if(sep>0){
+          phase=`applying — Rahu ${rahuDeg.toFixed(1)}° is above ${p} ${pd.toFixed(1)}° and, moving anti-clockwise (descending), is approaching it: <b>effect present and building</b>.`;
+        } else {
+          const gap=Math.abs(sep);
+          phase=`separating — Rahu ${rahuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`;
+        }
+      }
+      rows.push(Object.assign({how:how, phase:phase}, RAHU_COMBOS[p]));
     }
   }
   let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu Combinations (Session 14)</h4>`;
   if(rows.length){
+    html+=`<p class="akshara-note" style="margin:0 0 10px;">Rahu moves anti-clockwise (its degree decreases over time). In a conjunction, if Rahu is still <b>above</b> the planet's degree it is <b>approaching</b> (effect building, maximal at the same degree); once Rahu has fallen <b>below</b> the planet's degree it has <b>crossed</b> it and the effect is <b>reduced</b>. Aspect combinations are judged by whole sign.</p>`;
     html+=rows.map(r=>`<div style="margin:0 0 14px;">
       <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
+      ${r.phase?`<p style="margin:0 0 4px;"><em>Strength:</em> ${r.phase}</p>`:""}
       <p style="margin:0 0 4px;">${r.implication}</p>
       <p class="dig-note" style="margin:0;"><strong>Remedy:</strong> ${r.remedy}</p></div>`).join("");
   } else {
@@ -3732,7 +3748,7 @@ async function generate() {
   renderFullKarakatwas();
   renderCombustion(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
-  renderRahuCombinations(planetsByRashi);
+  renderRahuCombinations(planetsByRashi, chart.sidereal);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
     natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
