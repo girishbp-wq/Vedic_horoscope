@@ -707,6 +707,8 @@ details.section[open] > summary::after { content: "−"; }
 .tabpane-big h4 { font-size: 13px !important; }
 #kk-full-body table { font-size: 13px; }
 #kk-full-body td, #kk-full-body th { padding: 6px 8px; }
+tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
+.dasha-maha > summary { padding: 8px 12px; }
 .autosave-note a { color: var(--maroon); }
 .attr-table th, .attr-table td { padding: 5px 7px; white-space: nowrap; }
 @media (max-width: 900px) {
@@ -964,6 +966,7 @@ details.section[open] > summary::after { content: "−"; }
         <button class="rtab"        data-tab="karakatwas"  type="button">Karakatwas</button>
         <button class="rtab"        data-tab="class"       type="button">Classifications</button>
         <button class="rtab"        data-tab="remedies"    type="button">Remedies</button>
+        <button class="rtab"        data-tab="dasha"       type="button">Daśā–Bhukti</button>
         <button class="rtab"        data-tab="transit"     type="button">Transit</button>
       </div>
 
@@ -1201,6 +1204,17 @@ details.section[open] > summary::after { content: "−"; }
           <div class="section-body" id="rahu-body"></div>
         </details>
       </div><!-- /remediesPane -->
+
+      <div id="dashaPane" style="display:none;">
+        <details class="section" open>
+          <summary>
+            <span class="section-num">D</span>
+            <span class="section-title">Vimśottari Daśā &amp; Bhukti</span>
+            <span class="section-sub">120-year planetary timeline from the Moon's nakshatra — Mahādaśā &amp; Antardaśā (Bhukti), with the running period marked</span>
+          </summary>
+          <div class="section-body" id="dasha-body"></div>
+        </details>
+      </div><!-- /dashaPane -->
 
       <div id="transitPane" style="display:none;">
         <div class="no-print" style="display:flex;gap:12px;align-items:center;margin:4px 0 16px;flex-wrap:wrap;">
@@ -3517,6 +3531,60 @@ function renderRashiClassifications(planetsByRashi, lagnaN){
 /* ============================================================
    TRANSIT (Gochara) tab — transit chart + transit→natal Vedic aspects
    ============================================================ */
+function renderDasha(sidereal, dob, tob){
+  const el=document.getElementById("dasha-body"); if(!el) return;
+  const ORDER=["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"];
+  const YEARS={Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17};
+  const YR_MS=365.25*24*3600*1000;
+  const add=(d,y)=>new Date(d.getTime()+y*YR_MS);
+  const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmt=(d)=>String(d.getDate()).padStart(2,"0")+" "+MO[d.getMonth()]+" "+d.getFullYear();
+  const GL=(typeof GLYPH9!=="undefined")?GLYPH9:{};
+  if(!dob){ el.innerHTML="<p>Generate a horoscope to see the Daśā timeline.</p>"; return; }
+  const p=dob.split("-").map(Number), t=(tob||"0:0").split(":").map(Number);
+  const birth=new Date(p[0], p[1]-1, p[2], (t[0]||0), (t[1]||0), (t[2]||0));
+  const nk=nakshatraOf(sidereal.Moon);
+  const lord=nk.lord, frac=nk.degIn/NAK_SIZE, bal=(1-frac)*YEARS[lord];
+  const now=new Date();
+  const startIdx=ORDER.indexOf(lord);
+  // build 9 mahadashas using a virtual start for the (partial) first one
+  const mahas=[]; let vs=add(birth, -frac*YEARS[lord]);
+  for(let i=0;i<9;i++){ const L=ORDER[(startIdx+i)%9]; const full=YEARS[L]; const e=add(vs,full);
+    mahas.push({lord:L, full:full, vStart:vs, end:e}); vs=e; }
+  const bhuktis=(m)=>{ const idx=ORDER.indexOf(m.lord); const out=[]; let x=m.vStart;
+    for(let j=0;j<9;j++){ const sub=ORDER[(idx+j)%9]; const y=m.full*YEARS[sub]/120; const e=add(x,y);
+      out.push({sub:sub, s:x, e:e}); x=e; } return out; };
+  const cur=(a,b)=> (now>=a && now<b);
+
+  let h=`<p class="akshara-note" style="margin:0 0 6px;">Birth nakshatra: <b>${nk.name}</b> (pada ${nk.pada}) &middot; ruled by <b>${lord}</b>. Balance of ${lord} Mahādaśā at birth: <b>${bal.toFixed(2)} years</b>. Dates use the standard 365.25-day Vimśottari year; the running Mahādaśā and Bhukti are highlighted.</p>`;
+  h+=`<p class="akshara-note" style="margin:0 0 12px;">Sequence &amp; full lengths (years): Ketu 7 &middot; Venus 20 &middot; Sun 6 &middot; Moon 10 &middot; Mars 7 &middot; Rāhu 18 &middot; Jupiter 16 &middot; Saturn 19 &middot; Mercury 17 &nbsp;(=120).</p>`;
+
+  for(const m of mahas){
+    const isNow=cur(m.vStart, m.end);
+    const shownStart=(m.vStart<birth)?birth:m.vStart;
+    h+=`<details class="section dasha-maha"${isNow?" open":""} style="margin:0 0 8px;">
+      <summary>
+        <span class="glyph-mini">${GL[m.lord]||""}</span>
+        <span class="section-title" style="font-size:14px;">${m.lord} Mahādaśā</span>
+        <span class="section-sub">${fmt(shownStart)} — ${fmt(m.end)} &middot; ${m.full} yrs${isNow?' <b style="color:var(--maroon);">&#9679; RUNNING NOW</b>':''}</span>
+      </summary>
+      <div class="section-body">
+      <table class="planet-table"><thead><tr><th>Bhukti (Antardaśā)</th><th>From</th><th>To</th><th></th></tr></thead><tbody>`;
+    for(const b of bhuktis(m)){
+      if(b.e<=birth) continue;                       // skip sub-periods finished before birth
+      const bs=(b.s<birth)?birth:b.s;
+      const bnow=cur(b.s, b.e);
+      h+=`<tr class="${bnow?'dasha-now':''}">
+        <td><span class="glyph-mini">${GL[b.sub]||""}</span> ${m.lord}–${b.sub}</td>
+        <td>${fmt(bs)}</td><td>${fmt(b.e)}</td>
+        <td>${bnow?'<b style="color:var(--maroon);">&#9679; now</b>':''}</td></tr>`;
+    }
+    h+=`</tbody></table></div></details>`;
+  }
+  h+=`<p class="akshara-note">Antardaśā (Bhukti) sub-periods run in the same planetary order, beginning with the Mahādaśā lord itself; each lasts (Mahādaśā years &times; Bhukti-lord years ) / 120. Sub-periods that ended before birth are omitted from the first Mahādaśā.</p>`;
+  el.innerHTML=h;
+}
+
 function renderTransit(dateStr){
   if(!currentChart || !currentChart.natalPBR) return;
   const natalPBR = currentChart.natalPBR, lagnaN = currentChart.lagnaN,
@@ -3577,7 +3645,7 @@ function renderTransit(dateStr){
     ? `<ul>${rows.map(r=>`<li${r.jup?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
     : `<p>No transit planet currently aspects a natal planet.</p>`;
 }
-const REPORT_PANES={ birth:"birthPane", karakatwas:"karakatwasPane", "class":"classPane", remedies:"remediesPane", transit:"transitPane" };
+const REPORT_PANES={ birth:"birthPane", karakatwas:"karakatwasPane", "class":"classPane", remedies:"remediesPane", dasha:"dashaPane", transit:"transitPane" };
 function showReportTab(which){
   if(!REPORT_PANES[which]) which="birth";
   for(const k in REPORT_PANES){
@@ -4008,6 +4076,7 @@ async function generate() {
   renderCombustion(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
   renderRahuCombinations(planetsByRashi, chart.sidereal);
+  renderDasha(chart.sidereal, dob, tob);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
     natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
