@@ -695,6 +695,18 @@ details.section[open] > summary::after { content: "−"; }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; max-width: 100%; }
 .attr-table { font-size: 12px; }
 .autosave-note { font-size: 12.5px; color: var(--muted); margin: 10px 2px 0; font-style: italic; }
+.testcap { margin: 14px 2px 0; border: 1px solid var(--line, #e4d9c6); border-radius: 8px; padding: 8px 12px; background: rgba(0,0,0,0.015); }
+.testcap > summary { cursor: pointer; font-family: 'Cinzel', serif; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--maroon); }
+.testcap-note { font-size: 12px; color: var(--muted); margin: 8px 0; line-height: 1.5; }
+.testcap-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.testcap-row .btn { font-size: 12.5px; padding: 6px 12px; }
+.testcap-status { font-size: 12.5px; color: var(--ink, #333); margin: 4px 0; font-weight: 600; }
+.tabpane-big .narrative, .tabpane-big p, .tabpane-big li { font-size: 15.5px; line-height: 1.72; }
+.tabpane-big li { margin-bottom: 7px; }
+.tabpane-big .akshara-note, .tabpane-big .dig-note { font-size: 14px; line-height: 1.6; }
+.tabpane-big h4 { font-size: 13px !important; }
+#kk-full-body table { font-size: 13px; }
+#kk-full-body td, #kk-full-body th { padding: 6px 8px; }
 .autosave-note a { color: var(--maroon); }
 .attr-table th, .attr-table td { padding: 5px 7px; white-space: nowrap; }
 @media (max-width: 900px) {
@@ -908,6 +920,30 @@ details.section[open] > summary::after { content: "−"; }
     <p class="autosave-note no-print" id="vh-autosave">Your birth details are auto-saved on this device — reopen or refresh and they'll still be here. <a href="#" id="vh-clear">Clear saved details</a></p>
     <div class="loader" id="loader"><span class="spinner"></span> Computing planetary positions…</div>
     <div id="msg"></div>
+
+    <!-- ===== Test-data capture (owner only; nothing is sent anywhere) ===== -->
+    <details class="testcap no-print" id="testcap">
+      <summary>Collect test data (for the maintainer)</summary>
+      <p class="testcap-note">Every horoscope you generate is recorded on <em>this device only</em> (browser storage) as a test case — the inputs plus a fingerprint of the computed chart (Lagna, each planet's rashi/degree, retrograde). Nothing leaves your computer. Use the buttons to export a CSV (opens in Excel) and a JSONL (regression fixtures) that you can commit to the repo's <code>test_data/</code> folder.</p>
+      <div class="testcap-row">
+        <button class="btn btn-ghost" id="tc-link" type="button">🔗 Link a local file (Chrome/Edge)</button>
+        <button class="btn btn-ghost" id="tc-csv" type="button">⬇ Export CSV</button>
+        <button class="btn btn-ghost" id="tc-jsonl" type="button">⬇ Export JSONL</button>
+        <button class="btn btn-ghost" id="tc-clear" type="button">Clear</button>
+      </div>
+      <p class="testcap-status" id="tc-status">0 cases stored on this device.</p>
+      <p class="testcap-note">“Link a local file” lets you point the tool once at a file inside your local repo clone (e.g. <code>test_data/collected</code>). After that, each new horoscope <strong>auto-appends</strong> to <code>collected.csv</code> and <code>collected.jsonl</code> there — then just <code>git add / commit / push</code>. (File System Access API; Chromium browsers only. Other browsers use the Export buttons.)</p>
+
+      <div class="testcap-sheet">
+        <p class="testcap-note" style="margin-bottom:6px;"><strong>Google Sheet (private to you).</strong> Paste the Web-App URL of your Apps Script (see <code>apps_script/Code.gs</code>). Every horoscope then adds a row to your private sheet; visitors can post but can never read it. Saved on this device only — leave blank to disable.</p>
+        <div class="testcap-row">
+          <input type="url" id="tc-sheet-url" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1 1 260px;padding:6px 10px;border:1px solid var(--gold);border-radius:6px;font-size:12.5px;">
+          <input type="text" id="tc-sheet-token" placeholder="shared token (optional)" style="flex:0 1 160px;padding:6px 10px;border:1px solid var(--gold);border-radius:6px;font-size:12.5px;">
+          <button class="btn btn-ghost" id="tc-sheet-save" type="button">Save</button>
+        </div>
+        <p class="testcap-status" id="tc-sheet-status" style="font-weight:500;color:var(--muted);"></p>
+      </div>
+    </details>
   </section>
 
   <!-- REPORT -->
@@ -924,8 +960,11 @@ details.section[open] > summary::after { content: "−"; }
       </div>
 
       <div class="report-tabs no-print">
-        <button class="rtab active" id="rtab-birth" type="button">Birth Chart</button>
-        <button class="rtab" id="rtab-transit" type="button">Transit Chart</button>
+        <button class="rtab active" data-tab="birth"       type="button">Birth Chart</button>
+        <button class="rtab"        data-tab="karakatwas"  type="button">Karakatwas</button>
+        <button class="rtab"        data-tab="class"       type="button">Classifications</button>
+        <button class="rtab"        data-tab="remedies"    type="button">Remedies</button>
+        <button class="rtab"        data-tab="transit"     type="button">Transit</button>
       </div>
 
       <div id="birthPane">
@@ -1088,25 +1127,80 @@ details.section[open] > summary::after { content: "−"; }
         <div class="section-body" id="punarphoo-body"></div>
       </details>
 
-      <details class="section">
-        <summary>
-          <span class="section-num">VIII</span>
-          <span class="section-title">Pariharas — Remedial Measures</span>
-          <span class="section-sub">Suggested practices based on Lagna &amp; Moon tatwa</span>
-        </summary>
-        <div class="section-body" id="remedy-body"></div>
-      </details>
-
-      <details class="section">
-        <summary>
-          <span class="section-num">IX</span>
-          <span class="section-title">Graha Aksharas &amp; Beejakshari Mantras</span>
-          <span class="section-sub">Sound syllables &amp; seed-mantra of each graha</span>
-        </summary>
-        <div class="section-body" id="akshara-body"></div>
-      </details>
-
       </div><!-- /birthPane -->
+
+      <div id="karakatwasPane" class="tabpane-big" style="display:none;">
+        <details class="section" open>
+          <summary>
+            <span class="section-num">K1</span>
+            <span class="section-title">Complete Karakatwas — every field</span>
+            <span class="section-sub">All significators the course gives, for all nine grahas</span>
+          </summary>
+          <div class="section-body" id="kk-full-body"></div>
+        </details>
+        <details class="section" open>
+          <summary>
+            <span class="section-num">K2</span>
+            <span class="section-title">Graha Aksharas &amp; Beejakshari Mantras</span>
+            <span class="section-sub">Sound syllables &amp; seed-mantra of each graha</span>
+          </summary>
+          <div class="section-body" id="akshara-body"></div>
+        </details>
+      </div><!-- /karakatwasPane -->
+
+      <div id="classPane" style="display:none;">
+        <details class="section" open>
+          <summary>
+            <span class="section-num">C1</span>
+            <span class="section-title">Your Horoscope Classifications</span>
+            <span class="section-sub">Directions, colours, body types, gems &amp; more, from your planets &amp; rashis</span>
+          </summary>
+          <div class="section-body" id="class-body"></div>
+        </details>
+        <details class="section" open>
+          <summary>
+            <span class="section-num">C2</span>
+            <span class="section-title">Rāhu &amp; Ketu — nature &amp; significations (Session 13)</span>
+            <span class="section-sub">Reference: the nodes' behaviour, contrast &amp; mythology</span>
+          </summary>
+          <div class="section-body" id="s13-body"></div>
+        </details>
+        <details class="section">
+          <summary>
+            <span class="section-num">C3</span>
+            <span class="section-title">Additional rules (Session 12)</span>
+            <span class="section-sub">Sapta Chiranjeevi &amp; other supporting rules</span>
+          </summary>
+          <div class="section-body" id="s12-body"></div>
+        </details>
+        <details class="section">
+          <summary>
+            <span class="section-num">C4</span>
+            <span class="section-title">Combustion (Astangata)</span>
+            <span class="section-sub">Planets within 5° of the Sun</span>
+          </summary>
+          <div class="section-body" id="combust-body"></div>
+        </details>
+      </div><!-- /classPane -->
+
+      <div id="remediesPane" class="tabpane-big" style="display:none;">
+        <details class="section" open>
+          <summary>
+            <span class="section-num">R1</span>
+            <span class="section-title">Pariharas — Remedial Measures</span>
+            <span class="section-sub">Practices based on your Lagna &amp; Moon tatwa</span>
+          </summary>
+          <div class="section-body" id="remedy-body"></div>
+        </details>
+        <details class="section" open>
+          <summary>
+            <span class="section-num">R2</span>
+            <span class="section-title">Rāhu Combinations &amp; Remedies (Session 14)</span>
+            <span class="section-sub">Effect of Rāhu joined with / aspecting each planet, with remedies</span>
+          </summary>
+          <div class="section-body" id="rahu-body"></div>
+        </details>
+      </div><!-- /remediesPane -->
 
       <div id="transitPane" style="display:none;">
         <div class="no-print" style="display:flex;gap:12px;align-items:center;margin:4px 0 16px;flex-wrap:wrap;">
@@ -3264,8 +3358,8 @@ function renderSession12(sidereal, planetsByRashi, retroSet){
     <li>Never cut the cake at midnight — do it in the morning.</li>
     <li>Never blow out a candle — light a lamp instead (we never blow out Agni).</li>
   </ul><p class="akshara-note">Sapta Chiranjeevi: ${SAPTA_CHIRANJEEVI12}.</p>`;
-  const el = document.getElementById("akshara-body");
-  if (el) el.insertAdjacentHTML("beforeend", html);
+  const el = document.getElementById("s12-body");
+  if (el) el.innerHTML = html;
 }
 
 
@@ -3318,8 +3412,8 @@ function renderSession13(sidereal){
       ${RK_CONTRAST.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}
       </tbody></table></div>
     <p class="akshara-note">Mythology: after the Samudra Manthana the asura Svarabhanu drank the amrutha; Sun and Moon exposed him and Vishnu (as Mohini) beheaded him — the head became Rahu, the body Ketu, which is why the nodes eclipse the Sun and Moon.</p>`;
-  const el=document.getElementById("akshara-body");
-  if(el) el.insertAdjacentHTML("beforeend", html);
+  const el=document.getElementById("s13-body");
+  if(el) el.innerHTML = html;
 }
 
 
@@ -3338,8 +3432,8 @@ function renderFullKarakatwas(){
     html+=`<tr><td><b>${FULL_KK_LABELS[i]}</b></td>${order.map(p=>`<td>${FULL_KK_DATA[p][i]}</td>`).join("")}</tr>`;
   }
   html+=`</tbody></table></div>`;
-  const el=document.getElementById("akshara-body");
-  if(el) el.insertAdjacentHTML("beforeend", html);
+  const el=document.getElementById("kk-full-body");
+  if(el) el.innerHTML = html;
 }
 
 
@@ -3369,8 +3463,8 @@ function renderCombustion(sidereal){
   } else {
     html+=`<p>No graha is combust (none within 5° of the Sun).</p>`;
   }
-  const el=document.getElementById("akshara-body");
-  if(el) el.insertAdjacentHTML("beforeend", html);
+  const el=document.getElementById("combust-body");
+  if(el) el.innerHTML = html;
 }
 
 
@@ -3415,8 +3509,8 @@ function renderRashiClassifications(planetsByRashi, lagnaN){
   html+=`</tbody></table></div>`;
   html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">How each classification is used</h4><ul>${CLASSIFICATION_USES.map(u=>`<li><b>${u[0]}:</b> ${u[1]}</li>`).join("")}</ul>`;
   html+=`<p class="dig-note">${RASHI_LORDS_NOTE}</p>`;
-  const el=document.getElementById("akshara-body");
-  if(el) el.insertAdjacentHTML("beforeend", html);
+  const el=document.getElementById("class-body");
+  if(el) el.innerHTML = html;
 }
 
 
@@ -3483,13 +3577,16 @@ function renderTransit(dateStr){
     ? `<ul>${rows.map(r=>`<li${r.jup?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
     : `<p>No transit planet currently aspects a natal planet.</p>`;
 }
+const REPORT_PANES={ birth:"birthPane", karakatwas:"karakatwasPane", "class":"classPane", remedies:"remediesPane", transit:"transitPane" };
 function showReportTab(which){
-  const b=document.getElementById("birthPane"), t=document.getElementById("transitPane");
-  if(b) b.style.display = which==="transit"?"none":"";
-  if(t) t.style.display = which==="transit"?"":"none";
-  const rb=document.getElementById("rtab-birth"), rt=document.getElementById("rtab-transit");
-  if(rb) rb.classList.toggle("active", which!=="transit");
-  if(rt) rt.classList.toggle("active", which==="transit");
+  if(!REPORT_PANES[which]) which="birth";
+  for(const k in REPORT_PANES){
+    const el=document.getElementById(REPORT_PANES[k]);
+    if(el) el.style.display = (k===which)?"":"none";
+  }
+  document.querySelectorAll(".report-tabs .rtab").forEach(function(btn){
+    btn.classList.toggle("active", btn.getAttribute("data-tab")===which);
+  });
   if(which==="transit"){ const td=document.getElementById("transit-date"); renderTransit(td?td.value:null); }
 }
 
@@ -3503,6 +3600,168 @@ const RAHU_COMBOS = {"Sun": {"name": "Sun–Rahu (Grahan-affected Sun)", "implic
 const HUMAN_FACE_PLANETS = {"Hair": "Ketu", "Forehead": "Mercury", "Eyebrows": "Mars", "Right eye": "Sun", "Left eye": "Moon", "Nose": "Jupiter", "Cheeks": "Venus", "Moustache": "Ketu", "Beard": "Ketu", "Mouth / lips": "Rahu", "Chin": "Saturn", "Neck": "Mercury"};
 const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Namaha' 108 times; recite the Durga Kavacham.", "Visit Durga temples on Fridays or on Rahu nakshatra days (Ardra, Swati, Shatabhisha); light lemon lamps during Rahu Kaalam.", "Perform a Chandika Homam in a temple if the affliction is severe.", "Put dhoopam (incense) in the house on Saturdays (Rahu = smoke).", "Offer Boondhi to beggars; associate with and help people of other faiths / the underprivileged.", "Go to Sri Kalahasti and perform the Rahu–Ketu pooja.", "Offer urad-dal (Rahu) vada to Hanuman on Saturdays; do pradakshina at a snake-hill / Nagara Kallu.", "For a critical affliction, perform Rudrabhisheka and Maha Mrityunjaya / Ayush homa."];
 const RAHU_ITEMS = "Rahu items: Muslim associations, smoke, peacock feather, glittering items, covered items.";
+
+/* =====================================================================
+   TestCapture — records each generated horoscope on THIS device only as a
+   regression test case (inputs + a fingerprint of the computed chart).
+   Nothing is transmitted. Optionally auto-writes collected.csv/.jsonl into
+   a local folder the maintainer links via the File System Access API.
+   ===================================================================== */
+const TestCapture = (function(){
+  const LS_KEY = "vh_testcases_v1";
+  const ORDER = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  let dirHandle = null;                 // linked local folder (owner only)
+  const CFG_KEY = "vh_sheet_cfg";       // {url, token} — this device only
+  /* Optional: hard-code these to collect from ALL visitors (endpoint is public,
+     but your Sheet stays private; the token blocks casual spam). */
+  const SHEET_ENDPOINT_DEFAULT = "";
+  const SHEET_TOKEN_DEFAULT = "";
+  function sheetCfg(){
+    try { const c = JSON.parse(localStorage.getItem(CFG_KEY)||"null"); if(c && c.url) return c; } catch(e){}
+    return SHEET_ENDPOINT_DEFAULT ? {url:SHEET_ENDPOINT_DEFAULT, token:SHEET_TOKEN_DEFAULT} : null;
+  }
+  function postToSheet(row){
+    const cfg = sheetCfg(); if(!cfg) return;
+    try {
+      fetch(cfg.url, { method:"POST", mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify({ token: cfg.token||"", record: row }) }).catch(function(){});
+    } catch(e){ /* never block the report */ }
+  }
+
+  /* ---- tiny IndexedDB keyval to persist the folder handle across reloads ---- */
+  function idb(op, val){
+    return new Promise(function(res, rej){
+      const r = indexedDB.open("vh_testcap", 1);
+      r.onupgradeneeded = function(){ r.result.createObjectStore("kv"); };
+      r.onerror = function(){ rej(r.error); };
+      r.onsuccess = function(){
+        const db = r.result, tx = db.transaction("kv","readwrite"), st = tx.objectStore("kv");
+        const q = (op==="get") ? st.get("dir") : st.put(val,"dir");
+        q.onsuccess = function(){ res(op==="get" ? q.result : true); };
+        q.onerror = function(){ rej(q.error); };
+      };
+    });
+  }
+
+  function load(){ try { return JSON.parse(localStorage.getItem(LS_KEY)||"[]"); } catch(e){ return []; } }
+  function save(a){ localStorage.setItem(LS_KEY, JSON.stringify(a)); }
+
+  function fingerprint(rec){
+    const planets = {};
+    for (const p of ORDER){
+      const lon = rec.sidereal[p];
+      if (lon == null) continue;
+      const ri = rashiOf(lon);
+      planets[p] = { r: ri.n, deg: Math.round(ri.deg*100)/100, retro: rec.retro ? rec.retro.has(p) : false };
+    }
+    return planets;
+  }
+
+  /* a stable key so the same birth isn't stored twice (last one wins) */
+  function keyOf(rec){
+    return [rec.dob, rec.tob, (+rec.lat).toFixed(4), (+rec.lon).toFixed(4), rec.tz, rec.ayanamsa].join("|");
+  }
+
+  function record(rec){
+    const row = {
+      ts: new Date().toISOString(),
+      name: rec.name||"", gender: rec.gender||"", dob: rec.dob, tob: rec.tob,
+      place: rec.place||"", lat: +rec.lat, lon: +rec.lon, tz: +rec.tz, ayanamsa: rec.ayanamsa,
+      lagna: rec.lagna, planets: fingerprint(rec)
+    };
+    const all = load();
+    const k = keyOf(row);
+    const i = all.findIndex(function(r){ return keyOf(r) === k; });
+    if (i >= 0) all[i] = row; else all.push(row);
+    save(all);
+    updateStatus();
+    autoWrite(all);   // fire-and-forget if a folder is linked
+    postToSheet(row); // fire-and-forget if a Google Sheet endpoint is configured
+  }
+
+  /* ---- serialisers ---- */
+  function csv(all){
+    const head = ["ts","name","gender","dob","tob","place","lat","lon","tz","ayanamsa","lagna"];
+    for (const p of ORDER){ head.push(p+"_rashi", p+"_deg", p+"_retro"); }
+    const esc = function(v){ v = (v==null?"":String(v)); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    const lines = [head.join(",")];
+    for (const r of all){
+      const cells = [r.ts,r.name,r.gender,r.dob,r.tob,r.place,r.lat,r.lon,r.tz,r.ayanamsa,r.lagna];
+      for (const p of ORDER){ const g=r.planets[p]||{}; cells.push(g.r==null?"":g.r, g.deg==null?"":g.deg, g.retro?1:0); }
+      lines.push(cells.map(esc).join(","));
+    }
+    return lines.join("\n")+"\n";
+  }
+  function jsonl(all){ return all.map(function(r){ return JSON.stringify(r); }).join("\n")+"\n"; }
+
+  /* ---- manual download fallback (works in every browser) ---- */
+  function download(name, text){
+    const b = new Blob([text], {type:"text/plain"});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
+  }
+
+  /* ---- File System Access: link a folder, then auto-write both files ---- */
+  async function link(){
+    if (!window.showDirectoryPicker){ alert("Your browser doesn't support linking a local file. Use the Export buttons instead (Chrome or Edge support linking)."); return; }
+    try {
+      dirHandle = await window.showDirectoryPicker({ mode:"readwrite", id:"vh_testdata" });
+      await idb("put", dirHandle);
+      await autoWrite(load());
+      updateStatus();
+      alert("Linked. New horoscopes will auto-append to collected.csv and collected.jsonl in that folder.");
+    } catch(e){ /* user cancelled */ }
+  }
+  async function ensurePerm(){
+    if (!dirHandle) return false;
+    const opts = { mode:"readwrite" };
+    if ((await dirHandle.queryPermission(opts)) === "granted") return true;
+    return (await dirHandle.requestPermission(opts)) === "granted";
+  }
+  async function writeFile(fname, text){
+    const fh = await dirHandle.getFileHandle(fname, { create:true });
+    const w = await fh.createWritable(); await w.write(text); await w.close();
+  }
+  async function autoWrite(all){
+    try {
+      if (!dirHandle) return;
+      if (!(await ensurePerm())) return;
+      await writeFile("collected.csv", csv(all));
+      await writeFile("collected.jsonl", jsonl(all));
+    } catch(e){ /* leave localStorage as the source of truth */ }
+  }
+
+  function updateStatus(){
+    const el = document.getElementById("tc-status"); if (!el) return;
+    const n = load().length;
+    el.textContent = n + (n===1?" case":" cases") + " stored on this device." + (dirHandle ? "  ✓ auto-writing to linked folder." : "");
+  }
+
+  function wire(){
+    const b = function(id, fn){ const e=document.getElementById(id); if(e) e.addEventListener("click", fn); };
+    b("tc-link", link);
+    b("tc-csv",  function(){ download("collected.csv", csv(load())); });
+    b("tc-jsonl",function(){ download("collected.jsonl", jsonl(load())); });
+    b("tc-clear",function(){ if(confirm("Delete all stored test cases on this device?")){ save([]); updateStatus(); } });
+    // Google Sheet settings
+    const urlEl=document.getElementById("tc-sheet-url"), tokEl=document.getElementById("tc-sheet-token"), stEl=document.getElementById("tc-sheet-status");
+    const cfg=sheetCfg();
+    if(cfg){ if(urlEl) urlEl.value=cfg.url||""; if(tokEl) tokEl.value=cfg.token||""; if(stEl) stEl.textContent="✓ Sheet endpoint configured — new charts post to your Google Sheet."; }
+    b("tc-sheet-save",function(){
+      const u=(urlEl&&urlEl.value||"").trim();
+      if(!u){ localStorage.removeItem(CFG_KEY); if(stEl) stEl.textContent="Sheet posting disabled."; return; }
+      localStorage.setItem(CFG_KEY, JSON.stringify({url:u, token:(tokEl&&tokEl.value||"").trim()}));
+      if(stEl) stEl.textContent="✓ Saved on this device — new charts will post to your Google Sheet.";
+    });
+    idb("get").then(function(h){ if(h){ dirHandle=h; } updateStatus(); }).catch(function(){ updateStatus(); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
+
+  return { record: record };
+})();
+
 function renderRahuCombinations(planetsByRashi, sidereal){
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
   const rr=planetsByRashi.Rahu;
@@ -3547,8 +3806,8 @@ function renderRahuCombinations(planetsByRashi, sidereal){
   html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">General Rahu Remedies</h4><ul>${RAHU_GENERAL_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
   html+=`<p class="akshara-note">${RAHU_ITEMS}</p>`;
   html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Kaala-Purusha Face — planet of each feature</h4><p class="akshara-note">${Object.entries(HUMAN_FACE_PLANETS).map(function(e){return e[0]+": <b>"+e[1]+"</b>";}).join(" · ")}</p>`;
-  const el=document.getElementById("akshara-body");
-  if(el) el.insertAdjacentHTML("beforeend", html);
+  const el=document.getElementById("rahu-body");
+  if(el) el.innerHTML = html;
 }
 
 let currentChart = null;
@@ -3752,6 +4011,13 @@ async function generate() {
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
     natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
+  try {
+    TestCapture.record({
+      name: name, gender: (document.getElementById("f-gender")||{}).value || "",
+      dob: dob, tob: tob, place: placeName, lat: lat, lon: lon, tz: tz, ayanamsa: ayanType,
+      lagna: lagnaRashiInfo.n, sidereal: chart.sidereal, byRashi: planetsByRashi, retro: retroSet
+    });
+  } catch(e){ /* capture must never block the report */ }
   document.getElementById("report").classList.add("show");
   document.getElementById("btn-print").disabled = false;
   (function(){ const t=new Date(); const iso=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
@@ -3879,24 +4145,35 @@ document.getElementById("btn-manual").addEventListener("click", () => {
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", wire); else wire();
 })();
 document.getElementById("btn-generate").addEventListener("click", generate);
-document.getElementById("rtab-birth").addEventListener("click", ()=>showReportTab("birth"));
-document.getElementById("rtab-transit").addEventListener("click", ()=>showReportTab("transit"));
+document.querySelectorAll(".report-tabs .rtab").forEach(function(btn){
+  btn.addEventListener("click", function(){ showReportTab(btn.getAttribute("data-tab")); });
+});
 document.getElementById("btn-transit").addEventListener("click", ()=>renderTransit(document.getElementById("transit-date").value));
 document.getElementById("transit-date").addEventListener("change", ()=>renderTransit(document.getElementById("transit-date").value));
 document.getElementById("btn-print").addEventListener("click", () => window.print());
 
-/* Expand every section for the PDF, then restore state afterwards */
+/* Expand every section AND reveal every tab pane for the PDF, then restore. */
 window.addEventListener("beforeprint", () => {
   document.querySelectorAll("details.section").forEach(d => {
     d.dataset._wasOpen = d.open ? "1" : "0";
     d.open = true;
   });
+  for (const k in REPORT_PANES) {
+    const el = document.getElementById(REPORT_PANES[k]);
+    if (el) { el.dataset._wasDisp = el.style.display; el.style.display = ""; }
+  }
 });
 window.addEventListener("afterprint", () => {
   document.querySelectorAll("details.section").forEach(d => {
     if (d.dataset._wasOpen === "0") d.open = false;
     delete d.dataset._wasOpen;
   });
+  for (const k in REPORT_PANES) {
+    const el = document.getElementById(REPORT_PANES[k]);
+    if (el) { el.style.display = el.dataset._wasDisp || "none"; delete el.dataset._wasDisp; }
+  }
+  const active = document.querySelector(".report-tabs .rtab.active");
+  showReportTab(active ? active.getAttribute("data-tab") : "birth");
 });
 
 /* On load */
