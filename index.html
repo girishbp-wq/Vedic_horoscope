@@ -1718,10 +1718,11 @@ function ayanamsa(JD, type) {
   const lahiri = 23.85277 + 0.013957 * years - 6.7e-8 * years * years;
   if (type === "raman") return lahiri - 0.4;
   if (type === "kp") {
-    // KP-New (Krishnamurti): tropical & sidereal zodiacs coincide at 291 AD
-    // (KP zero-ayanamsa year); Newcomb precession rate 50.2388475"/yr.
-    const fracYear = 2000.0 + (JD - 2451545.0) / 365.25;
-    return (fracYear - 291.0) * 50.2388475 / 3600.0;
+    // KP (Krishnamurti) ayanamsa = Lahiri minus ~5.33'. KP(2000.0)=23.7639 deg
+    // vs Lahiri 23.85277 deg (offset 0.08887 deg); the two drift apart only
+    // negligibly over the useful era, so a constant offset reproduces standard
+    // KP tables and matches KP-based software (e.g. the reference kundali PDF).
+    return lahiri - 0.08887;
   }
   return lahiri;
 }
