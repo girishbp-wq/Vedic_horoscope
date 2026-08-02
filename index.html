@@ -4332,6 +4332,98 @@ setupPlaceAutocomplete();
     return null;
   }
 
+  // ---- transit helpers (for Sade Sati / Gurubala) ----
+  const SIGN=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+  const MY=d=>d.toLocaleDateString(undefined,{month:"short",year:"numeric"});
+  function signIdxOn(planet, dt){
+    const JD=julianDay(dt.getFullYear(),dt.getMonth()+1,dt.getDate(),0);
+    return Math.floor(computeChart(JD, currentChart.ayanType||"lahiri").sidereal[planet]/30);
+  }
+  // earliest/latest day (weekly scan, refined) that pred(signIdx) holds, within ±days of now
+  function scanWindow(planet, predSet, backDays, fwdDays){
+    const now=new Date(), DAY=86400000;
+    let start=null,end=null;
+    for(let k=-backDays;k<=fwdDays;k+=7){
+      const dt=new Date(now.getTime()+k*DAY);
+      if(predSet.has(signIdxOn(planet,dt))){ if(start===null)start=dt; end=dt; }
+    }
+    return {start,end};
+  }
+  function firstEntry(planet, sIdx, backDays, fwdDays){
+    const now=new Date(), DAY=86400000;
+    for(let k=-backDays;k<=fwdDays;k+=7){ const dt=new Date(now.getTime()+k*DAY);
+      if(signIdxOn(planet,dt)===sIdx) return dt; }
+    return null;
+  }
+
+  function punarphooAnswer(){
+    if(!have()) return "Generate your chart first, then I'll check Punarphoo (Shani–Chandra).";
+    const s=sid(), mR=rashiOf(s.Moon).n, satR=rashiOf(s.Saturn).n;
+    const hd=(a,b)=>((b-a)%12+12)%12+1;
+    const conj=(mR===satR), satAsp=[3,7,10].includes(hd(satR,mR)), moonAsp=(hd(mR,satR)===7);
+    if(conj||satAsp||moonAsp){
+      const how=conj?"Saturn is conjunct the Moon (same rashi)":(satAsp?"Saturn aspects the Moon":"the Moon and Saturn are in mutual aspect");
+      return `<b>Punarphoo Dosha (Shani–Chandra): present.</b> ${how}. It tends to postpone or test marriage and relationships and gives a careful, calculative, sometimes anxious temperament — but the hurdles are not permanent. <b>Remedy:</b> Milk Abhisheka to Lord Chandramouleeswara (Shiva) on Mondays.`;
+    }
+    return "<b>Punarphoo Dosha: not present</b> — your Saturn neither joins nor aspects the Moon.";
+  }
+
+  function sadeSatiAnswer(){
+    if(!have()) return "Generate your chart first, then I'll compute your Sade Sati window.";
+    const mIdx=rashiOf(sid().Moon).n-1;
+    const s12=(mIdx+11)%12, s1=mIdx, s2=(mIdx+1)%12;
+    const SS=new Set([s12,s1,s2]);
+    const now=new Date(), nIdx=signIdxOn("Saturn",now), active=SS.has(nIdx);
+    if(!active){
+      return `<b>Sade Sati: not active now.</b> Transit Saturn is in ${SIGN[nIdx]}; Sade Sati runs while Saturn is in ${SIGN[s12]}, ${SIGN[s1]} or ${SIGN[s2]} (the 12th, 1st and 2nd from your Moon in ${SIGN[s1]}).`;
+    }
+    const win=scanWindow("Saturn", SS, 3600, 3600);
+    const eS1=firstEntry("Saturn", s1, 3600, 3600);
+    const eS2=firstEntry("Saturn", s2, 0, 3600);
+    let phase = nIdx===s12?"rising phase (Saturn in the 12th from the Moon)"
+      : nIdx===s1?"peak phase (Saturn over your Moon sign / Janma Rāśi)"
+      : "setting phase (Saturn in the 2nd from the Moon)";
+    let h=`<b>Sade Sati: active</b> — currently the <b>${phase}</b>.<br>`;
+    h+=`Overall span: <b>${win.start?MY(win.start):"?"} → ${win.end?MY(new Date(win.end.getTime()+7*86400000)):"?"}</b> (about 7½ years).<br>`;
+    h+=`Phases: 12th (${SIGN[s12]}) from ${win.start?MY(win.start):"?"}; peak (${SIGN[s1]}) from ${eS1?MY(eS1):"?"}; 2nd (${SIGN[s2]}) from ${eS2?MY(eS2):"?"}.`;
+    return h;
+  }
+
+  function gurubalaAnswer(){
+    if(!have()) return "Generate your chart first, then I'll check Gurubala.";
+    const mIdx=rashiOf(sid().Moon).n-1;
+    const good=new Set([(mIdx+1)%12,(mIdx+4)%12,(mIdx+6)%12,(mIdx+8)%12,(mIdx+10)%12]); // 2,5,7,9,11
+    const now=new Date(), jIdx=signIdxOn("Jupiter",now), active=good.has(jIdx);
+    const house=((jIdx-mIdx+12)%12)+1;
+    if(!active){
+      // find next favourable window start
+      const nxt=(function(){const DAY=86400000;for(let k=0;k<=520;k+=7){const dt=new Date(now.getTime()+k*DAY);if(good.has(signIdxOn("Jupiter",dt)))return dt;}return null;})();
+      return `<b>Gurubala: not active now.</b> Transit Jupiter is in ${SIGN[jIdx]} (house ${house} from your Moon); Gurubala needs Jupiter in the 2/5/7/9/11 from the Moon.${nxt?` It next begins around <b>${MY(nxt)}</b>.`:""}`;
+    }
+    // contiguous favourable span containing now
+    const DAY=86400000; let start=now,end=now;
+    for(let k=-7;k>=-520;k-=7){const dt=new Date(now.getTime()+k*DAY);if(good.has(signIdxOn("Jupiter",dt)))start=dt;else break;}
+    for(let k=7;k<=520;k+=7){const dt=new Date(now.getTime()+k*DAY);if(good.has(signIdxOn("Jupiter",dt)))end=dt;else break;}
+    return `<b>Gurubala: active</b> — a period of divine grace, good for auspicious functions. Transit Jupiter is in <b>${SIGN[jIdx]}</b>, the <b>${house}th</b> from your Moon. Current favourable period: <b>${MY(start)} → ${MY(new Date(end.getTime()+7*DAY))}</b>.`;
+  }
+
+  function natureAnswer(){
+    if(!have()) return "Generate your chart first, then I'll read your overall nature.";
+    const s=sid(); const tat={},mode={};
+    for(const p of PLANETS){ const r=getRashi(rashiOf(s[p]).n); tat[r.tatwa]=(tat[r.tatwa]||0)+1; mode[r.mode]=(mode[r.mode]||0)+1; }
+    const top=o=>{const m=Math.max(...Object.values(o));return Object.keys(o).filter(k=>o[k]===m);};
+    const TE={Agni:"energetic, driven and confident",Jala:"emotional, intuitive and caring",Prithvi:"practical, patient and reliable",Vayu:"intellectual, communicative and restless"};
+    const MO={Chara:"dynamic and initiating — you like change and movement",Sthira:"steady, fixed and determined — you prefer stability",Dwisabhava:"adaptable and versatile — a great communicator, though sometimes indecisive"};
+    const te=top(tat), mo=top(mode);
+    const teStr=te.map(x=>`${x} (${tat[x]})`).join(" & ");
+    const moStr=mo.map(x=>`${x} (${mode[x]})`).join(" & ");
+    let h=`<b>Your overall nature</b> (from where most of your nine grahas fall):<br>`;
+    h+=`• Dominant element: <b>${teStr}</b> — ${te.map(x=>TE[x]).join("; ")}.<br>`;
+    h+=`• Dominant mode: <b>${moStr}</b> — ${mo.map(x=>MO[x]).join("; ")}.`;
+    if(te.length>1) h+=`<br>The elemental tie means you blend those temperaments.`;
+    return h;
+  }
+
   const cap=s=>s;
   function yogaAnswer(planet, label){
     const info=RAHU_COMBOS[planet]; if(!info) return "I don't have that yoga in my tables.";
@@ -4384,7 +4476,7 @@ setupPlaceAutocomplete();
   }
 
   function helpText(){
-    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Guru Chandala”<br>• “is my Saturn exalted”<br>• “what is my Moon sign / nakshatra”<br>• “what is Sade Sati / Kuja Dosha”";
+    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Punarphoo dosha”<br>• “do I have Sade Sati and its dates”<br>• “do I have Gurubala and the period”<br>• “my general nature”<br>• “do I have Guru Chandala”, “is my Saturn exalted”, “my Moon sign”";
   }
 
   function answer(qRaw){
@@ -4395,6 +4487,10 @@ setupPlaceAutocomplete();
     if(/jupiter.*rahu|rahu.*jupiter|guru.*rahu/.test(q)) return yogaAnswer("Jupiter","guru chandala");
     if(/saturn.*rahu|rahu.*saturn|shani.*rahu/.test(q)) return yogaAnswer("Saturn","shaapit");
     if(/moon.*rahu|rahu.*moon|chandra.*rahu/.test(q)) return yogaAnswer("Moon","grahan");
+    if(/punarphoo|punarfoo|punar phoo|punarphu/.test(q) || (/\bpunar/.test(q))) return punarphooAnswer();
+    if(/sade *sati|sadesati|saade sati|elenati|7.?.?half.?year/.test(q)) return sadeSatiAnswer();
+    if(/gurubala|guru bala|jupiter.*(grace|transit|favou)|god.?s grace|daiva/.test(q)) return gurubalaAnswer();
+    if(/general nature|my nature|overall nature|majority.*plan|personality|temperament|what am i like|what is my nature/.test(q)) return natureAnswer();
     if(/dasha|dasa|bhukti|antar|mahadasha|maha dasha|which period|running period/.test(q)) return dashaAnswer();
     if(/remed|parihar|pooja|puja|mantra|upay|remedy/.test(q)) return remediesAnswer(q);
     const pl=detectPlanet(q);
