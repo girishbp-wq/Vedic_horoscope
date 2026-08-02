@@ -1184,6 +1184,14 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
           </summary>
           <div class="section-body" id="combust-body"></div>
         </details>
+        <details class="section">
+          <summary>
+            <span class="section-num">C5</span>
+            <span class="section-title">Budhāditya Yoga (Sun–Mercury) &amp; Rāhu</span>
+            <span class="section-sub">Intellect yoga — and how Rāhu's contact modulates it by the Sun's strength</span>
+          </summary>
+          <div class="section-body" id="budhaditya-body"></div>
+        </details>
       </div><!-- /classPane -->
 
       <div id="remediesPane" class="tabpane-big" style="display:none;">
@@ -3503,6 +3511,30 @@ const RCLASS_ROWS = [
   ["Fertility","fertility"],["Day / Night","dayNight"],["Rising","rising"],["Legs (nature)","legs"],
   ["Tridosha","tridosha"],["Lucky colour","colour"],["Place","place"],["Body part","bodyPart"],["Jyotirlinga","jyothirlinga"]
 ];
+function renderBudhaditya(sidereal){
+  const el=document.getElementById("budhaditya-body"); if(!el) return;
+  const sunR=rashiOf(sidereal.Sun).n, merR=rashiOf(sidereal.Mercury).n, rahuR=rashiOf(sidereal.Rahu).n;
+  if(sunR!==merR){
+    el.innerHTML=`<p>No Budhāditya Yoga in this chart — the Sun and Mercury are not in the same rāśi.</p>`;
+    return;
+  }
+  const dg=planetDignity("Sun", sunR, rashiOf(sidereal.Sun).deg);
+  const flag=dg&&dg.flag;
+  let cls = (["exalted","mtr","own"].includes(flag))?"strong":((["debilitated","enemy"].includes(flag))?"weak":"moderate");
+  const hd=(a,b)=>((b-a)%12+12)%12+1;
+  const conj=(rahuR===sunR), asp=[5,9,12].includes(hd(rahuR,sunR)), contact=conj||asp;
+  const how=conj?"conjunction":"aspect (2/5/9 anti-clockwise)";
+  const combust=sunGap("Mercury",sidereal)<=5;
+  let t=`<b>Budhāditya Yoga:</b> the Sun and Mercury are together in <b>${getRashi(sunR).english}</b> — a yoga for intelligence, analytical skill, learning, communication and success through the intellect.`;
+  if(combust) t+=` <span class="dig-note">(Mercury is combust here — some of its independent strength is burnt, but the yoga still forms.)</span>`;
+  let e;
+  if(!contact) e=`Rāhu does not contact this yoga, so it operates on its own merits.`;
+  else if(cls==="strong") e=`Rāhu is in <b>${how}</b> with the yoga, so there <b>is</b> an effect; but because the Sun is <b>strong (${dg.label})</b>, Rāhu <b>amplifies the positive qualities</b> of the Sun — heightened intelligence, ambition, authority, name &amp; fame, and out-of-the-box thinking that the strong Sun channels constructively.`;
+  else if(cls==="weak") e=`Rāhu is in <b>${how}</b> with the yoga, so there <b>is</b> an effect; with the Sun <b>weak (${dg.label})</b>, Rāhu <b>distorts</b> the yoga — ego inflation, scattered or manipulative thinking, restlessness. Strengthen the Sun (Sūrya Namaskār, Aditya Hrudayam) to steady it.`;
+  else e=`Rāhu is in <b>${how}</b> with the yoga, so there <b>is</b> an effect; with the Sun of <b>moderate</b> strength the result is mixed — a real boost to intellect and ambition, best kept constructive by strengthening the Sun.`;
+  el.innerHTML=`<p style="margin:0 0 6px;">${t}</p><p style="margin:0;">${e}</p>`;
+}
+
 function renderRashiClassifications(planetsByRashi, lagnaN){
   // ordered unique columns: Lagna's rashi first, then other occupied rashis
   const byR = {};
@@ -4093,6 +4125,7 @@ async function generate() {
   renderSession13(chart.sidereal);
   renderFullKarakatwas();
   renderCombustion(chart.sidereal);
+  renderBudhaditya(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
   renderRahuCombinations(planetsByRashi, chart.sidereal);
   renderDasha(chart.sidereal, dob, tob);
@@ -4424,6 +4457,23 @@ setupPlaceAutocomplete();
     return h;
   }
 
+  function budhadityaAnswer(){
+    if(!have()) return "Generate your chart first, then I'll check Budhāditya Yoga.";
+    const s=sid(), sunR=rashiOf(s.Sun).n, merR=rashiOf(s.Mercury).n, rahuR=rashiOf(s.Rahu).n;
+    if(sunR!==merR) return "You don't have Budhāditya Yoga — your Sun and Mercury are in different rāśis.";
+    const dg=planetDignity("Sun", sunR, rashiOf(s.Sun).deg), flag=dg&&dg.flag;
+    const cls=(["exalted","mtr","own"].includes(flag))?"strong":((["debilitated","enemy"].includes(flag))?"weak":"moderate");
+    const hd=(a,b)=>((b-a)%12+12)%12+1;
+    const conj=(rahuR===sunR), asp=[5,9,12].includes(hd(rahuR,sunR)), contact=conj||asp;
+    const how=conj?"conjunction":"aspect (2/5/9 anti-clockwise)";
+    let t=`<b>Budhāditya Yoga: yes</b> — Sun and Mercury together in ${getRashi(sunR).english} (intelligence, learning, communication, success through the intellect). `;
+    if(!contact) t+="Rāhu doesn't contact it, so it works on its own merits.";
+    else if(cls==="strong") t+=`Rāhu contacts it by ${how}, so there is an effect — but your Sun is <b>strong (${dg.label})</b>, so Rāhu <b>amplifies</b> the positive qualities (intelligence, ambition, authority, fame).`;
+    else if(cls==="weak") t+=`Rāhu contacts it by ${how}; with the Sun <b>weak (${dg.label})</b>, Rāhu <b>distorts</b> it (ego, scattered thinking) — strengthen the Sun.`;
+    else t+=`Rāhu contacts it by ${how}, so there is an effect; with a moderate Sun the result is mixed — strengthen the Sun to keep it constructive.`;
+    return t;
+  }
+
   const cap=s=>s;
   function yogaAnswer(planet, label){
     const info=RAHU_COMBOS[planet]; if(!info) return "I don't have that yoga in my tables.";
@@ -4490,6 +4540,7 @@ setupPlaceAutocomplete();
     if(/punarphoo|punarfoo|punar phoo|punarphu/.test(q) || (/\bpunar/.test(q))) return punarphooAnswer();
     if(/sade *sati|sadesati|saade sati|elenati|7.?.?half.?year/.test(q)) return sadeSatiAnswer();
     if(/gurubala|guru bala|jupiter.*(grace|transit|favou)|god.?s grace|daiva/.test(q)) return gurubalaAnswer();
+    if(/budh?aditya|budha.?ditya|sun.*mercury|mercury.*sun/.test(q)) return budhadityaAnswer();
     if(/general nature|my nature|overall nature|majority.*plan|personality|temperament|what am i like|what is my nature/.test(q)) return natureAnswer();
     if(/dasha|dasa|bhukti|antar|mahadasha|maha dasha|which period|running period/.test(q)) return dashaAnswer();
     if(/remed|parihar|pooja|puja|mantra|upay|remedy/.test(q)) return remediesAnswer(q);
