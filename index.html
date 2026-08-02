@@ -3844,24 +3844,42 @@ function renderRahuCombinations(planetsByRashi, sidereal){
     const pSeesRahu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,rr));
     if(conjunct||rahuSeesP||pSeesRahu){
       const how=conjunct?"conjunction":((rahuSeesP&&pSeesRahu)?"mutual aspect":"aspect");
-      let phase=null;
+      let phase=null, phaseKey=(how==="conjunction"?"exact":"aspect");
       if(conjunct && rahuDeg!=null){
         const pd=rashiOf(sidereal[p]).deg;
         const sep=rahuDeg-pd;                          // Rahu descends (anti-clockwise)
         if(Math.abs(sep)<=1.0){
+          phaseKey="exact";
           phase=`near-exact — Rahu ${rahuDeg.toFixed(1)}° is right on ${p} ${pd.toFixed(1)}° (within ${Math.abs(sep).toFixed(1)}°): <b>MAXIMUM effect</b>.`;
         } else if(sep>0){
+          phaseKey="applying";
           phase=`applying — Rahu ${rahuDeg.toFixed(1)}° is above ${p} ${pd.toFixed(1)}° and, moving anti-clockwise (descending), is approaching it: <b>effect present and building</b>.`;
         } else {
           const gap=Math.abs(sep);
+          phaseKey="separating";
           phase=`separating — Rahu ${rahuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`;
         }
       }
-      rows.push(Object.assign({how:how, phase:phase}, RAHU_COMBOS[p]));
+      rows.push(Object.assign({planet:p, how:how, phase:phase, phaseKey:phaseKey}, RAHU_COMBOS[p]));
     }
   }
   let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu Combinations (Session 14)</h4>`;
   if(rows.length){
+    // ---- per-chart remedy summary, ordered by strength/priority ----
+    const PR={exact:0, applying:1, aspect:2, separating:3};
+    const PRLABEL={exact:'<b style="color:var(--maroon)">High</b>', applying:'Medium–High', aspect:'Medium', separating:'Lower'};
+    const PRWORD={exact:'near-exact (peak)', applying:'applying (building)', aspect:'by aspect', separating:'separating (reduced)'};
+    const shortRem=(s)=> (s.split(/[;.]/)[0]||s).trim();
+    const summ=rows.slice().sort((a,b)=>(PR[a.phaseKey]-PR[b.phaseKey]));
+    html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Your combinations &amp; which remedy each needs</h4>`;
+    html+=`<table class="planet-table"><thead><tr><th>Combination</th><th>Contact</th><th>Priority</th><th>First remedy step</th></tr></thead><tbody>`;
+    html+=summ.map(r=>`<tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.how}${r.phaseKey&&r.phaseKey!=='aspect'?` · ${PRWORD[r.phaseKey]}`:''}</td>
+      <td>${PRLABEL[r.phaseKey]||'—'}</td>
+      <td>${shortRem(r.remedy)}</td></tr>`).join("");
+    html+=`</tbody></table>`;
+    html+=`<p class="akshara-note" style="margin:6px 0 16px;">Priority follows the degree rule: a <b>near-exact</b> conjunction has maximum effect and most warrants its remedy; an <b>applying</b> one is building; a <b>separating</b> one (Rahu has already crossed the planet) is weakening, so its remedy is lower priority. Full remedies for each are listed below.</p>`;
     html+=`<p class="akshara-note" style="margin:0 0 10px;">Rahu moves anti-clockwise (its degree decreases over time). In a conjunction, if Rahu is still <b>above</b> the planet's degree it is <b>approaching</b> (effect building, maximal at the same degree); once Rahu has fallen <b>below</b> the planet's degree it has <b>crossed</b> it and the effect is <b>reduced</b>. Aspect combinations are judged by whole sign.</p>`;
     html+=rows.map(r=>`<div style="margin:0 0 14px;">
       <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
@@ -4248,6 +4266,191 @@ window.addEventListener("afterprint", () => {
 
 /* On load */
 setupPlaceAutocomplete();
+
+/* =====================================================================
+   CHART ASSISTANT — a grounded, rule-based helper. It answers ONLY from
+   the computed chart (currentChart) and the course knowledge tables, so
+   it never invents astrology. No backend, no keys; runs in the browser.
+   ===================================================================== */
+(function(){
+  const VORDER=["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"];
+  const VYEARS={Ketu:7,Venus:20,Sun:6,Moon:10,Mars:7,Rahu:18,Jupiter:16,Saturn:19,Mercury:17};
+  const YOGA={ "guru chandala":"Jupiter","guru-chandala":"Jupiter","chandala":"Jupiter",
+    "shaapit":"Saturn","shapit":"Saturn","cursed":"Saturn",
+    "grahan":"Moon","chandra rahu":"Moon","volcano":"Mars" };
+  const DEFS={
+    "kuja dosha":"Kuja Dosha (Mangal / Manglik) is a Mars-based affliction judged from the Lagna, Venus and Moon — Mars in the 1st, 2nd, 4th, 7th, 8th or 12th can stress marriage and harmony, subject to several cancellations. Your specific result is in the <b>Kuja Dosha</b> section of the Birth Chart tab.",
+    "mangal":"See Kuja Dosha — a Mars affliction affecting marriage, judged from Lagna, Venus and Moon. Your result is in the Kuja Dosha section (Birth Chart tab).",
+    "manglik":"Manglik = Kuja Dosha, a Mars affliction affecting marriage. Your specific result is in the Kuja Dosha section (Birth Chart tab).",
+    "sade sati":"Sade Sati is the ~7½-year span when transit Saturn passes through the 12th, 1st and 2nd signs from your natal Moon. Your live status is in the <b>Sade Sati</b> section (Birth Chart tab).",
+    "combustion":"Combustion (Astangata) is when a planet sits within ~5° of the Sun and its significations get 'burnt'. Only the five star-planets combust — never the Moon, Rahu or Ketu. See the <b>Combustion</b> section (Classifications tab).",
+    "astangata":"Astangata = combustion: a planet within ~5° of the Sun. Only the five Tara grahas combust. See the Combustion section (Classifications tab).",
+    "vimshottari":"Vimshottari Daśā is the 120-year planetary timeline begun from your Moon's nakshatra. Your full sequence is in the <b>Daśā–Bhukti</b> tab.",
+    "exaltation":"Exaltation (Uccha) is a planet's sign of greatest strength; debilitation (Neecha) is the opposite. Ask e.g. “is my Saturn exalted”.",
+    "combustion of sun":"The Sun does not combust; it is the one that combusts other planets."
+  };
+  const PLANETS=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  const ALIAS={sun:"Sun",moon:"Moon",mars:"Mars",kuja:"Mars",mangal:"Mars",mercury:"Mercury",budha:"Mercury",
+    jupiter:"Jupiter",guru:"Jupiter",brihaspati:"Jupiter",venus:"Venus",shukra:"Venus",
+    saturn:"Saturn",shani:"Saturn",rahu:"Rahu",ketu:"Ketu"};
+
+  function have(){ return (typeof currentChart!=="undefined") && currentChart && currentChart.chart; }
+  function sid(){ return currentChart.chart.sidereal; }
+
+  function detectPlanet(q){ for(const k in ALIAS){ if(new RegExp("\\b"+k+"\\b").test(q)) return ALIAS[k]; } return null; }
+
+  function rahuCombos(){
+    if(!have()) return null;
+    const s=sid(); const pbr={}; PLANETS.forEach(p=>pbr[p]=rashiOf(s[p]).n);
+    const rr=pbr.Rahu, rahuDeg=rashiOf(s.Rahu).deg;
+    const hd=(a,b)=>((b-a)%12+12)%12+1;
+    const out=[];
+    for(const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]){
+      const conj=(pbr[p]===rr), rSees=[5,9,12].includes(hd(rr,pbr[p])), pSees=(PLANET_ASPECTS[p]||[7]).includes(hd(pbr[p],rr));
+      if(!(conj||rSees||pSees)) continue;
+      let key=conj?"exact":"aspect", pri=conj?0:2;
+      if(conj){ const sep=rahuDeg-rashiOf(s[p]).deg;
+        if(Math.abs(sep)<=1){key="exact";pri=0;} else if(sep>0){key="applying";pri=1;} else {key="separating";pri=3;} }
+      out.push(Object.assign({planet:p, how:conj?"conjunction":"aspect", key, pri}, RAHU_COMBOS[p]));
+    }
+    return out.sort((a,b)=>a.pri-b.pri);
+  }
+
+  function currentDasha(){
+    if(!have()||!currentChart.dob) return null;
+    const s=sid(), YR=365.25*24*3600*1000, add=(d,y)=>new Date(d.getTime()+y*YR);
+    const p=currentChart.dob.split("-").map(Number), t=(currentChart.tob||"0:0").split(":").map(Number);
+    const birth=new Date(p[0],p[1]-1,p[2],(t[0]||0),(t[1]||0),(t[2]||0));
+    const nk=nakshatraOf(s.Moon), frac=nk.degIn/NAK_SIZE, si=VORDER.indexOf(nk.lord);
+    let vs=add(birth,-frac*VYEARS[nk.lord]); const now=new Date();
+    for(let i=0;i<9;i++){ const L=VORDER[(si+i)%9], full=VYEARS[L], e=add(vs,full);
+      if(now>=vs&&now<e){ let x=vs; const li=VORDER.indexOf(L);
+        for(let j=0;j<9;j++){ const sub=VORDER[(li+j)%9], be=add(x, full*VYEARS[sub]/120);
+          if(now>=x&&now<be){ const f=d=>d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+            return {maha:L, bhukti:sub, mEnd:f(e), bStart:f(x), bEnd:f(be)}; } x=be; } }
+      vs=e; }
+    return null;
+  }
+
+  const cap=s=>s;
+  function yogaAnswer(planet, label){
+    const info=RAHU_COMBOS[planet]; if(!info) return "I don't have that yoga in my tables.";
+    let pres="";
+    const c=rahuCombos();
+    if(c){ const m=c.find(x=>x.planet===planet);
+      pres = m ? `<br><b>In your chart:</b> yes — present by ${m.how}${m.key!=="aspect"?` (${m.key})`:""}.`
+               : `<br><b>In your chart:</b> not present (your Rāhu doesn't join or aspect ${planet}).`; }
+    else pres = `<br><i>Generate your chart to see whether you have it.</i>`;
+    return `<b>${info.name}</b><br>${info.implication}<br><br><b>Remedy:</b> ${info.remedy}${pres}`;
+  }
+
+  function remediesAnswer(q){
+    const pl=detectPlanet(q);
+    if(pl && RAHU_COMBOS[pl]) return yogaAnswer(pl, pl);
+    const c=rahuCombos();
+    if(!c) return "Generate your chart first, then ask again — I'll list the remedies for the exact combinations in your chart. In general, Rāhu is pacified by: "+RAHU_GENERAL_REMEDIES.slice(0,3).join(" ");
+    if(!c.length) return "Your Rāhu forms no combination with the seven planets, so no combination-specific remedy applies. General Rāhu measures: "+RAHU_GENERAL_REMEDIES.slice(0,3).join(" ");
+    const PRI={exact:"High",applying:"Medium–High",aspect:"Medium",separating:"Lower"};
+    let h="Here are your combinations, by priority, with the first remedy step:<br><br>";
+    h+=c.map(r=>`<b>${r.name}</b> — <i>${PRI[r.key]||"—"}</i><br>${(r.remedy.split(/[;.]/)[0]||r.remedy).trim()}.`).join("<br><br>");
+    h+="<br><br>Open the <b>Remedies</b> tab for the full text of each, plus general Rāhu remedies.";
+    return h;
+  }
+
+  function dashaAnswer(){
+    const d=currentDasha();
+    if(!d) return have()? "I couldn't read the birth time for the Daśā — open the Daśā–Bhukti tab." : "Generate a chart first, then I'll tell you the running Mahādaśā and Bhukti.";
+    return `You are currently in <b>${d.maha} Mahādaśā</b> (until ${d.mEnd}), <b>${d.maha}–${d.bhukti} Bhukti</b> (${d.bStart} → ${d.bEnd}). The full 120-year timeline is in the Daśā–Bhukti tab.`;
+  }
+
+  function dignityAnswer(pl){
+    if(!have()) return "Generate a chart first, then ask about a planet's dignity.";
+    const s=sid(), r=rashiOf(s[pl]);
+    if(pl==="Rahu"||pl==="Ketu") return `${pl} is in ${getRashi(r.n).english} (${r.deg.toFixed(1)}°). The nodes are shadow points and take on the nature of their sign lord and conjunctions rather than a fixed exaltation in this tool.`;
+    const dg=planetDignity(pl, r.n, r.deg);
+    const flag=(dg&&dg.flag)?dg.flag:"neutral";
+    return `<b>${pl}</b> is in <b>${getRashi(r.n).english}</b> at ${r.deg.toFixed(1)}° — dignity: <b>${flag}</b>. (See the Graha Placements table on the Birth Chart tab for its strength %.)`;
+  }
+
+  function lagnaAnswer(){
+    if(!have()) return "Generate a chart first.";
+    const n=currentChart.lagnaN||rashiOf(0).n; const r=getRashi(currentChart.lagnaN);
+    return `Your <b>Lagna (Ascendant)</b> is <b>${r.english} / ${r.sanskrit}</b>, lord ${r.lord}. This shapes the physical body and how the world sees you (Janma Lagna tab).`;
+  }
+  function moonAnswer(){
+    if(!have()) return "Generate a chart first.";
+    const s=sid(), r=rashiOf(s.Moon), nk=nakshatraOf(s.Moon);
+    return `Your <b>Moon sign (Janma Rāśi)</b> is <b>${getRashi(r.n).english}</b>, and your <b>birth star (Janma Nakshatra)</b> is <b>${nk.name}</b> (pada ${nk.pada}), ruled by ${nk.lord} — which also starts your Vimśottari Daśā.`;
+  }
+
+  function helpText(){
+    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Guru Chandala”<br>• “is my Saturn exalted”<br>• “what is my Moon sign / nakshatra”<br>• “what is Sade Sati / Kuja Dosha”";
+  }
+
+  function answer(qRaw){
+    const q=(qRaw||"").toLowerCase().trim();
+    if(!q) return helpText();
+    if(/\b(help|what can you|who are you|hi|hello|hey|start)\b/.test(q)) return helpText();
+    for(const k in YOGA){ if(q.includes(k)) return yogaAnswer(YOGA[k], k); }
+    if(/jupiter.*rahu|rahu.*jupiter|guru.*rahu/.test(q)) return yogaAnswer("Jupiter","guru chandala");
+    if(/saturn.*rahu|rahu.*saturn|shani.*rahu/.test(q)) return yogaAnswer("Saturn","shaapit");
+    if(/moon.*rahu|rahu.*moon|chandra.*rahu/.test(q)) return yogaAnswer("Moon","grahan");
+    if(/dasha|dasa|bhukti|antar|mahadasha|maha dasha|which period|running period/.test(q)) return dashaAnswer();
+    if(/remed|parihar|pooja|puja|mantra|upay|remedy/.test(q)) return remediesAnswer(q);
+    const pl=detectPlanet(q);
+    if(pl && /(exalt|debilit|dignit|strong|weak|combust|which sign|placed|position)/.test(q)) return dignityAnswer(pl);
+    if(/lagna|ascendant|rising sign/.test(q)) return lagnaAnswer();
+    if(/moon sign|janma ras|rashi|nakshatra|birth star|janma/.test(q)) return moonAnswer();
+    for(const k in DEFS){ if(q.includes(k)) return DEFS[k]; }
+    if(pl) return dignityAnswer(pl);
+    return "I can help with your <b>remedies</b>, current <b>Daśā–Bhukti</b>, <b>yogas</b> (Guru Chandala, Shaapit, Grahan, Kuja Dosha, Sade Sati), your <b>Lagna</b> &amp; <b>Moon/nakshatra</b>, and a planet's <b>dignity/combustion</b>. Try “what are my remedies” or type “help”.";
+  }
+
+  // ---- UI ----
+  const style=document.createElement("style");
+  style.textContent=`
+  #cbBtn{position:fixed;right:20px;bottom:20px;z-index:9999;font-family:'Cinzel',serif;font-size:12px;letter-spacing:.12em;
+    background:var(--maroon,#7a1f2b);color:#fff;border:none;border-radius:999px;padding:12px 18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+  #cbPanel{position:fixed;right:20px;bottom:72px;z-index:9999;width:min(360px,92vw);height:min(480px,70vh);display:none;
+    flex-direction:column;background:#fff;border:1px solid var(--gold,#c8a24a);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.3);}
+  #cbPanel .cbHead{background:var(--maroon,#7a1f2b);color:#fff;padding:10px 14px;font-family:'Cinzel',serif;font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+  #cbPanel .cbHead span{cursor:pointer;font-size:18px;line-height:1;}
+  #cbMsgs{flex:1;overflow-y:auto;padding:12px;background:#faf6ee;font-size:13.5px;line-height:1.5;}
+  #cbMsgs .u{text-align:right;margin:8px 0;}
+  #cbMsgs .u b{background:var(--maroon,#7a1f2b);color:#fff;padding:6px 10px;border-radius:10px 10px 2px 10px;display:inline-block;max-width:85%;font-weight:400;}
+  #cbMsgs .a{margin:8px 0;}
+  #cbMsgs .a span{background:#fff;border:1px solid var(--gold,#c8a24a);padding:8px 11px;border-radius:10px 10px 10px 2px;display:inline-block;max-width:90%;}
+  .cbChips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;}
+  .cbChips button{font-size:11.5px;border:1px solid var(--gold,#c8a24a);background:#fff;color:var(--maroon,#7a1f2b);border-radius:999px;padding:4px 9px;cursor:pointer;}
+  #cbInRow{display:flex;border-top:1px solid #eadfca;}
+  #cbInput{flex:1;border:none;padding:11px;font-size:13.5px;outline:none;}
+  #cbSend{border:none;background:var(--gold,#c8a24a);color:#3a2410;padding:0 16px;cursor:pointer;font-weight:600;}
+  .cbNote{font-size:10.5px;color:#8a7f6a;padding:6px 10px;background:#f3ecdc;}
+  @media print{#cbBtn,#cbPanel{display:none!important;}}`;
+  document.head.appendChild(style);
+
+  const btn=document.createElement("button"); btn.id="cbBtn"; btn.type="button"; btn.textContent="✦ Ask the chart";
+  const panel=document.createElement("div"); panel.id="cbPanel";
+  panel.innerHTML=`<div class="cbHead">Chart Assistant <span id="cbClose" title="close">×</span></div>
+    <div id="cbMsgs"></div>
+    <div id="cbInRow"><input id="cbInput" placeholder="e.g. what are my remedies?" autocomplete="off"/><button id="cbSend" type="button">Send</button></div>
+    <div class="cbNote">Answers come from your computed chart &amp; the course material — devotional guidance, not a substitute for a professional.</div>`;
+  document.body.appendChild(btn); document.body.appendChild(panel);
+  const msgs=panel.querySelector("#cbMsgs"), input=panel.querySelector("#cbInput");
+  function push(html, who){ const d=document.createElement("div"); d.className=who; d.innerHTML=who==="u"?`<b>${html}</b>`:`<span>${html}</span>`; msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; }
+  function ask(q){ push(q.replace(/</g,"&lt;"),"u"); push(answer(q),"a"); }
+  function chips(){ const c=document.createElement("div"); c.className="cbChips a";
+    ["what are my remedies","which daśā am I in","do I have Guru Chandala","my Moon sign"].forEach(t=>{
+      const b=document.createElement("button"); b.type="button"; b.textContent=t; b.onclick=()=>ask(t); c.appendChild(b); });
+    msgs.appendChild(c); }
+  let opened=false;
+  btn.onclick=()=>{ const on=panel.style.display!=="flex"; panel.style.display=on?"flex":"none";
+    if(on&&!opened){ opened=true; push("Namaste 🙏 I'm your chart assistant. "+helpText(),"a"); chips(); input.focus(); } };
+  panel.querySelector("#cbClose").onclick=()=>panel.style.display="none";
+  panel.querySelector("#cbSend").onclick=()=>{ const v=input.value.trim(); if(v){ ask(v); input.value=""; } };
+  input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ const v=input.value.trim(); if(v){ ask(v); input.value=""; } } });
+  try { window.chartAssistant = { answer: answer }; } catch(e){}
+})();
 
 </script>
 </body>
