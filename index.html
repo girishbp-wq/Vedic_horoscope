@@ -4457,6 +4457,41 @@ setupPlaceAutocomplete();
     return h;
   }
 
+  function detectPlanets(q){
+    const found=[]; for(const k in ALIAS){ if(new RegExp("\\b"+k+"\\b").test(q) && !found.includes(ALIAS[k])) found.push(ALIAS[k]); }
+    return found;
+  }
+  function aspNum(P, fromR, toR){ // ordinal to show (anti-clockwise for nodes)
+    const h=((toR-fromR)%12+12)%12+1;
+    return (P==="Rahu"||P==="Ketu") ? ({12:2,9:5,5:9}[h]||h) : h;
+  }
+  function aspects(P, fromR, toR){ return (PLANET_ASPECTS[P]||[7]).includes(((toR-fromR)%12+12)%12+1); }
+  const ord=n=>{const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+  function aspectAnswer(q){
+    if(!have()) return "Generate your chart first, then I can check aspects.";
+    const s=sid(), R={}; PLANETS.forEach(p=>R[p]=rashiOf(s[p]).n);
+    const pls=detectPlanets(q);
+    // "does A aspect B"
+    if(pls.length>=2){
+      const [A,B]=pls;
+      if(aspects(A,R[A],R[B])) return `<b>Yes</b> — ${A} casts its <b>${ord(aspNum(A,R[A],R[B]))} aspect</b>${(A==="Rahu"||A==="Ketu")?" (anti-clockwise)":""} on ${B} (in ${getRashi(R[B]).english}).`;
+      if(aspects(B,R[B],R[A])) return `Not the other way, but <b>${B}</b> casts its <b>${ord(aspNum(B,R[B],R[A]))} aspect</b>${(B==="Rahu"||B==="Ketu")?" (anti-clockwise)":""} on ${A}.`;
+      return `<b>No</b> — ${A} does not aspect ${B}, nor ${B} aspect ${A}.`;
+    }
+    if(pls.length===1){
+      const X=pls[0];
+      const onX=PLANETS.filter(p=>p!==X && aspects(p,R[p],R[X]))
+                       .map(p=>`${p} (${ord(aspNum(p,R[p],R[X]))}${(p==="Rahu"||p==="Ketu")?" a-c":""})`);
+      const byX=PLANETS.filter(p=>p!==X && aspects(X,R[X],R[p]))
+                       .map(p=>`${p} (${ord(aspNum(X,R[X],R[p]))}${(X==="Rahu"||X==="Ketu")?" a-c":""})`);
+      let h=`<b>${X}</b> is in ${getRashi(R[X]).english}.<br>`;
+      h+= onX.length? `Aspected by: <b>${onX.join(", ")}</b>.` : `No planet casts a special aspect on ${X}.`;
+      h+= "<br>"+ (byX.length? `${X} aspects: <b>${byX.join(", ")}</b>.` : `${X} aspects no planet (only the empty 7th house).`);
+      return h;
+    }
+    return "Tell me which planets — e.g. “does Jupiter aspect Ketu” or “what aspects my Sun”.";
+  }
+
   function budhadityaAnswer(){
     if(!have()) return "Generate your chart first, then I'll check Budhāditya Yoga.";
     const s=sid(), sunR=rashiOf(s.Sun).n, merR=rashiOf(s.Mercury).n, rahuR=rashiOf(s.Rahu).n;
@@ -4526,7 +4561,7 @@ setupPlaceAutocomplete();
   }
 
   function helpText(){
-    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Punarphoo dosha”<br>• “do I have Sade Sati and its dates”<br>• “do I have Gurubala and the period”<br>• “my general nature”<br>• “do I have Guru Chandala”, “is my Saturn exalted”, “my Moon sign”";
+    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Punarphoo dosha”<br>• “do I have Sade Sati and its dates”<br>• “do I have Gurubala and the period”<br>• “my general nature”<br>• “does Jupiter aspect Ketu” / “what aspects my Sun”<br>• “do I have Guru Chandala”, “is my Saturn exalted”, “my Moon sign”";
   }
 
   function answer(qRaw){
@@ -4534,6 +4569,7 @@ setupPlaceAutocomplete();
     if(!q) return helpText();
     if(/\b(help|what can you|who are you|hi|hello|hey|start)\b/.test(q)) return helpText();
     for(const k in YOGA){ if(q.includes(k)) return yogaAnswer(YOGA[k], k); }
+    if(/\baspect|drishti|drsti|drishthi|aspecting/.test(q)) return aspectAnswer(q);
     if(/jupiter.*rahu|rahu.*jupiter|guru.*rahu/.test(q)) return yogaAnswer("Jupiter","guru chandala");
     if(/saturn.*rahu|rahu.*saturn|shani.*rahu/.test(q)) return yogaAnswer("Saturn","shaapit");
     if(/moon.*rahu|rahu.*moon|chandra.*rahu/.test(q)) return yogaAnswer("Moon","grahan");
