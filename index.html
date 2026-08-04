@@ -3903,6 +3903,14 @@ function renderRahuCombinations(planetsByRashi, sidereal){
     const pSeesRahu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,rr));
     if(conjunct||rahuSeesP||pSeesRahu){
       const how=conjunct?"conjunction":((rahuSeesP&&pSeesRahu)?"mutual aspect":"aspect");
+      const ord=n=>{const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+      let aspBy="";
+      if(!conjunct){
+        const parts=[];
+        if(rahuSeesP) parts.push(`Rāhu's ${ord(dispAspHouse("Rahu", hd(rr,pr)))} aspect (anti-clockwise)`);
+        if(pSeesRahu) parts.push(`${p}'s ${ord(hd(pr,rr))} aspect`);
+        aspBy=parts.join(" & ");
+      }
       let phase=null, phaseKey=(how==="conjunction"?"exact":"aspect"), pd=null, strong=false;
       if(conjunct && sidereal){
         pd=rashiOf(sidereal[p]).deg;
@@ -3923,7 +3931,7 @@ function renderRahuCombinations(planetsByRashi, sidereal){
           phase=`separating — Rahu ${rahuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`;
         }
       }
-      rows.push(Object.assign({planet:p, how:how, phase:phase, phaseKey:phaseKey, pd:pd, strong:strong, priority:(how==="conjunction"?null:"aspect")}, RAHU_COMBOS[p]));
+      rows.push(Object.assign({planet:p, how:how, aspBy:aspBy, phase:phase, phaseKey:phaseKey, pd:pd, strong:strong, priority:(how==="conjunction"?null:"aspect")}, RAHU_COMBOS[p]));
     }
   }
   // Nearest-planet rule: among conjunctions, the closest to Rahu is PRIMARY (remedy);
@@ -3952,7 +3960,7 @@ function renderRahuCombinations(planetsByRashi, sidereal){
     html+=`<table class="planet-table"><thead><tr><th>Combination</th><th>Contact</th><th>Focus</th><th>First remedy step</th></tr></thead><tbody>`;
     html+=summ.map(r=>`<tr>
       <td><strong>${r.name}</strong></td>
-      <td>${r.how}${r.phaseKey&&r.phaseKey!=='aspect'?` · ${PRWORD[r.phaseKey]}`:''}</td>
+      <td>${r.how}${r.aspBy?` · ${r.aspBy}`:''}${r.phaseKey&&r.phaseKey!=='aspect'?` · ${PRWORD[r.phaseKey]}`:''}</td>
       <td>${PRLABEL[r.priority]||'By aspect — remedy'}</td>
       <td>${r.priority==='secondary'?'—':shortRem(r.remedy)}</td></tr>`).join("");
     html+=`</tbody></table>`;
@@ -3960,6 +3968,7 @@ function renderRahuCombinations(planetsByRashi, sidereal){
     html+=`<p class="akshara-note" style="margin:0 0 10px;">Rahu moves anti-clockwise (its degree decreases over time). In a conjunction, if Rahu is still <b>above</b> the planet's degree it is <b>approaching</b> (effect building, maximal at the same degree); once Rahu has fallen <b>below</b> the planet's degree it has <b>crossed</b> it and the effect is <b>reduced</b>. Aspect combinations are judged by whole sign.</p>`;
     html+=rows.map(r=>`<div style="margin:0 0 14px;">
       <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
+      ${r.aspBy?`<p style="margin:0 0 4px;"><em>Formed by:</em> ${r.aspBy}.</p>`:""}
       ${r.phase?`<p style="margin:0 0 4px;"><em>Strength:</em> ${r.phase}</p>`:""}
       <p style="margin:0 0 4px;">${r.implication}</p>
       <p class="dig-note" style="margin:0;"><strong>Remedy:</strong> ${r.remedy}</p></div>`).join("");
