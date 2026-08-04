@@ -3876,9 +3876,13 @@ function renderRahuCombinations(planetsByRashi, sidereal){
     const pSeesRahu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,rr));
     if(conjunct||rahuSeesP||pSeesRahu){
       const how=conjunct?"conjunction":((rahuSeesP&&pSeesRahu)?"mutual aspect":"aspect");
-      let phase=null, phaseKey=(how==="conjunction"?"exact":"aspect");
+      let phase=null, phaseKey=(how==="conjunction"?"exact":"aspect"), pd=null, strong=false;
+      if(conjunct && sidereal){
+        pd=rashiOf(sidereal[p]).deg;
+        const dgP=planetDignity(p, pr, pd);
+        strong = !!(dgP && ["exalted","mtr","own"].includes(dgP.flag));
+      }
       if(conjunct && rahuDeg!=null){
-        const pd=rashiOf(sidereal[p]).deg;
         const sep=rahuDeg-pd;                          // Rahu descends (anti-clockwise)
         if(Math.abs(sep)<=1.0){
           phaseKey="exact";
@@ -3892,26 +3896,40 @@ function renderRahuCombinations(planetsByRashi, sidereal){
           phase=`separating — Rahu ${rahuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`;
         }
       }
-      rows.push(Object.assign({planet:p, how:how, phase:phase, phaseKey:phaseKey}, RAHU_COMBOS[p]));
+      rows.push(Object.assign({planet:p, how:how, phase:phase, phaseKey:phaseKey, pd:pd, strong:strong, priority:(how==="conjunction"?null:"aspect")}, RAHU_COMBOS[p]));
     }
+  }
+  // Nearest-planet rule: among conjunctions, the closest to Rahu is PRIMARY (remedy);
+  // the farther conjunct planets are secondary. Aspect combinations stay separate.
+  const conjRows=rows.filter(r=>r.how==="conjunction");
+  if(conjRows.length && rahuDeg!=null){
+    conjRows.forEach(r=>r._gap=Math.abs(rahuDeg-r.pd));
+    const primary=conjRows.reduce((a,b)=>a._gap<=b._gap?a:b);
+    conjRows.forEach(r=>{
+      if(r===primary){ r.priority="primary";
+        r.phase=(r.phase||"")+` <b>NEAREST to Rāhu (${r._gap.toFixed(1)}°)</b> — Rāhu meets it first, so the <b>maximum effect is here</b>; this is the combination to remedy.`;
+      } else { r.priority="secondary";
+        r.phase=(r.phase||"")+` <b>Secondary</b> — ${primary.planet} is nearer to Rāhu and takes the main effect${r.strong?` (and ${r.planet} is itself strong)`:""}, so this ${r.planet}–Rāhu combination is minor; no separate remedy is pressed.`;
+      }
+    });
   }
   let html=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Rahu Combinations (Session 14)</h4>`;
   if(rows.length){
     // ---- per-chart remedy summary, ordered by strength/priority ----
-    const PR={exact:0, applying:1, aspect:2, separating:3};
-    const PRLABEL={exact:'<b style="color:var(--maroon)">High</b>', applying:'Medium–High', aspect:'Medium', separating:'Lower'};
+    const FOCUS={primary:0, aspect:1, secondary:2};
+    const PRLABEL={primary:'<b style="color:var(--maroon)">Primary — remedy</b>', aspect:'By aspect — remedy', secondary:'Secondary — minor'};
     const PRWORD={exact:'near-exact (peak)', applying:'applying (building)', aspect:'by aspect', separating:'separating (reduced)'};
     const shortRem=(s)=> (s.split(/[;.]/)[0]||s).trim();
-    const summ=rows.slice().sort((a,b)=>(PR[a.phaseKey]-PR[b.phaseKey]));
+    const summ=rows.slice().sort((a,b)=>((FOCUS[a.priority]??1)-(FOCUS[b.priority]??1)));
     html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">Your combinations &amp; which remedy each needs</h4>`;
-    html+=`<table class="planet-table"><thead><tr><th>Combination</th><th>Contact</th><th>Priority</th><th>First remedy step</th></tr></thead><tbody>`;
+    html+=`<table class="planet-table"><thead><tr><th>Combination</th><th>Contact</th><th>Focus</th><th>First remedy step</th></tr></thead><tbody>`;
     html+=summ.map(r=>`<tr>
       <td><strong>${r.name}</strong></td>
       <td>${r.how}${r.phaseKey&&r.phaseKey!=='aspect'?` · ${PRWORD[r.phaseKey]}`:''}</td>
-      <td>${PRLABEL[r.phaseKey]||'—'}</td>
-      <td>${shortRem(r.remedy)}</td></tr>`).join("");
+      <td>${PRLABEL[r.priority]||'By aspect — remedy'}</td>
+      <td>${r.priority==='secondary'?'—':shortRem(r.remedy)}</td></tr>`).join("");
     html+=`</tbody></table>`;
-    html+=`<p class="akshara-note" style="margin:6px 0 16px;">Priority follows the degree rule: a <b>near-exact</b> conjunction has maximum effect and most warrants its remedy; an <b>applying</b> one is building; a <b>separating</b> one (Rahu has already crossed the planet) is weakening, so its remedy is lower priority. Full remedies for each are listed below.</p>`;
+    html+=`<p class="akshara-note" style="margin:6px 0 16px;"><b>Nearest-planet rule:</b> when Rāhu is conjunct several planets in one sign, it meets the <b>closest</b> one first, so the maximum effect (and the remedy) falls on that <b>primary</b> planet; the farther conjunct planets are <b>secondary</b> and need no separate remedy (all the more if they are strong/exalted). Aspect combinations are judged separately and each keeps its own remedy.</p>`;
     html+=`<p class="akshara-note" style="margin:0 0 10px;">Rahu moves anti-clockwise (its degree decreases over time). In a conjunction, if Rahu is still <b>above</b> the planet's degree it is <b>approaching</b> (effect building, maximal at the same degree); once Rahu has fallen <b>below</b> the planet's degree it has <b>crossed</b> it and the effect is <b>reduced</b>. Aspect combinations are judged by whole sign.</p>`;
     html+=rows.map(r=>`<div style="margin:0 0 14px;">
       <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
@@ -4341,12 +4359,19 @@ setupPlaceAutocomplete();
     for(const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]){
       const conj=(pbr[p]===rr), rSees=[5,9,12].includes(hd(rr,pbr[p])), pSees=(PLANET_ASPECTS[p]||[7]).includes(hd(pbr[p],rr));
       if(!(conj||rSees||pSees)) continue;
-      let key=conj?"exact":"aspect", pri=conj?0:2;
-      if(conj){ const sep=rahuDeg-rashiOf(s[p]).deg;
-        if(Math.abs(sep)<=1){key="exact";pri=0;} else if(sep>0){key="applying";pri=1;} else {key="separating";pri=3;} }
-      out.push(Object.assign({planet:p, how:conj?"conjunction":"aspect", key, pri}, RAHU_COMBOS[p]));
+      let key=conj?"exact":"aspect", pri=conj?0:2, gap=null;
+      if(conj){ const sep=rahuDeg-rashiOf(s[p]).deg; gap=Math.abs(sep);
+        if(Math.abs(sep)<=1){key="exact";} else if(sep>0){key="applying";} else {key="separating";} }
+      out.push(Object.assign({planet:p, how:conj?"conjunction":"aspect", key, gap, priority:(conj?null:"aspect")}, RAHU_COMBOS[p]));
     }
-    return out.sort((a,b)=>a.pri-b.pri);
+    // nearest-planet rule: closest conjunct planet = primary; others secondary
+    const conj=out.filter(c=>c.how==="conjunction");
+    if(conj.length){
+      const primary=conj.reduce((a,b)=>a.gap<=b.gap?a:b);
+      conj.forEach(c=>{ c.priority=(c===primary)?"primary":"secondary"; c._primaryName=primary.planet; });
+    }
+    const rank={primary:0, aspect:1, secondary:2};
+    return out.sort((a,b)=>(rank[a.priority]??1)-(rank[b.priority]??1));
   }
 
   function currentDasha(){
@@ -4527,9 +4552,13 @@ setupPlaceAutocomplete();
     const c=rahuCombos();
     if(!c) return "Generate your chart first, then ask again — I'll list the remedies for the exact combinations in your chart. In general, Rāhu is pacified by: "+RAHU_GENERAL_REMEDIES.slice(0,3).join(" ");
     if(!c.length) return "Your Rāhu forms no combination with the seven planets, so no combination-specific remedy applies. General Rāhu measures: "+RAHU_GENERAL_REMEDIES.slice(0,3).join(" ");
-    const PRI={exact:"High",applying:"Medium–High",aspect:"Medium",separating:"Lower"};
-    let h="Here are your combinations, by priority, with the first remedy step:<br><br>";
-    h+=c.map(r=>`<b>${r.name}</b> — <i>${PRI[r.key]||"—"}</i><br>${(r.remedy.split(/[;.]/)[0]||r.remedy).trim()}.`).join("<br><br>");
+    const PRI={primary:"Primary — do this remedy", aspect:"By aspect — remedy", secondary:"Secondary — minor, no separate remedy"};
+    let h="Here are your combinations, by focus (nearest conjunct planet to Rāhu takes the main effect):<br><br>";
+    h+=c.map(r=>{
+      const lab=PRI[r.priority]||"By aspect — remedy";
+      const rem=(r.priority==="secondary")?`(${r._primaryName} is nearer to Rāhu and takes the effect)`:(r.remedy.split(/[;.]/)[0]||r.remedy).trim()+".";
+      return `<b>${r.name}</b> — <i>${lab}</i><br>${rem}`;
+    }).join("<br><br>");
     h+="<br><br>Open the <b>Remedies</b> tab for the full text of each, plus general Rāhu remedies.";
     return h;
   }
