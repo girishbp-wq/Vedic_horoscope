@@ -689,6 +689,10 @@ details.section[open] > summary::after { content: "−"; }
 .report-tabs { display:flex; gap:8px; margin:8px 0 20px; }
 .rtab { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.15em; text-transform:uppercase; padding:8px 18px; border:1px solid var(--gold); border-radius:999px; color:var(--maroon); background:transparent; cursor:pointer; }
 .rtab.active { background:var(--maroon); color:#fff; border-color:var(--maroon); }
+.chart-style-tabs { display:flex; gap:10px; justify-content:center; margin:0 0 16px; }
+.single-chart-wrap { display:flex; justify-content:center; }
+.single-chart-wrap .chart-panel { max-width:460px; width:100%; }
+@media print { .single-chart-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; } }
 .rtab.no-print { }
 
 /* Wide attribute / classification tables — compact + horizontally scrollable */
@@ -980,15 +984,19 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
           <span class="section-sub">Both North-Indian (diamond) &amp; South-Indian (square) styles</span>
         </summary>
         <div class="section-body">
-          <div class="dual-chart-wrap">
-            <div class="chart-panel">
+          <div class="chart-style-tabs no-print">
+            <button class="rtab active" type="button" data-cstyle="north">North-Indian</button>
+            <button class="rtab"        type="button" data-cstyle="south">South-Indian</button>
+          </div>
+          <div class="single-chart-wrap">
+            <div class="chart-panel" id="chartPanelNorth">
               <h4 class="chart-panel-title">North-Indian Style</h4>
-              <div class="chart-panel-sub">Houses fixed · Rāśis rotate · Lagna at top</div>
+              <div class="chart-panel-sub">Houses fixed · Rāśis rotate · Lagna at top · planet degrees shown</div>
               <div id="chartWheel"></div>
             </div>
-            <div class="chart-panel">
+            <div class="chart-panel" id="chartPanelSouth" style="display:none;">
               <h4 class="chart-panel-title">South-Indian Style</h4>
-              <div class="chart-panel-sub">Rāśis fixed · Lagna marked · Planets placed by sign</div>
+              <div class="chart-panel-sub">Rāśis fixed · Lagna marked · planet degrees shown</div>
               <div id="chartSouth"></div>
             </div>
           </div>
@@ -1231,10 +1239,19 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
           <button class="btn btn-ghost" id="btn-transit" type="button">Update transit</button>
         </div>
         <div class="report-meta" id="transit-meta"></div>
+        <div class="chart-style-tabs no-print" style="margin-top:12px;">
+          <button class="rtab active" type="button" data-cstyle="north">North-Indian</button>
+          <button class="rtab"        type="button" data-cstyle="south">South-Indian</button>
+        </div>
         <div class="dual-chart-wrap" style="margin-top:12px;">
-          <div class="chart-panel">
+          <div class="chart-panel" id="transitChartPanelNorth">
+            <h4 class="chart-panel-title">North-Indian Style · Transit</h4>
+            <div class="chart-panel-sub">Houses fixed · natal Lagna at top · transit planets · degrees shown</div>
+            <div id="transit-chartWheel"></div>
+          </div>
+          <div class="chart-panel" id="transitChartPanelSouth" style="display:none;">
             <h4 class="chart-panel-title">South-Indian Style · Transit</h4>
-            <div class="chart-panel-sub">Rāśis fixed · natal Lagna marked · transit planets by sign</div>
+            <div class="chart-panel-sub">Rāśis fixed · natal Lagna marked · transit planets · degrees shown</div>
             <div id="transit-chartSouth"></div>
           </div>
           <div class="chart-panel">
@@ -2216,7 +2233,9 @@ function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
 }
 
 /* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
-function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
+function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet, sidereal, wheelId, legendId) {
+  wheelId = wheelId || "chartWheel";
+  legendId = (legendId === undefined) ? "chartLegend" : legendId;
   retroSet = retroSet || new Set();
   // Standard North-Indian layout positions (cx, cy) for houses 1-12.
   // The diamond chart has 4 outer triangles and 4 inner diamonds, arranged so:
@@ -2250,7 +2269,10 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
   for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
     if (planet === "_Lagna") continue;
     const h = houseFromLagna(lagnaRashiNum, rashiNum);
-    planetsByHouse[h].push((PLANET_ABBR[planet] || planet) + (retroSet.has(planet) ? " (R)" : ""));
+    let lbl = (PLANET_ABBR[planet] || planet);
+    if (sidereal && sidereal[planet] != null) lbl += " " + Math.floor(rashiOf(sidereal[planet]).deg) + "°";
+    if (retroSet.has(planet)) lbl += " (R)";
+    planetsByHouse[h].push(lbl);
   }
 
   // Rashi number for each house
@@ -2314,8 +2336,9 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
     </div>`;
   }
 
-  document.getElementById("chartWheel").innerHTML = svg;
-  document.getElementById("chartLegend").innerHTML = legend;
+  const wheelEl = document.getElementById(wheelId);
+  if (wheelEl) wheelEl.innerHTML = svg;
+  if (legendId) { const lg = document.getElementById(legendId); if (lg) lg.innerHTML = legend; }
 }
 
 /* South Indian rashi chakra — 4×4 grid with rāśis in FIXED positions.
@@ -2325,7 +2348,7 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, retroSet) {
        Row 2:          Kumbha(11)  [center]   [center]      Karka(4)
        Row 3:          Makara(10)  [center]   [center]      Simha(5)
        Bottom row L→R: Dhanus(9)  Vrischika(8) Tula(7)      Kanya(6)                       */
-function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, retroSet, targetId) {
+function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, retroSet, targetId, sidereal) {
   targetId = targetId || "chartSouth";
   retroSet = retroSet || new Set();
   // Map rashi number -> grid cell index (0..15), reading row-major left-to-right top-to-bottom.
@@ -2351,7 +2374,10 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     let cls = "";
     if (dignity === "Exalted") cls = "exalted";
     else if (dignity === "Debilitated") cls = "debilitated";
-    planetsByRashiList[rashiNum].push({ abbr: (PLANET_ABBR[planet] || planet) + (retroSet.has(planet) ? " (R)" : ""), cls });
+    let abbr = (PLANET_ABBR[planet] || planet);
+    if (sidereal && sidereal[planet] != null) abbr += " " + Math.floor(rashiOf(sidereal[planet]).deg) + "°";
+    if (retroSet.has(planet)) abbr += " (R)";
+    planetsByRashiList[rashiNum].push({ abbr, cls });
   }
 
   // Build the grid
@@ -3641,7 +3667,8 @@ function renderTransit(dateStr){
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const trPBR = {}; for(const p of order) trPBR[p] = rashiOf(trSid[p]).n;
   const trRetro = retrogradeSet(jd, ayanType);
-  renderSouthIndianChart(lagnaN, trPBR, {}, trRetro, "transit-chartSouth");
+  renderSouthIndianChart(lagnaN, trPBR, {}, trRetro, "transit-chartSouth", trSid);
+  renderNorthIndianChart(lagnaN, trPBR, trRetro, trSid, "transit-chartWheel", null);
   const pad=n=>String(n).padStart(2,"0");
   document.getElementById("transit-meta").innerHTML =
     `Transit for <strong>${y}-${pad(m)}-${pad(d)}</strong> (${timeLabel}) · sidereal ${ayanType} · built-in ephemeris. `+
@@ -4118,8 +4145,8 @@ async function generate() {
     planetsWithDignity[p] = planetDignity(p, rNum).label;
   }
   const retroSet = retrogradeSet(JD, ayanType);
-  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, retroSet);
-  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity, retroSet);
+  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, retroSet, chart.sidereal);
+  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity, retroSet, "chartSouth", chart.sidereal);
 
   renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
@@ -4317,6 +4344,33 @@ window.addEventListener("afterprint", () => {
 
 /* On load */
 setupPlaceAutocomplete();
+
+/* North / South chart-style toggle (persists the choice on this device) */
+(function(){
+  const KEY="vh_chartstyle";
+  const NORTH=["chartPanelNorth","transitChartPanelNorth"];
+  const SOUTH=["chartPanelSouth","transitChartPanelSouth"];
+  const show=(id,on)=>{const el=document.getElementById(id); if(el) el.style.display=on?"":"none";};
+  function apply(style){
+    NORTH.forEach(id=>show(id, style!=="south"));
+    SOUTH.forEach(id=>show(id, style==="south"));
+    document.querySelectorAll(".chart-style-tabs .rtab").forEach(b=>b.classList.toggle("active", b.getAttribute("data-cstyle")===style));
+    try{ localStorage.setItem(KEY, style); }catch(e){}
+  }
+  document.querySelectorAll(".chart-style-tabs .rtab").forEach(b=>{
+    b.addEventListener("click", ()=>apply(b.getAttribute("data-cstyle")));
+  });
+  let saved="north"; try{ saved=localStorage.getItem(KEY)||"north"; }catch(e){}
+  apply(saved);
+  // For the PDF, reveal BOTH styles (birth + transit), then restore the chosen one.
+  const ALL=NORTH.concat(SOUTH);
+  window.addEventListener("beforeprint", ()=>{
+    ALL.forEach(id=>{const el=document.getElementById(id); if(el){el.dataset._d=el.style.display; el.style.display="";}});
+  });
+  window.addEventListener("afterprint", ()=>{
+    ALL.forEach(id=>{const el=document.getElementById(id); if(el){el.style.display=el.dataset._d||""; delete el.dataset._d;}});
+  });
+})();
 
 /* =====================================================================
    CHART ASSISTANT — a grounded, rule-based helper. It answers ONLY from
