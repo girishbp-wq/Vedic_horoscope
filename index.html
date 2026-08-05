@@ -3006,6 +3006,11 @@ const PUNARPHOO_REMEDIES = [
 const PUNARPHOO_EFFECTS = "Postponement or obstruction of marriage; unhappiness and misunderstanding in relationships; a logical, calculative, fault-finding temperament (they make good critics and do well in quality control); results come only after hard tests, though the hurdles are not permanent; fear, anxiety, depression or melancholy — worse when Saturn aspects a waning Moon; frequent job changes and a preference for one's own business; worry over the mother or a troublesome mother-in-law; gastric, digestive or breathing complaints, cracked teeth or calcium deficiency. Such natives are often slow learners yet good achievers and social workers.";
 const SUN_SATURN_EFFECT_M = "A strained relationship between father and son, or separation between them (Sun = father, Saturn = son).";
 const SUN_SATURN_EFFECT_F = "In a female chart the effect is reversed — the native is usually very close to her father.";
+const SUN_SATURN_REMEDIES = [
+  "Surya Arghya — offer water to the rising Sun every morning from a copper vessel, facing east; chant “Om Suryaya Namah” 11 or 21 times and spend a few moments in gratitude. This strengthens confidence and clarity.",
+  "Worship Lord Hanuman — traditionally believed to help balance Saturn’s difficult influences while supporting courage and righteous action: read the Hanuman Chalisa on Tuesdays and Saturdays, and visit a Hanuman temple regularly.",
+  "Charity on Saturdays — donate according to your capacity: black sesame seeds, black urad dal, a blanket or warm clothes, footwear, or food for the needy. Serve without expecting recognition."
+];
 const SATURN_MARS_EFFECT = "Harassment, tension or quarrels in the profession; disputes with brothers or blood relatives; hard physical work with little reward; frequent leg injuries, fractures or accident-proneness and decayed teeth; a leaning toward old property / real estate, or technical, dental or uniformed (police/security) work. In a female chart the husband may dwell on the past or be lazy, and servants may dominate and be short-tempered.";
 
 function detectPunarphoo(moonR, satR, moonNakLord, satNakLord){
@@ -3056,12 +3061,15 @@ function detectParivartana(planetsByRashi){
   return out;
 }
 
-function comboBlock(title, det, effect){
+function comboBlock(title, det, effect, remedies){
   if(det.present){
+    const remBlock = (remedies && remedies.length)
+      ? `<p style="margin:8px 0 4px;"><strong>Remedies:</strong></p><ul>${remedies.map(r=>`<li>${r}</li>`).join("")}</ul>`
+      : "";
     return `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">${title}</h4>
       <p><span class="section-flag flag-debilitated">⚠ Present</span></p>
       <p>Formed by:</p><ul>${det.reasons.map(r=>`<li>${r}</li>`).join("")}</ul>
-      <p class="dig-note">${effect}</p>`;
+      <p class="dig-note">${effect}</p>${remBlock}`;
   }
   return `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:20px 0 8px;">${title}</h4>
     <p><span class="section-flag flag-friend">Not present</span></p>`;
@@ -3086,7 +3094,7 @@ function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRash
   // Sun–Saturn (father–son) — gender-sensitive effect
   const isFemale = (gender||"").toString().trim().toLowerCase().startsWith("f");
   html += comboBlock("Sun&ndash;Saturn (father&ndash;son)", detectSunSaturn(sunRashiNum, satRashiNum),
-                     isFemale ? SUN_SATURN_EFFECT_F : SUN_SATURN_EFFECT_M);
+                     isFemale ? SUN_SATURN_EFFECT_F : SUN_SATURN_EFFECT_M, SUN_SATURN_REMEDIES);
   // Saturn–Mars
   html += comboBlock("Saturn&ndash;Mars combination", detectSaturnMars(marsRashiNum, satRashiNum), SATURN_MARS_EFFECT);
 
