@@ -971,6 +971,7 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
         <button class="rtab"        data-tab="class"       type="button">Classifications</button>
         <button class="rtab"        data-tab="remedies"    type="button">Remedies</button>
         <button class="rtab"        data-tab="dasha"       type="button">Daśā–Bhukti</button>
+        <button class="rtab"        data-tab="rahukaal"    type="button">Rāhu Kāla</button>
         <button class="rtab"        data-tab="transit"     type="button">Transit</button>
       </div>
 
@@ -1219,6 +1220,22 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
           </summary>
           <div class="section-body" id="rahu-body"></div>
         </details>
+        <details class="section" open>
+          <summary>
+            <span class="section-num">R3</span>
+            <span class="section-title">Ketu Combinations &amp; Remedies (Session 15)</span>
+            <span class="section-sub">Effect of Ketu joined with / aspecting each planet, with remedies</span>
+          </summary>
+          <div class="section-body" id="ketu-body"></div>
+        </details>
+        <details class="section" open>
+          <summary>
+            <span class="section-num">R4</span>
+            <span class="section-title">Kaala Sarpa Dosha / Yoga (Session 15)</span>
+            <span class="section-sub">Are all planets &amp; the Lagna hemmed within the Rāhu–Ketu axis?</span>
+          </summary>
+          <div class="section-body" id="kaalasarpa-body"></div>
+        </details>
       </div><!-- /remediesPane -->
 
       <div id="dashaPane" style="display:none;">
@@ -1231,6 +1248,32 @@ tr.dasha-now td { background: rgba(191,140,42,0.16); font-weight: 600; }
           <div class="section-body" id="dasha-body"></div>
         </details>
       </div><!-- /dashaPane -->
+
+      <div id="rahukaalPane" style="display:none;">
+        <details class="section" open>
+          <summary>
+            <span class="section-num">RK</span>
+            <span class="section-title">Rāhu Kāla</span>
+            <span class="section-sub">The inauspicious 1/8 of daytime — avoid starting new/auspicious work. Enter any place &amp; date.</span>
+          </summary>
+          <div class="section-body">
+            <div class="no-print" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+              <div style="flex:1 1 240px;position:relative;">
+                <label for="rk-place" style="font-size:12px;color:var(--muted);display:block;margin-bottom:3px;">Place</label>
+                <input id="rk-place" type="text" placeholder="Type any place (city/town)…" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid var(--gold);border-radius:6px;">
+                <div id="rk-suggestions" class="suggestions"></div>
+                <div id="rk-place-hint" style="font-size:11.5px;color:var(--muted);margin-top:3px;">Type and pick from the list; resolves to coordinates &amp; timezone (falls back to the built-in city list).</div>
+              </div>
+              <div>
+                <label for="rk-date" style="font-size:12px;color:var(--muted);display:block;margin-bottom:3px;">Date</label>
+                <input id="rk-date" type="date" style="padding:8px 10px;border:1px solid var(--gold);border-radius:6px;">
+              </div>
+              <button class="btn btn-primary" id="rk-go" type="button">Get Rāhu Kāla</button>
+            </div>
+            <div id="rk-body"></div>
+          </div>
+        </details>
+      </div><!-- /rahukaalPane -->
 
       <div id="transitPane" style="display:none;">
         <div class="no-print" style="display:flex;gap:12px;align-items:center;margin:4px 0 16px;flex-wrap:wrap;">
@@ -3713,7 +3756,7 @@ function renderTransit(dateStr){
     ? `<ul>${rows.map(r=>`<li${r.jup?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
     : `<p>No transit planet currently aspects a natal planet.</p>`;
 }
-const REPORT_PANES={ birth:"birthPane", karakatwas:"karakatwasPane", "class":"classPane", remedies:"remediesPane", dasha:"dashaPane", transit:"transitPane" };
+const REPORT_PANES={ birth:"birthPane", karakatwas:"karakatwasPane", "class":"classPane", remedies:"remediesPane", dasha:"dashaPane", rahukaal:"rahukaalPane", transit:"transitPane" };
 function showReportTab(which){
   if(!REPORT_PANES[which]) which="birth";
   for(const k in REPORT_PANES){
@@ -3736,6 +3779,13 @@ const RAHU_COMBOS = {"Sun": {"name": "Sun–Rahu (Grahan-affected Sun)", "implic
 const HUMAN_FACE_PLANETS = {"Hair": "Ketu", "Forehead": "Mercury", "Eyebrows": "Mars", "Right eye": "Sun", "Left eye": "Moon", "Nose": "Jupiter", "Cheeks": "Venus", "Moustache": "Ketu", "Beard": "Ketu", "Mouth / lips": "Rahu", "Chin": "Saturn", "Neck": "Mercury"};
 const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Namaha' 108 times; recite the Durga Kavacham.", "Visit Durga temples on Fridays or on Rahu nakshatra days (Ardra, Swati, Shatabhisha); light lemon lamps during Rahu Kaalam.", "Perform a Chandika Homam in a temple if the affliction is severe.", "Put dhoopam (incense) in the house on Saturdays (Rahu = smoke).", "Offer Boondhi to beggars; associate with and help people of other faiths / the underprivileged.", "Go to Sri Kalahasti and perform the Rahu–Ketu pooja.", "Offer urad-dal (Rahu) vada to Hanuman on Saturdays; do pradakshina at a snake-hill / Nagara Kallu.", "For a critical affliction, perform Rudrabhisheka and Maha Mrityunjaya / Ayush homa."];
 const RAHU_ITEMS = "Rahu items: Muslim associations, smoke, peacock feather, glittering items, covered items.";
+const KETU_COMBOS = {"Sun": {"name": "Ketu–Sun", "implication": "Physical energy when the Sun is strong (Aries/Leo/Scorpio); if the two conjoin in Libra the energy is 'sucked up' by Ketu, and in other signs Ketu lowers self-confidence — physical weakness, past-life guilt carried through life, introversion and self-pity, a stooped posture and a pessimistic outlook. A strict father, possible separation from the father, and eyesight problems.", "remedy": "General Ketu remedies (Ganapathi worship); honour the father and do Surya Namaskar / Aditya Hrudayam to strengthen the Sun."}, "Moon": {"name": "Ketu–Moon", "implication": "A strongly split, imaginative mind: in youth heart-breaks, mental unrest, disturbing dreams, insomnia and depression; over time it matures into detachment from useless issues, mental multi-tasking and progress in spirituality (with good creativity/narration if Mercury is strong). Can indicate a dosha or legal issues on the mother's side.", "remedy": "Bathe in holy rivers (Ganga, Kaveri — Ketu = small/river, Moon = water); worship Ganapathi; honour and care for the mother."}, "Mars": {"name": "Ketu–Mars (Volcano)", "implication": "Excess aggression, cruelty, over-confidence and cunning/'devilish' thinking — in the extreme, instigators of religious or racist conflict; strict self-control of thought, word and deed is essential. Bitterness with brothers, little benefit from blood relatives, improper property partition and litigation, Vastu defects; in a female chart, frequent quarrels with the husband and property disputes.", "remedy": "Buy a silver spear (vel), do pooja on Shashti tithi or Vishaka nakshatra with flowers and kumkum at home, then offer it in the hundi of an OLD Lord Subramanya (Kartikeya) temple; channel the energy through sport, discipline and restraint."}, "Mercury": {"name": "Ketu–Mercury", "implication": "Imagination, an experimental streak and revolutionary ideas — productive if Mercury signifies benefic houses; if Mercury is afflicted, poor judgement in a crisis, idle/loose talk and frustration. Misunderstandings with the maternal uncle, trouble with a younger sister and friends, complications in legal documents, a chance of a love-trap or love-marriage, and a break in education.", "remedy": "General Ketu remedies — Ganapathi worship and 'Om Gam Ganapataye Namah' 108 times daily; pray to Maha Vishnu for Mercury."}, "Jupiter": {"name": "Ketu–Jupiter", "implication": "At its best in Sagittarius or Pisces — Jupiter's wisdom guided by Ketu's instinct: excellent for religious heads, spiritual seekers, writers and orators, with strong intuition and easy access to loans, but detachment/disinterest in life and family. If Jupiter is badly placed: unpopularity in social and religious life, money-related litigation, and possible separation from children. (Working while standing/sitting on a staircase creates this combo — avoid deciding there, as it brings obstacles and litigation.)", "remedy": "Pray to Lord Ganesha, especially below-ground / Paatala idols (Kaanipakam Vinayaka, Paatala Ganapathi at Sri Kaalahasti); keep horse gram under the pillow overnight and feed the birds next morning; feed fish (and avoid eating fish or keeping aquariums); tonsure the head and offer the hair to the family deity."}, "Venus": {"name": "Ketu–Venus", "implication": "A restless search for 'true love' that often ends in frustration; heavy expenses and difficulty saving; men suffer through women and vice-versa; a troubled married life. As Venus governs reproduction, it can bring low sperm count, childlessness, impotence or late/weak children. (If Venus is retrograde, a divorce may be followed by a very happy, loving second marriage.)", "remedy": "Ganapathi worship and general Ketu remedies; keep the home clean and do NOT grow creepers over the house walls (that itself forms Venus–Ketu); pray to Mahalakshmi on Fridays."}, "Saturn": {"name": "Ketu–Saturn", "implication": "A life of struggle, disappointment, frustration and sorrow, with a profession full of ups and downs — yet a Ketu-related line of work can bring great success. Unsteady or low-income jobs, constant business enemies, being easily cheated, and little interest in salaried service. (Shaking the legs while sitting idle is a marker: Saturn = legs, Ketu = tail/shaking.)", "remedy": "Ganapathi worship and general Ketu remedies; worship Hanuman and Lord Shiva for Saturn; consider a Ketu-signified profession."}};
+const KETU_GENERAL_REMEDIES = ["Ganapathi pooja — offer durva grass (garike), do Gana Homa and wear a Ganapathi pendant; chant 'Om Gam Ganapataye Namah' 108 times daily.", "Visit pilgrimage centres and bathe in holy rivers.", "Feed horse gram to horses and fish; keep a handful of horse gram under the pillow overnight and feed it to the birds the next morning.", "Feed street dogs, squirrels, rats and fish; on a Sunday, light 7 candles in a church.", "Offer a 108-cardamom (elaichi) haara to Ganapathi; fly a kite; donate a saffron flag bearing 'Om'.", "Gift creeper-grown vegetables to sanyasis, barbers, cobblers and tailors; do seva or donate to mutts and ashramas.", "Ketu Parihara: tonsure the head and give the hair to your family deity; at the ChitraGupta temple, Kanchipuram, light 7 ghee lamps set over horse gram for Ketu.", "Chant the Gayatri mantra of the planet Ketu is joined with, and do the tatwa remedy of Ketu's rashi (Vayu: fly a kite / hoist a flag / chant; Jala: Abhisheka to Ganapathi; Agni: Ganapathi Homa / light candles in a church; Prithvi: pooja, charity, feed sanyasis, cobblers, barbers)."];
+const KETU_ITEMS = "Ketu items/associations: horse gram, fish, Ganesha (below-ground idols), staircase, tail/thin things, nets & checks, creepers, barbers/cobblers/tailors/sanyasis/astrologers/lawyers, broken items, spirituality. Tip: keep no broken items at home, don't quarrel with those Ketu signifies, and go serve a sanyasi rather than invite one home.";
+const KAALA_SARPA_RESULTS = ["Devotion to family and society, but repeated struggle and loneliness in times of need.", "Fear of heights, lonely places and snakes.", "Difficulty having children or little happiness from them; delay in marriage or an unhappy married life.", "Hurdles in life, health issues, lack of peace, tension and anxiety.", "Little support from friends and relatives; seldom rewarded for one's efforts.", "Dreams of dead ancestors or of bad things happening."];
+const KAALA_SARPA_REMEDIES = ["Kaala Sarpa Dosha Nivarana Pooja at Sri Kaalahasti, Rameshwaram, Thiru Nageshwaram, Kukke Subramanya or Ujjain.", "Rudrabhisheka to Lord Shiva; chant 'Om Namah Shivaya'.", "Chant the Maha Mrityunjaya mantra 108 times.", "Water a Peepal tree every Saturday.", "Visit the Garuda temple near Mulbagal (believed to relieve the 8 kinds of sarpa dosha).", "Chant the Hanuman Chalisa daily."];
+const KAALA_SARPA_NOTE = "Kaala Sarpa forms when ALL planets (and the Lagna) are hemmed within the Rahu–Ketu axis. If even one planet or the Lagna is outside the axis, it is NOT formed. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga, giving detachment and a spiritual inclination.";
+const NODE_RETRO_NOTE = "This planet is RETROGRADE, so Rahu/Ketu do not harm it — any damage is compensated and the result turns favourable (often with large gains in money, fame or standing). A retrograde planet 'circles' its own ground, so the native stays firm and undeviating in its matters.";
 
 /* =====================================================================
    TestCapture — records each generated horoscope on THIS device only as a
@@ -3898,7 +3948,7 @@ const TestCapture = (function(){
   return { record: record };
 })();
 
-function renderRahuCombinations(planetsByRashi, sidereal){
+function renderRahuCombinations(planetsByRashi, sidereal, retroSet){
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
   const rr=planetsByRashi.Rahu;
   const rahuDeg = sidereal ? rashiOf(sidereal.Rahu).deg : null;   // deg within its rashi
@@ -3939,7 +3989,8 @@ function renderRahuCombinations(planetsByRashi, sidereal){
           phase=`separating — Rahu ${rahuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`;
         }
       }
-      rows.push(Object.assign({planet:p, how:how, aspBy:aspBy, phase:phase, phaseKey:phaseKey, pd:pd, strong:strong, priority:(how==="conjunction"?null:"aspect")}, RAHU_COMBOS[p]));
+      const retro=!!(retroSet && retroSet.has(p));
+      rows.push(Object.assign({planet:p, how:how, aspBy:aspBy, phase:phase, phaseKey:phaseKey, pd:pd, strong:strong, retro:retro, priority:(how==="conjunction"?null:"aspect")}, RAHU_COMBOS[p]));
     }
   }
   // Nearest-planet rule: among conjunctions, the closest to Rahu is PRIMARY (remedy);
@@ -3978,17 +4029,118 @@ function renderRahuCombinations(planetsByRashi, sidereal){
       <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
       ${r.aspBy?`<p style="margin:0 0 4px;"><em>Formed by:</em> ${r.aspBy}.</p>`:""}
       ${r.phase?`<p style="margin:0 0 4px;"><em>Strength:</em> ${r.phase}</p>`:""}
+      ${r.retro?`<p style="margin:0 0 4px;color:#2e7d32;"><em>Retrograde:</em> ${NODE_RETRO_NOTE}</p>`:""}
       <p style="margin:0 0 4px;">${r.implication}</p>
       <p class="dig-note" style="margin:0;"><strong>Remedy:</strong> ${r.remedy}</p></div>`).join("");
   } else {
     html+=`<p>Rahu is not combined (by conjunction or aspect) with any of the seven planets in this chart.</p>`;
   }
-  html+=`<p class="akshara-note">Ketu combinations are taught in the next session and are not yet included.</p>`;
   html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">General Rahu Remedies</h4><ul>${RAHU_GENERAL_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
   html+=`<p class="akshara-note">${RAHU_ITEMS}</p>`;
   html+=`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Kaala-Purusha Face — planet of each feature</h4><p class="akshara-note">${Object.entries(HUMAN_FACE_PLANETS).map(function(e){return e[0]+": <b>"+e[1]+"</b>";}).join(" · ")}</p>`;
   const el=document.getElementById("rahu-body");
   if(el) el.innerHTML = html;
+}
+
+/* Ketu combinations (Session 15) — mirrors the Rahu logic (nearest-planet, degree
+   phase, aspect detail, retrograde immunity). */
+function renderKetuCombinations(planetsByRashi, sidereal, retroSet){
+  const el=document.getElementById("ketu-body"); if(!el) return;
+  const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+  const kr=planetsByRashi.Ketu;
+  const ketuDeg = sidereal ? rashiOf(sidereal.Ketu).deg : null;
+  const hd=(a,b)=>((b-a)%12+12)%12+1;
+  const ord=n=>{const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+  const rows=[];
+  for(const p of order){
+    const pr=planetsByRashi[p]; if(pr==null) continue;
+    const conjunct=(pr===kr);
+    const ketuSeesP=[5,9,12].includes(hd(kr,pr));
+    const pSeesKetu=(PLANET_ASPECTS[p]||[7]).includes(hd(pr,kr));
+    if(!(conjunct||ketuSeesP||pSeesKetu)) continue;
+    const how=conjunct?"conjunction":((ketuSeesP&&pSeesKetu)?"mutual aspect":"aspect");
+    let aspBy="";
+    if(!conjunct){
+      const parts=[];
+      if(ketuSeesP) parts.push(`Ketu's ${ord(dispAspHouse("Ketu", hd(kr,pr)))} aspect (anti-clockwise)`);
+      if(pSeesKetu) parts.push(`${p}'s ${ord(hd(pr,kr))} aspect`);
+      aspBy=parts.join(" & ");
+    }
+    let phase=null, phaseKey=(how==="conjunction"?"exact":"aspect"), pd=null;
+    if(conjunct && ketuDeg!=null){
+      pd=rashiOf(sidereal[p]).deg;
+      const sep=ketuDeg-pd;
+      if(Math.abs(sep)<=1.0){ phaseKey="exact"; phase=`near-exact — Ketu ${ketuDeg.toFixed(1)}° is right on ${p} ${pd.toFixed(1)}°: <b>MAXIMUM effect</b>.`; }
+      else if(sep>0){ phaseKey="applying"; phase=`applying — Ketu ${ketuDeg.toFixed(1)}° is above ${p} ${pd.toFixed(1)}° and, descending, is approaching it: <b>effect present and building</b>.`; }
+      else { const gap=Math.abs(sep); phaseKey="separating"; phase=`separating — Ketu ${ketuDeg.toFixed(1)}° has already crossed ${p} ${pd.toFixed(1)}° (by ${gap.toFixed(1)}°): <b>effect ${gap>6?'greatly reduced':'reduced'}</b>.`; }
+    }
+    const retro=!!(retroSet && retroSet.has(p));
+    rows.push(Object.assign({planet:p, how:how, aspBy:aspBy, phase:phase, phaseKey:phaseKey, pd:pd, retro:retro, priority:(how==="conjunction"?null:"aspect")}, KETU_COMBOS[p]));
+  }
+  // nearest-planet rule among conjunctions
+  const conjRows=rows.filter(r=>r.how==="conjunction");
+  if(conjRows.length && ketuDeg!=null){
+    conjRows.forEach(r=>r._gap=Math.abs(ketuDeg-r.pd));
+    const primary=conjRows.reduce((a,b)=>a._gap<=b._gap?a:b);
+    conjRows.forEach(r=>{
+      if(r===primary){ r.priority="primary"; r.phase=(r.phase||"")+` <b>NEAREST to Ketu (${r._gap.toFixed(1)}°)</b> — Ketu meets it first, so the <b>maximum effect is here</b>.`; }
+      else { r.priority="secondary"; r.phase=(r.phase||"")+` <b>Secondary</b> — ${primary.planet} is nearer to Ketu and takes the main effect; this ${r.planet}–Ketu combination is minor.`; }
+    });
+  }
+  const H=t=>`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:18px 0 8px;">${t}</h4>`;
+  let html=H("Ketu Combinations (Session 15)");
+  if(rows.length){
+    const FOCUS={primary:0, aspect:1, secondary:2};
+    const PRLABEL={primary:'<b style="color:var(--maroon)">Primary — remedy</b>', aspect:'By aspect — remedy', secondary:'Secondary — minor'};
+    const shortRem=(s)=>(s.split(/[;.]/)[0]||s).trim();
+    const summ=rows.slice().sort((a,b)=>((FOCUS[a.priority]??1)-(FOCUS[b.priority]??1)));
+    html+=`<table class="planet-table"><thead><tr><th>Combination</th><th>Contact</th><th>Focus</th><th>First remedy step</th></tr></thead><tbody>`;
+    html+=summ.map(r=>`<tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.how}${r.aspBy?` · ${r.aspBy}`:''}${r.retro?' · <span style="color:#2e7d32">retro (favourable)</span>':''}</td>
+      <td>${PRLABEL[r.priority]||'By aspect — remedy'}</td>
+      <td>${r.priority==='secondary'?'—':shortRem(r.remedy)}</td></tr>`).join("");
+    html+=`</tbody></table>`;
+    html+=rows.map(r=>`<div style="margin:0 0 14px;">
+      <p style="margin:0 0 4px;"><strong>${r.name}</strong> <span class="section-flag flag-debilitated">${r.how}</span></p>
+      ${r.aspBy?`<p style="margin:0 0 4px;"><em>Formed by:</em> ${r.aspBy}.</p>`:""}
+      ${r.phase?`<p style="margin:0 0 4px;"><em>Strength:</em> ${r.phase}</p>`:""}
+      ${r.retro?`<p style="margin:0 0 4px;color:#2e7d32;"><em>Retrograde:</em> ${NODE_RETRO_NOTE}</p>`:""}
+      <p style="margin:0 0 4px;">${r.implication}</p>
+      <p class="dig-note" style="margin:0;"><strong>Remedy:</strong> ${r.remedy}</p></div>`).join("");
+  } else {
+    html+=`<p>Ketu is not combined (by conjunction or aspect) with any of the seven planets in this chart.</p>`;
+  }
+  html+=H("General Ketu Remedies")+`<ul>${KETU_GENERAL_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  html+=`<p class="akshara-note">${KETU_ITEMS}</p>`;
+  el.innerHTML=html;
+}
+
+/* Kaala Sarpa Dosha / Yoga (Session 15) */
+function renderKaalaSarpa(sidereal, lagnaLon){
+  const el=document.getElementById("kaalasarpa-body"); if(!el) return;
+  const planets=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+  const rlon=sidereal.Rahu;
+  const pts=planets.map(p=>sidereal[p]);
+  if(lagnaLon!=null) pts.push(lagnaLon);
+  const rels=pts.map(x=>((x-rlon)%360+360)%360);
+  const side=r=>(r<=0.5||r>=359.5||Math.abs(r-180)<=0.5)?0:(r<180?1:2);
+  const sides=rels.map(side).filter(s=>s!==0);
+  const present = sides.length>0 && sides.every(s=>s===sides[0]);
+  const H=t=>`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">${t}</h4>`;
+  let html;
+  if(present){
+    const leader = sides[0]===1 ? "Rāhu" : "Ketu";
+    const kind = leader==="Rāhu" ? "Kaala Sarpa Dosha (Rāhu leads)" : "Kalamrit / Kaala Sarpa Yoga (Ketu leads)";
+    html = H("Kaala Sarpa — "+kind)+`<p><span class="section-flag flag-debilitated flag-deep">⚠ Present</span></p>`;
+    if(leader==="Ketu") html+=`<p class="dig-note">Ketu leads, so this is the milder Kalamrit Yoga — detachment and a spiritual inclination rather than the harsher dosha.</p>`;
+    html+=`<p class="akshara-note">${KAALA_SARPA_NOTE}</p>`;
+    html+=H("Common results")+`<ul>${KAALA_SARPA_RESULTS.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+    html+=H("Remedies")+`<ul>${KAALA_SARPA_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  } else {
+    html = H("Kaala Sarpa")+`<p><span class="section-flag flag-friend">Not present</span> — not all planets (and the Lagna) are hemmed within the Rāhu–Ketu axis; at least one falls on the other side.</p>`;
+  }
+  el.innerHTML=html;
 }
 
 let currentChart = null;
@@ -4189,11 +4341,13 @@ async function generate() {
   renderCombustion(chart.sidereal);
   renderBudhaditya(chart.sidereal);
   renderRashiClassifications(planetsByRashi, lagnaRashiInfo.n);
-  renderRahuCombinations(planetsByRashi, chart.sidereal);
+  renderRahuCombinations(planetsByRashi, chart.sidereal, retroSet);
+  renderKetuCombinations(planetsByRashi, chart.sidereal, retroSet);
+  renderKaalaSarpa(chart.sidereal, lagnaLon);
   renderDasha(chart.sidereal, dob, tob);
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName,
-    natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType };
+    natalPBR: planetsByRashi, lagnaN: lagnaRashiInfo.n, moonN: moonRashiInfo.n, ayanType, lagnaLon, retroSet };
   try {
     TestCapture.record({
       name: name, gender: (document.getElementById("f-gender")||{}).value || "",
@@ -4201,6 +4355,7 @@ async function generate() {
       lagna: lagnaRashiInfo.n, sidereal: chart.sidereal, byRashi: planetsByRashi, retro: retroSet
     });
   } catch(e){ /* capture must never block the report */ }
+  (function(){ const rp=document.getElementById("rk-place"); if(rp && !rp.value) rp.value = placeName||""; })();
   document.getElementById("report").classList.add("show");
   document.getElementById("btn-print").disabled = false;
   (function(){ const t=new Date(); const iso=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
@@ -4230,15 +4385,27 @@ function ianaOffsetHours(tz, dateISO){
   }catch(e){ return NaN; }
 }
 async function geocodePlace(q){
-  const url = "https://geocoding-api.open-meteo.com/v1/search?count=8&language=en&format=json&name=" + encodeURIComponent(q);
-  const r = await fetch(url);
-  if(!r.ok) throw new Error("geocode http " + r.status);
-  const j = await r.json();
-  return (j.results || []).map(x => ({
-    name: x.name,
-    region: [x.admin1, x.country].filter(Boolean).join(", "),
-    lat: x.latitude, lon: x.longitude, iana: x.timezone || null, source: "web"
-  }));
+  // The Open-Meteo geocoder is punctuation-sensitive: "sunbury on thames" finds
+  // nothing, but "Sunbury-on-Thames" does. So if a query returns nothing, retry
+  // with hyphens joining the words, then with just the first word.
+  const fetchName = async (name) => {
+    const url = "https://geocoding-api.open-meteo.com/v1/search?count=8&language=en&format=json&name=" + encodeURIComponent(name);
+    const r = await fetch(url);
+    if(!r.ok) return [];
+    const j = await r.json();
+    return (j.results || []).map(x => ({
+      name: x.name,
+      region: [x.admin1, x.country].filter(Boolean).join(", "),
+      lat: x.latitude, lon: x.longitude, iana: x.timezone || null, source: "web"
+    }));
+  };
+  let out = await fetchName(q);
+  if(!out.length && /\s/.test(q)) out = await fetchName(q.trim().replace(/\s+/g, "-"));   // "sunbury on thames" -> "sunbury-on-thames"
+  if(!out.length){
+    const first = q.split(/[\s,]+/)[0];
+    if(first && first.length >= 3 && first.toLowerCase() !== q.trim().toLowerCase()) out = await fetchName(first);
+  }
+  return out;
 }
 function builtinMatches(q){
   const ql = q.toLowerCase(); const starts=[], contains=[];
@@ -4359,8 +4526,133 @@ window.addEventListener("afterprint", () => {
   showReportTab(active ? active.getAttribute("data-tab") : "birth");
 });
 
+/* =====================================================================
+   RAHU KAALA — the inauspicious 1/8 of the daytime.
+   Daytime (sunrise→sunset) is split into 8 equal parts; the Rahu part
+   depends on the weekday: Sun=8, Mon=2, Tue=7, Wed=5, Thu=6, Fri=4, Sat=3.
+   Sunrise/sunset from the keyless api.sunrise-sunset.org (returns UTC).
+   ===================================================================== */
+const RK_PART = {0:8, 1:2, 2:7, 3:5, 4:6, 5:4, 6:3};   // 0=Sunday … 6=Saturday
+const RK_DAYNAME = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+/* pure helper (testable): times in ms epoch; returns the Rahu slice + all parts */
+function rahuKaalaWindow(srMs, ssMs, weekday){
+  const part = RK_PART[weekday];
+  const slice = (ssMs - srMs) / 8;
+  const parts = [];
+  for(let i=1;i<=8;i++) parts.push({ i, start: srMs+(i-1)*slice, end: srMs+i*slice, rahu: i===part });
+  return { part, slice, start: srMs+(part-1)*slice, end: srMs+part*slice, parts };
+}
+let rkSelected = null;   // set when the user picks a place from the Rahu-Kaala dropdown
+/* Live place autocomplete for the Rahu-Kaala tab (mirrors the birth-place field) */
+function setupRkAutocomplete(){
+  const input = document.getElementById("rk-place");
+  const sug   = document.getElementById("rk-suggestions");
+  if(!input || !sug) return;
+  let activeIdx=-1, currentList=[], seq=0, tmr=null;
+  const render=()=>{
+    if(!currentList.length){ sug.classList.remove("show"); return; }
+    sug.innerHTML = currentList.slice(0,20).map((c,i)=>
+      `<div data-idx="${i}" class="${i===activeIdx?"active":""}">${c.name} <small>· ${c.region||""}${c.source==="local"?" · offline":""}</small></div>`).join("");
+    sug.classList.add("show");
+  };
+  async function search(q){
+    if(!q || q.length<2){ currentList=[]; render(); return; }
+    const my=++seq; let list=[];
+    try{ list=await geocodePlace(q); }catch(e){ list=[]; }
+    if(my!==seq) return;
+    if(!list.length) list=builtinMatches(q);
+    currentList=list; activeIdx=-1; render();
+  }
+  input.addEventListener("input", ()=>{ rkSelected=null; clearTimeout(tmr); const q=input.value.trim(); tmr=setTimeout(()=>search(q),320); });
+  input.addEventListener("focus", ()=>{ const q=input.value.trim(); if(q.length>=2) search(q); });
+  input.addEventListener("blur",  ()=> setTimeout(()=>sug.classList.remove("show"),200));
+  input.addEventListener("keydown", (e)=>{
+    if(!currentList.length) return;
+    if(e.key==="ArrowDown"){ activeIdx=Math.min(activeIdx+1,currentList.length-1,19); render(); e.preventDefault(); }
+    else if(e.key==="ArrowUp"){ activeIdx=Math.max(activeIdx-1,0); render(); e.preventDefault(); }
+    else if(e.key==="Enter" && activeIdx>=0){ pick(activeIdx); e.preventDefault(); }
+    else if(e.key==="Escape"){ sug.classList.remove("show"); }
+  });
+  sug.addEventListener("mousedown", (e)=>{ const div=e.target.closest("div[data-idx]"); if(div) pick(parseInt(div.dataset.idx)); });
+  function pick(i){
+    const c=currentList[i]; if(!c) return;
+    const dateStr=(document.getElementById("rk-date")||{}).value||"";
+    let tz=c.tz;
+    if(c.iana){ const o=ianaOffsetHours(c.iana, dateStr); if(!isNaN(o)) tz=o; }
+    if(tz===undefined||tz===null||isNaN(tz)) tz=0;
+    rkSelected={ name:c.name, region:c.region, lat:c.lat, lon:c.lon, iana:c.iana||null, tz:tz };
+    input.value=c.name;
+    document.getElementById("rk-place-hint").innerHTML =
+      `<em>${c.name}${c.region?", "+c.region:""} — lat ${(+c.lat).toFixed(4)}°, lon ${(+c.lon).toFixed(4)}°, UTC ${tz>=0?"+":""}${tz}${c.iana?" ("+c.iana+")":""}</em>`;
+    sug.classList.remove("show");
+  }
+}
+
+async function getRahuKaala(){
+  const el = document.getElementById("rk-body");
+  const placeStr = (document.getElementById("rk-place").value||"").trim();
+  const dateStr  = document.getElementById("rk-date").value;
+  if(!placeStr || !dateStr){ el.innerHTML = "<p>Please enter a place and a date.</p>"; return; }
+  el.innerHTML = "<p class='akshara-note'>Resolving place and fetching sunrise/sunset…</p>";
+  // resolve place -> lat/lon/timezone: prefer a picked suggestion, else geocode, else built-in list
+  let place=null;
+  if(rkSelected && rkSelected.name && placeStr.toLowerCase()===rkSelected.name.toLowerCase()) place=rkSelected;
+  if(!place){ try{ const res = await geocodePlace(placeStr); if(res && res.length) place = res[0]; }catch(e){} }
+  if(!place){ const bm = builtinMatches(placeStr); if(bm.length) place = bm[0]; }
+  if(!place){ el.innerHTML = "<p>Couldn't resolve that place — start typing and pick a suggestion from the list, or try a nearby city.</p>"; return; }
+  const lat = place.lat, lon = place.lon;
+  const off = place.iana ? ianaOffsetHours(place.iana, dateStr)
+                         : (place.tz!=null ? place.tz : NaN);
+  const tzOff = isNaN(off) ? 0 : off;
+  // fetch sunrise/sunset (UTC ISO)
+  let sr, ss, dayLen;
+  try{
+    const u = `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${encodeURIComponent(dateStr)}&formatted=0`;
+    const r = await fetch(u);
+    const j = await r.json();
+    if(j.status !== "OK" || !j.results || !j.results.sunrise) throw new Error(j.status||"no data");
+    sr = new Date(j.results.sunrise).getTime();
+    ss = new Date(j.results.sunset).getTime();
+    dayLen = j.results.day_length;
+  }catch(e){
+    el.innerHTML = "<p>Couldn't fetch sunrise/sunset from api.sunrise-sunset.org (network or API issue). "+
+                   "Please check your connection and try again.</p>";
+    return;
+  }
+  const [Y,M,D] = dateStr.split("-").map(Number);
+  const wd = new Date(Date.UTC(Y, M-1, D)).getUTCDay();
+  const rk = rahuKaalaWindow(sr, ss, wd);
+  const fmt = (ms)=>{ const l = new Date(ms + tzOff*3600000);
+    let h=l.getUTCHours(), m=l.getUTCMinutes(), ap=h<12?"AM":"PM", hh=h%12; if(hh===0) hh=12;
+    return `${hh}:${String(m).padStart(2,"0")} ${ap}`; };
+  const dlMin = Math.round((ss-sr)/60000), sliceMin = Math.round(rk.slice/60000);
+  const placeName = place.name + (place.region? ", "+place.region : "");
+  let html = `<p class="akshara-note" style="margin:0 0 6px;">${placeName} · ${dateStr} · <b>${RK_DAYNAME[wd]}</b>`+
+             ` · UTC ${tzOff>=0?'+':''}${tzOff}</p>`;
+  html += `<div class="kv-grid" style="margin-bottom:12px;">
+    <div class="kv"><span class="k">Sunrise</span><span class="v">${fmt(sr)}</span></div>
+    <div class="kv"><span class="k">Sunset</span><span class="v">${fmt(ss)}</span></div>
+    <div class="kv"><span class="k">Daytime length</span><span class="v">${Math.floor(dlMin/60)}h ${dlMin%60}m (each part ≈ ${sliceMin} min)</span></div>
+    <div class="kv"><span class="k">Rāhu part (${RK_DAYNAME[wd]})</span><span class="v">part ${rk.part} of 8</span></div>
+  </div>`;
+  html += `<p style="font-size:16px;margin:0 0 12px;"><strong style="color:var(--maroon);">Rāhu Kāla: ${fmt(rk.start)} – ${fmt(rk.end)}</strong></p>`;
+  html += `<table class="planet-table"><thead><tr><th>Part</th><th>From</th><th>To</th></tr></thead><tbody>`;
+  html += rk.parts.map(p=>`<tr class="${p.rahu?'dasha-now':''}"><td>Part ${p.i}${p.rahu?' — <b>Rāhu Kāla</b>':''}</td><td>${fmt(p.start)}</td><td>${fmt(p.end)}</td></tr>`).join("");
+  html += `</tbody></table>`;
+  html += `<p class="akshara-note" style="margin-top:10px;">Daytime (sunrise→sunset) is divided into 8 equal parts (each ≈ 90 minutes); the Rāhu part per weekday is Sun 8th, Mon 2nd, Tue 7th, Wed 5th, Thu 6th, Fri 4th, Sat 3rd. During Rāhu Kāla, Rāhu is said to "cover" the mind so it doesn't think clearly — so it is avoided for starting new or auspicious ventures (ongoing work is fine). <b>Mnemonic for the weekday order:</b> "Mother saw father wearing the turban suddenly." Sunrise/sunset from api.sunrise-sunset.org; times shown in the place's local time.</p>`;
+  el.innerHTML = html;
+}
 /* On load */
 setupPlaceAutocomplete();
+
+/* Rahu Kaala tab: default date = today, prefill place from the last chart, wire button */
+(function(){
+  const dEl=document.getElementById("rk-date");
+  if(dEl && !dEl.value){ const t=new Date(); dEl.value = t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); }
+  const go=document.getElementById("rk-go");
+  if(go) go.addEventListener("click", getRahuKaala);
+  setupRkAutocomplete();
+})();
 
 /* North / South chart-style toggle (persists the choice on this device) */
 (function(){
@@ -4420,6 +4712,55 @@ setupPlaceAutocomplete();
   function sid(){ return currentChart.chart.sidereal; }
 
   function detectPlanet(q){ for(const k in ALIAS){ if(new RegExp("\\b"+k+"\\b").test(q)) return ALIAS[k]; } return null; }
+
+  function ketuCombos(){
+    if(!have()) return null;
+    const s=sid(); const pbr={}; PLANETS.forEach(p=>pbr[p]=rashiOf(s[p]).n);
+    const kr=pbr.Ketu, ketuDeg=rashiOf(s.Ketu).deg;
+    const hd=(a,b)=>((b-a)%12+12)%12+1;
+    const retro=(currentChart.retroSet)||new Set();
+    const out=[];
+    for(const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]){
+      const conj=(pbr[p]===kr), kSees=[5,9,12].includes(hd(kr,pbr[p])), pSees=(PLANET_ASPECTS[p]||[7]).includes(hd(pbr[p],kr));
+      if(!(conj||kSees||pSees)) continue;
+      let gap=conj?Math.abs(ketuDeg-rashiOf(s[p]).deg):null;
+      out.push(Object.assign({planet:p, how:conj?"conjunction":"aspect", gap, retro:retro.has(p), priority:(conj?null:"aspect")}, KETU_COMBOS[p]));
+    }
+    const conj=out.filter(c=>c.how==="conjunction");
+    if(conj.length){ const primary=conj.reduce((a,b)=>a.gap<=b.gap?a:b);
+      conj.forEach(c=>{ c.priority=(c===primary)?"primary":"secondary"; c._primaryName=primary.planet; }); }
+    const rank={primary:0, aspect:1, secondary:2};
+    return out.sort((a,b)=>(rank[a.priority]??1)-(rank[b.priority]??1));
+  }
+  function ketuAnswer(){
+    const c=ketuCombos();
+    if(!c) return "Generate your chart first, then I'll list your Ketu combinations & remedies.";
+    if(!c.length) return "Your Ketu forms no combination with the seven planets. General Ketu measures: "+KETU_GENERAL_REMEDIES.slice(0,2).join(" ");
+    const PRI={primary:"Primary — do this remedy", aspect:"By aspect — remedy", secondary:"Secondary — minor"};
+    let h="Your Ketu combinations (Session 15):<br><br>";
+    h+=c.map(r=>{
+      const rem=(r.priority==="secondary")?`(${r._primaryName} is nearer to Ketu and takes the effect)`:(r.remedy.split(/[;.]/)[0]||r.remedy).trim()+".";
+      const rp=r.retro?" <span style='color:#2e7d32'>· retro planet → not harmed, result turns favourable</span>":"";
+      return `<b>${r.name}</b> — <i>${PRI[r.priority]||"By aspect — remedy"}</i>${rp}<br>${rem}`;
+    }).join("<br><br>");
+    h+="<br><br>Open the <b>Remedies</b> tab for the full Ketu remedies.";
+    return h;
+  }
+  function kaalaSarpaAnswer(){
+    if(!have()) return "Generate your chart first, then I'll check Kaala Sarpa.";
+    const s=sid(); const rlon=s.Rahu;
+    const pts=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"].map(p=>s[p]);
+    if(currentChart.lagnaLon!=null) pts.push(currentChart.lagnaLon);
+    const rels=pts.map(x=>((x-rlon)%360+360)%360);
+    const side=r=>(r<=0.5||r>=359.5||Math.abs(r-180)<=0.5)?0:(r<180?1:2);
+    const sides=rels.map(side).filter(x=>x!==0);
+    const present=sides.length>0 && sides.every(x=>x===sides[0]);
+    if(!present) return "<b>Kaala Sarpa: not present</b> — not all your planets (and the Lagna) are hemmed within the Rāhu–Ketu axis; at least one falls on the other side.";
+    const leader=sides[0]===1?"Rāhu":"Ketu";
+    return leader==="Ketu"
+      ? "<b>Kaala Sarpa: present — Kalamrit / Kaala Sarpa Yoga (Ketu leads)</b>. Milder: detachment and a spiritual inclination. See the Remedies tab (R4) for results and remedies."
+      : "<b>Kaala Sarpa: present — Kaala Sarpa Dosha (Rāhu leads)</b>. Life shows repeated ups and downs; most powerful up to ~age 45. See the Remedies tab (R4) for results and remedies.";
+  }
 
   function rahuCombos(){
     if(!have()) return null;
@@ -4661,13 +5002,15 @@ setupPlaceAutocomplete();
   }
 
   function helpText(){
-    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Punarphoo dosha”<br>• “do I have Sade Sati and its dates”<br>• “do I have Gurubala and the period”<br>• “my general nature”<br>• “does Jupiter aspect Ketu” / “what aspects my Sun”<br>• “do I have Guru Chandala”, “is my Saturn exalted”, “my Moon sign”";
+    return "I answer from your computed chart and the course material. Try:<br>• “what are my remedies”<br>• “which daśā am I in”<br>• “do I have Punarphoo dosha”<br>• “do I have Sade Sati and its dates”<br>• “do I have Gurubala and the period”<br>• “my general nature”<br>• “my Ketu combinations”, “do I have Kaala Sarpa”<br>• “does Jupiter aspect Ketu” / “what aspects my Sun”<br>• “do I have Guru Chandala”, “is my Saturn exalted”, “my Moon sign”";
   }
 
   function answer(qRaw){
     const q=(qRaw||"").toLowerCase().trim();
     if(!q) return helpText();
     if(/\b(help|what can you|who are you|hi|hello|hey|start)\b/.test(q)) return helpText();
+    if(/kaala? ?sarpa|kalasarpa|kala sarpa|sarpa dosh|sarpa yog|kalamrit/.test(q)) return kaalaSarpaAnswer();
+    if(/ketu/.test(q) && /(combinat|remed|yog|dosh|do i have|which|list)/.test(q)) return ketuAnswer();
     for(const k in YOGA){ if(q.includes(k)) return yogaAnswer(YOGA[k], k); }
     if(/\baspect|drishti|drsti|drishthi|aspecting/.test(q)) return aspectAnswer(q);
     if(/jupiter.*rahu|rahu.*jupiter|guru.*rahu/.test(q)) return yogaAnswer("Jupiter","guru chandala");
