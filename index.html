@@ -2460,7 +2460,13 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     html += `<div class="south-cell ${isLagna ? "lagna-cell" : ""}">`;
     html += `<div class="sc-rashi">${r.glyph}&nbsp;${r.sanskrit}</div>`;
     html += `<div class="sc-rashi-en">${r.english}</div>`;
-    html += `<div class="sc-planets">`;
+    // shrink the font when a cell is crowded so all planets stay visible (e.g. a
+    // 4-planet Pisces cell with degrees) — the cell has overflow:hidden. For 4+
+    // planets, stack them vertically (one per line) so the width never overflows.
+    const _n = planets.length;
+    const _fs = _n <= 2 ? 12 : (_n === 3 ? 11 : (_n <= 5 ? 9.5 : 8.5));
+    const _col = _n >= 4 ? "flex-direction:column;flex-wrap:nowrap;gap:1px;" : "gap:2px 5px;";
+    html += `<div class="sc-planets" style="font-size:${_fs}px;${_col}">`;
     for (const p of planets) {
       html += `<span class="sc-planet ${p.cls}">${p.abbr}</span>`;
     }
