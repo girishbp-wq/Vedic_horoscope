@@ -3791,7 +3791,7 @@ const KETU_ITEMS = "Ketu items/associations: horse gram, fish, Ganesha (below-gr
 const KAALA_SARPA_RESULTS = ["Devotion to family and society, but repeated struggle and loneliness in times of need.", "Fear of heights, lonely places and snakes.", "Difficulty having children or little happiness from them; delay in marriage or an unhappy married life.", "Hurdles in life, health issues, lack of peace, tension and anxiety.", "Little support from friends and relatives; seldom rewarded for one's efforts.", "Dreams of dead ancestors or of bad things happening."];
 const KAALA_SARPA_REMEDIES = ["Kaala Sarpa Dosha Nivarana Pooja at Sri Kaalahasti, Rameshwaram, Thiru Nageshwaram, Kukke Subramanya or Ujjain.", "Rudrabhisheka to Lord Shiva; chant 'Om Namah Shivaya'.", "Chant the Maha Mrityunjaya mantra 108 times.", "Water a Peepal tree every Saturday.", "Visit the Garuda temple near Mulbagal (believed to relieve the 8 kinds of sarpa dosha).", "Chant the Hanuman Chalisa daily."];
 const KAALA_SARPA_SYMPTOMS = ["Frequently getting a hair (Ketu) in the mouth while eating (mouth = Rahu).", "Needing to go to the toilet (Ketu) at the very time of eating food (mouth = Rahu).", "Rahu and Ketu activities happening simultaneously in daily life."];
-const KAALA_SARPA_NOTE = "Kaala Sarpa forms when ALL planets (and the Lagna) are hemmed within the Rahu–Ketu axis. If even one planet or the Lagna is outside the axis, it is NOT formed. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga (kaala = time, amrita = nectar), giving detachment and a spiritual inclination — over time it yields beneficial results, and the intense karmic situations it brings become a source of strength for success.";
+const KAALA_SARPA_NOTE = "Kaala Sarpa forms when ALL planets (and the Lagna) are hemmed within the Rahu–Ketu axis. If even one planet or the Lagna is outside the axis, it is NOT formed. Because the nodes are always retrograde (their degree keeps decreasing / moving anti-clockwise), a planet sitting in a node's OWN sign is judged by whether the node has already crossed it: if the planet's degree is HIGHER than the node's, the descending node has passed it, so it lies OUTSIDE the axis and breaks the yoga; if lower, the node is still approaching and the planet is inside. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga (kaala = time, amrita = nectar), giving detachment and a spiritual inclination — over time it yields beneficial results, and the intense karmic situations it brings become a source of strength for success.";
 const NODE_RETRO_NOTE = "This planet is RETROGRADE, so Rahu/Ketu do not harm it — any damage is compensated and the result turns favourable (often with large gains in money, fame or standing). A retrograde planet 'circles' its own ground, so the native stays firm and undeviating in its matters.";
 
 /* =====================================================================
@@ -4128,15 +4128,40 @@ function renderKaalaSarpa(sidereal, lagnaLon){
   const el=document.getElementById("kaalasarpa-body"); if(!el) return;
   const planets=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
   const rlon=sidereal.Rahu, klon=(sidereal.Ketu!=null?sidereal.Ketu:(rlon+180)%360);
+  // Shanthi Madam's motion-based method: nodes are retrograde (degree decreasing).
+  // A body in a node's OWN sign lies OUTSIDE the axis if the (descending) node has
+  // already crossed it — i.e. the body's degree is HIGHER than the node's.
+  const Rs=Math.floor(rlon/30), Rd=rlon%30;
+  const Ks=Math.floor(klon/30), Kd=klon%30;
   const named=planets.map(p=>[p,sidereal[p]]);
   if(lagnaLon!=null) named.push(["Lagna",lagnaLon]);
-  const side=x=>{const r=((x-rlon)%360+360)%360; return (r<=0.5||r>=359.5||Math.abs(r-180)<=0.5)?0:(r<180?1:2);};
-  const s1=named.filter(([n,x])=>side(x)===1), s2=named.filter(([n,x])=>side(x)===2);
-  const present = (s1.length===0 || s2.length===0) && (s1.length+s2.length>0);
+  const TOL=1.0;
+  const status={};   // name -> {st:'inside'|'outside'|'axis', note}
+  const others=[];   // [name,lon] not in a node's sign — decided by majority side
+  named.forEach(([n,x])=>{
+    const sgn=Math.floor(x/30), dg=x%30;
+    if(sgn===Rs){
+      if(Math.abs(dg-Rd)<=TOL) status[n]={st:"axis",note:`on the axis (with Rāhu at ${Rd.toFixed(1)}°)`};
+      else if(dg>Rd) status[n]={st:"outside",note:`Rāhu (${Rd.toFixed(1)}°) has already crossed it — it lies outside the axis`};
+      else status[n]={st:"inside",note:`Rāhu (${Rd.toFixed(1)}°) is still approaching it — inside`};
+    } else if(sgn===Ks){
+      if(Math.abs(dg-Kd)<=TOL) status[n]={st:"axis",note:`on the axis (with Ketu at ${Kd.toFixed(1)}°)`};
+      else if(dg>Kd) status[n]={st:"outside",note:`Ketu (${Kd.toFixed(1)}°) has already crossed it — it lies outside the axis`};
+      else status[n]={st:"inside",note:`Ketu (${Kd.toFixed(1)}°) is still approaching it — inside`};
+    } else { others.push([n,x]); }
+  });
+  const side=x=>{const r=((x-rlon)%360+360)%360; return r<180?1:2;};
+  const s1=others.filter(([n,x])=>side(x)===1), s2=others.filter(([n,x])=>side(x)===2);
+  const majside = s1.length>=s2.length ? 1 : 2;
+  others.forEach(([n,x])=>{ status[n]= side(x)===majside
+    ? {st:"inside",note:"on the majority side"}
+    : {st:"outside",note:"on the far semicircle"}; });
+  const outside = named.map(([n])=>n).filter(n=>status[n].st==="outside");
+  const leader = majside===1 ? "Rāhu" : "Ketu";
+  const present = outside.length===0;
   const H=t=>`<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:4px 0 8px;">${t}</h4>`;
   let html;
   if(present){
-    const leader = s1.length ? "Rāhu" : "Ketu";
     const kind = leader==="Rāhu" ? "Kaala Sarpa Dosha (Rāhu leads)" : "Kalamrit / Kaala Sarpa Yoga (Ketu leads)";
     html = H("Kaala Sarpa — "+kind)+`<p><span class="section-flag flag-debilitated flag-deep">⚠ Present</span></p>`;
     if(leader==="Ketu") html+=`<p class="dig-note">Ketu leads, so this is the milder Kalamrit Yoga — detachment and a spiritual inclination rather than the harsher dosha.</p>`;
@@ -4144,18 +4169,11 @@ function renderKaalaSarpa(sidereal, lagnaLon){
     html+=H("Common results")+`<ul>${KAALA_SARPA_RESULTS.map(x=>`<li>${x}</li>`).join("")}</ul>`;
     html+=H("Remedies")+`<ul>${KAALA_SARPA_REMEDIES.map(x=>`<li>${x}</li>`).join("")}</ul>`;
   } else {
-    // identify the breaking point(s): the minority side
-    const breakers = (s2.length<=s1.length)?s2:s1;
-    const majority = (breakers===s2)?s1:s2;
-    const majLeader = (majority===s1)?"Rāhu":"Ketu";
-    const wouldBe = (majLeader==="Rāhu")?"Kaala Sarpa Dosha":"Kalamrit / Kaala Sarpa Yoga";
-    const nearNode=x=>{const dr=Math.min(((x-rlon)%360+360)%360,((rlon-x)%360+360)%360);
-      const dk=Math.min(((x-klon)%360+360)%360,((klon-x)%360+360)%360);
-      return dr<=dk?["Rāhu",dr]:["Ketu",dk];};
-    const detail = breakers.map(([n,x])=>{const [nd,g]=nearNode(x); return `<b>${n}</b> (~${g.toFixed(0)}° from ${nd})`;}).join(", ");
-    const one = breakers.length===1;
+    const wouldBe = (leader==="Rāhu")?"Kaala Sarpa Dosha":"Kalamrit / Kaala Sarpa Yoga";
+    const detail = outside.map(n=>`<b>${n}</b> (${status[n].note})`).join(", ");
+    const one = outside.length===1;
     html = H("Kaala Sarpa")+`<p><span class="section-flag flag-friend">Not present</span></p>`+
-      `<p class="dig-note">All the other grahas and the Lagna are hemmed on the <b>${majLeader}-led</b> side of the Rāhu–Ketu axis, but ${detail} ${one?'falls':'fall'} on the <b>opposite</b> side — so the yoga is not formed. Had ${one?'it':'they'} also been inside the axis, this would have been a <b>${wouldBe}</b>.</p>`;
+      `<p class="dig-note">${detail} ${one?'is':'are'} <b>outside</b> the Rāhu–Ketu axis, so the yoga is not formed. Had ${one?'it':'they'} been inside, this would have been a <b>${wouldBe}</b>.</p>`;
   }
   html+=H("Everyday symptoms of Sarpa dosha")+`<ul>${KAALA_SARPA_SYMPTOMS.map(x=>`<li>${x}</li>`).join("")}</ul>`;
   el.innerHTML=html;
@@ -4767,23 +4785,36 @@ setupPlaceAutocomplete();
   function kaalaSarpaAnswer(){
     if(!have()) return "Generate your chart first, then I'll check Kaala Sarpa.";
     const s=sid(); const rlon=s.Rahu;
-    const pts=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"].map(p=>s[p]);
-    if(currentChart.lagnaLon!=null) pts.push(currentChart.lagnaLon);
     const klon=(s.Ketu!=null?s.Ketu:(rlon+180)%360);
+    const Rs=Math.floor(rlon/30), Rd=rlon%30, Ks=Math.floor(klon/30), Kd=klon%30;
     const named=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"].map(p=>[p,s[p]]);
     if(currentChart.lagnaLon!=null) named.push(["Lagna",currentChart.lagnaLon]);
-    const side=x=>{const r=((x-rlon)%360+360)%360; return (r<=0.5||r>=359.5||Math.abs(r-180)<=0.5)?0:(r<180?1:2);};
-    const s1=named.filter(([n,x])=>side(x)===1), s2=named.filter(([n,x])=>side(x)===2);
-    const present=(s1.length===0||s2.length===0)&&(s1.length+s2.length>0);
+    const TOL=1.0, status={}, others=[];
+    named.forEach(([n,x])=>{
+      const sgn=Math.floor(x/30), dg=x%30;
+      if(sgn===Rs){
+        if(Math.abs(dg-Rd)<=TOL) status[n]={st:"axis",note:`on the axis with Rāhu`};
+        else if(dg>Rd) status[n]={st:"outside",note:`Rāhu (${Rd.toFixed(1)}°) has already crossed it`};
+        else status[n]={st:"inside",note:`Rāhu still approaching`};
+      } else if(sgn===Ks){
+        if(Math.abs(dg-Kd)<=TOL) status[n]={st:"axis",note:`on the axis with Ketu`};
+        else if(dg>Kd) status[n]={st:"outside",note:`Ketu (${Kd.toFixed(1)}°) has already crossed it`};
+        else status[n]={st:"inside",note:`Ketu still approaching`};
+      } else others.push([n,x]);
+    });
+    const side=x=>{const r=((x-rlon)%360+360)%360; return r<180?1:2;};
+    const s1=others.filter(([n,x])=>side(x)===1), s2=others.filter(([n,x])=>side(x)===2);
+    const majside=s1.length>=s2.length?1:2;
+    others.forEach(([n,x])=>{ status[n]= side(x)===majside?{st:"inside"}:{st:"outside",note:"on the far semicircle"}; });
+    const outside=named.map(([n])=>n).filter(n=>status[n].st==="outside");
+    const leader=majside===1?"Rāhu":"Ketu";
+    const present=outside.length===0;
     if(!present){
-      const breakers=(s2.length<=s1.length)?s2:s1, majority=(breakers===s2)?s1:s2;
-      const majLeader=(majority===s1)?"Rāhu":"Ketu", wouldBe=(majLeader==="Rāhu")?"Kaala Sarpa Dosha":"Kalamrit Yoga";
-      const nn=x=>{const dr=Math.min(((x-rlon)%360+360)%360,((rlon-x)%360+360)%360),dk=Math.min(((x-klon)%360+360)%360,((klon-x)%360+360)%360);return dr<=dk?["Rāhu",dr]:["Ketu",dk];};
-      const det=breakers.map(([n,x])=>{const[nd,g]=nn(x);return `${n} (~${g.toFixed(0)}° from ${nd})`;}).join(", ");
-      const one=breakers.length===1;
-      return `<b>Kaala Sarpa: not present.</b> Everything else is hemmed on the ${majLeader}-led side, but <b>${det}</b> ${one?'falls':'fall'} on the opposite side of the Rāhu–Ketu axis — so it doesn't form. Had ${one?'it':'they'} been inside, it would have been a ${wouldBe}.`;
+      const wouldBe=(leader==="Rāhu")?"Kaala Sarpa Dosha":"Kalamrit Yoga";
+      const det=outside.map(n=>`${n} (${status[n].note})`).join(", ");
+      const one=outside.length===1;
+      return `<b>Kaala Sarpa: not present.</b> <b>${det}</b> ${one?'is':'are'} outside the Rāhu–Ketu axis — so it doesn't form. Had ${one?'it':'they'} been inside, it would have been a ${wouldBe}.`;
     }
-    const leader=s1.length?"Rāhu":"Ketu";
     return leader==="Ketu"
       ? "<b>Kaala Sarpa: present — Kalamrit / Kaala Sarpa Yoga (Ketu leads)</b>. Milder: detachment and a spiritual inclination. See the Remedies tab (R4) for results and remedies."
       : "<b>Kaala Sarpa: present — Kaala Sarpa Dosha (Rāhu leads)</b>. Life shows repeated ups and downs; most powerful up to ~age 45. See the Remedies tab (R4) for results and remedies.";
