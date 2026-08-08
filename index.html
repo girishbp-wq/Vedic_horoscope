@@ -528,6 +528,22 @@ details.section[open] > summary::after { content: "−"; }
 .table-scroll .attr-wide { min-width: 1080px; }
 .scroll-hint { font-size: 11px; color: var(--saffron); font-family: 'Cinzel', serif; letter-spacing: .05em; margin: 14px 0 2px; }
 @media (min-width: 1180px) { .scroll-hint { display: none; } }
+/* Dasha visual timeline + mahadasha blocks */
+.dasha-bar { position: relative; display: flex; height: 34px; margin: 22px 0 6px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.dasha-seg { display: flex; align-items: center; justify-content: center; min-width: 0; color: #fff; font-size: 14px; border-right: 1px solid rgba(255,255,255,.4); background: linear-gradient(180deg, var(--maroon), var(--maroon-2)); }
+.dasha-seg:nth-child(even) { background: linear-gradient(180deg, var(--saffron), var(--saffron-2)); }
+.dasha-seg.cur { background: linear-gradient(180deg, var(--teal), #3a8f88); box-shadow: inset 0 0 0 2px var(--gold); font-weight: 700; }
+.dasha-today { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px dashed var(--ink); pointer-events: none; }
+.dasha-today span { position: absolute; top: -15px; transform: translateX(-50%); font-size: 9px; color: var(--ink); white-space: nowrap; font-family: 'Cinzel', serif; }
+.dasha-bar-legend { font-size: 11px; color: var(--muted); margin: 2px 0 16px; line-height: 1.7; }
+.dasha-bar-legend em { color: var(--maroon); font-style: normal; font-weight: 600; }
+.maha-block { border: 1px solid var(--line); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+.maha-block.cur { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.maha-head { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 15px; }
+.maha-block.cur .maha-head { background: #fff4d6; }
+.maha-head .maha-span { margin-left: auto; font-size: 12px; color: var(--muted); }
+.dasha-table { margin: 0; border: 0; }
+.dasha-table th, .dasha-table td { border-left: 0; border-right: 0; }
 .chart-panel {
   display: flex;
   flex-direction: column;
@@ -2340,9 +2356,15 @@ function renderLagnaSection(lagnaRashi, lagnaDeg) {
 function renderMoonSection(moonRashi, moonDeg, moonHouse, moonDignity) {
   const interp = interpretMoon(moonRashi, moonHouse, moonDignity);
   const kv = document.getElementById("moon-kv");
+  const _mlon = (moonRashi.n - 1) * 30 + moonDeg;      // absolute sidereal longitude
+  const _nk = nakshatraOf(_mlon);
   let html = `
     <div class="kv"><span class="k">Sidereal Longitude</span>
-      <span class="v">${fmtDeg(moonDeg)} in ${moonRashi.sanskrit}</span></div>`;
+      <span class="v">${fmtDeg(moonDeg)} in ${moonRashi.sanskrit}</span></div>
+    <div class="kv"><span class="k">Janma Nakshatra</span>
+      <span class="v"><strong>${_nk.name}</strong> · Pada ${_nk.pada}</span></div>
+    <div class="kv"><span class="k">Nakshatra Lord</span>
+      <span class="v">${_nk.lord}</span></div>`;
   for (const [k, v] of interp.kv) {
     html += `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   }
@@ -2565,12 +2587,19 @@ function computeTithi(sunLon, moonLon) {
 
 function renderTithiSection(sidereal) {
   const tithi = computeTithi(sidereal.Sun, sidereal.Moon);
+  const sunR  = getRashi(rashiOf(sidereal.Sun).n);
+  const ayana = ([4,5,6,7,8,9].includes(sunR.n))
+    ? "Dakshinayana (southward course)" : "Uttarayana (northward course)";
+  const masa  = `${sunR.sanskrit} Masa`;
+  const pakshaShort = tithi.tithiNum <= 15 ? "Shukla" : "Krishna";
   const tkv = [
+    ["Ayana (born in)",           ayana],
+    ["Solar month (Masa)",        masa],
     ["Sun longitude (sidereal)",  `${sidereal.Sun.toFixed(2)}°`],
     ["Moon longitude (sidereal)", `${sidereal.Moon.toFixed(2)}°`],
     ["Moon − Sun separation",     `${tithi.sep.toFixed(2)}°`],
     ["Tithi number (1–30)",       tithi.tithiNum],
-    ["Tithi name",                tithi.tithiName],
+    ["Tithi",                     `<strong>${pakshaShort} ${tithi.tithiName}</strong>`],
     ["Paksha",                    tithi.paksha],
     ["Moon strength window",      tithi.strength]
   ];
@@ -3751,31 +3780,55 @@ function buildDasha(moonLon, dobISO, tobStr){
   const si=VORDER.indexOf(lord);
   let vs=add(birth,-frac*VYEARS[lord]);           // virtual start of the first (running) maha
   const now=new Date(), timeline=[];
-  for(let i=0;i<9;i++){ const L=VORDER[(si+i)%9], e=add(vs,VYEARS[L]);
-    timeline.push({lord:L, start:new Date(vs), end:new Date(e), cur:(now>=vs&&now<e)}); vs=e; }
-  // bhuktis inside the running maha
-  const cm=timeline.find(x=>x.cur)||timeline[0];
-  const full=VYEARS[cm.lord], li=VORDER.indexOf(cm.lord), bh=[]; let x=new Date(cm.start);
-  for(let j=0;j<9;j++){ const sub=VORDER[(li+j)%9], be=add(x, full*VYEARS[sub]/120);
-    bh.push({lord:sub, start:new Date(x), end:new Date(be), cur:(now>=x&&now<be)}); x=be; }
-  return {nak:nk, timeline, curMaha:cm, bhuktis:bh};
+  for(let i=0;i<9;i++){
+    const L=VORDER[(si+i)%9], full=VYEARS[L], e=add(vs,full);
+    // full bhukti (antardaśā) breakdown inside THIS mahādaśā
+    const li=VORDER.indexOf(L), bh=[]; let x=new Date(vs);
+    for(let j=0;j<9;j++){ const sub=VORDER[(li+j)%9], be=add(x, full*VYEARS[sub]/120);
+      bh.push({lord:sub, start:new Date(x), end:new Date(be), cur:(now>=x&&now<be)}); x=be; }
+    timeline.push({lord:L, years:full, start:new Date(vs), end:new Date(e), cur:(now>=vs&&now<e), bhuktis:bh});
+    vs=e;
+  }
+  const curMaha  = timeline.find(x=>x.cur) || timeline[0];
+  const curBhukti= curMaha.bhuktis.find(b=>b.cur) || curMaha.bhuktis[0];
+  return {nak:nk, birth, timeline, curMaha, curBhukti,
+          spanStart:timeline[0].start, spanEnd:timeline[8].end};
 }
 
+const DASHA_GLYPH = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃", Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
 function renderDashaPane(D){
   const el=document.getElementById("pane-dasha"); if(!el) return;
-  if(!D){ el.innerHTML="<p>Provide date & time of birth to compute the Vimshottari daśā.</p>"; return; }
-  const bhk=D.bhuktis.find(b=>b.cur);
+  if(!D){ el.innerHTML="<p>Provide date &amp; time of birth to compute the Vimśottarī daśā.</p>"; return; }
+  const G=DASHA_GLYPH, now=new Date();
   let h=`<h4 class="pane-h">Vimśottarī Daśā</h4>`;
-  h+=`<p>Birth-star <strong>${D.nak.name}</strong> (lord <strong>${D.nak.lord}</strong>). `;
-  if(bhk) h+=`Running now: <strong>${D.curMaha.lord} mahādaśā → ${bhk.lord} bhukti</strong> (until ${_fdate(bhk.end)}).`;
-  h+=`</p>`;
-  h+=`<table class="rtable"><thead><tr><th>Mahādaśā</th><th>Years</th><th>From</th><th>To</th></tr></thead><tbody>`;
-  for(const t of D.timeline) h+=`<tr class="${t.cur?'now':''}"><td>${t.lord}</td><td>${VYEARS[t.lord]}</td><td>${_fdate(t.start)}</td><td>${_fdate(t.end)}</td></tr>`;
-  h+=`</tbody></table>`;
-  h+=`<h4 class="pane-h">Bhukti (antardaśā) within ${D.curMaha.lord} mahādaśā</h4>`;
-  h+=`<table class="rtable"><thead><tr><th>Bhukti lord</th><th>From</th><th>To</th></tr></thead><tbody>`;
-  for(const b of D.bhuktis) h+=`<tr class="${b.cur?'now':''}"><td>${b.lord}</td><td>${_fdate(b.start)}</td><td>${_fdate(b.end)}</td></tr>`;
-  h+=`</tbody></table><p class="rnote">Vimśottarī (120-yr) system, computed from the Moon's nakṣatra at birth. Dates are approximate (±) — for precise sandhi use a professional ephemeris.</p>`;
+  h+=`<p>Birth-star <strong>${D.nak.name}</strong> (lord <strong>${D.nak.lord}</strong>, pada ${D.nak.pada}). `;
+  h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
+  h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
+
+  /* visual 120-year timeline bar, segments proportional to each mahādaśā */
+  const span=D.spanEnd-D.spanStart;
+  const todayPct=Math.max(0,Math.min(100,(now-D.spanStart)/span*100));
+  h+=`<div class="dasha-bar" aria-label="120-year Vimshottari timeline">`;
+  for(const t of D.timeline){
+    h+=`<div class="dasha-seg${t.cur?' cur':''}" style="width:${(t.years/120*100).toFixed(2)}%" `
+      +`title="${t.lord} · ${_fdate(t.start)} – ${_fdate(t.end)}"><span>${G[t.lord]}</span></div>`;
+  }
+  h+=`<div class="dasha-today" style="left:${todayPct.toFixed(2)}%"><span>▲ today</span></div></div>`;
+  h+=`<div class="dasha-bar-legend">${D.timeline.map(t=>`${G[t.lord]} ${t.lord} <em>${t.years}y</em>`).join(" · ")}</div>`;
+
+  /* full mahādaśā → bhukti (antardaśā) tables, current period highlighted */
+  for(const t of D.timeline){
+    h+=`<div class="maha-block${t.cur?' cur':''}">`
+      +`<div class="maha-head">${G[t.lord]} <strong>${t.lord} Mahādaśā</strong>`
+      +`<span class="maha-span">${_fdate(t.start)} — ${_fdate(t.end)} · ${t.years} yrs</span></div>`
+      +`<table class="rtable dasha-table"><thead><tr><th>Bhukti (Antardaśā)</th><th>From</th><th>To</th></tr></thead><tbody>`;
+    for(const b of t.bhuktis){
+      h+=`<tr class="${b.cur?'now':''}"><td>${G[t.lord]}–${G[b.lord]} ${t.lord}–${b.lord}</td>`
+        +`<td>${_fdate(b.start)}</td><td>${_fdate(b.end)}</td></tr>`;
+    }
+    h+=`</tbody></table></div>`;
+  }
+  h+=`<p class="rnote">Vimśottarī (120-yr) system, from the Moon's nakṣatra at birth. The highlighted row/block is the period running today. Dates are approximate (±) — for exact sandhi use a professional ephemeris.</p>`;
   el.innerHTML=h;
 }
 
