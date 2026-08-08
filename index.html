@@ -489,6 +489,45 @@ details.section[open] > summary::after { content: "−"; }
   gap: 32px;
   margin-bottom: 28px;
 }
+/* North / South toggle tabs */
+.chart-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+.chart-tab {
+  font-family: 'Cinzel', serif; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 7px 16px; border: 1px solid var(--line); border-radius: 20px;
+  background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s;
+}
+.chart-tab:hover { border-color: var(--saffron); }
+.chart-tab.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
+.dual-chart-wrap[data-view="north"] .chart-panel-south,
+.dual-chart-wrap[data-view="south"] .chart-panel-north { display: none; }
+.dual-chart-wrap[data-view="north"],
+.dual-chart-wrap[data-view="south"] { grid-template-columns: 1fr; justify-items: center; }
+/* Degree label inside South-Indian cells */
+.south-cell .sc-planet .sc-deg { color: var(--muted); font-size: 0.82em; font-weight: 500; margin-left: 1px; }
+/* Predictive & Remedies report tabs */
+.report-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.rtab { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 13px; border: 1px solid var(--line); border-radius: 16px; background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s; }
+.rtab:hover { border-color: var(--saffron); }
+.rtab.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
+.rtable { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+.rtable th, .rtable td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
+.rtable th { background: var(--parchment); font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--maroon); }
+.rtable tr.now td { background: #fff4d6; font-weight: 600; }
+.combo-card { border: 1px solid var(--line); border-left: 3px solid var(--saffron); border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--parchment-2); }
+.combo-card.primary { border-left-color: var(--maroon); }
+.combo-card h5 { margin: 0 0 4px; font-family: 'Cinzel', serif; color: var(--maroon); font-size: 14px; }
+.combo-card .rem { color: var(--teal); font-size: 13px; margin-top: 6px; }
+.combo-card .tag-how { display: inline-block; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--saffron); font-family: 'Cinzel', serif; margin-left: 6px; }
+.rnote { color: var(--muted); font-size: 12.5px; font-style: italic; margin-top: 8px; }
+.rpane h4.pane-h { font-family: 'Cinzel', serif; color: var(--maroon); font-size: 15px; margin: 4px 0 10px; }
+.rlist { margin: 6px 0 10px 0; padding-left: 20px; }
+.rlist li { margin: 3px 0; }
+/* Horizontal-scroll wrapper for wide tables (e.g. Graha Attributes) */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 4px 0 8px; border: 1px solid var(--line); border-radius: 8px; }
+.table-scroll table { margin: 0; border: 0; }
+.table-scroll .attr-wide { min-width: 1080px; }
+.scroll-hint { font-size: 11px; color: var(--saffron); font-family: 'Cinzel', serif; letter-spacing: .05em; margin: 14px 0 2px; }
+@media (min-width: 1180px) { .scroll-hint { display: none; } }
 .chart-panel {
   display: flex;
   flex-direction: column;
@@ -880,6 +919,8 @@ details.section[open] > summary::after { content: "−"; }
 
     <div class="actions">
       <button class="btn btn-ghost" id="btn-manual" type="button">Use manual lat/lon</button>
+      <button class="btn btn-ghost no-print" id="btn-clear" type="button">Clear saved details</button>
+      <button class="btn btn-ghost no-print" id="btn-test-log" type="button">Test logging</button>
       <button class="btn btn-gold no-print" id="btn-print" type="button" disabled>Export PDF</button>
       <button class="btn btn-primary" id="btn-generate" type="button">✦ Generate Horoscope</button>
     </div>
@@ -904,18 +945,47 @@ details.section[open] > summary::after { content: "−"; }
 
       <details class="section" open>
         <summary>
+          <span class="section-num">P</span>
+          <span class="section-title">Predictive &amp; Remedies</span>
+          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam</span>
+        </summary>
+        <div class="section-body">
+          <div class="report-tabs" id="reportTabs">
+            <button type="button" class="rtab active" data-tab="dasha">Daśā–Bhukti</button>
+            <button type="button" class="rtab" data-tab="transit">Transit</button>
+            <button type="button" class="rtab" data-tab="combos">Rahu / Ketu Combos</button>
+            <button type="button" class="rtab" data-tab="ksarpa">Kaala Sarpa</button>
+            <button type="button" class="rtab" data-tab="remedies">Remedies</button>
+            <button type="button" class="rtab" data-tab="rahukaal">Rahu Kaalam</button>
+          </div>
+          <div class="rpane" id="pane-dasha"></div>
+          <div class="rpane" id="pane-transit" style="display:none"></div>
+          <div class="rpane" id="pane-combos" style="display:none"></div>
+          <div class="rpane" id="pane-ksarpa" style="display:none"></div>
+          <div class="rpane" id="pane-remedies" style="display:none"></div>
+          <div class="rpane" id="pane-rahukaal" style="display:none"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">I</span>
           <span class="section-title">Rāśi Chakra — Birth Chart Wheel</span>
           <span class="section-sub">Both North-Indian (diamond) &amp; South-Indian (square) styles</span>
         </summary>
         <div class="section-body">
-          <div class="dual-chart-wrap">
-            <div class="chart-panel">
+          <div class="chart-tabs" id="chartTabs">
+            <button type="button" class="chart-tab active" data-view="both">Both</button>
+            <button type="button" class="chart-tab" data-view="north">North-Indian</button>
+            <button type="button" class="chart-tab" data-view="south">South-Indian</button>
+          </div>
+          <div class="dual-chart-wrap" id="dualChartWrap" data-view="both">
+            <div class="chart-panel chart-panel-north">
               <h4 class="chart-panel-title">North-Indian Style</h4>
               <div class="chart-panel-sub">Houses fixed · Rāśis rotate · Lagna at top</div>
               <div id="chartWheel"></div>
             </div>
-            <div class="chart-panel">
+            <div class="chart-panel chart-panel-south">
               <h4 class="chart-panel-title">South-Indian Style</h4>
               <div class="chart-panel-sub">Rāśis fixed · Lagna marked · Planets placed by sign</div>
               <div id="chartSouth"></div>
@@ -2063,7 +2133,7 @@ function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
 }
 
 /* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
-function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
+function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, planetsDeg) {
   // Standard North-Indian layout positions (cx, cy) for houses 1-12.
   // The diamond chart has 4 outer triangles and 4 inner diamonds, arranged so:
   //   house 1 = top center (Lagna)
@@ -2096,7 +2166,9 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
   for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
     if (planet === "_Lagna") continue;
     const h = houseFromLagna(lagnaRashiNum, rashiNum);
-    planetsByHouse[h].push(PLANET_ABBR[planet] || planet);
+    const ab = PLANET_ABBR[planet] || planet;
+    const dg = (planetsDeg && planetsDeg[planet] != null) ? ` ${planetsDeg[planet]}°` : "";
+    planetsByHouse[h].push(ab + dg);
   }
 
   // Rashi number for each house
@@ -2136,7 +2208,7 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
     // Planets stacked
     if (ps.length === 0) continue;
     // Choose font size by count
-    const fs = ps.length <= 2 ? 13 : (ps.length <= 4 ? 11 : 10);
+    const fs = ps.length <= 2 ? 12 : (ps.length <= 4 ? 10 : 9);
     const lineH = fs + 2;
     const startY = pos.y + 6 - ((ps.length - 1) / 2) * lineH;
     for (let i = 0; i < ps.length; i++) {
@@ -2171,7 +2243,7 @@ function renderNorthIndianChart(lagnaRashiNum, planetsByRashi) {
        Row 2:          Kumbha(11)  [center]   [center]      Karka(4)
        Row 3:          Makara(10)  [center]   [center]      Simha(5)
        Bottom row L→R: Dhanus(9)  Vrischika(8) Tula(7)      Kanya(6)                       */
-function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity) {
+function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignity, planetsDeg) {
   // Map rashi number -> grid cell index (0..15), reading row-major left-to-right top-to-bottom.
   // Centre cells (5, 6, 9, 10) are reserved for the title block.
   const RASHI_TO_CELL = {
@@ -2195,7 +2267,8 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     let cls = "";
     if (dignity === "Exalted") cls = "exalted";
     else if (dignity === "Debilitated") cls = "debilitated";
-    planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls });
+    planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls,
+      deg: (planetsDeg && planetsDeg[planet] != null) ? planetsDeg[planet] : null });
   }
 
   // Build the grid
@@ -2237,7 +2310,7 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     html += `<div class="sc-rashi-en">${r.english}</div>`;
     html += `<div class="sc-planets">`;
     for (const p of planets) {
-      html += `<span class="sc-planet ${p.cls}">${p.abbr}</span>`;
+      html += `<span class="sc-planet ${p.cls}">${p.abbr}${p.deg != null ? `<span class="sc-deg">${p.deg}°</span>` : ""}</span>`;
     }
     html += `</div>`;
     html += `<span class="sc-house-num">H${houseNum}</span>`;
@@ -2958,14 +3031,18 @@ const GRAHA_REF = {
    slide panels; the remaining grahas are marked "—" until their session slides
    are supplied, rather than guessed. */
 const GRAHA_ATTRS = {
-  Sun:     { day:"Sunday",    metal:"—", dhanya:"—", gothra:"—", avatar:"—",
-             masa:"—", stotram:"—", gem:"Ruby" },
-  Moon:    { day:"Monday",    metal:"—", dhanya:"—", gothra:"—", avatar:"—",
-             masa:"—", stotram:"—", gem:"Pearl" },
-  Mars:    { day:"Tuesday",   metal:"—", dhanya:"—", gothra:"—", avatar:"—",
-             masa:"—", stotram:"—", gem:"Red Coral" },
-  Mercury: { day:"Wednesday", metal:"—", dhanya:"—", gothra:"—", avatar:"—",
-             masa:"—", stotram:"—", gem:"Emerald" },
+  Sun:     { day:"Sunday",    metal:"Copper", dhanya:"Wheat", gothra:"Kashyapa", avatar:"Rama",
+             masa:"Magha Masa, Shukla Saptami", stotram:"Aditya Hrudayam", gem:"Ruby", transit:"1 month in each rashi",
+             portfolio:"King" },
+  Moon:    { day:"Monday",    metal:"Lead", dhanya:"Rice", gothra:"Atreya", avatar:"Krishna",
+             masa:"Karthika Masa, Shukla Pournami", stotram:"Soundarya Lahari", gem:"Pearl", transit:"~2.25 days in each rashi",
+             portfolio:"Queen" },
+  Mars:    { day:"Tuesday",   metal:"Copper", dhanya:"Toor dhal", gothra:"Bharadwaja", avatar:"Narasimha",
+             masa:"Shravana Masa, Shukla Trayodashi", stotram:"Skanda Sashti Kavacham", gem:"Red Coral", transit:"—",
+             portfolio:"Commander-in-Chief" },
+  Mercury: { day:"Wednesday", metal:"—", dhanya:"—", gothra:"Atreya", avatar:"Buddha (Balarama)",
+             masa:"Jyeshta Masa, Shukla Ekadashi", stotram:"—", gem:"Emerald", transit:"25–27 days in each rashi",
+             portfolio:"Prince" },
   Jupiter: { day:"Thursday",  metal:"Gold", dhanya:"Bengal gram", gothra:"Angirasa",
              avatar:"Vamana", masa:"Vaishaka Masa, Shukla Ekadashi",
              stotram:"Dakshina Murthy Stotram (parayana)",
@@ -2989,8 +3066,10 @@ const GRAHA_ATTRS = {
              season:"Shishira Ritu (winter)", gender:"Eunuch", tree:"Banni tree",
              transit:"2.5 years (30 months) in each rashi", pregnancy:"6th month",
              wife:"Jyeshta devi", number:"8" },
-  Rahu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Hessonite (Gomedha)" },
-  Ketu:    { day:"—", metal:"—", dhanya:"—", gothra:"—", avatar:"—", masa:"—", stotram:"—", gem:"Cat's Eye (Vaidurya)" }
+  Rahu:    { day:"—", metal:"Graphite (black lead)", dhanya:"Urad dal", gothra:"Paitheenasa", avatar:"Varaha (Boar)",
+             masa:"Bhadrapada Masa, Shukla Poornami", stotram:"Durga Kavacham", gem:"Hessonite (Gomedha)", transit:"1.5 years in each rashi" },
+  Ketu:    { day:"—", metal:"Mica", dhanya:"Horse gram", gothra:"—", avatar:"—",
+             masa:"—", stotram:"Ganesha Stotram", gem:"Cat's Eye (Vaidurya)", transit:"1.5 years in each rashi" }
 };
 
 /* ---- Session 12: classification, Mukkoota, retrogression, Jyothirlingas ---- */
@@ -3102,8 +3181,8 @@ const GRAHA_KARAKA = {
   Jupiter: { karaka:"Gnana karaka, Dhana karaka, Putra karaka, Jeeva karaka", keyword:"Auspiciousness" },
   Venus:   { karaka:"Kalatra karaka, Bhoga karaka, Vahana karaka", keyword:"Pleasant" },
   Saturn:  { karaka:"Karma karaka, Ayus karaka, Roga karaka, Dukha karaka", keyword:"Paramparic (ancestral / old)" },
-  Rahu:    { karaka:"\u2014", keyword:"\u2014" },
-  Ketu:    { karaka:"\u2014", keyword:"\u2014" }
+  Rahu:    { karaka:"Maya, materialistic", keyword:"Shanivat Rahu (behaves like Saturn)" },
+  Ketu:    { karaka:"Kujavat Ketu (behaves like Mars); Moksha karaka", keyword:"Separation, inwards" }
 };
 
 /* "Tip of the Day" remedies to strengthen a graha (Sessions 9 & 10 decks). */
@@ -3171,7 +3250,8 @@ function renderGrahaReference() {
 
   /* Attribute panel from the course decks (Sessions 9 & 10). */
   html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Graha Attributes</h4>
-    <table class="planet-table">
+    <div class="scroll-hint">← scroll sideways to see all columns →</div>
+    <div class="table-scroll"><table class="planet-table attr-wide">
     <thead><tr><th>Graha</th><th>Karaka (Ready Reckoner)</th><th>Key word</th><th>Day</th><th>Metal</th><th>Gemstone</th><th>Dhanya (grain)</th><th>Gothra</th><th>Dasavathara</th><th>Masa</th><th>Stotram</th><th>Transit per rashi</th></tr></thead><tbody>`;
   for (const p of order) {
     const a = GRAHA_ATTRS[p] || {};
@@ -3184,7 +3264,7 @@ function renderGrahaReference() {
       <td>${a.masa||"—"}</td><td>${a.stotram||"—"}</td><td>${a.transit||"—"}</td>
     </tr>`;
   }
-  html += `</tbody></table>
+  html += `</tbody></table></div>
     <p class="akshara-note">Attributes as given in the course decks. Entries shown as &ldquo;—&rdquo; are for grahas whose
     attribute slides have not yet been supplied; they are left blank rather than guessed.</p>`;
 
@@ -3357,13 +3437,15 @@ function generate() {
   // Planets by rashi for the chart wheel
   const planetsByRashi = {};
   const planetsWithDignity = {};
+  const planetsDeg = {};
   for (const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
-    const rNum = rashiOf(chart.sidereal[p]).n;
-    planetsByRashi[p] = rNum;
-    planetsWithDignity[p] = planetDignity(p, rNum).label;
+    const ro = rashiOf(chart.sidereal[p]);
+    planetsByRashi[p] = ro.n;
+    planetsWithDignity[p] = planetDignity(p, ro.n).label;
+    planetsDeg[p] = Math.floor(ro.deg);   // whole-degree, matches printed kundali convention
   }
-  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi);
-  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity);
+  renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsDeg);
+  renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity, planetsDeg);
 
   renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
@@ -3386,6 +3468,9 @@ function generate() {
   renderGrahaReference();
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName };
+  renderPredictive();
+  saveForm();     // remember these details on this device
+  saveToSheet();  // optional: log to your Google Sheet if an endpoint is configured
   document.getElementById("report").classList.add("show");
   document.getElementById("btn-print").disabled = false;
 
@@ -3481,6 +3566,110 @@ document.getElementById("btn-manual").addEventListener("click", () => {
     visible ? "Use city lookup" : "Use manual lat/lon";
 });
 
+/* ============================================================
+   Remember the birth details on THIS device (localStorage), so the
+   form is pre-filled next time it's opened on the same computer.
+   Saved on every change and on each successful generate; restored on load.
+   ============================================================ */
+const VH_FORM_KEY = "vh_form_v1";
+function saveForm(){
+  try {
+    const g = id => (document.getElementById(id) || {}).value;
+    localStorage.setItem(VH_FORM_KEY, JSON.stringify({
+      name:g("f-name"), dob:g("f-dob"), tob:g("f-tob"), place:g("f-place"),
+      gender:g("f-gender"), ayanamsa:g("f-ayanamsa"),
+      manual: document.getElementById("latLonRow").classList.contains("show"),
+      lat:g("f-lat"), lon:g("f-lon"), tz:g("f-tz"), selectedCity: selectedCity
+    }));
+  } catch(e){ /* storage may be disabled — fail silently */ }
+}
+function restoreForm(){
+  try {
+    const raw = localStorage.getItem(VH_FORM_KEY); if(!raw) return;
+    const d = JSON.parse(raw);
+    const set = (id,v) => { const el=document.getElementById(id); if(el && v!=null && v!=="") el.value=v; };
+    set("f-name",d.name); set("f-dob",d.dob); set("f-tob",d.tob); set("f-place",d.place);
+    set("f-gender",d.gender); set("f-ayanamsa",d.ayanamsa);
+    set("f-lat",d.lat); set("f-lon",d.lon); set("f-tz",d.tz);
+    if(Array.isArray(d.selectedCity)) selectedCity = d.selectedCity;
+    if(d.manual){
+      document.getElementById("latLonRow").classList.add("show");
+      const b=document.getElementById("btn-manual"); if(b) b.textContent="Use city lookup";
+    }
+  } catch(e){ /* ignore corrupt saved data */ }
+}
+["f-name","f-dob","f-tob","f-place","f-gender","f-ayanamsa","f-lat","f-lon","f-tz"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){ el.addEventListener("change", saveForm); el.addEventListener("input", saveForm); }
+});
+restoreForm();
+
+/* ---- Clear saved details from THIS device ---- */
+function clearSaved(){
+  try { localStorage.removeItem(VH_FORM_KEY); } catch(e){}
+  ["f-name","f-dob","f-tob","f-place","f-lat","f-lon","f-tz"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
+  const gsel=document.getElementById("f-gender"); if(gsel) gsel.selectedIndex=0;
+  selectedCity = null;
+  const row=document.getElementById("latLonRow"); if(row) row.classList.remove("show");
+  const bm=document.getElementById("btn-manual"); if(bm) bm.textContent="Use manual lat/lon";
+  if (typeof showMsg==="function") showMsg("Saved birth details cleared from this device.");
+}
+{ const bc=document.getElementById("btn-clear"); if(bc) bc.addEventListener("click", clearSaved); }
+
+/* ============================================================
+   Optional: log each generated horoscope to your Google Sheet.
+   A browser cannot write to a Sheet's edit URL directly — it POSTs
+   to a Google Apps Script Web App that appends a row. Deploy the
+   supplied Code.gs on your sheet, then paste the resulting /exec URL
+   below to switch this ON. Leave "" to keep it OFF.
+   Sheet: 1QXOWH1Z1W4qnf9pg9p_sV_-mTnDEj7u85bmtZGj8p9c  (gid 1665679163)
+   ============================================================ */
+const VH_SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbzIxahLaOnjRMZJro6beOenWFwK2G4-6zFQHp06nEZgim6L04xBaXsHvKqYojrbdzt6/exec";   // <-- paste your Apps Script Web App URL ending in /exec
+function postSheet(rec){
+  if(!VH_SHEET_ENDPOINT) return false;
+  try {
+    fetch(VH_SHEET_ENDPOINT,{ method:"POST", mode:"no-cors",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(rec) }).catch(()=>{});
+    return true;
+  } catch(e){ return false; }
+}
+function saveToSheet(){
+  if(!VH_SHEET_ENDPOINT || !currentChart) return;
+  try {
+    const c=currentChart, sid=c.chart.sidereal;
+    const fmt=p=>{ const r=rashiOf(sid[p]); return getRashi(r.n).english+" "+r.deg.toFixed(2)+"°"; };
+    postSheet({
+      ts:new Date().toISOString(), name:c.name, dob:c.dob, tob:c.tob, place:c.placeName,
+      ayanamsa:(document.getElementById("f-ayanamsa")||{}).value||"",
+      gender:(document.getElementById("f-gender")||{}).value||"",
+      lagna:(c.lagnaRashi&&c.lagnaRashi.english)||"",
+      Sun:fmt("Sun"),Moon:fmt("Moon"),Mars:fmt("Mars"),Mercury:fmt("Mercury"),
+      Jupiter:fmt("Jupiter"),Venus:fmt("Venus"),Saturn:fmt("Saturn"),Rahu:fmt("Rahu"),Ketu:fmt("Ketu")
+    });
+  } catch(e){ /* never block the report */ }
+}
+/* Send a clearly-marked test row so you can confirm the sheet link works.
+   (no-cors hides the response, so we can't read success — check the sheet.) */
+function testSheet(){
+  if(!VH_SHEET_ENDPOINT){
+    if(typeof showMsg==="function") showMsg("Sheet logging is OFF — no endpoint is set in VH_SHEET_ENDPOINT.", true);
+    return;
+  }
+  const stamp = new Date().toLocaleString();
+  const sent = postSheet({
+    ts:new Date().toISOString(), name:"⚙ TEST LOGGING", dob:"", tob:"",
+    place:"connectivity test @ "+stamp, ayanamsa:"", gender:"", lagna:"TEST",
+    Sun:"",Moon:"",Mars:"",Mercury:"",Jupiter:"",Venus:"",Saturn:"",Rahu:"",Ketu:""
+  });
+  if(typeof showMsg==="function") showMsg(sent
+    ? "Test row sent. Check your Google Sheet now — a “⚙ TEST LOGGING” row should appear within a few seconds. "
+      + "If it does NOT, the Apps Script deployment’s “Who has access” is not set to “Anyone” "
+      + "(open the /exec URL in an incognito window: it should show {\"ok\":true} rather than a Google sign-in page)."
+    : "Could not send — check that VH_SHEET_ENDPOINT holds a valid /exec URL.", !sent);
+}
+{ const bt=document.getElementById("btn-test-log"); if(bt) bt.addEventListener("click", testSheet); }
+
 /* Bind buttons */
 document.getElementById("btn-generate").addEventListener("click", generate);
 document.getElementById("btn-print").addEventListener("click", () => window.print());
@@ -3532,6 +3721,201 @@ function _selfCheckRahu(){
   return fails.length === 0;
 }
 _selfCheckRahu();
+
+const RAHU_COMBOS = {"Sun": {"name": "Sun–Rahu (Grahan-affected Sun)", "implication": "Rahu amplifies the ego and distorts the Sun's significations: a strong drive to succeed, obsession with name, fame and status, and a tendency to challenge authority and tradition. Physically strong and drawn to powerful, influential people, with a big ego and little sympathy for others' pain. Rahu 'sucks up' the Sun's physical energy — yet a powerfully placed Sun (Aries/Leo) still lets the native enjoy its positivity, while conjunction in Libra (the Sun's fall) drains the energy and leaves little motivation.", "remedy": "Surya Namaskar daily; respect the father and fatherly figures; drink water from a copper vessel at dawn; chant or listen to Aditya Hrudayam; offer water to the Sun on Sundays; rise early."}, "Moon": {"name": "Moon–Rahu (Grahan / Chandra-Rahu)", "implication": "Strong imagination but also paranormal experiences, disturbing dreams, insomnia and mental unrest; multiple heart-breaks; difficulty with elders and female relatives. Rahu=huge & Moon=food → a voracious appetite that is hard to control, with a risk of food poisoning; Rahu=illusion & Moon=mind → hallucination or illusory fear; the mother may face recurring ill-health.", "remedy": "Ocean bath (samudra snana) at holy places such as Rameshwaram; feed elderly women on three consecutive Amavasyas; pray to Goddess Durga and offer rice as prasadam at a Durga temple on Fridays; care for and honour the mother and elders."}, "Mars": {"name": "Mars–Rahu (Volcano combination)", "implication": "A 'volcano' — excessive, often directionless aggression, an inflated ego and at times sadistic thinking, in a strong-willed nature that stops at nothing to reach its goal. Great self-control over thought, word and deed is essential; in the extreme it is seen with instigators of conflict and revolutionary figures. It stays more controlled only when Mars is debilitated, retrograde or combust.", "remedy": "Channel the energy through sport, exercise, martial arts and meditation; worship Hanuman / Subramanya; practise restraint and think before acting."}, "Mercury": {"name": "Mercury–Rahu (amplified intellect)", "implication": "Rahu amplifies Mercury into an exceptionally sharp, highly intelligent mind — brilliant analytical and problem-solving ability, unconventional out-of-the-box thinking, and excellent communication and persuasion (a natural salesman who could 'sell a comb to a bald man'). The shadow side is over-cleverness, manipulation, or scattered/nervous thinking if Mercury is afflicted. (Mercury = memory, Rahu = huge, so it typically gives a powerful, retentive memory.)", "remedy": "Pray to Maha Vishnu; chant or listen to Vishnu Sahasranama; visit a Vishnu temple on Wednesdays and offer Tulsi; pray to Goddess Durga; donate notebooks/stationery to poor children."}, "Jupiter": {"name": "Jupiter–Rahu (Guru Chandala Yoga)", "implication": "Guru Chandala Yoga — Jupiter (wisdom, tradition, guru, dharma) meets Rahu (ambition, foreign influence, breaking of tradition). The native questions beliefs and traditions and may feel he alone is knowledgeable; it can bring sickness or bodily pain, or highly unconventional, eccentric behaviour. With a well-placed Jupiter, though, it grants extraordinary intelligence and research ability.", "remedy": "Do 16 pradakshinas of the Peepal (Ashwattha) tree at sunrise daily for 48 days; study and respect genuine wisdom; associate respectfully with people of other faiths."}, "Venus": {"name": "Venus–Rahu", "implication": "Excellent for performers — actors, writers, singers, dancers, musicians — but tends to skin allergies. In relationships the native struggles to find the right partner, often leaving suitable people and making wrong choices; as Venus governs the sexual drive, this combination can bring excessive, sometimes uncontrollable, desire.", "remedy": "Keep the house and surroundings clean; wear clean, washed clothes; men stay clean-shaven; pray to Mahalakshmi and visit a Lakshmi temple on Fridays; chant the Lakshmi Ashtottaram; light a diya daily; use a pleasant fragrance."}, "Saturn": {"name": "Saturn–Rahu (Shaapit / Cursed Yoga)", "implication": "Shaapit (Cursed) Yoga — a life marked by struggle, disappointment, frustration and sorrow. The native is forced to face karmic results (good and bad) that little can modify, and the combination damages the good significations of the house they jointly occupy — unless that house's lord is well placed.", "remedy": "Worship Lord Shiva — Abhishekam with water and milk on the Shivalinga on Mondays and Saturdays, chanting 'Om Namah Shivaya'; do silent, mindful Panchakshari japa; do not keep footwear in front of the main door."}};
+const KETU_COMBOS = {"Sun": {"name": "Ketu–Sun", "implication": "Physical energy when the Sun is strong (Aries/Leo/Scorpio); if the two conjoin in Libra the energy is 'sucked up' by Ketu, and in other signs Ketu lowers self-confidence — physical weakness, past-life guilt carried through life, introversion and self-pity, a stooped posture and a pessimistic outlook. A strict father, possible separation from the father, and eyesight problems.", "remedy": "General Ketu remedies (Ganapathi worship); honour the father and do Surya Namaskar / Aditya Hrudayam to strengthen the Sun."}, "Moon": {"name": "Ketu–Moon", "implication": "A strongly split, imaginative mind: in youth heart-breaks, mental unrest, disturbing dreams, insomnia and depression; over time it matures into detachment from useless issues, mental multi-tasking and progress in spirituality (with good creativity/narration if Mercury is strong). Can indicate a dosha or legal issues on the mother's side.", "remedy": "Bathe in holy rivers (Ganga, Kaveri — Ketu = small/river, Moon = water); worship Ganapathi; honour and care for the mother."}, "Mars": {"name": "Ketu–Mars (Volcano)", "implication": "Excess aggression, cruelty, over-confidence and cunning/'devilish' thinking — in the extreme, instigators of religious or racist conflict; strict self-control of thought, word and deed is essential. Bitterness with brothers, little benefit from blood relatives, improper property partition and litigation, Vastu defects; in a female chart, frequent quarrels with the husband and property disputes.", "remedy": "Buy a silver spear (vel), do pooja on Shashti tithi or Vishaka nakshatra with flowers and kumkum at home, then offer it in the hundi of an OLD Lord Subramanya (Kartikeya) temple; channel the energy through sport, discipline and restraint."}, "Mercury": {"name": "Ketu–Mercury", "implication": "Imagination, an experimental streak and revolutionary ideas — productive if Mercury signifies benefic houses; if Mercury is afflicted, poor judgement in a crisis, idle/loose talk and frustration. Misunderstandings with the maternal uncle, trouble with a younger sister and friends, complications in legal documents, a chance of a love-trap or love-marriage, and a break in education. It also tends to forgetfulness / weak memory (Mercury = memory, Ketu = small); an everyday marker is constantly touching or fiddling with the hair with the fingers (Mercury = fingers, Ketu = hair).", "remedy": "General Ketu remedies — Ganapathi worship and 'Om Gam Ganapataye Namah' 108 times daily; pray to Maha Vishnu for Mercury."}, "Jupiter": {"name": "Ketu–Jupiter", "implication": "At its best in Sagittarius or Pisces — Jupiter's wisdom guided by Ketu's instinct: excellent for religious heads, spiritual seekers, writers and orators, with strong intuition and easy access to loans, but detachment/disinterest in life and family. If Jupiter is badly placed: unpopularity in social and religious life, money-related litigation, and possible separation from children. (Working while standing/sitting on a staircase creates this combo — avoid deciding there, as it brings obstacles and litigation.)", "remedy": "Pray to Lord Ganesha, especially below-ground / Paatala idols (Kaanipakam Vinayaka, Paatala Ganapathi at Sri Kaalahasti); keep horse gram under the pillow overnight and feed the birds next morning; feed fish (and avoid eating fish or keeping aquariums); tonsure the head and offer the hair to the family deity."}, "Venus": {"name": "Ketu–Venus", "implication": "A restless search for 'true love' that often ends in frustration; heavy expenses and difficulty saving; men suffer through women and vice-versa; a troubled married life. As Venus governs reproduction, it can bring low sperm count, childlessness, impotence or late/weak children. Everyday triggers of Venus–Ketu are wearing checked / net-patterned branded clothes, or a man keeping a beard (Venus = cheeks / branded shirt, Ketu = beard / checks). (If Venus is retrograde, a divorce may be followed by a very happy, loving second marriage.)", "remedy": "Ganapathi worship and general Ketu remedies; keep the home clean and do NOT grow creepers over the house walls (that itself forms Venus–Ketu); pray to Mahalakshmi on Fridays."}, "Saturn": {"name": "Ketu–Saturn", "implication": "A life of struggle, disappointment, frustration and sorrow, with a profession full of ups and downs — yet a Ketu-related line of work can bring great success. Unsteady or low-income jobs, constant business enemies, being easily cheated, and little interest in salaried service. (Shaking the legs while sitting idle is a marker: Saturn = legs, Ketu = tail/shaking.)", "remedy": "Ganapathi worship and general Ketu remedies; worship Hanuman and Lord Shiva for Saturn; consider a Ketu-signified profession."}};
+const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Namaha' 108 times; recite the Durga Kavacham.", "Visit Durga temples on Fridays or on Rahu nakshatra days (Ardra, Swati, Shatabhisha); light lemon lamps during Rahu Kaalam.", "Perform a Chandika Homam in a temple if the affliction is severe.", "Put dhoopam (incense) in the house on Saturdays (Rahu = smoke).", "Offer Boondhi to beggars; associate with and help people of other faiths / the underprivileged.", "Go to Sri Kalahasti and perform the Rahu–Ketu pooja.", "Offer urad-dal (Rahu) vada to Hanuman on Saturdays; do pradakshina at a snake-hill / Nagara Kallu.", "For a critical affliction, perform Rudrabhisheka and Maha Mrityunjaya / Ayush homa."];
+const KETU_GENERAL_REMEDIES = ["Ganapathi pooja — offer durva grass (garike), do Gana Homa and wear a Ganapathi pendant; chant 'Om Gam Ganapataye Namah' 108 times daily.", "Visit pilgrimage centres and bathe in holy rivers.", "Feed horse gram to horses and fish; keep a handful of horse gram under the pillow overnight and feed it to the birds the next morning.", "Feed street dogs (Ketu = street dogs, unlike Mars = the pet dog), squirrels, rats and fish; on a Sunday, light 7 candles in a church.", "Offer a 108-cardamom (elaichi) haara to Ganapathi; fly a kite; donate a saffron flag bearing 'Om'.", "Gift creeper-grown vegetables to sanyasis, barbers, cobblers and tailors; do seva or donate to mutts and ashramas.", "Ketu Parihara: tonsure the head and give the hair to your family deity; at the ChitraGupta temple, Kanchipuram, light 7 ghee lamps set over horse gram for Ketu.", "Chant the Gayatri mantra of the planet Ketu is joined with, and do the tatwa remedy of Ketu's rashi (Vayu: fly a kite / hoist a flag / chant; Jala: Abhisheka to Ganapathi; Agni: Ganapathi Homa / light candles in a church; Prithvi: pooja, charity, feed sanyasis, cobblers, barbers)."];
+const KAALA_SARPA_RESULTS = ["Devotion to family and society, but repeated struggle and loneliness in times of need.", "Fear of heights, lonely places and snakes.", "Difficulty having children or little happiness from them; delay in marriage or an unhappy married life.", "Hurdles in life, health issues, lack of peace, tension and anxiety.", "Little support from friends and relatives; seldom rewarded for one's efforts.", "Dreams of dead ancestors or of bad things happening."];
+const KAALA_SARPA_REMEDIES = ["Kaala Sarpa Dosha Nivarana Pooja at Sri Kaalahasti, Rameshwaram, Thiru Nageshwaram, Kukke Subramanya or Ujjain.", "Rudrabhisheka to Lord Shiva; chant 'Om Namah Shivaya'.", "Chant the Maha Mrityunjaya mantra 108 times.", "Water a Peepal tree every Saturday.", "Visit the Garuda temple near Mulbagal (believed to relieve the 8 kinds of sarpa dosha).", "Chant the Hanuman Chalisa daily."];
+const KAALA_SARPA_NOTE = "Kaala Sarpa forms when ALL planets (and the Lagna) are hemmed within the Rahu–Ketu axis. If even one planet or the Lagna is outside the axis, it is NOT formed. Because the nodes are always retrograde (their degree keeps decreasing / moving anti-clockwise), a planet sitting in a node's OWN sign is judged by whether the node has already crossed it: if the planet's degree is HIGHER than the node's, the descending node has passed it, so it lies OUTSIDE the axis and breaks the yoga; if lower, the node is still approaching and the planet is inside. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga (kaala = time, amrita = nectar), giving detachment and a spiritual inclination — over time it yields beneficial results, and the intense karmic situations it brings become a source of strength for success.";
+
+/* ============================================================
+   PREDICTIVE & REMEDIES  (Section X)
+   Dasha-Bhukti · Transit · Rahu/Ketu combos · Kaala Sarpa ·
+   Remedies · Rahu Kaalam.  Built on the existing JS ephemeris.
+   ============================================================ */
+const VORDER = ["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"];
+const VYEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, Saturn:19, Mercury:17 }; // Σ = 120
+const PRED_PLANETS = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+const _esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const _fdate = d => d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+
+/* Vimshottari mahadasha timeline + running bhukti */
+function buildDasha(moonLon, dobISO, tobStr){
+  if(!dobISO) return null;
+  const YR = 365.25*24*3600*1000, add=(dt,y)=>new Date(dt.getTime()+y*YR);
+  const p=dobISO.split("-").map(Number), t=(tobStr||"0:0:0").split(":").map(Number);
+  const birth=new Date(p[0],(p[1]||1)-1,p[2]||1,(t[0]||0),(t[1]||0),(t[2]||0));
+  const nk=nakshatraOf(moonLon), lord=nk.lord, frac=nk.degIn/NAK_SIZE;
+  const si=VORDER.indexOf(lord);
+  let vs=add(birth,-frac*VYEARS[lord]);           // virtual start of the first (running) maha
+  const now=new Date(), timeline=[];
+  for(let i=0;i<9;i++){ const L=VORDER[(si+i)%9], e=add(vs,VYEARS[L]);
+    timeline.push({lord:L, start:new Date(vs), end:new Date(e), cur:(now>=vs&&now<e)}); vs=e; }
+  // bhuktis inside the running maha
+  const cm=timeline.find(x=>x.cur)||timeline[0];
+  const full=VYEARS[cm.lord], li=VORDER.indexOf(cm.lord), bh=[]; let x=new Date(cm.start);
+  for(let j=0;j<9;j++){ const sub=VORDER[(li+j)%9], be=add(x, full*VYEARS[sub]/120);
+    bh.push({lord:sub, start:new Date(x), end:new Date(be), cur:(now>=x&&now<be)}); x=be; }
+  return {nak:nk, timeline, curMaha:cm, bhuktis:bh};
+}
+
+function renderDashaPane(D){
+  const el=document.getElementById("pane-dasha"); if(!el) return;
+  if(!D){ el.innerHTML="<p>Provide date & time of birth to compute the Vimshottari daśā.</p>"; return; }
+  const bhk=D.bhuktis.find(b=>b.cur);
+  let h=`<h4 class="pane-h">Vimśottarī Daśā</h4>`;
+  h+=`<p>Birth-star <strong>${D.nak.name}</strong> (lord <strong>${D.nak.lord}</strong>). `;
+  if(bhk) h+=`Running now: <strong>${D.curMaha.lord} mahādaśā → ${bhk.lord} bhukti</strong> (until ${_fdate(bhk.end)}).`;
+  h+=`</p>`;
+  h+=`<table class="rtable"><thead><tr><th>Mahādaśā</th><th>Years</th><th>From</th><th>To</th></tr></thead><tbody>`;
+  for(const t of D.timeline) h+=`<tr class="${t.cur?'now':''}"><td>${t.lord}</td><td>${VYEARS[t.lord]}</td><td>${_fdate(t.start)}</td><td>${_fdate(t.end)}</td></tr>`;
+  h+=`</tbody></table>`;
+  h+=`<h4 class="pane-h">Bhukti (antardaśā) within ${D.curMaha.lord} mahādaśā</h4>`;
+  h+=`<table class="rtable"><thead><tr><th>Bhukti lord</th><th>From</th><th>To</th></tr></thead><tbody>`;
+  for(const b of D.bhuktis) h+=`<tr class="${b.cur?'now':''}"><td>${b.lord}</td><td>${_fdate(b.start)}</td><td>${_fdate(b.end)}</td></tr>`;
+  h+=`</tbody></table><p class="rnote">Vimśottarī (120-yr) system, computed from the Moon's nakṣatra at birth. Dates are approximate (±) — for precise sandhi use a professional ephemeris.</p>`;
+  el.innerHTML=h;
+}
+
+function renderTransitPane(natalSid, natalMoonR, lagnaN){
+  const el=document.getElementById("pane-transit"); if(!el) return;
+  const ay=(document.getElementById("f-ayanamsa")||{}).value||"lahiri";
+  const now=new Date();
+  const JD=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
+                     now.getUTCHours()+now.getUTCMinutes()/60);
+  const tsid=computeChart(JD, ay).sidereal;
+  let h=`<h4 class="pane-h">Gochara (transit) — ${_fdate(now)}</h4>`;
+  h+=`<table class="rtable"><thead><tr><th>Planet</th><th>Transit rāśi</th><th>House from Moon</th><th>House from Lagna</th></tr></thead><tbody>`;
+  const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  for(const p of order){ const r=rashiOf(tsid[p]).n;
+    h+=`<tr><td>${p}</td><td>${getRashi(r).sanskrit} (${getRashi(r).english})</td><td>${houseFromLagna(natalMoonR,r)}</td><td>${houseFromLagna(lagnaN,r)}</td></tr>`; }
+  h+=`</tbody></table>`;
+  // transit aspects onto natal planets
+  const natalByR={}; for(const p of order){ (natalByR[rashiOf(natalSid[p]).n] ||= []).push(p); }
+  const rows=[];
+  for(const t of order){ const tr=rashiOf(tsid[t]).n; const disps=(SPECIAL_ASPECTS[t]||[7]);
+    for(const hh of disps){ const tgt=aspectedRashi(tr,hh); const anti=(t==="Rahu"||t==="Ketu")?" (anti-clockwise)":"";
+      for(const n of (natalByR[tgt]||[])){ rows.push({jup:t==="Jupiter",
+        html:`Transit <strong>${t}</strong> casts its ${ord(hh)}${anti} aspect on natal <strong>${n}</strong> (${getRashi(tgt).english}).`}); } } }
+  rows.sort((a,b)=>(a.jup?0:1)-(b.jup?0:1));
+  h+=`<h4 class="pane-h">Transit aspects on natal planets</h4>`;
+  h+= rows.length ? `<ul class="rlist">${rows.map(r=>`<li>${r.html}</li>`).join("")}</ul>`
+                  : `<p>No transit planet currently aspects a natal planet.</p>`;
+  h+=`<p class="rnote">Transit positions for now (UTC), same ayanāṁśa as the birth chart. Gochara is read primarily from the natal Moon (Chandra Lagna).</p>`;
+  el.innerHTML=h;
+}
+
+function _nodeCombos(sid, node, DATA){
+  const nR=rashiOf(sid[node]).n, out=[];
+  for(const p of PRED_PLANETS){ const pR=rashiOf(sid[p]).n;
+    const conj=(pR===nR);
+    const nodeSees=(SPECIAL_ASPECTS[node]||[5,7,9]).some(h=>aspectedRashi(nR,h)===pR);
+    const pSees=(SPECIAL_ASPECTS[p]||[7]).some(h=>aspectedRashi(pR,h)===nR);
+    if(!(conj||nodeSees||pSees)) continue;
+    out.push(Object.assign({planet:p, how: conj?"conjunction":(nodeSees?node+" aspect":p+" aspect"), conj}, DATA[p]));
+  }
+  out.sort((a,b)=>(a.conj?0:1)-(b.conj?0:1));
+  return out;
+}
+function _comboCards(list){
+  if(!list.length) return `<p>No Rahu/Ketu combination with the seven planets.</p>`;
+  return list.map(c=>`<div class="combo-card ${c.conj?'primary':''}"><h5>${_esc(c.name)}<span class="tag-how">${_esc(c.how)}</span></h5>
+    <div>${_esc(c.implication)}</div><div class="rem"><strong>Remedy:</strong> ${_esc(c.remedy)}</div></div>`).join("");
+}
+function renderCombosPane(sid){
+  const el=document.getElementById("pane-combos"); if(!el) return;
+  let h=`<h4 class="pane-h">Rāhu combinations</h4>`+_comboCards(_nodeCombos(sid,"Rahu",RAHU_COMBOS));
+  h+=`<h4 class="pane-h">Ketu combinations</h4>`+_comboCards(_nodeCombos(sid,"Ketu",KETU_COMBOS));
+  h+=`<p class="rnote">Formed by conjunction (strongest — shown first) or by the node's 5/7/9 aspect / the planet's aspect on the node. Conjunction cards are highlighted.</p>`;
+  el.innerHTML=h;
+}
+
+/* Kaala Sarpa — are all seven grahas hemmed on one side of the Rahu–Ketu axis? */
+function renderKsarpaPane(sid){
+  const el=document.getElementById("pane-ksarpa"); if(!el) return;
+  const R=norm360(sid.Rahu);
+  const info=PRED_PLANETS.map(p=>{ const d=norm360(sid[p]-R); return {p, inside:(d>0&&d<180)}; });
+  const outside=info.filter(x=>!x.inside).map(x=>x.p);
+  const allInside=info.every(x=>x.inside), allOutside=info.every(x=>!x.inside);
+  let verdict;
+  if(allInside) verdict=`<p><strong>✔ Kaala Sarpa present — Rāhu leads (Kaala Sarpa Dosha).</strong> All seven planets fall in the Rāhu→Ketu half.</p>`;
+  else if(allOutside) verdict=`<p><strong>✔ Kaala Sarpa present — Ketu leads (Kālāmṛt / Kaala Sarpa Yoga).</strong> Milder: detachment and a spiritual inclination.</p>`;
+  else verdict=`<p><strong>✘ Kaala Sarpa not formed.</strong> ${_esc(outside.join(", "))} ${outside.length===1?"lies":"lie"} on the opposite side of the Rāhu–Ketu axis, so the yoga breaks.</p>`;
+  let h=`<h4 class="pane-h">Kaala Sarpa Dosha</h4>`+verdict;
+  h+=`<p class="rnote">${_esc(KAALA_SARPA_NOTE)}</p>`;
+  if(allInside||allOutside){
+    h+=`<h4 class="pane-h">Typical results</h4><ul class="rlist">${KAALA_SARPA_RESULTS.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
+    h+=`<h4 class="pane-h">Remedies</h4><ul class="rlist">${KAALA_SARPA_REMEDIES.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
+  }
+  h+=`<p class="rnote">Evaluated on the seven grahas (Lagna not included in this check).</p>`;
+  el.innerHTML=h;
+}
+
+function renderRemediesPane(sid){
+  const el=document.getElementById("pane-remedies"); if(!el) return;
+  const rahu=_nodeCombos(sid,"Rahu",RAHU_COMBOS), ketu=_nodeCombos(sid,"Ketu",KETU_COMBOS);
+  const pick=list=>list.filter(c=>c.conj).length?list.filter(c=>c.conj):list;
+  let h=`<h4 class="pane-h">Chart-specific remedies</h4>`;
+  const rc=pick(rahu), kc=pick(ketu);
+  if(rc.length){ h+=`<p><strong>For your Rāhu combination(s):</strong></p><ul class="rlist">${rc.map(c=>`<li><strong>${_esc(c.name)}:</strong> ${_esc(c.remedy)}</li>`).join("")}</ul>`; }
+  if(kc.length){ h+=`<p><strong>For your Ketu combination(s):</strong></p><ul class="rlist">${kc.map(c=>`<li><strong>${_esc(c.name)}:</strong> ${_esc(c.remedy)}</li>`).join("")}</ul>`; }
+  if(!rc.length && !kc.length) h+=`<p>No specific Rāhu/Ketu combination — see the general nodal remedies below.</p>`;
+  h+=`<h4 class="pane-h">General Rāhu remedies</h4><ul class="rlist">${RAHU_GENERAL_REMEDIES.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
+  h+=`<h4 class="pane-h">General Ketu remedies</h4><ul class="rlist">${KETU_GENERAL_REMEDIES.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
+  h+=`<p class="rnote">The section above (Jyothirlinga) also gives an exaltation-temple remedy for any debilitated graha.</p>`;
+  el.innerHTML=h;
+}
+
+/* Rahu Kaalam — 8-part division of the daytime, by weekday (approx. sunrise 06:00). */
+const RAHU_KAALAM = { 0:["16:30","18:00"],1:["07:30","09:00"],2:["15:00","16:30"],3:["12:00","13:30"],4:["13:30","15:00"],5:["10:30","12:00"],6:["09:00","10:30"] };
+function renderRahukaalPane(){
+  const el=document.getElementById("pane-rahukaal"); if(!el) return;
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const now=new Date(), w=now.getDay(), rk=RAHU_KAALAM[w];
+  let h=`<h4 class="pane-h">Rāhu Kaalam — today (${days[w]})</h4>`;
+  h+=`<p>Avoid starting anything auspicious between <strong>${rk[0]}</strong> and <strong>${rk[1]}</strong>.</p>`;
+  h+=`<table class="rtable"><thead><tr><th>Weekday</th><th>Rāhu Kaalam</th></tr></thead><tbody>`;
+  for(let d=0;d<7;d++) h+=`<tr class="${d===w?'now':''}"><td>${days[d]}</td><td>${RAHU_KAALAM[d][0]} – ${RAHU_KAALAM[d][1]}</td></tr>`;
+  h+=`</tbody></table><p class="rnote">Standard table assuming sunrise ≈ 06:00 and a 12-hour day. For exact timing, shift by your local sunrise.</p>`;
+  el.innerHTML=h;
+}
+
+function renderPredictive(){
+  if(!currentChart || !currentChart.chart) return;
+  const sid=currentChart.chart.sidereal;
+  const natalMoonR=rashiOf(sid.Moon).n;
+  const lagnaN=(currentChart.lagnaRashi && currentChart.lagnaRashi.n) || natalMoonR;
+  renderDashaPane(buildDasha(sid.Moon, currentChart.dob, currentChart.tob));
+  renderTransitPane(sid, natalMoonR, lagnaN);
+  renderCombosPane(sid);
+  renderKsarpaPane(sid);
+  renderRemediesPane(sid);
+  renderRahukaalPane();
+}
+
+/* report-tab switching */
+document.querySelectorAll("#reportTabs .rtab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("#reportTabs .rtab").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const which=btn.dataset.tab;
+    ["dasha","transit","combos","ksarpa","remedies","rahukaal"].forEach(k=>{
+      const pane=document.getElementById("pane-"+k); if(pane) pane.style.display=(k===which)?"":"none";
+    });
+  });
+});
+
+
+/* North / South chart toggle */
+document.querySelectorAll("#chartTabs .chart-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#chartTabs .chart-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("dualChartWrap").dataset.view = btn.dataset.view;
+  });
+});
 
 /* On load */
 setupPlaceAutocomplete();
