@@ -1022,6 +1022,15 @@ details.section[open] > summary::after { content: "−"; }
 
       <details class="section" open>
         <summary>
+          <span class="section-num">✦</span>
+          <span class="section-title">Nakṣatras — Janma Nakṣatra</span>
+          <span class="section-sub">Session 16 · the Moon’s birth star — deity, gana &amp; naming syllable</span>
+        </summary>
+        <div class="section-body" id="nakshatraBody"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">II</span>
           <span class="section-title">Janma Lagna — Ascendant Analysis</span>
           <span class="section-sub">Physical body, outer personality, how the world sees you</span>
@@ -2158,6 +2167,80 @@ function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
 }
 
 /* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
+/* ===== Nakshatras (Session 16) — 27 nakshatras: deity, symbol, gana, naming syllables ===== */
+const GANA_TEMPERAMENT = {
+  Deva: "Sattvic \u2014 soft, refined, gentle; not aggressive (the devas\u2019 nature).",
+  Manushya: "Mixed \u2014 a human blend of sattvic, rajasic and tamasic; material and spiritual.",
+  Rakshasa: "Tamasic \u2014 aggressive, dominating, blunt, strong-willed and tough."
+};
+const NAKSHATRA_INFO = {
+  "Ashwini":             {deity:'Ashwini Kumaras', symbol:"Horse's head", gana:'Deva', syl:["Chu","Che","Cho","La"]},
+  "Bharani":             {deity:'Yama', symbol:'Yoni (womb)', gana:'Manushya', syl:["Li","Lu","Le","Lo"]},
+  "Krittika":            {deity:'Agni', symbol:'Razor / flame', gana:'Rakshasa', syl:["A","Ee","U","Ea"]},
+  "Rohini":              {deity:'Brahma (Prajapati)', symbol:'Cart / chariot', gana:'Manushya', syl:["O","Va","Vi","Vu"]},
+  "Mrigashira":          {deity:'Soma (Chandra)', symbol:"Deer's head", gana:'Deva', syl:["Ve","Vo","Ka","Ki"]},
+  "Ardra":               {deity:'Rudra', symbol:'Teardrop / diamond', gana:'Manushya', syl:["Ku","Gha","Nga","Chha"]},
+  "Punarvasu":           {deity:'Aditi', symbol:'Bow & quiver', gana:'Deva', syl:["Ke","Ko","Ha","Hi"]},
+  "Pushya":              {deity:'Brihaspati', symbol:"Cow's udder / lotus", gana:'Deva', syl:["Hu","He","Ho","Da"]},
+  "Ashlesha":            {deity:'Nagas (serpents)', symbol:'Coiled serpent', gana:'Rakshasa', syl:["Di","Du","De","Do"]},
+  "Magha":               {deity:'Pitris (ancestors)', symbol:'Royal throne', gana:'Rakshasa', syl:["Ma","Mi","Mu","Me"]},
+  "Purva Phalguni":      {deity:'Bhaga', symbol:'Front legs of a cot', gana:'Manushya', syl:["Mo","Ta","Ti","Tu"]},
+  "Uttara Phalguni":     {deity:'Aryaman', symbol:'Back legs of a cot', gana:'Manushya', syl:["Te","To","Pa","Pi"]},
+  "Hasta":               {deity:'Savitar (Sun)', symbol:'Hand / palm', gana:'Deva', syl:["Pu","Sha","Na","Tha"]},
+  "Chitra":              {deity:'Vishwakarma (Tvashtar)', symbol:'Bright jewel / pearl', gana:'Rakshasa', syl:["Pe","Po","Ra","Ri"]},
+  "Swati":               {deity:'Vayu', symbol:'Coral / young sprout', gana:'Deva', syl:["Ru","Re","Ro","Ta"]},
+  "Vishakha":            {deity:'Indra-Agni', symbol:'Triumphal archway', gana:'Rakshasa', syl:["Ti","Tu","Te","To"]},
+  "Anuradha":            {deity:'Mitra', symbol:'Lotus / archway', gana:'Deva', syl:["Na","Ni","Nu","Ne"]},
+  "Jyeshtha":            {deity:'Indra', symbol:'Earring / umbrella', gana:'Rakshasa', syl:["No","Ya","Yi","Yu"]},
+  "Mula":                {deity:'Nirriti', symbol:'Tied bunch of roots', gana:'Rakshasa', syl:["Ye","Yo","Bha","Bhi"]},
+  "Purva Ashadha":       {deity:'Apas (the waters)', symbol:'Winnowing fan / tusk', gana:'Manushya', syl:["Bu","Dha","Bha","Dha"]},
+  "Uttara Ashadha":      {deity:'Vishwadevas', symbol:'Elephant tusk / planks', gana:'Manushya', syl:["Be","Bo","Ja","Ji"]},
+  "Shravana":            {deity:'Vishnu', symbol:'Ear / three footprints', gana:'Deva', syl:["Ju","Je","Jo","Gha"]},
+  "Dhanishta":           {deity:'Vasus (Ashta Vasu)', symbol:'Drum (mridangam)', gana:'Rakshasa', syl:["Ga","Gi","Gu","Ge"]},
+  "Shatabhisha":         {deity:'Varuna', symbol:'Empty circle (100 stars)', gana:'Rakshasa', syl:["Go","Sa","Si","Su"]},
+  "Purva Bhadrapada":    {deity:'Aja Ekapada', symbol:'Front of a funeral cot / two-faced', gana:'Manushya', syl:["Se","So","Da","Di"]},
+  "Uttara Bhadrapada":   {deity:'Ahir Budhnya', symbol:'Back of a funeral cot / water serpent', gana:'Manushya', syl:["Du","Tha","Jha","Nya"]},
+  "Revati":              {deity:'Pushan', symbol:'Fish / pair of fish', gana:'Deva', syl:["De","Do","Cha","Chi"]},
+};
+/* Session 16 slide specifications for the 5 nakshatras taught in detail */
+const NAKSHATRA_DETAIL = {
+  'Ashwini': {'Meaning': 'Star of transport', 'Purushartha': 'Dharma', 'Varna': 'Vaishya (merchant)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male horse', 'Bird': 'Hamsa (swan)', 'Guna': 'Tamas', 'Tridosha': 'Vata', 'Direction': 'South', 'Gotra': 'Marichi', 'Body part': 'Knees & upper feet', 'Nature': 'Kshipra (swift)', 'Lucky colour': 'Blood red'},
+  'Bharani': {'Purushartha': 'Artha', 'Varna': 'Vaishya', 'Element': 'Prithvi (Earth)', 'Animal (yoni)': 'Elephant', 'Bird': 'Crow', 'Guna': 'Rajas', 'Tridosha': 'Pitta', 'Body part': 'Head / forehead', 'Nature': 'Ugra (fierce)', 'Yoni gender': 'Female', 'Lucky colour': 'Blood red', 'Lucky stone': 'Diamond', 'Tree': 'Amla (Amalaka)'},
+  'Krittika': {'Purushartha': 'Kama', 'Varna': 'Brahmin (priest)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Female sheep/goat', 'Bird': 'Peacock', 'Tree': 'Fig tree'},
+  'Rohini': {'Meaning': 'The red one', 'Element': 'Prithvi (Earth)', 'Animal (yoni)': 'Male serpent (Sarpa)', 'Bird': 'Owl', 'Tridosha': 'Kapha', 'Nature': 'Dhruva (fixed)', 'Body part': 'Legs / shanks (eyes)', 'Lucky colour': 'White', 'Lucky stone': 'Pearl', 'Tree': 'Jamun'},
+  'Mrigashira': {'Meaning': "Deer's head / the searching star", 'Purushartha': 'Moksha', 'Varna': 'Farmer / servant', 'Element': 'Prithvi (Earth)', 'Guna': 'Tamas', 'Tridosha': 'Pitta', 'Direction': 'South', 'Gotra': 'Pulastya', 'Body part': 'Eyes & eyebrows', 'Nature': 'Mridu (soft)'},
+};
+function renderNakshatraSection(moonLon){
+  const el=document.getElementById("nakshatraBody"); if(!el) return;
+  const nk=nakshatraOf(moonLon);
+  const info=NAKSHATRA_INFO[nk.name]||{deity:"\u2014",symbol:"\u2014",gana:"\u2014",syl:["","","",""]};
+  const syl=info.syl[nk.pada-1]||"\u2014";
+  let h=`<p>The <strong>Janma Nak\u1e63atra</strong> is the nak\u1e63atra (and pada) the Moon occupies at birth \u2014 one layer deeper than the Janma R\u0101\u015bi. It is used for naming, muh\u016brta (electional timing), horoscope matching, and the Vim\u015bottar\u012b da\u015b\u0101.</p>`;
+  h+=`<table class="rtable"><tbody>`;
+  h+=`<tr><th>Janma Nak\u1e63atra</th><td>${nk.name} \u2014 pada ${nk.pada}</td></tr>`;
+  h+=`<tr><th>Nak\u1e63atra lord</th><td>${nk.lord}</td></tr>`;
+  h+=`<tr><th>Deity</th><td>${info.deity}</td></tr>`;
+  h+=`<tr><th>Symbol</th><td>${info.symbol}</td></tr>`;
+  h+=`<tr><th>Gana</th><td>${info.gana} \u2014 ${GANA_TEMPERAMENT[info.gana]||""}</td></tr>`;
+  h+=`<tr><th>Naming syllable (pada ${nk.pada})</th><td><strong>${syl}</strong> \u2014 traditional first syllable for a name</td></tr>`;
+  h+=`</tbody></table>`;
+  const det=NAKSHATRA_DETAIL[nk.name];
+  if(det){
+    h+=`<h4 class="pane-h" style="margin-top:12px">Full specification (Session 16 slides)</h4>`;
+    h+=`<table class="rtable"><tbody>`;
+    for(const k of Object.keys(det)){ h+=`<tr><th>${k}</th><td>${det[k]}</td></tr>`; }
+    h+=`</tbody></table>`;
+  } else {
+    h+=`<p class="rnote">Detailed specification not yet covered for this nak\u1e63atra \u2014 Session 16 detailed the first five (Ashwini, Bharani, Krittika, Rohini, Mrigashira); more follow in later sessions.</p>`;
+  }
+  h+=`<details style="margin-top:10px"><summary style="cursor:pointer; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon);">Reference \u2014 all 27 nak\u1e63atras</summary>`;
+  h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>#</th><th>Nak\u1e63atra</th><th>Lord</th><th>Deity</th><th>Symbol</th><th>Gana</th><th>Syllables (padas 1\u20134)</th></tr></thead><tbody>`;
+  for(let i=0;i<NAKSHATRAS.length;i++){ const nm=NAKSHATRAS[i][0], ld=NAKSHATRAS[i][1]; const inf=NAKSHATRA_INFO[nm]; const hi = nm===nk.name ? ' class="now"' : '';
+    h+=`<tr${hi}><td>${i+1}</td><td>${nm}</td><td>${ld}</td><td>${inf.deity}</td><td>${inf.symbol}</td><td>${inf.gana}</td><td>${inf.syl.join(", ")}</td></tr>`; }
+  h+=`</tbody></table></div></details>`;
+  el.innerHTML=h;
+}
+
 function renderNorthIndianChart(lagnaRashiNum, planetsByRashi, planetsDeg) {
   // Standard North-Indian layout positions (cx, cy) for houses 1-12.
   // The diamond chart has 4 outer triangles and 4 inner diamonds, arranged so:
@@ -3484,6 +3567,7 @@ function generate() {
   }
   renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsDeg);
   renderSouthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsWithDignity, planetsDeg);
+  renderNakshatraSection(chart.sidereal.Moon);
 
   renderLagnaSection(lagnaRashi, lagnaRashiInfo.deg);
   renderMoonSection(moonRashi, moonRashiInfo.deg, moonHouse, moonDignity);
