@@ -2238,11 +2238,11 @@ const NAKSHATRA_INFO = {
   "Purva Phalguni":      {deity:'Bhaga', symbol:'Front legs of a cot', gana:'Manushya', syl:["Mo","Ta","Ti","Tu"]},
   "Uttara Phalguni":     {deity:'Aryaman', symbol:'Back legs of a cot', gana:'Manushya', syl:["Te","To","Pa","Pi"]},
   "Hasta":               {deity:'Savitar (Sun)', symbol:'Hand / palm', gana:'Deva', syl:["Pu","Sha","Na","Tha"]},
-  "Chitra":              {deity:'Vishwakarma (Tvashtar)', symbol:'Bright jewel / pearl', gana:'Rakshasa', syl:["Pe","Po","Ra","Ri"]},
+  "Chitra":              {deity:'Vishwakarma', symbol:'Bright jewel / pearl', gana:'Rakshasa', syl:["Pe","Po","Ra","Ri"]},
   "Swati":               {deity:'Vayu', symbol:'Coral / young sprout', gana:'Deva', syl:["Ru","Re","Ro","Ta"]},
   "Vishakha":            {deity:'Indra-Agni', symbol:'Triumphal archway', gana:'Rakshasa', syl:["Ti","Tu","Te","To"]},
-  "Anuradha":            {deity:'Mitra', symbol:'Lotus / archway', gana:'Deva', syl:["Na","Ni","Nu","Ne"]},
-  "Jyeshtha":            {deity:'Indra', symbol:'Earring / umbrella', gana:'Rakshasa', syl:["No","Ya","Yi","Yu"]},
+  "Anuradha":            {deity:'Mitra', symbol:'Staff / lotus', gana:'Deva', syl:["Na","Ni","Nu","Ne"]},
+  "Jyeshtha":            {deity:'Indra', symbol:'Talisman / umbrella', gana:'Rakshasa', syl:["No","Ya","Yi","Yu"]},
   "Mula":                {deity:'Nirriti', symbol:'Tied bunch of roots', gana:'Rakshasa', syl:["Ye","Yo","Bha","Bhi"]},
   "Purva Ashadha":       {deity:'Apas (the waters)', symbol:'Winnowing fan / tusk', gana:'Manushya', syl:["Bu","Dha","Bha","Dha"]},
   "Uttara Ashadha":      {deity:'Vishwadevas', symbol:'Elephant tusk / planks', gana:'Manushya', syl:["Be","Bo","Ja","Ji"]},
@@ -2269,7 +2269,7 @@ const NAKSHATRA_DETAIL = {
   'Uttara Phalguni': {'Meaning': 'Star of Patronage', 'Purushartha': 'Moksha', 'Varna': 'Kshatriya (warrior)', 'Element': 'Agni (Fire)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male cow (bull)', 'Bird': 'Peacock', 'Tree': 'Rose laurel / Juvvi'},
   'Hasta': {'Meaning': 'Star of the Hand', 'Purushartha': 'Moksha', 'Varna': 'Vaishya (merchant)', 'Element': 'Agni (Fire)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Female buffalo', 'Bird': 'Vulture', 'Tree': 'Jasmine (Jaai)'},
   'Chitra': {'Meaning': 'The bright one (a pearl / shining jewel)', 'Purushartha': 'Kama', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female tiger'},
-  'Swati': {'Meaning': 'Independent / self-going (the first drop of rain; the sword)', 'Purushartha': 'Artha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male buffalo'},
+  'Swati': {'Meaning': 'Independent / self-going (the first drop of rain; the sword)', 'Purushartha': 'Artha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male cow / buffalo'},
   'Vishakha': {'Meaning': 'Star of Purpose', 'Purushartha': 'Dharma', 'Varna': 'Mleccha (outcaste)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male tiger'},
   'Anuradha': {'Meaning': 'Star of Success', 'Purushartha': 'Dharma', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female deer/hare'},
   'Jyeshtha': {'Meaning': 'The eldest / senior', 'Purushartha': 'Artha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male deer/hare', 'Bird': 'Brahmani duck', 'Tree': 'Red silk cotton'},
@@ -3865,7 +3865,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-08-26 · 27 nakṣatras · nodes 2/5/9";
+const TOOL_VERSION = "2026-08-27 · 27 nakṣatras · KSarpa planets-only";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   const _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION;
@@ -4124,16 +4124,17 @@ function renderCombosPane(sid){
 }
 
 /* Kaala Sarpa — are all seven grahas hemmed on one side of the Rahu–Ketu axis? */
-function renderKsarpaPane(sid, lagnaLon){
+function renderKsarpaPane(sid){
   const el=document.getElementById("pane-ksarpa"); if(!el) return;
   const R=norm360(sid.Rahu);
+  // Judged on the SEVEN grahas only — the Lagna is NOT considered (Rahu engulfs all
+  // the planets, so even if the Lagna is outside it is still Kaala Sarpa). Session 18.
   const pts=PRED_PLANETS.map(p=>{ const d=norm360(sid[p]-R); return {name:p, inside:(d>0&&d<180)}; });
-  if(lagnaLon!=null){ const d=norm360(lagnaLon-R); pts.push({name:"Lagna", inside:(d>0&&d<180)}); }
   const insideList=pts.filter(x=>x.inside).map(x=>x.name);
   const outsideList=pts.filter(x=>!x.inside).map(x=>x.name);
   const allInside=(outsideList.length===0), allOutside=(insideList.length===0);
   let verdict;
-  if(allInside) verdict=`<p><strong>✔ Kaala Sarpa present — Rāhu leads (Kaala Sarpa Dosha).</strong> Every planet and the Lagna fall in the Rāhu→Ketu half.</p>`;
+  if(allInside) verdict=`<p><strong>✔ Kaala Sarpa present — Rāhu leads (Kaala Sarpa Dosha).</strong> All seven planets fall in the Rāhu→Ketu half.</p>`;
   else if(allOutside) verdict=`<p><strong>✔ Kaala Sarpa present — Ketu leads (Kālāmṛt / Kaala Sarpa Yoga).</strong> Milder: detachment and a spiritual inclination.</p>`;
   else { const breakers=(outsideList.length<=insideList.length)?outsideList:insideList;
     verdict=`<p><strong>✘ Kaala Sarpa not formed.</strong> ${_esc(breakers.join(", "))} ${breakers.length===1?"lies":"lie"} on the opposite side of the Rāhu–Ketu axis, so the yoga breaks.</p>`; }
@@ -4143,7 +4144,7 @@ function renderKsarpaPane(sid, lagnaLon){
     h+=`<h4 class="pane-h">Typical results</h4><ul class="rlist">${KAALA_SARPA_RESULTS.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
     h+=`<h4 class="pane-h">Remedies</h4><ul class="rlist">${KAALA_SARPA_REMEDIES.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
   }
-  h+=`<p class="rnote">Evaluated on the seven grahas <strong>and the Lagna</strong> — all must sit within the same Rāhu–Ketu half for the yoga to form.</p>`;
+  h+=`<p class="rnote">Evaluated on the seven grahas only — the Lagna is not considered (Rāhu engulfs all the planets). All seven must sit within the same Rāhu–Ketu half.</p>`;
   el.innerHTML=h;
 }
 
@@ -4184,7 +4185,7 @@ function renderPredictive(){
   renderDashaPane(buildDasha(sid.Moon, currentChart.dob, currentChart.tob));
   renderTransitPane(sid, natalMoonR, lagnaN);
   renderCombosPane(sid);
-  renderKsarpaPane(sid, currentChart.lagnaLon);
+  renderKsarpaPane(sid);
   renderRemediesPane(sid);
   renderRahukaalPane();
 }
