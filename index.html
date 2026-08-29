@@ -3009,23 +3009,41 @@ function renderAspectsSection(planetsByRashi){
   /* Influence readings — blend the aspecting planet's qualities with the
      aspected planet's karakatwas. Jupiter's are listed first and highlighted,
      since its aspect is held to be more powerful than its placement. */
-  const readings=[];
+  /* Grouped by aspecting planet: its qualities stated ONCE, then each of its
+     aspects lists the planets it falls on (no per-line repetition). */
+  const groups=[];
   for(const p of order){
+    const byHouse={};
     for(const a of aspects[p]){
       for(const q of (inRashi[a.rashi]||[])){
         if(q===p) continue;
-        const txt = aspectReading(p, q, a.house);
-        if(txt) readings.push({ p, html: txt });
+        (byHouse[a.house]=byHouse[a.house]||[]).push(q);
       }
     }
+    if(Object.keys(byHouse).length) groups.push({p, byHouse});
   }
-  readings.sort((x,y)=> (x.p==="Jupiter"?0:1) - (y.p==="Jupiter"?0:1));
+  groups.sort((x,y)=> (x.p==="Jupiter"?0:1) - (y.p==="Jupiter"?0:1));
   const infl = document.getElementById("aspect-influence");
   if(infl){
-    infl.innerHTML = readings.length
-      ? `<p><strong>Influence on karakatwas</strong> — an aspect casts the aspecting planet's nature onto whatever the aspected planet signifies:</p>
-         <ul>${readings.map(r=>`<li${r.p==="Jupiter"?' style="border-left:3px solid var(--gold);padding-left:10px;"':''}>${r.html}</li>`).join("")}</ul>`
-      : `<p>No planet-to-planet aspects in this chart (aspects still fall on the rashis listed above).</p>`;
+    if(!groups.length){
+      infl.innerHTML = `<p>No planet-to-planet aspects in this chart (aspects still fall on the rashis listed above).</p>`;
+    } else {
+      let h = `<p><strong>Influence on karakatwas</strong> — an aspect lends the aspecting planet's nature to whatever the aspected planet signifies. Grouped by planet, so each planet's qualities are stated once:</p>`;
+      for(const g of groups){
+        const A = KARAKATWAS[g.p], isJup = g.p==="Jupiter";
+        h += `<div class="asp-group"${isJup?' style="border-left:3px solid var(--gold);padding-left:10px;margin:12px 0;"':' style="margin:12px 0;"'}>`;
+        h += `<h5 style="margin:0 0 3px;font-family:'Cinzel',serif;font-size:14px;color:var(--maroon);">${GLYPH9[g.p]} ${g.p} — ${A.qualities}${isJup?` <span class="section-flag flag-exalted flag-deep">aspect &gt; placement</span>`:``}</h5>`;
+        h += `<p class="rnote" style="margin:0 0 6px;">Its aspect brings these qualities to whichever planet it influences.</p>`;
+        const houses = Object.keys(g.byHouse).map(Number).sort((a,b)=>a-b);
+        for(const hh of houses){
+          h += `<p style="margin:4px 0 2px;"><strong>${ord(hh)} aspect →</strong></p><ul style="margin:0 0 6px;">`;
+          for(const q of g.byHouse[hh]) h += `<li>On <strong>${q}</strong> — ${KARAKATWAS[q].signifies}.</li>`;
+          h += `</ul>`;
+        }
+        h += `</div>`;
+      }
+      infl.innerHTML = h;
+    }
   }
 
   const aspSet={};
