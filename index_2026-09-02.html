@@ -823,52 +823,6 @@ details.section[open] > summary::after { content: "−"; }
   .section-body { padding: 4px 16px 18px; }
   .dist-row .dist-label { width: 120px; font-size: 10px; }
 }
-
-/* ===== Mobile-friendliness (phones & small tablets) ===== */
-html, body { overflow-x: hidden; }               /* never let the page scroll sideways */
-* { -webkit-tap-highlight-color: rgba(107,29,43,.18); }
-
-@media (max-width: 680px) {
-  .shell { padding: 0 12px 56px; }
-  .title { font-size: 34px; line-height: 1.06; }
-  .hero { padding: 38px 14px 54px; }
-  .panel { padding: 18px 14px; border-radius: 12px; }
-  .input-grid { grid-template-columns: 1fr; gap: 12px; }
-  .summary-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .kv-grid { grid-template-columns: 1fr; }
-  details.section > summary { padding: 12px 14px; }
-  .section-num { margin-right: 8px; }
-  .section-title { font-size: 15px; }
-  .section-sub { font-size: 11px; }
-
-  /* Data tables scroll inside their own box instead of the whole page */
-  .planet-table, .rtable {
-    display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
-  }
-  .planet-table { font-size: 13px; }
-  .rtable { font-size: 12.5px; }
-
-  /* Charts fill the width, centred */
-  .dual-chart-wrap { grid-template-columns: 1fr !important; justify-items: center; gap: 16px; }
-  .chart-svg, .south-chart { width: 100% !important; max-width: 340px; }
-  .chart-legend { min-width: 0; }
-
-  /* Bigger tap targets; let control rows wrap */
-  .chart-tabs, .report-tabs, .actions { flex-wrap: wrap; gap: 8px; }
-  .chart-tab, .rtab { padding: 9px 14px; font-size: 11px; }
-  button, .btn { min-height: 42px; }
-
-  .asp-group ul, .rlist { padding-left: 18px; }
-  .table-scroll .attr-wide { min-width: 780px; }   /* still scrolls, a touch tighter */
-  .build-badge { font-size: 9px; }
-}
-
-@media (max-width: 400px) {
-  .summary-strip { grid-template-columns: 1fr; }
-  .title { font-size: 28px; }
-  .s-card .glyph { font-size: 26px; }
-  .chart-svg, .south-chart { max-width: 300px; }
-}
 </style>
 </head>
 <body>
@@ -3929,7 +3883,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-02 · 27 nakṣatras · mobile-friendly";
+const TOOL_VERSION = "2026-08-27 · 27 nakṣatras · KSarpa planets-only";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   const _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION;
