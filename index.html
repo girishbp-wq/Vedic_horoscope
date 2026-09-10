@@ -1019,7 +1019,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <summary>
           <span class="section-num">P</span>
           <span class="section-title">Predictive &amp; Remedies</span>
-          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam</span>
+          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta</span>
         </summary>
         <div class="section-body">
           <div class="report-tabs" id="reportTabs">
@@ -1029,6 +1029,8 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
             <button type="button" class="rtab" data-tab="ksarpa">Kaala Sarpa</button>
             <button type="button" class="rtab" data-tab="remedies">Remedies</button>
             <button type="button" class="rtab" data-tab="rahukaal">Rahu Kaalam</button>
+            <button type="button" class="rtab" data-tab="tarabala">Tārā Bala</button>
+            <button type="button" class="rtab" data-tab="muhurta">Muhūrta</button>
           </div>
           <div class="rpane" id="pane-dasha"></div>
           <div class="rpane" id="pane-transit" style="display:none"></div>
@@ -1036,6 +1038,8 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
           <div class="rpane" id="pane-ksarpa" style="display:none"></div>
           <div class="rpane" id="pane-remedies" style="display:none"></div>
           <div class="rpane" id="pane-rahukaal" style="display:none"></div>
+          <div class="rpane" id="pane-tarabala" style="display:none"></div>
+          <div class="rpane" id="pane-muhurta" style="display:none"></div>
         </div>
       </details>
 
@@ -3929,7 +3933,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-02 · 27 nakṣatras · mobile-friendly";
+const TOOL_VERSION = "2026-09-10 · Tārā Bala + Muhūrta";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   const _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION;
@@ -4241,6 +4245,110 @@ function renderRahukaalPane(){
   el.innerHTML=h;
 }
 
+/* ===== Tārā Bala & Muhūrta (Session 20) — nakṣatra strength & electional timing ===== */
+const NAK_ORDER = NAKSHATRAS.map(x=>x[0]);   // 27 nakṣatra names in zodiacal order
+
+const TARA_BALA = [
+  null,
+  { n:"Janma",            good:false, m:"Danger to the body — avoid." },
+  { n:"Sampat",           good:true,  m:"Wealth & prosperity — very good (especially business)." },
+  { n:"Vipat",            good:false, m:"Danger, loss, accident — avoid." },
+  { n:"Kshema",           good:true,  m:"Well-being & safety — good (journeys, operations)." },
+  { n:"Pratyak",          good:false, m:"Obstacles — avoid." },
+  { n:"Sadhaka",          good:true,  m:"Accomplishes ambitions — good (negotiation, exams, new work)." },
+  { n:"Vadha / Naidhana", good:false, m:"Danger / death — avoid." },
+  { n:"Mitra",            good:true,  m:"Friendly — good." },
+  { n:"Parama Mitra",     good:true,  m:"Most favourable — good." }
+];
+function taraFor(janmaIdx, targetIdx){        // both 1..27
+  const count = ((targetIdx - janmaIdx + 27) % 27) + 1;   // inclusive count from Janma nakṣatra
+  let rem = count % 9; if(rem===0) rem = 9;
+  return { count, tara:rem, info:TARA_BALA[rem] };
+}
+function janmaNakIndex(){
+  if(!currentChart || !currentChart.chart) return null;
+  return nakshatraOf(currentChart.chart.sidereal.Moon).index;   // 1..27
+}
+function todayMoonNak(){
+  const ay=(document.getElementById("f-ayanamsa")||{}).value||"lahiri";
+  const now=new Date();
+  const JD=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
+                     now.getUTCHours()+now.getUTCMinutes()/60);
+  return nakshatraOf(computeChart(JD, ay).sidereal.Moon);       // {index,name,...}
+}
+function _tbMark(name, J){
+  const idx = NAK_ORDER.indexOf(name);
+  if(idx<0) return `<span style="color:#6b4a00">${_esc(name)}</span>`;   // Abhijit (28th) — no tārā
+  const good = taraFor(J, idx+1).info.good;
+  return good ? `<strong style="color:#1a7f37">${_esc(name)} ✅</strong>`
+              : `<span style="color:#9a3b1b">${_esc(name)}</span>`;
+}
+
+function renderTarabalaPane(){
+  const el=document.getElementById("pane-tarabala"); if(!el) return;
+  const J=janmaNakIndex(); if(!J){ el.innerHTML=""; return; }
+  const janmaName=NAK_ORDER[J-1];
+  let h=`<h4 class="pane-h">Tārā Bala — from your Janma Nakṣatra (${_esc(janmaName)})</h4>`;
+  h+=`<p>Count from your birth star to the star running on any day; the remainder (÷9) gives that day's <em>tārā</em> — its strength for you. Five tārās are auspicious to begin things, four are best avoided.</p>`;
+  const t=todayMoonNak(), tt=taraFor(J, t.index);
+  h+=`<p style="padding:9px 11px;border-radius:8px;background:${tt.info.good?'#e9f5e9':'#fbe9e7'}">
+      <strong>Today (${_esc(t.name)}):</strong> ${_esc(tt.info.n)} tārā — ${_esc(tt.info.m)}</p>`;
+  h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>#</th><th>Muhūrta nakṣatra</th><th>Count</th><th>Tārā</th><th>For you</th></tr></thead><tbody>`;
+  for(let i=1;i<=27;i++){ const r=taraFor(J,i);
+    h+=`<tr class="${i===t.index?'now':''}"><td>${i}</td><td>${_esc(NAK_ORDER[i-1])}</td><td>${r.count}</td><td>${_esc(r.info.n)}</td><td>${r.info.good?'✅ good':'⛔ avoid'}</td></tr>`; }
+  h+=`</tbody></table></div>`;
+  const goodNaks=[]; for(let i=1;i<=27;i++){ if(taraFor(J,i).info.good) goodNaks.push(NAK_ORDER[i-1]); }
+  h+=`<p class="rnote"><strong>Your auspicious days</strong> (good tārā): ${_esc(goodNaks.join(", "))}.</p>`;
+  h+=`<p class="rnote">Count is inclusive from your Janma nakṣatra. If a bad tārā is unavoidable, a small dāna (e.g. yellow pumpkin or a leafy vegetable) before starting is the classical remedy. Tārā Bala is one limb of the Pañcāṅga — also weigh tithi, vāra, yoga and karaṇa.</p>`;
+  el.innerHTML=h;
+}
+
+const MUHURTA_GROUPS = [
+  { label:"Fixed (Dhruva / Sthira)",   naks:["Rohini","Uttara Phalguni","Uttara Ashadha","Uttara Bhadrapada"],
+    act:"Things meant to last — laying a foundation, digging a well, building a house, Upanayana, starting a service or agriculture." },
+  { label:"Movable (Chara)",           naks:["Punarvasu","Swati","Shravana","Dhanishta","Shatabhisha"],
+    act:"Anything with movement — travel and journeys, buying or first-driving a vehicle, relocation." },
+  { label:"Fierce (Ugra / Krura)",     naks:["Bharani","Magha","Purva Phalguni","Purva Ashadha","Purva Bhadrapada"],
+    act:"Forceful acts — work with fire or weapons, surgery, demolition, dealing with poison, applying for arms." },
+  { label:"Mixed (Mishra / Sadharana)",naks:["Krittika","Vishakha"],
+    act:"Fire-related work — welding, melting, gas work, fabrication, preparing medicines, Agnihotra." },
+  { label:"Swift (Kshipra / Laghu)",   naks:["Ashwini","Pushya","Hasta","Abhijit"],
+    act:"Quick, light starts — opening a shop, beginning education or fine arts, making/wearing ornaments, learning music. (Pushya is not used for marriage.)" },
+  { label:"Gentle (Mridu / Maitra)",   naks:["Mrigashira","Chitra","Anuradha","Revati"],
+    act:"Soft activities — singing and music, new clothes, play and games, making friends, romance." },
+  { label:"Sharp (Tikshna / Daruna)",  naks:["Ardra","Ashlesha","Mula","Jyeshtha"],
+    act:"Intense acts — mantra/tantra sādhana, taming animals, hatha-yoga discipline, confronting enemies." }
+];
+const MUKHA_GROUPS = [
+  { label:"Downward (Adhomukha)",  naks:["Mula","Ashlesha","Vishakha","Krittika","Purva Phalguni","Purva Ashadha","Purva Bhadrapada","Bharani","Magha"],
+    act:"Downward work — digging wells or foundations, mining, irrigation." },
+  { label:"Upward (Urdhvamukha)",  naks:["Ardra","Pushya","Shravana","Dhanishta","Shatabhisha","Uttara Phalguni","Uttara Ashadha","Uttara Bhadrapada","Rohini"],
+    act:"Upward work — construction, worship, planting and agriculture, promotion." },
+  { label:"Forward (Tiryangmukha)",naks:["Revati","Chitra","Mrigashira","Anuradha","Hasta","Swati","Punarvasu","Ashwini","Jyeshtha"],
+    act:"Forward movement — journeys, visiting friends, trade, vehicles." }
+];
+
+function renderMuhurtaPane(){
+  const el=document.getElementById("pane-muhurta"); if(!el) return;
+  const J=janmaNakIndex(); if(!J){ el.innerHTML=""; return; }
+  const janmaName=NAK_ORDER[J-1];
+  let h=`<h4 class="pane-h">Muhūrta — choosing an auspicious day for an activity</h4>`;
+  h+=`<p>Each nakṣatra suits certain activities by its nature. The stars good for each activity are listed below; a <strong style="color:#1a7f37">✅</strong> marks those that also give <em>you</em> (Janma ${_esc(janmaName)}) a good Tārā Bala — your best days for that activity.</p>`;
+  h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>Nature</th><th>Good for</th><th>Nakṣatras (✅ = good for you)</th></tr></thead><tbody>`;
+  for(const g of MUHURTA_GROUPS){
+    h+=`<tr><td><strong>${_esc(g.label)}</strong></td><td>${_esc(g.act)}</td><td>${g.naks.map(n=>_tbMark(n,J)).join(", ")}</td></tr>`; }
+  h+=`</tbody></table></div>`;
+  h+=`<h4 class="pane-h">By direction (mukha)</h4>`;
+  h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>Facing</th><th>Good for</th><th>Nakṣatras (✅ = good for you)</th></tr></thead><tbody>`;
+  for(const g of MUKHA_GROUPS){
+    h+=`<tr><td><strong>${_esc(g.label)}</strong></td><td>${_esc(g.act)}</td><td>${g.naks.map(n=>_tbMark(n,J)).join(", ")}</td></tr>`; }
+  h+=`</tbody></table></div>`;
+  h+=`<h4 class="pane-h">Abhijit Muhūrta — the daily victory window</h4>`;
+  h+=`<p>A ~48-minute window centred on <strong>local solar noon</strong> (solar noon ± 24 min), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
+  h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window depends on your current-city sunrise/sunset — it will fill in with the location-based Pañcāṅga.</p>`;
+  el.innerHTML=h;
+}
+
 function renderPredictive(){
   if(!currentChart || !currentChart.chart) return;
   const sid=currentChart.chart.sidereal;
@@ -4252,6 +4360,8 @@ function renderPredictive(){
   renderKsarpaPane(sid);
   renderRemediesPane(sid);
   renderRahukaalPane();
+  renderTarabalaPane();
+  renderMuhurtaPane();
 }
 
 /* report-tab switching */
@@ -4260,7 +4370,7 @@ document.querySelectorAll("#reportTabs .rtab").forEach(btn=>{
     document.querySelectorAll("#reportTabs .rtab").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     const which=btn.dataset.tab;
-    ["dasha","transit","combos","ksarpa","remedies","rahukaal"].forEach(k=>{
+    ["dasha","transit","combos","ksarpa","remedies","rahukaal","tarabala","muhurta"].forEach(k=>{
       const pane=document.getElementById("pane-"+k); if(pane) pane.style.display=(k===which)?"":"none";
     });
   });
