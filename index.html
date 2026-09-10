@@ -2303,6 +2303,23 @@ const NAKSHATRA_INFO = {
   "Uttara Bhadrapada":   {deity:'Ahir Budhnya', symbol:'Back of a funeral cot / water serpent', gana:'Manushya', syl:["Du","Tha","Jha","Nya"]},
   "Revati":              {deity:'Pushan', symbol:'Fish / pair of fish', gana:'Deva', syl:["De","Do","Cha","Chi"]},
 };
+/* Picture glyphs for each nakṣatra symbol and its ruling deity (self-contained, no external images) */
+const NAK_SYMBOL_EMOJI = {
+  "Ashwini":"🐎","Bharani":"🔻","Krittika":"🔥","Rohini":"🐂","Mrigashira":"🦌","Ardra":"💧",
+  "Punarvasu":"🏹","Pushya":"🪷","Ashlesha":"🐍","Magha":"👑","Purva Phalguni":"🛏️","Uttara Phalguni":"🛏️",
+  "Hasta":"✋","Chitra":"💎","Swati":"🌱","Vishakha":"🏛️","Anuradha":"🌸","Jyeshtha":"☂️",
+  "Mula":"🌿","Purva Ashadha":"🪭","Uttara Ashadha":"🐘","Shravana":"👂","Dhanishta":"🥁","Shatabhisha":"⭕",
+  "Purva Bhadrapada":"🗡️","Uttara Bhadrapada":"🐉","Revati":"🐟"
+};
+const DEITY_EMOJI = {
+  "Ashwini Kumaras":"⚕️","Yama":"⚖️","Agni":"🔥","Brahma (Prajapati)":"🪷","Soma (Chandra)":"🌙","Rudra":"🔱",
+  "Aditi":"🌌","Brihaspati":"📿","Nagas (serpents)":"🐍","Pitris (ancestors)":"🕯️","Bhaga":"🌅","Aryaman":"☀️",
+  "Savitar (Sun)":"☀️","Vishwakarma":"🛠️","Vayu":"🌬️","Indra-Agni":"⚡","Mitra":"🤝","Indra":"⚡",
+  "Nirriti":"🌑","Apas (the waters)":"🌊","Vishwadevas":"🕉️","Vishnu":"🐚","Vasus (Ashta Vasu)":"✨",
+  "Varuna":"🌊","Aja Ekapada":"🐐","Ahir Budhnya":"🐍","Pushan":"☀️"
+};
+function nakSymGlyph(name){ return NAK_SYMBOL_EMOJI[name] || "✨"; }
+function nakDeityGlyph(deity){ return DEITY_EMOJI[deity] || "🕉️"; }
 /* Session 16 slide specifications for the 5 nakshatras taught in detail */
 const NAKSHATRA_DETAIL = {
   'Ashwini': {'Meaning': 'Star of transport', 'Purushartha': 'Dharma', 'Varna': 'Vaishya (merchant)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male horse', 'Bird': 'Hamsa (swan)', 'Guna': 'Tamas', 'Tridosha': 'Vata', 'Direction': 'South', 'Gotra': 'Marichi', 'Body part': 'Knees & upper feet', 'Nature': 'Kshipra (swift)', 'Lucky colour': 'Blood red'},
@@ -2368,12 +2385,17 @@ function renderNakshatraSection(moonLon){
   const nk=nakshatraOf(moonLon);
   const info=NAKSHATRA_INFO[nk.name]||{deity:"\u2014",symbol:"\u2014",gana:"\u2014",syl:["","","",""]};
   const syl=info.syl[nk.pada-1]||"\u2014";
+  const symG=nakSymGlyph(nk.name), deiG=nakDeityGlyph(info.deity);
   let h=`<p>The <strong>Janma Nak\u1e63atra</strong> is the nak\u1e63atra (and pada) the Moon occupies at birth \u2014 one layer deeper than the Janma R\u0101\u015bi. It is used for naming, muh\u016brta (electional timing), horoscope matching, and the Vim\u015bottar\u012b da\u015b\u0101.</p>`;
+  h+=`<div style="display:flex;gap:22px;justify-content:center;text-align:center;margin:6px 0 16px;flex-wrap:wrap">
+    <div><div style="font-size:44px;line-height:1">${deiG}</div><div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase;color:var(--maroon);margin-top:4px">Deity</div><div style="font-size:13px">${info.deity}</div></div>
+    <div><div style="font-size:44px;line-height:1">${symG}</div><div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase;color:var(--maroon);margin-top:4px">Symbol</div><div style="font-size:13px">${info.symbol}</div></div>
+  </div>`;
   h+=`<table class="rtable"><tbody>`;
   h+=`<tr><th>Janma Nak\u1e63atra</th><td>${nk.name} \u2014 pada ${nk.pada}</td></tr>`;
   h+=`<tr><th>Nak\u1e63atra lord</th><td>${nk.lord}</td></tr>`;
-  h+=`<tr><th>Deity</th><td>${info.deity}</td></tr>`;
-  h+=`<tr><th>Symbol</th><td>${info.symbol}</td></tr>`;
+  h+=`<tr><th>Deity</th><td>${deiG} ${info.deity}</td></tr>`;
+  h+=`<tr><th>Symbol</th><td>${symG} ${info.symbol}</td></tr>`;
   h+=`<tr><th>Gana</th><td>${info.gana} \u2014 ${GANA_TEMPERAMENT[info.gana]||""}</td></tr>`;
   h+=`<tr><th>Naming syllable (pada ${nk.pada})</th><td><strong>${syl}</strong> \u2014 traditional first syllable for a name</td></tr>`;
   h+=`</tbody></table>`;
@@ -2391,7 +2413,7 @@ function renderNakshatraSection(moonLon){
   h+=`<details style="margin-top:10px"><summary style="cursor:pointer; font-family:'Cinzel',serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--maroon);">Reference \u2014 all 27 nak\u1e63atras</summary>`;
   h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>#</th><th>Nak\u1e63atra</th><th>Lord</th><th>Deity</th><th>Symbol</th><th>Gana</th><th>Syllables (padas 1\u20134)</th></tr></thead><tbody>`;
   for(let i=0;i<NAKSHATRAS.length;i++){ const nm=NAKSHATRAS[i][0], ld=NAKSHATRAS[i][1]; const inf=NAKSHATRA_INFO[nm]; const hi = nm===nk.name ? ' class="now"' : '';
-    h+=`<tr${hi}><td>${i+1}</td><td>${nm}</td><td>${ld}</td><td>${inf.deity}</td><td>${inf.symbol}</td><td>${inf.gana}</td><td>${inf.syl.join(", ")}</td></tr>`; }
+    h+=`<tr${hi}><td>${i+1}</td><td>${nm}</td><td>${ld}</td><td>${nakDeityGlyph(inf.deity)} ${inf.deity}</td><td>${nakSymGlyph(nm)} ${inf.symbol}</td><td>${inf.gana}</td><td>${inf.syl.join(", ")}</td></tr>`; }
   h+=`</tbody></table></div></details>`;
   el.innerHTML=h;
 }
@@ -3933,7 +3955,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-10 · Tārā Bala + Muhūrta";
+const TOOL_VERSION = "2026-09-10 · Muhūrta + Pañcāṅga + nakṣatra icons";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   const _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION;
@@ -4328,11 +4350,69 @@ const MUKHA_GROUPS = [
     act:"Forward movement — journeys, visiting friends, trade, vehicles." }
 ];
 
+/* ---- Sunrise/sunset (NOAA) + day-based Pañcāṅga: Rāhu Kāla, Yamaganda, Gulika, Abhijit ---- */
+function sunTimes(lat, lon, tz, y, m, d){
+  const rad=Math.PI/180, deg=180/Math.PI;
+  function julian(Y,M,D){ if(M<=2){Y-=1;M+=12;} const A=Math.floor(Y/100), B=2-A+Math.floor(A/4);
+    return Math.floor(365.25*(Y+4716))+Math.floor(30.6001*(M+1))+D+B-1524.5; }
+  const JD=julian(y,m,d), n=Math.round(JD-2451545.0+0.0008), Jstar=n-lon/360.0;
+  const M=(357.5291+0.98560028*Jstar)%360;
+  const C=1.9148*Math.sin(M*rad)+0.02*Math.sin(2*M*rad)+0.0003*Math.sin(3*M*rad);
+  const lam=(M+C+180+102.9372)%360;
+  const Jtr=2451545.0+Jstar+0.0053*Math.sin(M*rad)-0.0069*Math.sin(2*lam*rad);
+  const dec=Math.asin(Math.sin(lam*rad)*Math.sin(23.44*rad));
+  const cosH=(Math.sin(-0.833*rad)-Math.sin(lat*rad)*Math.sin(dec))/(Math.cos(lat*rad)*Math.cos(dec));
+  if(cosH>1||cosH<-1) return null;               // no rise/set at this latitude/date
+  const H=deg*Math.acos(cosH);
+  const toLoc=J=>{ let ut=((J+0.5)-Math.floor(J+0.5))*24; let loc=(ut+tz)%24; if(loc<0)loc+=24; return loc*60; };
+  return { rise:toLoc(Jtr-H/360), set:toLoc(Jtr+H/360), noon:toLoc(Jtr) };
+}
+const RAHU_PART=[8,2,7,5,6,4,3], YAMA_PART=[5,4,3,2,1,7,6], GULIKA_PART=[7,6,5,4,3,2,1]; // by weekday (0=Sun)
+function _hm(x){ x=((x%1440)+1440)%1440; let h=Math.floor(x/60), m=Math.round(x-h*60); if(m===60){h=(h+1)%24;m=0;} return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0'); }
+function _dmy(y,mo,d){ return String(d).padStart(2,'0')+"-"+String(mo).padStart(2,'0')+"-"+y; }
+
+function computeMhPanchanga(){
+  const box=document.getElementById("mh-panchanga"); if(!box) return;
+  const sel=document.getElementById("mh-city"), di=document.getElementById("mh-date"); if(!sel||!di) return;
+  const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-");
+  if(!c || p.length!==3){ box.innerHTML=""; return; }
+  const y=+p[0], mo=+p[1], d=+p[2];
+  const st=sunTimes(c[2],c[3],c[4],y,mo,d);
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const w=new Date(y,mo-1,d).getDay();
+  if(!st){ box.innerHTML=`<p class="rnote">The Sun does not rise or set normally at this latitude on this date.</p>`; return; }
+  const dayLen=st.set-st.rise, part=dayLen/8;
+  const seg=k=>`${_hm(st.rise+(k-1)*part)} – ${_hm(st.rise+k*part)}`;
+  let h=`<h4 class="pane-h">Pañcāṅga — ${_esc(c[0])}, ${_dmy(y,mo,d)} (${days[w]})</h4>`;
+  h+=`<table class="rtable"><tbody>`;
+  h+=`<tr><th>Sunrise</th><td>${_hm(st.rise)}</td><th>Sunset</th><td>${_hm(st.set)}</td></tr>`;
+  h+=`<tr><th>Solar noon</th><td>${_hm(st.noon)}</td><th>Day length</th><td>${Math.floor(dayLen/60)}h ${Math.round(dayLen%60)}m</td></tr>`;
+  h+=`</tbody></table>`;
+  h+=`<table class="rtable"><thead><tr><th>Window</th><th>Time</th><th>Note</th></tr></thead><tbody>`;
+  h+=`<tr class="now"><td><strong>Abhijit Muhūrta</strong></td><td>${_hm(st.noon-24)} – ${_hm(st.noon+24)}</td><td>${w===3?'⚠ Wednesday — held weak, usually avoided':'Auspicious for most new starts'}</td></tr>`;
+  h+=`<tr><td>Rāhu Kāla</td><td>${seg(RAHU_PART[w])}</td><td>Avoid auspicious starts</td></tr>`;
+  h+=`<tr><td>Yamaganda</td><td>${seg(YAMA_PART[w])}</td><td>Avoid</td></tr>`;
+  h+=`<tr><td>Gulika Kāla</td><td>${seg(GULIKA_PART[w])}</td><td>Neutral to inauspicious</td></tr>`;
+  h+=`</tbody></table>`;
+  h+=`<p class="rnote">Sunrise/sunset by the NOAA algorithm for the selected city and its timezone; the daytime is split into eight equal parts for Rāhu Kāla, Yamaganda and Gulika. Abhijit = solar noon ± 24 min. Accurate to within a few minutes — for a precise muhūrta confirm against a local pañcāṅga.</p>`;
+  box.innerHTML=h;
+}
+
 function renderMuhurtaPane(){
   const el=document.getElementById("pane-muhurta"); if(!el) return;
   const J=janmaNakIndex(); if(!J){ el.innerHTML=""; return; }
   const janmaName=NAK_ORDER[J-1];
-  let h=`<h4 class="pane-h">Muhūrta — choosing an auspicious day for an activity</h4>`;
+  const _birth=(typeof selectedCity!=='undefined' && selectedCity)?selectedCity[0]:null;
+  let _opt=""; CITIES.forEach((c,i)=>{ _opt+=`<option value="${i}"${(_birth&&c[0]===_birth)?' selected':''}>${_esc(c[0])} — ${_esc(c[1])}</option>`; });
+  const _t=new Date(), _td=`${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+  const _lbl="font-size:11px;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase;color:var(--maroon)";
+  const _fld="margin-top:4px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--parchment-2)";
+  let h=`<h4 class="pane-h">Current location — daily muhūrta windows</h4>`;
+  h+=`<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 12px">
+    <label style="${_lbl}">Current city<br><select id="mh-city" style="${_fld};min-width:190px;max-width:100%">${_opt}</select></label>
+    <label style="${_lbl}">Date<br><input type="date" id="mh-date" value="${_td}" style="${_fld}"></label></div>`;
+  h+=`<div id="mh-panchanga"></div>`;
+  h+=`<h4 class="pane-h">Muhūrta — choosing an auspicious day for an activity</h4>`;
   h+=`<p>Each nakṣatra suits certain activities by its nature. The stars good for each activity are listed below; a <strong style="color:#1a7f37">✅</strong> marks those that also give <em>you</em> (Janma ${_esc(janmaName)}) a good Tārā Bala — your best days for that activity.</p>`;
   h+=`<div class="table-scroll"><table class="rtable"><thead><tr><th>Nature</th><th>Good for</th><th>Nakṣatras (✅ = good for you)</th></tr></thead><tbody>`;
   for(const g of MUHURTA_GROUPS){
@@ -4345,8 +4425,12 @@ function renderMuhurtaPane(){
   h+=`</tbody></table></div>`;
   h+=`<h4 class="pane-h">Abhijit Muhūrta — the daily victory window</h4>`;
   h+=`<p>A ~48-minute window centred on <strong>local solar noon</strong> (solar noon ± 24 min), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
-  h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window depends on your current-city sunrise/sunset — it will fill in with the location-based Pañcāṅga.</p>`;
+  h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window is computed above from your current-city sunrise/sunset.</p>`;
   el.innerHTML=h;
+  const _sc=document.getElementById("mh-city"), _sd=document.getElementById("mh-date");
+  if(_sc) _sc.addEventListener("change", computeMhPanchanga);
+  if(_sd) _sd.addEventListener("change", computeMhPanchanga);
+  computeMhPanchanga();
 }
 
 function renderPredictive(){
