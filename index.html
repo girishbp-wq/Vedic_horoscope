@@ -1054,6 +1054,18 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
 
       <details class="section" open>
         <summary>
+          <span class="section-num">◷</span>
+          <span class="section-title">Choughadiya — Auspicious Windows</span>
+          <span class="section-sub">Day &amp; night 8-part muhūrta, by current location</span>
+        </summary>
+        <div class="section-body">
+          <p class="rnote">Set your <strong>Current location</strong> and date in the birth-details form above — the windows below recalculate for that place.</p>
+          <div id="choghadiya-body"></div>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">P</span>
           <span class="section-title">Predictive &amp; Remedies</span>
           <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta</span>
@@ -4020,7 +4032,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-11 · report tabs + UI polish";
+const TOOL_VERSION = "2026-09-11 · Choughadiya tab (DrikPanchang-validated)";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -4465,6 +4477,52 @@ function computeMhPanchanga(){
   box.innerHTML=h;
 }
 
+/* ---- Choughadiya (4-ghaṭi day/night windows) — sequence validated against DrikPanchang ---- */
+const CHOG_CYCLE=["Udveg","Char","Labh","Amrit","Kaal","Shubh","Rog"];
+const CHOG_META={
+  Udveg:{en:"Anxiety", planet:"Sun",     cls:"bad"},
+  Char: {en:"Movable", planet:"Venus",   cls:"neutral"},
+  Labh: {en:"Gain",    planet:"Mercury", cls:"good"},
+  Amrit:{en:"Nectar",  planet:"Moon",    cls:"good"},
+  Kaal: {en:"Loss",    planet:"Saturn",  cls:"bad"},
+  Shubh:{en:"Good",    planet:"Jupiter", cls:"good"},
+  Rog:  {en:"Disease", planet:"Mars",    cls:"bad"}
+};
+const CHOG_DAY_START=[0,3,6,2,5,1,4];    // Sun..Sat, day steps +1 through the cycle
+const CHOG_NIGHT_START=[5,1,4,0,3,6,2];  // Sun..Sat, night steps -2 through the cycle
+function _chogVerdict(cls){ return cls==='good'?['#1a7f37','Auspicious']:cls==='bad'?['#9a3b1b','Avoid']:['#9a6b00','Neutral']; }
+function computeChoghadiya(){
+  const box=document.getElementById("choghadiya-body"); if(!box) return;
+  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate"); if(!sel||!di) return;
+  const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-"); if(!c||p.length!==3){ box.innerHTML=""; return; }
+  const y=+p[0],mo=+p[1],d=+p[2];
+  const tz=-new Date(y,mo-1,d).getTimezoneOffset()/60;
+  const st=sunTimes(c[2],c[3],tz,y,mo,d);
+  if(!st){ box.innerHTML=`<p class="rnote">The Sun does not rise or set normally here on this date.</p>`; return; }
+  const nd=new Date(y,mo-1,d); nd.setDate(nd.getDate()+1);
+  const tz2=-nd.getTimezoneOffset()/60;
+  const st2=sunTimes(c[2],c[3],tz2,nd.getFullYear(),nd.getMonth()+1,nd.getDate());
+  const riseNext=(st2?st2.rise:st.rise)+1440;
+  const w=new Date(y,mo-1,d).getDay();
+  const dseg=(st.set-st.rise)/8, nseg=(riseNext-st.set)/8;
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const nowD=new Date(), isToday=(nowD.getFullYear()===y&&nowD.getMonth()+1===mo&&nowD.getDate()===d);
+  const nowMin=isToday?(nowD.getHours()*60+nowD.getMinutes()):-1;
+  const rows=(startIdx,step,seg,base)=>{ let h=''; for(let i=0;i<8;i++){ const nm=CHOG_CYCLE[((startIdx+step*i)%7+7)%7], m=CHOG_META[nm], v=_chogVerdict(m.cls);
+    const s0=base+i*seg, s1=base+(i+1)*seg; const now=nowMin>=0 && ((nowMin>=s0&&nowMin<s1)||(nowMin+1440>=s0&&nowMin+1440<s1));
+    h+=`<tr class="${now?'now':''}"><td>${_hm(s0)} – ${_hm(s1)}</td><td><strong>${nm}</strong> — ${m.en}</td><td>${m.planet}</td><td><span style="color:${v[0]};font-weight:600">${v[1]}</span></td></tr>`; } return h; };
+  let h=`<h4 class="pane-h">Choughadiya — ${_esc(c[0])}, ${_dmy(y,mo,d)} (${days[w]})</h4>`;
+  h+=`<p class="rnote">Sunrise ${_hm(st.rise)} · Sunset ${_hm(st.set)}. Day and night are each split into 8 parts (~4 ghaṭis). <span style="color:#1a7f37;font-weight:600">Good:</span> Amrit, Shubh, Labh, Char · <span style="color:#9a3b1b;font-weight:600">Avoid:</span> Udveg, Rog, Kaal.</p>`;
+  h+=`<h5 class="pane-h" style="margin-top:6px">Day (sunrise → sunset)</h5><div class="table-scroll"><table class="rtable"><thead><tr><th>Time</th><th>Choughadiya</th><th>Lord</th><th>Verdict</th></tr></thead><tbody>`;
+  h+=rows(CHOG_DAY_START[w],1,dseg,st.rise);
+  h+=`</tbody></table></div>`;
+  h+=`<h5 class="pane-h" style="margin-top:10px">Night (sunset → next sunrise)</h5><div class="table-scroll"><table class="rtable"><thead><tr><th>Time</th><th>Choughadiya</th><th>Lord</th><th>Verdict</th></tr></thead><tbody>`;
+  h+=rows(CHOG_NIGHT_START[w],-2,nseg,st.set);
+  h+=`</tbody></table></div>`;
+  h+=`<p class="rnote">Computed from your current-city sunrise/sunset in device-local time (DST-aware); day steps +1 and night steps −2 through the seven-window cycle, validated against DrikPanchang. The highlighted row is the window running now.</p>`;
+  box.innerHTML=h;
+}
+
 function renderMuhurtaPane(){
   const el=document.getElementById("pane-muhurta"); if(!el) return;
   const J=janmaNakIndex(); if(!J){ el.innerHTML=""; return; }
@@ -4538,14 +4596,15 @@ function setupCurrentLocation(){
     let def=0;
     CITIES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${c[0]} — ${c[1]}`; sel.appendChild(o); if(birth && c[0]===birth) def=i; });
     sel.value=def;
-    sel.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); });
+    sel.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); if(typeof computeChoghadiya==='function') computeChoghadiya(); });
   }
   if(di){
     if(!di.value){ const t=new Date(); di.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
-    di.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); });
+    di.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); if(typeof computeChoghadiya==='function') computeChoghadiya(); });
   }
 }
 setupCurrentLocation();
+if(typeof computeChoghadiya==='function') computeChoghadiya();
 
 /* ===== UX refinement: sticky report tab-nav, Export-PDF-to-header, button hierarchy ===== */
 function runUxRefine(){
@@ -4559,6 +4618,7 @@ function runUxRefine(){
       ["Charts",["Rāśi Chakra"]],
       ["Planetary Details",["Graha Placements","Graha Drishti","Tatwa","Chara","Exaltation","Kuja","Classification"]],
       ["Predictive & Remedies",["Predictive","Jyothirlinga","Gurubala","Sade Sati","Saturn Combinations","Parihara"]],
+      ["Choughadiya",["Choughadiya"]],
       ["Mantras",["Akshara","Beejakshari","Mantra"]]
     ];
     const groupOf=t=>{ for(let i=0;i<GROUPS.length;i++){ if(GROUPS[i][1].some(k=>t.includes(k))) return i; } return 2; };
