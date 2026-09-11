@@ -973,6 +973,15 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <span class="hint">Lahiri is the Government-of-India standard.</span>
       </div>
 
+      <div class="field" style="grid-column: span 2;">
+        <label for="f-curcity">Current location — for Muhūrta timings</label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <select id="f-curcity" style="flex:1 1 200px; min-width:180px;"></select>
+          <input id="f-curdate" type="date" style="flex:0 0 auto;" />
+        </div>
+        <span class="hint">Where you are <em>now</em> and the date — used only for today's Rāhu Kāla, Abhijit &amp; muhūrta windows in the report, not for the birth chart.</span>
+      </div>
+
       <div class="lat-lon-row" id="latLonRow">
         <div class="field">
           <label>Latitude</label>
@@ -3955,10 +3964,11 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-10 · Muhūrta + Pañcāṅga + nakṣatra icons";
+const TOOL_VERSION = "2026-09-11 · current-location + Pañcāṅga + icons";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
-  const _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION;
+  function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
+  if(document.readyState!=="loading") _setBadge(); else document.addEventListener("DOMContentLoaded", _setBadge);
 })();
 
 /* ---- Clear saved details from THIS device ---- */
@@ -4373,7 +4383,7 @@ function _dmy(y,mo,d){ return String(d).padStart(2,'0')+"-"+String(mo).padStart(
 
 function computeMhPanchanga(){
   const box=document.getElementById("mh-panchanga"); if(!box) return;
-  const sel=document.getElementById("mh-city"), di=document.getElementById("mh-date"); if(!sel||!di) return;
+  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate"); if(!sel||!di) return;
   const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-");
   if(!c || p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0], mo=+p[1], d=+p[2];
@@ -4402,15 +4412,8 @@ function renderMuhurtaPane(){
   const el=document.getElementById("pane-muhurta"); if(!el) return;
   const J=janmaNakIndex(); if(!J){ el.innerHTML=""; return; }
   const janmaName=NAK_ORDER[J-1];
-  const _birth=(typeof selectedCity!=='undefined' && selectedCity)?selectedCity[0]:null;
-  let _opt=""; CITIES.forEach((c,i)=>{ _opt+=`<option value="${i}"${(_birth&&c[0]===_birth)?' selected':''}>${_esc(c[0])} — ${_esc(c[1])}</option>`; });
-  const _t=new Date(), _td=`${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
-  const _lbl="font-size:11px;font-family:'Cinzel',serif;letter-spacing:.05em;text-transform:uppercase;color:var(--maroon)";
-  const _fld="margin-top:4px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--parchment-2)";
   let h=`<h4 class="pane-h">Current location — daily muhūrta windows</h4>`;
-  h+=`<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 12px">
-    <label style="${_lbl}">Current city<br><select id="mh-city" style="${_fld};min-width:190px;max-width:100%">${_opt}</select></label>
-    <label style="${_lbl}">Date<br><input type="date" id="mh-date" value="${_td}" style="${_fld}"></label></div>`;
+  h+=`<p class="rnote">Set your <strong>Current location</strong> and date in the birth-details form above — these windows recalculate for that place.</p>`;
   h+=`<div id="mh-panchanga"></div>`;
   h+=`<h4 class="pane-h">Muhūrta — choosing an auspicious day for an activity</h4>`;
   h+=`<p>Each nakṣatra suits certain activities by its nature. The stars good for each activity are listed below; a <strong style="color:#1a7f37">✅</strong> marks those that also give <em>you</em> (Janma ${_esc(janmaName)}) a good Tārā Bala — your best days for that activity.</p>`;
@@ -4427,9 +4430,6 @@ function renderMuhurtaPane(){
   h+=`<p>A ~48-minute window centred on <strong>local solar noon</strong> (solar noon ± 24 min), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
   h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window is computed above from your current-city sunrise/sunset.</p>`;
   el.innerHTML=h;
-  const _sc=document.getElementById("mh-city"), _sd=document.getElementById("mh-date");
-  if(_sc) _sc.addEventListener("change", computeMhPanchanga);
-  if(_sd) _sd.addEventListener("change", computeMhPanchanga);
   computeMhPanchanga();
 }
 
@@ -4472,6 +4472,23 @@ document.querySelectorAll("#chartTabs .chart-tab").forEach(btn => {
 
 /* On load */
 setupPlaceAutocomplete();
+
+/* Current-location controls (for Muhūrta / Pañcāṅga) on the birth-details form */
+function setupCurrentLocation(){
+  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
+  if(sel && !sel.options.length){
+    const birth=(typeof selectedCity!=='undefined' && selectedCity)?selectedCity[0]:null;
+    let def=0;
+    CITIES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${c[0]} — ${c[1]}`; sel.appendChild(o); if(birth && c[0]===birth) def=i; });
+    sel.value=def;
+    sel.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); });
+  }
+  if(di){
+    if(!di.value){ const t=new Date(); di.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
+    di.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); });
+  }
+}
+setupCurrentLocation();
 
 </script>
 <div id="buildBadge" class="no-print" style="position:fixed;bottom:6px;right:9px;font:10px/1 ui-monospace,monospace;letter-spacing:.02em;color:rgba(107,29,43,.55);background:rgba(255,247,228,.6);padding:2px 6px;border-radius:6px;z-index:60;pointer-events:none;" title="Deployed build version"></div>
