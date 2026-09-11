@@ -869,6 +869,33 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
   .s-card .glyph { font-size: 26px; }
   .chart-svg, .south-chart { max-width: 300px; }
 }
+
+/* ===== UX refinement — report tab-nav, hero cards, card elevation (2026-09) ===== */
+#report .panel{ background:var(--parchment); }
+#summary-strip .s-card{ border:1px solid var(--line); border-radius:14px; background:linear-gradient(160deg,#fffaf0,var(--parchment-2)); box-shadow:0 3px 12px rgba(107,29,43,.10); }
+#summary-strip .s-card .val{ color:var(--maroon); }
+#reportNav{ position:sticky; top:8px; z-index:45; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
+  background:rgba(255,247,228,.92); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:14px;
+  padding:8px; margin:16px 0 20px; box-shadow:0 4px 16px rgba(0,0,0,.08); }
+#reportNav button{ font-family:'Cinzel',serif; font-size:12px; letter-spacing:.07em; text-transform:uppercase;
+  padding:10px 18px; border:1px solid transparent; border-radius:9px; background:transparent; color:var(--maroon); cursor:pointer; transition:all .15s; }
+#reportNav button:hover{ border-color:var(--saffron); }
+#reportNav button.active{ background:var(--maroon); color:var(--parchment-2); box-shadow:0 2px 8px rgba(107,29,43,.25); }
+#report details.section{ background:var(--parchment-2); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.055); margin-bottom:18px; padding:4px 4px 2px; }
+#report details.section[data-tabbed] > summary{ list-style:none; cursor:default; }
+#report details.section[data-tabbed] > summary::-webkit-details-marker{ display:none; }
+#report .rtable, #report .planet-table{ background:#fffdf7; }
+#report .rtable th, #report .planet-table th{ background:#f3e7c8; }
+.actions{ align-items:center; gap:12px; flex-wrap:wrap; }
+#btn-generate{ padding:13px 28px; font-size:14px; letter-spacing:.05em; box-shadow:0 5px 16px rgba(107,29,43,.28); margin-left:auto; }
+#btn-test-log,#btn-manual,#btn-clear{ background:none!important; border:none!important; box-shadow:none!important;
+  color:var(--muted)!important; text-decoration:underline; text-underline-offset:3px; text-transform:none!important;
+  font-family:inherit!important; font-size:12.5px!important; letter-spacing:.01em; padding:6px 6px!important; min-height:auto!important; }
+#btn-test-log:hover,#btn-manual:hover,#btn-clear:hover{ color:var(--maroon)!important; }
+.field .hint{ font-style:normal; color:var(--muted); font-size:12px; line-height:1.45; }
+@media print{ #reportNav{ display:none!important; } #report details.section{ display:block!important; box-shadow:none!important; } }
+@media (max-width:680px){ #reportNav{ top:0; padding:6px; } #reportNav button{ padding:8px 12px; font-size:10.5px; } #btn-generate{ margin-left:0; width:100%; } }
 </style>
 </head>
 <body>
@@ -3993,7 +4020,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-11 · UK cities + editable birth timezone";
+const TOOL_VERSION = "2026-09-11 · report tabs + UI polish";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -4519,6 +4546,37 @@ function setupCurrentLocation(){
   }
 }
 setupCurrentLocation();
+
+/* ===== UX refinement: sticky report tab-nav, Export-PDF-to-header, button hierarchy ===== */
+function runUxRefine(){
+  try{
+    const bp=document.getElementById('btn-print'), tagRow=document.querySelector('#report .report-header .tag-row');
+    if(bp && tagRow && bp.parentElement!==tagRow){ bp.classList.add('btn-gold'); tagRow.appendChild(bp); }
+    const panel=document.querySelector('#report .panel'); if(!panel) return;
+    const sections=[...panel.querySelectorAll('details.section')]; if(!sections.length) return;
+    const GROUPS=[
+      ["Summary",["Nakṣatra","Janma Lagna","Janma Rāśi","Tithi"]],
+      ["Charts",["Rāśi Chakra"]],
+      ["Planetary Details",["Graha Placements","Graha Drishti","Tatwa","Chara","Exaltation","Kuja","Classification"]],
+      ["Predictive & Remedies",["Predictive","Jyothirlinga","Gurubala","Sade Sati","Saturn Combinations","Parihara"]],
+      ["Mantras",["Akshara","Beejakshari","Mantra"]]
+    ];
+    const groupOf=t=>{ for(let i=0;i<GROUPS.length;i++){ if(GROUPS[i][1].some(k=>t.includes(k))) return i; } return 2; };
+    sections.forEach(s=>{
+      const t=(s.querySelector('.section-title')||{}).textContent||'';
+      s.dataset.grp=groupOf(t); s.open=true; s.setAttribute('data-tabbed','');
+      const sm=s.querySelector('summary'); if(sm && !sm.dataset.noTog){ sm.dataset.noTog='1'; sm.addEventListener('click',e=>e.preventDefault()); }
+    });
+    let nav=document.getElementById('reportNav'); if(nav) nav.remove();
+    nav=document.createElement('div'); nav.id='reportNav';
+    GROUPS.forEach((g,i)=>{ const b=document.createElement('button'); b.type='button'; b.textContent=g[0]; b.dataset.grp=i; nav.appendChild(b); });
+    const strip=document.getElementById('summary-strip'); if(strip) strip.after(nav); else panel.insertBefore(nav, sections[0]);
+    const show=i=>{ sections.forEach(s=>s.style.display=(String(s.dataset.grp)===String(i))?'':'none'); [...nav.children].forEach(b=>b.classList.toggle('active',String(b.dataset.grp)===String(i))); };
+    nav.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) show(b.dataset.grp); });
+    show(0);
+  }catch(e){ console.warn('uxRefine failed', e); }
+}
+if(document.readyState!=="loading") runUxRefine(); else document.addEventListener("DOMContentLoaded", runUxRefine);
 
 </script>
 <div id="buildBadge" class="no-print" style="position:fixed;bottom:6px;right:9px;font:10px/1 ui-monospace,monospace;letter-spacing:.02em;color:rgba(107,29,43,.55);background:rgba(255,247,228,.6);padding:2px 6px;border-radius:6px;z-index:60;pointer-events:none;" title="Deployed build version"></div>
