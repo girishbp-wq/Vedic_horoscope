@@ -1661,6 +1661,30 @@ const CITIES = [
   ["Manchester","UK",53.4808,-2.2426,0],
   ["Edinburgh","UK",55.9533,-3.1883,0],
   ["Birmingham","UK",52.4862,-1.8904,0],
+  ["Sunbury-on-Thames","Surrey, UK",51.4076,-0.4166,0],
+  ["Sunbury on Thames","Surrey, UK",51.4076,-0.4166,0],
+  ["Staines-upon-Thames","Surrey, UK",51.4340,-0.5110,0],
+  ["Walton-on-Thames","Surrey, UK",51.3870,-0.4160,0],
+  ["Weybridge","Surrey, UK",51.3740,-0.4580,0],
+  ["Woking","Surrey, UK",51.3168,-0.5600,0],
+  ["Guildford","Surrey, UK",51.2362,-0.5704,0],
+  ["Kingston upon Thames","London, UK",51.4123,-0.3007,0],
+  ["Twickenham","London, UK",51.4463,-0.3312,0],
+  ["Richmond","London, UK",51.4613,-0.3037,0],
+  ["Hounslow","London, UK",51.4670,-0.3750,0],
+  ["Croydon","London, UK",51.3762,-0.0982,0],
+  ["Slough","Berkshire, UK",51.5105,-0.5954,0],
+  ["Reading","Berkshire, UK",51.4543,-0.9781,0],
+  ["Watford","Hertfordshire, UK",51.6565,-0.3903,0],
+  ["Leeds","UK",53.8008,-1.5491,0],
+  ["Liverpool","UK",53.4084,-2.9916,0],
+  ["Sheffield","UK",53.3811,-1.4701,0],
+  ["Nottingham","UK",52.9548,-1.1581,0],
+  ["Leicester","UK",52.6369,-1.1398,0],
+  ["Bristol","UK",51.4545,-2.5879,0],
+  ["Cardiff","Wales, UK",51.4816,-3.1791,0],
+  ["Glasgow","Scotland, UK",55.8642,-4.2518,0],
+  ["Newcastle","UK",54.9783,-1.6178,0],
   ["Paris","France",48.8566,2.3522,1],
   ["Berlin","Germany",52.52,13.405,1],
   ["Munich","Germany",48.1351,11.582,1],
@@ -3964,7 +3988,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-11 · current-location + Pañcāṅga + icons";
+const TOOL_VERSION = "2026-09-11 · UK cities + DST-aware Pañcāṅga";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -4387,7 +4411,8 @@ function computeMhPanchanga(){
   const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-");
   if(!c || p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0], mo=+p[1], d=+p[2];
-  const st=sunTimes(c[2],c[3],c[4],y,mo,d);
+  const tz=-new Date(y,mo-1,d).getTimezoneOffset()/60;   // device's actual offset for that date (DST-aware)
+  const st=sunTimes(c[2],c[3],tz,y,mo,d);
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const w=new Date(y,mo-1,d).getDay();
   if(!st){ box.innerHTML=`<p class="rnote">The Sun does not rise or set normally at this latitude on this date.</p>`; return; }
@@ -4404,7 +4429,7 @@ function computeMhPanchanga(){
   h+=`<tr><td>Yamaganda</td><td>${seg(YAMA_PART[w])}</td><td>Avoid</td></tr>`;
   h+=`<tr><td>Gulika Kāla</td><td>${seg(GULIKA_PART[w])}</td><td>Neutral to inauspicious</td></tr>`;
   h+=`</tbody></table>`;
-  h+=`<p class="rnote">Sunrise/sunset by the NOAA algorithm for the selected city and its timezone; the daytime is split into eight equal parts for Rāhu Kāla, Yamaganda and Gulika. Abhijit = solar noon ± 24 min. Accurate to within a few minutes — for a precise muhūrta confirm against a local pañcāṅga.</p>`;
+  h+=`<p class="rnote">Sunrise/sunset by the NOAA algorithm for the selected city, shown in your device's local time (adjusts for daylight saving). The daytime is split into eight equal parts for Rāhu Kāla, Yamaganda and Gulika; Abhijit = solar noon ± 24 min. Accurate to within a few minutes — for a precise muhūrta confirm against a local pañcāṅga. If your device clock is in a different country from the city you pick, the times will use your device's zone.</p>`;
   box.innerHTML=h;
 }
 
