@@ -954,6 +954,11 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <div id="suggestions" class="suggestions"></div>
         <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
       </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="f-tz">Birth timezone (UTC offset, hours)</label>
+        <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5 (India) · 0 (UK winter/GMT) · 1 (UK summer/BST)" />
+        <span class="hint"><strong>Auto-filled when you pick a city.</strong> UK births: the default is <strong>0 (GMT)</strong> — if the birth was during British Summer Time (late March to late October) change this to <strong>1</strong> before generating. Only the birth chart needs this; today's muhūrta timings already adjust for daylight saving automatically.</span>
+      </div>
       <div class="field">
         <label for="f-gender">Gender (optional)</label>
         <select id="f-gender">
@@ -990,10 +995,6 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <div class="field">
           <label>Longitude</label>
           <input id="f-lon" type="text" placeholder="e.g. 76:37:2 E or 72.88" />
-        </div>
-        <div class="field">
-          <label>Timezone (UTC offset hr)</label>
-          <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5" />
         </div>
       </div>
     </div>
@@ -3740,13 +3741,15 @@ function generate() {
     }
     placeName = place || `${fmtCoord(lat, "lat")}, ${fmtCoord(lon, "lon")}`;
   } else if (selectedCity) {
-    lat = selectedCity[2]; lon = selectedCity[3]; tz = selectedCity[4];
+    lat = selectedCity[2]; lon = selectedCity[3];
+    { const _t = parseFloat(document.getElementById("f-tz").value); tz = isNaN(_t) ? selectedCity[4] : _t; }
     placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
   } else {
     // Try to find in city DB by name
     const match = CITIES.find(c => c[0].toLowerCase() === place.toLowerCase());
     if (match) {
-      lat = match[2]; lon = match[3]; tz = match[4];
+      lat = match[2]; lon = match[3];
+      { const _t = parseFloat(document.getElementById("f-tz").value); tz = isNaN(_t) ? match[4] : _t; }
       placeName = `${match[0]}, ${match[1]}`;
     } else {
       showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
@@ -3913,6 +3916,7 @@ function setupPlaceAutocomplete() {
     const c = currentList[i];
     selectedCity = c;
     input.value = c[0];
+    const _tzf = document.getElementById("f-tz"); if(_tzf) _tzf.value = c[4];
     document.getElementById("place-hint").innerHTML =
       `<em>${c[0]}, ${c[1]} — lat ${c[2]}°, lon ${c[3]}°, UTC ${c[4] >= 0 ? "+" : ""}${c[4]}</em>`;
     sug.classList.remove("show");
@@ -3922,6 +3926,7 @@ function setupPlaceAutocomplete() {
   const init = filter(input.value);
   if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
     selectedCity = init[0];
+    const _tzf = document.getElementById("f-tz"); if(_tzf && !_tzf.value) _tzf.value = init[0][4];
     document.getElementById("place-hint").innerHTML =
       `<em>${init[0][0]}, ${init[0][1]} — lat ${init[0][2]}°, lon ${init[0][3]}°, UTC ${init[0][4] >= 0 ? "+" : ""}${init[0][4]}</em>`;
   }
@@ -3988,7 +3993,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-11 · UK cities + DST-aware Pañcāṅga";
+const TOOL_VERSION = "2026-09-11 · UK cities + editable birth timezone";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
