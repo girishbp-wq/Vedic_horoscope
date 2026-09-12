@@ -4032,7 +4032,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-11 · Choughadiya tab (DrikPanchang-validated)";
+const TOOL_VERSION = "2026-09-12 · Choughadiya follows current location";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -4545,7 +4545,8 @@ function renderMuhurtaPane(){
   h+=`<p>A ~48-minute window centred on <strong>local solar noon</strong> (solar noon ± 24 min), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
   h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window is computed above from your current-city sunrise/sunset.</p>`;
   el.innerHTML=h;
-  computeMhPanchanga();
+  try{ computeMhPanchanga(); }catch(e){ console.warn('panchanga',e); }
+  try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){ console.warn('choghadiya',e); }
 }
 
 function renderPredictive(){
@@ -4596,11 +4597,11 @@ function setupCurrentLocation(){
     let def=0;
     CITIES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${c[0]} — ${c[1]}`; sel.appendChild(o); if(birth && c[0]===birth) def=i; });
     sel.value=def;
-    sel.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); if(typeof computeChoghadiya==='function') computeChoghadiya(); });
+    sel.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} });
   }
   if(di){
     if(!di.value){ const t=new Date(); di.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
-    di.addEventListener("change", ()=>{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); if(typeof computeChoghadiya==='function') computeChoghadiya(); });
+    di.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} });
   }
 }
 setupCurrentLocation();
