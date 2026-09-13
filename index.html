@@ -2391,8 +2391,9 @@ const DEITY_EMOJI = {
   "Nirriti":"🌑","Apas (the waters)":"🌊","Vishwadevas":"🕉️","Vishnu":"🐚","Vasus (Ashta Vasu)":"✨",
   "Varuna":"🌊","Aja Ekapada":"🐐","Ahir Budhnya":"🐍","Pushan":"☀️"
 };
+const CADUCEUS_SVG = `<svg viewBox="0 0 64 64" width="1em" height="1em" style="vertical-align:-0.14em" xmlns="http://www.w3.org/2000/svg" fill="#141414" role="img" aria-label="Caduceus — Aśvinī Kumāras"><circle cx="32" cy="6.5" r="3.4"/><rect x="30.6" y="8" width="2.8" height="50" rx="1.4"/><path d="M31 15 C22 10 12 10 4.5 16.5 C13 15.5 22 16.8 31 20 Z"/><path d="M33 15 C42 10 52 10 59.5 16.5 C51 15.5 42 16.8 33 20 Z"/><path d="M31 20.5 C23.5 16.5 15.5 16.5 9.5 21.5 C16.5 20.8 24 22 31 24 Z"/><path d="M33 20.5 C40.5 16.5 48.5 16.5 54.5 21.5 C47.5 20.8 40 22 33 24 Z"/><g fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round"><path d="M32 13 C19 19 45 27 32 33 C19 39 45 47 32 55"/><path d="M32 13 C45 19 19 27 32 33 C45 39 19 47 32 55"/></g><circle cx="25.5" cy="13.5" r="1.7"/><circle cx="38.5" cy="13.5" r="1.7"/></svg>`;
 function nakSymGlyph(name){ return NAK_SYMBOL_EMOJI[name] || "✨"; }
-function nakDeityGlyph(deity){ return DEITY_EMOJI[deity] || "🕉️"; }
+function nakDeityGlyph(deity){ if(deity==='Ashwini Kumaras') return CADUCEUS_SVG; return DEITY_EMOJI[deity] || "🕉️"; }
 /* Session 16 slide specifications for the 5 nakshatras taught in detail */
 const NAKSHATRA_DETAIL = {
   'Ashwini': {'Meaning': 'Star of transport', 'Purushartha': 'Dharma', 'Varna': 'Vaishya (merchant)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male horse', 'Bird': 'Hamsa (swan)', 'Guna': 'Tamas', 'Tridosha': 'Vata', 'Direction': 'South', 'Gotra': 'Marichi', 'Body part': 'Knees & upper feet', 'Nature': 'Kshipra (swift)', 'Lucky colour': 'Blood red'},
@@ -4032,7 +4033,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-09-12 · Choughadiya follows current location";
+const TOOL_VERSION = "2026-09-13 · Ashwini caduceus emblem";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
