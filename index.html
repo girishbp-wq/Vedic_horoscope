@@ -3332,32 +3332,35 @@ function aspectedRashi(fromRashi, aspectHouse){ return ((fromRashi-1)+(aspectHou
 function ord(n){ const s=["th","st","nd","rd"], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 
 /* ===== 12 Bhavas (Houses) — Sessions 21 & 22 (24 Sep & 1 Oct 2026) ===== */
+/* BHAVA-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* 12 bhavas — from the 'Bhava Info' sheet (Sessions 21 & 22). */
 const BHAVA_INFO = {
-  1:{ nm:"Tanu Bhava (Lagna)", body:"Head; whole body & appearance", karaka:["Sun"], rel:"Self",
+   1:{ nm:"Tanu Bhava (Lagna)", body:"Head; whole body & appearance", karaka:["Sun"], rel:"Self",
       sig:"Self, personality and temperament, physical appearance & constitution, health and vitality, name and fame, life purpose and life path, place of birth, the east direction." },
-  2:{ nm:"Dhana · Kutumbha · Vaak · Anna · Netra · Māraka Sthana", body:"Face, eyes, teeth, mouth, throat", karaka:["Jupiter"], rel:"Family members",
+   2:{ nm:"Dhana · Kutumbha · Vaak · Anna · Netra · Māraka Sthana", body:"Face, eyes, teeth, mouth, throat", karaka:["Jupiter"], rel:"Family members",
       sig:"Accumulated wealth and savings, liquid assets (gold, gems), family and lineage, source of income, speech, food habits, early (school) education, eyes; what one values. (Also a māraka.)" },
-  3:{ nm:"Bhratru · Parakrama Sthana (Sahaja)", body:"Neck, shoulders, throat, ears, arms, oesophagus", karaka:["Mars"], rel:"Younger siblings, neighbours",
+   3:{ nm:"Bhratru · Parakrama Sthana (Sahaja)", body:"Neck, shoulders, throat, ears, arms, oesophagus", karaka:["Mars"], rel:"Younger siblings, neighbours",
       sig:"Stamina, courage, will-power and self-effort, younger siblings, neighbours, communication and writing, marketing and media, hobbies, short journeys, partition of property, the drive to do business." },
-  4:{ nm:"Matru · Sukha · Vidya · Vāhana · Bandhu Sthana", body:"Chest, heart, lungs, upper stomach", karaka:["Moon","Venus"], rel:"Mother",
+   4:{ nm:"Matru · Sukha · Vidya · Vāhana · Bandhu Sthana", body:"Chest, heart, lungs, upper stomach", karaka:["Moon", "Venus"], rel:"Mother",
       sig:"Mother, home and motherland, domestic happiness & peace of mind, landed & ancestral property, fixed assets, vehicles, schooling up to under-graduate education, emotions." },
-  5:{ nm:"Putra · Santāna · Poorva Punya · Mantra Sthana", body:"Lower heart, liver, gall bladder, spleen, stomach", karaka:["Jupiter"], rel:"Children; spouse's elder sibling",
+   5:{ nm:"Putra · Santāna · Poorva Punya · Mantra Sthana", body:"Lower heart, liver, gall bladder, spleen, stomach", karaka:["Jupiter"], rel:"Children; spouse's elder sibling",
       sig:"Children, creativity, love & romance, intellect, higher education (Master's), past-life merit (poorva punya), mantra & upāsana, speculation (stock market, lottery), entertainment — drama, music, dance, cinema." },
-  6:{ nm:"Ari · Shatru · Roga · Runa · Ripu Sthana", body:"Waist, hip, small intestine", karaka:["Saturn","Mars"], rel:"Enemies; maternal uncle",
+   6:{ nm:"Ari · Shatru · Roga · Runa · Ripu Sthana", body:"Waist, hip, small intestine", karaka:["Saturn", "Mars"], rel:"Enemies; maternal uncle",
       sig:"Enemies, debts & loans, disease, obstacles, disputes & litigation (court cases), divorce / domination by the spouse, daily routine & colleagues, service (monthly salary), healing & medicine, competitive spirit." },
-  7:{ nm:"Kalatra · Jaya Sthana", body:"Kidneys, urinary bladder, ovaries, urethra, prostate", karaka:["Venus"], rel:"Spouse, 2nd child, business partner, clients, the public",
+   7:{ nm:"Kalatra · Jaya Sthana", body:"Kidneys, urinary bladder, ovaries, urethra, prostate", karaka:["Venus"], rel:"Spouse, 2nd child, business partner, clients, the public",
       sig:"Spouse & marriage, all partnerships & business partners, social interactions, dealings with the masses / market, foreign travel & trade, recovery of lost articles, the west direction. (Also a māraka.)" },
-  8:{ nm:"Ayur · Randhra · Mangalya Sthana", body:"Private parts, rectum", karaka:["Saturn"], rel:"Adopted children; spouse's family",
+   8:{ nm:"Ayur · Randhra · Mangalya Sthana", body:"Private parts, rectum", karaka:["Saturn"], rel:"Adopted children; spouse's family",
       sig:"Longevity & lifespan, the manner/cause of death, sudden & unexpected events, inheritance, insurance, unearned/hidden wealth (lottery), the occult & research, forensic & investigation, chronic illness, surgery, accidents, transformation; and the darker side — humiliation, sorrow, fear, obstruction, delays." },
-  9:{ nm:"Dharma · Bhagya · Pitru Sthana", body:"Thighs", karaka:["Sun","Jupiter"], rel:"Father, gurus & teachers, grandchild",
+   9:{ nm:"Dharma · Bhagya · Pitru Sthana", body:"Thighs", karaka:["Sun", "Jupiter"], rel:"Father, gurus & teachers, grandchild",
       sig:"Fortune & luck (bhagya), dharma, deity & religion, father, gurus & higher wisdom, intuition & meditation, moral standards, higher studies, pilgrimage & temples, long-distance travel (beyond ~2000 miles), charity." },
   10:{ nm:"Karma · Keerti Sthana", body:"Knees", karaka:["Saturn"], rel:"Mother-in-law",
       sig:"Profession & livelihood (karma), name/fame & honour, recognition, social status, authority & administrative capacity, political power, public image." },
   11:{ nm:"Labha · Aaya Sthana", body:"Legs; left ear", karaka:["Saturn"], rel:"Elder siblings, friends, son-in-law, paternal uncle, well-wishers",
       sig:"Profits & gains (labha), income (the daily/monthly earnings whose savings become 2nd-house wealth), fulfilment of desires & ambitions, success in undertakings, friends & networks, large organisations, discharge from hospital, return of lent money with interest." },
   12:{ nm:"Vyaya · Moksha · Shayana Sthana", body:"Feet; left eye", karaka:["Ketu"], rel:"Paternal grandparents; secret enemies",
-      sig:"Losses & wasteful expenditure, liberation (moksha) & spirituality, isolation & seclusion, foreign lands & residence abroad, bed comforts & sleep, investments; hospitals, jails & ashrams, secret enemies, confiscation, taxes & penalties." }
+      sig:"Losses & wasteful expenditure, liberation (moksha) & spirituality, isolation & seclusion, foreign lands & residence abroad, bed comforts & sleep, investments; hospitals, jails & ashrams, secret enemies, confiscation, taxes & penalties." },
 };
+/* BHAVA-END */
 function renderBhavaAnalysis(sid, lagnaRashiNum){
   const el=document.getElementById("bhavaBody"); if(!el) return;
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
