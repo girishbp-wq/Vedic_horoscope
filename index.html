@@ -2106,26 +2106,17 @@ function ketuTropical(JD) {
 }
 
 /* ----- Planets (Keplerian elements, JPL J2000 reference) ----- */
+/* EPHEMERIS-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Keplerian orbital elements — from the 'Planet Ephemeris' sheet. */
 const PLANET_ELEMS = {
-  Mercury: { a:0.38709927, da:0.00000037, e:0.20563593, de:0.00001906,
-             i:7.00497902, di:-0.00594749, L:252.25032350, dL:149472.67411175,
-             wb:77.45779628, dwb:0.16047689, om:48.33076593, dom:-0.12534081 },
-  Venus:   { a:0.72333566, da:0.00000390, e:0.00677672, de:-0.00004107,
-             i:3.39467605, di:-0.00078890, L:181.97909950, dL:58517.81538729,
-             wb:131.60246718, dwb:0.00268329, om:76.67984255, dom:-0.27769418 },
-  Earth:   { a:1.00000261, da:0.00000562, e:0.01671123, de:-0.00004392,
-             i:-0.00001531, di:-0.01294668, L:100.46457166, dL:35999.37244981,
-             wb:102.93768193, dwb:0.32327364, om:0.0, dom:0.0 },
-  Mars:    { a:1.52371034, da:0.00001847, e:0.09339410, de:0.00007882,
-             i:1.84969142, di:-0.00813131, L:-4.55343205, dL:19140.30268499,
-             wb:-23.94362959, dwb:0.44441088, om:49.55953891, dom:-0.29257343 },
-  Jupiter: { a:5.20288700, da:-0.00011607, e:0.04838624, de:-0.00013253,
-             i:1.30439695, di:-0.00183714, L:34.39644051, dL:3034.74612775,
-             wb:14.72847983, dwb:0.21252668, om:100.47390909, dom:0.20469106 },
-  Saturn:  { a:9.53667594, da:-0.00125060, e:0.05386179, de:-0.00050991,
-             i:2.48599187, di:0.00193609, L:49.95424423, dL:1222.49362201,
-             wb:92.59887831, dwb:-0.41897216, om:113.66242448, dom:-0.28867794 }
+  Mercury: { a:0.38709927, da:3.7e-07, e:0.20563593, de:1.906e-05, i:7.00497902, di:-0.00594749, L:252.2503235, dL:149472.67411175, wb:77.45779628, dwb:0.16047689, om:48.33076593, dom:-0.12534081 },
+  Venus: { a:0.72333566, da:3.9e-06, e:0.00677672, de:-4.107e-05, i:3.39467605, di:-0.0007889, L:181.9790995, dL:58517.81538729, wb:131.60246718, dwb:0.00268329, om:76.67984255, dom:-0.27769418 },
+  Earth: { a:1.00000261, da:5.62e-06, e:0.01671123, de:-4.392e-05, i:-1.531e-05, di:-0.01294668, L:100.46457166, dL:35999.37244981, wb:102.93768193, dwb:0.32327364, om:0.0, dom:0.0 },
+  Mars: { a:1.52371034, da:1.847e-05, e:0.0933941, de:7.882e-05, i:1.84969142, di:-0.00813131, L:-4.55343205, dL:19140.30268499, wb:-23.94362959, dwb:0.44441088, om:49.55953891, dom:-0.29257343 },
+  Jupiter: { a:5.202887, da:-0.00011607, e:0.04838624, de:-0.00013253, i:1.30439695, di:-0.00183714, L:34.39644051, dL:3034.74612775, wb:14.72847983, dwb:0.21252668, om:100.47390909, dom:0.20469106 },
+  Saturn: { a:9.53667594, da:-0.0012506, e:0.05386179, de:-0.00050991, i:2.48599187, di:0.00193609, L:49.95424423, dL:1222.49362201, wb:92.59887831, dwb:-0.41897216, om:113.66242448, dom:-0.28867794 },
 };
+/* EPHEMERIS-END */
 
 /* Solve Kepler's equation: M = E - e*sin(E)  (M in degrees, E returned in radians) */
 function solveKepler(Mdeg, e) {
@@ -2235,15 +2226,194 @@ function rashiOf(lonDeg) {
 /* 27 nakshatras of 13°20' each; each split into 4 padas of 3°20'.
    Returns {index (1-27), name, pada (1-4), degIn (deg within the nakshatra),
    lord (Vimshottari dasha lord)}. Pure function of the sidereal longitude. */
+/* NAKSHATRA-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* 27 nakshatras — from 'Nakshatras', 'Nakshatra Detail', 'Gana Temperaments', 'Deity Emoji'. */
 const NAKSHATRAS = [
-  ["Ashwini","Ketu"], ["Bharani","Venus"], ["Krittika","Sun"], ["Rohini","Moon"],
-  ["Mrigashira","Mars"], ["Ardra","Rahu"], ["Punarvasu","Jupiter"], ["Pushya","Saturn"],
-  ["Ashlesha","Mercury"], ["Magha","Ketu"], ["Purva Phalguni","Venus"], ["Uttara Phalguni","Sun"],
-  ["Hasta","Moon"], ["Chitra","Mars"], ["Swati","Rahu"], ["Vishakha","Jupiter"],
-  ["Anuradha","Saturn"], ["Jyeshtha","Mercury"], ["Mula","Ketu"], ["Purva Ashadha","Venus"],
-  ["Uttara Ashadha","Sun"], ["Shravana","Moon"], ["Dhanishta","Mars"], ["Shatabhisha","Rahu"],
-  ["Purva Bhadrapada","Jupiter"], ["Uttara Bhadrapada","Saturn"], ["Revati","Mercury"]
+  ["Ashwini", "Ketu"],
+  ["Bharani", "Venus"],
+  ["Krittika", "Sun"],
+  ["Rohini", "Moon"],
+  ["Mrigashira", "Mars"],
+  ["Ardra", "Rahu"],
+  ["Punarvasu", "Jupiter"],
+  ["Pushya", "Saturn"],
+  ["Ashlesha", "Mercury"],
+  ["Magha", "Ketu"],
+  ["Purva Phalguni", "Venus"],
+  ["Uttara Phalguni", "Sun"],
+  ["Hasta", "Moon"],
+  ["Chitra", "Mars"],
+  ["Swati", "Rahu"],
+  ["Vishakha", "Jupiter"],
+  ["Anuradha", "Saturn"],
+  ["Jyeshtha", "Mercury"],
+  ["Mula", "Ketu"],
+  ["Purva Ashadha", "Venus"],
+  ["Uttara Ashadha", "Sun"],
+  ["Shravana", "Moon"],
+  ["Dhanishta", "Mars"],
+  ["Shatabhisha", "Rahu"],
+  ["Purva Bhadrapada", "Jupiter"],
+  ["Uttara Bhadrapada", "Saturn"],
+  ["Revati", "Mercury"]
 ];
+
+const NAKSHATRA_INFO = {
+  "Ashwini": { deity: "Ashwini Kumaras", symbol: "Horse's head", gana: "Deva", syl: ["Chu", "Che", "Cho", "La"] },
+  "Bharani": { deity: "Yama", symbol: "Yoni (womb)", gana: "Manushya", syl: ["Li", "Lu", "Le", "Lo"] },
+  "Krittika": { deity: "Agni", symbol: "Razor / flame", gana: "Rakshasa", syl: ["A", "Ee", "U", "Ea"] },
+  "Rohini": { deity: "Brahma (Prajapati)", symbol: "Cart / chariot", gana: "Manushya", syl: ["O", "Va", "Vi", "Vu"] },
+  "Mrigashira": { deity: "Soma (Chandra)", symbol: "Deer's head", gana: "Deva", syl: ["Ve", "Vo", "Ka", "Ki"] },
+  "Ardra": { deity: "Rudra", symbol: "Teardrop / diamond", gana: "Manushya", syl: ["Ku", "Gha", "Nga", "Chha"] },
+  "Punarvasu": { deity: "Aditi", symbol: "Bow & quiver", gana: "Deva", syl: ["Ke", "Ko", "Ha", "Hi"] },
+  "Pushya": { deity: "Brihaspati", symbol: "Cow's udder / lotus", gana: "Deva", syl: ["Hu", "He", "Ho", "Da"] },
+  "Ashlesha": { deity: "Nagas (serpents)", symbol: "Coiled serpent", gana: "Rakshasa", syl: ["Di", "Du", "De", "Do"] },
+  "Magha": { deity: "Pitris (ancestors)", symbol: "Royal throne", gana: "Rakshasa", syl: ["Ma", "Mi", "Mu", "Me"] },
+  "Purva Phalguni": { deity: "Bhaga", symbol: "Front legs of a cot", gana: "Manushya", syl: ["Mo", "Ta", "Ti", "Tu"] },
+  "Uttara Phalguni": { deity: "Aryaman", symbol: "Back legs of a cot", gana: "Manushya", syl: ["Te", "To", "Pa", "Pi"] },
+  "Hasta": { deity: "Savitar (Sun)", symbol: "Hand / palm", gana: "Deva", syl: ["Pu", "Sha", "Na", "Tha"] },
+  "Chitra": { deity: "Vishwakarma", symbol: "Bright jewel / pearl", gana: "Rakshasa", syl: ["Pe", "Po", "Ra", "Ri"] },
+  "Swati": { deity: "Vayu", symbol: "Coral / young sprout", gana: "Deva", syl: ["Ru", "Re", "Ro", "Ta"] },
+  "Vishakha": { deity: "Indra-Agni", symbol: "Triumphal archway", gana: "Rakshasa", syl: ["Ti", "Tu", "Te", "To"] },
+  "Anuradha": { deity: "Mitra", symbol: "Staff / lotus", gana: "Deva", syl: ["Na", "Ni", "Nu", "Ne"] },
+  "Jyeshtha": { deity: "Indra", symbol: "Talisman / umbrella", gana: "Rakshasa", syl: ["No", "Ya", "Yi", "Yu"] },
+  "Mula": { deity: "Nirriti", symbol: "Tied bunch of roots", gana: "Rakshasa", syl: ["Ye", "Yo", "Bha", "Bhi"] },
+  "Purva Ashadha": { deity: "Apas (the waters)", symbol: "Winnowing fan / tusk", gana: "Manushya", syl: ["Bu", "Dha", "Bha", "Dha"] },
+  "Uttara Ashadha": { deity: "Vishwadevas", symbol: "Elephant tusk / planks", gana: "Manushya", syl: ["Be", "Bo", "Ja", "Ji"] },
+  "Shravana": { deity: "Vishnu", symbol: "Ear / three footprints", gana: "Deva", syl: ["Ju", "Je", "Jo", "Gha"] },
+  "Dhanishta": { deity: "Vasus (Ashta Vasu)", symbol: "Drum (mridangam)", gana: "Rakshasa", syl: ["Ga", "Gi", "Gu", "Ge"] },
+  "Shatabhisha": { deity: "Varuna", symbol: "Empty circle (100 stars)", gana: "Rakshasa", syl: ["Go", "Sa", "Si", "Su"] },
+  "Purva Bhadrapada": { deity: "Aja Ekapada", symbol: "Front of a funeral cot / two-faced", gana: "Manushya", syl: ["Se", "So", "Da", "Di"] },
+  "Uttara Bhadrapada": { deity: "Ahir Budhnya", symbol: "Back of a funeral cot / water serpent", gana: "Manushya", syl: ["Du", "Tha", "Jha", "Nya"] },
+  "Revati": { deity: "Pushan", symbol: "Fish / pair of fish", gana: "Deva", syl: ["De", "Do", "Cha", "Chi"] },
+};
+
+const NAK_SYMBOL_EMOJI = {
+  "Ashwini": "🐎",
+  "Bharani": "🔻",
+  "Krittika": "🔥",
+  "Rohini": "🐂",
+  "Mrigashira": "🦌",
+  "Ardra": "💧",
+  "Punarvasu": "🏹",
+  "Pushya": "🪷",
+  "Ashlesha": "🐍",
+  "Magha": "👑",
+  "Purva Phalguni": "🛏️",
+  "Uttara Phalguni": "🛏️",
+  "Hasta": "✋",
+  "Chitra": "💎",
+  "Swati": "🌱",
+  "Vishakha": "🏛️",
+  "Anuradha": "🌸",
+  "Jyeshtha": "☂️",
+  "Mula": "🌿",
+  "Purva Ashadha": "🪭",
+  "Uttara Ashadha": "🐘",
+  "Shravana": "👂",
+  "Dhanishta": "🥁",
+  "Shatabhisha": "⭕",
+  "Purva Bhadrapada": "🗡️",
+  "Uttara Bhadrapada": "🐉",
+  "Revati": "🐟"
+};
+
+const DEITY_EMOJI = {
+  "Ashwini Kumaras": "⚕️",
+  "Yama": "⚖️",
+  "Agni": "🔥",
+  "Brahma (Prajapati)": "🪷",
+  "Soma (Chandra)": "🌙",
+  "Rudra": "🔱",
+  "Aditi": "🌌",
+  "Brihaspati": "📿",
+  "Nagas (serpents)": "🐍",
+  "Pitris (ancestors)": "🕯️",
+  "Bhaga": "🌅",
+  "Aryaman": "☀️",
+  "Savitar (Sun)": "☀️",
+  "Vishwakarma": "🛠️",
+  "Vayu": "🌬️",
+  "Indra-Agni": "⚡",
+  "Mitra": "🤝",
+  "Indra": "⚡",
+  "Nirriti": "🌑",
+  "Apas (the waters)": "🌊",
+  "Vishwadevas": "🕉️",
+  "Vishnu": "🐚",
+  "Vasus (Ashta Vasu)": "✨",
+  "Varuna": "🌊",
+  "Aja Ekapada": "🐐",
+  "Ahir Budhnya": "🐍",
+  "Pushan": "☀️"
+};
+
+const GANA_TEMPERAMENT = {
+  "Deva": "Sattvic — soft, refined, gentle; not aggressive (the devas’ nature).",
+  "Manushya": "Mixed — a human blend of sattvic, rajasic and tamasic; material and spiritual.",
+  "Rakshasa": "Tamasic — aggressive, dominating, blunt, strong-willed and tough."
+};
+
+const NAKSHATRA_TRAITS = {
+  "Ashwini": "Quick, spontaneous and pioneering - natural initiators who love new beginnings and want immediate results. Strongly drawn to healing, medicine and helping others (the deity are the divine physicians). Independent, confident, youthful and adventurous, with Ketu lending detachment and sharp intuition. The watch-outs are impatience, impulsiveness, restlessness and starting more than they finish.",
+  "Bharani": "Full of zest for life, usually prosperous and truthful, with a strong sense of justice and morality (deity Yama). Direct and frank - they say exactly what they think, which not everyone likes, yet they carry a pure heart. Dignified and majestic (the elephant), able to shoulder heavy responsibility like the nurturing womb. Watch-outs: bluntness that invites criticism and impulsive decisions.",
+  "Krittika": "Sharp, fiery and critical (symbol a razor; deity Agni, the fire god). Determined, independent and straightforward - they do not beat around the bush, which can intimidate people. Adventurous, energetic and intelligent, capable in any situation, with strong likes and dislikes. Both creative and destructive tendencies; the cutting nature ultimately purifies.",
+  "Rohini": "Attractive, charming and magnetic, with a gentle, courteous and modest nature. Level-headed and insightful, not easily swayed by emotion in decisions; honest, generous and charitable. Often the centre of attention socially and lucky in matters of the heart. Watch-outs: a strong pull toward material pleasures, possessiveness and attachment.",
+  "Mrigashira": "Gentle, soft-natured and peaceful (Saumya), with a searching, questing mind. Learned, curious and research-minded, quick to think and act, and fond of clean, aesthetic surroundings. Introverted and simple-living, with money coming fairly easily. Watch-outs: timidity, suspicion, an inferiority streak and restlessness.",
+  "Ardra": "Intense and transformative (the teardrop) - life brings hard-learned lessons that clear old patterns. Sharp minds with a real hunger for knowledge; bold, straightforward, quick thinkers with good memory and precise communication. Innovators drawn to renovation, recycling and improving things, with quick empathy. Watch-outs: stubbornness, impulsiveness, obsessive perfectionism and difficulty sticking to one job; emotions can cloud judgment.",
+  "Punarvasu": "The return of light - renewal, hope and restoration after difficulty. Polite, tactful and clever in dealings, content with little, religiously inclined and simple in living. Associated with large families and groups; events tend to come in pairs, so they may fail on the first attempt and succeed on the second. Helpful and principled, resisting wrongdoing in themselves and others.",
+  "Pushya": "The most auspicious and nourishing star (called the King of nakshatras) - caring, loving and emotionally supportive. Seekers of truth, devoted to God, with a balanced, calm mind; hardworking and dedicated to their work. Cannot tolerate injustice; kind-hearted protectors of dharma. Watch-outs: timid and over-cautious, trust too easily and can be taken advantage of, and at times lazy.",
+  "Ashlesha": "Mentally very active, smart and deeply thoughtful (Mercury in Cancer), philosophical and academically gifted. Blessed with extraordinary intuition and observation; can appear social and friendly to get what they want. Chameleon-like, secretive and slow to trust, clinging strongly to family and close ones. Watch-outs: suspicion, coldness once their aim is met, and emotional bondage.",
+  "Magha": "Royal, dignified and authoritative - born leaders who command respect (the throne; ruled by the Pitris, the ancestors). Deeply rooted in ancestral tradition and ritual; honest, achievement-oriented and never compromising on dignity. Financially shrewd, fond of luxury, with many friends and a love of stability over change. Reliable, with fail-safe, dependable work.",
+  "Purva Phalguni": "Warm, sociable and generous, blessed with good luck and fortune (deity Bhaga). Creative, artistic and a little theatrical; light-hearted, hospitable and affectionate, closely tied to family. Loyal, honest friends who love relaxation, pleasure and the arts. Watch-outs: laziness, vanity and a carefree, do-nothing streak.",
+  "Uttara Phalguni": "Noble, reliable and generous, with a civilized, cultured approach to life (deity Aryaman). Stable, rational and wise in both science and the arts; charitable yet prudent with money, and natural peacemakers who prefer reconciliation to conflict. Determined, self-respecting and knowledgeable. Watch-outs: an obsession with cleanliness and a streak of arrogance.",
+  "Hasta": "Skilled with the hands, industrious, intelligent and reasonable (symbol the hand; deity Savitar). A calm nature and a magnetic smile that draws people in; helpful, honest and respected, with a strong dislike of deceit. Optimistic and highly creative, linked with crafts, skill and family life. Watch-outs: frequent ups and downs of fortune, effort often repaid with criticism, and a fondness for music or drink.",
+  "Chitra": "Blessed with a good physique, attractive features and striking eyes. They value relationships and dislike breaking them; calm, composed and practical, using intellect for important decisions. Mars makes them energetic, powerful and a little short-tempered, slow to cool down. Loving toward parents and siblings, though somewhat doubtful and slow to trust.",
+  "Swati": "Refined, dignified and polished in manner, shy with great self-control, though they can be stubborn. Independent and self-going, linked with purity (the first drop of rain) and sharpness or talent (the sword). Like a plant-shoot in the wind, they grow slowly but steadily, surviving every obstacle. With Saraswati's grace they are gifted in knowledge, learning, music and speech; Rahu adds a restless worldly drive.",
+  "Vishakha": "Attractive, bright-faced and personable, sharp and keen to learn, favouring modern ways over orthodox ones. Excellent speakers and orators who can convince others of their view. Ruled by Indra-Agni, they are ambitious and goal-focused, hungry for power, position and authority. Purpose-driven, determined and hard to deflect.",
+  "Anuradha": "The Star of Success - practical, analytical and persevering (Saturn), organizing and working with devotion. A deep capacity for friendship and cooperation (deity Mitra) lets them thrive in groups. They may get little help from father or siblings and carry heavy responsibility, but Scorpio's energy drives them to pursue and achieve their goals.",
+  "Jyeshtha": "Senior, mature and protective - the 'eldest' - and very conscious of reputation and how they are perceived. Sharp intellect, logic and administrative, managerial and diplomatic skill (Mercury), with the protective, warlike resolve of Indra. They carry an air of authority (the talisman) but can be secretive and shoulder hidden burdens.",
+  "Mula": "Rooted, curious and intelligent, with a direct, straightforward approach - they get to the root of matters. Focused and persistent, trying until they succeed or exhaust themselves. Ruled by Ketu and the goddess Nirriti, life can bring upheaval that clears the way; yet they stay peaceful, wise and optimistic even in hard times.",
+  "Purva Ashadha": "The 'former invincible one' (also Aparajita, the undefeated). Strong will-power makes them mentally invincible, little bothered by failure or setback. Extraordinary communicators and orators - hard to win an argument against them. Ruled by the water-goddess Apah and Venus, they are secretive yet charming, with fine taste and creativity.",
+  "Uttara Ashadha": "The 'latter invincible one' - the victory that lasts. Respectful of tradition and ancestry, ruled by the ten Vishvadevas and the Sun, giving authority, intelligence and integrity. Responsible, principled and goal-oriented, they earn lasting success through sincere, sustained effort.",
+  "Shravana": "The star of hearing and learning, ruled by Vishnu/Narayana and the Moon - gentle, receptive and able to connect with and influence the masses. Clever, organized, determined and flexible, achieving their ends without conflict. Patient and persevering, practical and hard to mislead.",
+  "Dhanishta": "Wealthy, famous and musical (symbol the drum), ruled by the eight Vasus and Mars - brave, energetic and enterprising, with a warrior's drive. Naturally drawn to music and rhythm, and to creating something from nothing. Generous and prosperous, they value name and status.",
+  "Shatabhisha": "The 'hundred healers' - drawn to healing, medicine and hidden knowledge, with the wisdom of a hundred experts and many resources to solve problems. Ruled by Varuna (god of the waters) and Rahu, they love mysteries, puzzles and research. Independent, secretive and highly guarded - it takes a lot to get inside their circle of trust.",
+  "Purva Bhadrapada": "Deep philosophical wisdom and independent behaviour (Jupiter), pushing toward spiritual progress; the fierce Aja Ekapada, a Rudra, destroys illusion and the mind's hypocrisy. They chafe at social constraints, love to travel, and can be intense and idealistic - the first step of the journey beyond death.",
+  "Uttara Bhadrapada": "Wise, calm and far-seeing, working for the benefit of others rather than selfish motives (deity Ahir Budhnya, the deep serpent). Inclined to astrology, numerology, spirituality, yoga and meditation. Fixed on their goals yet unhurried and unobsessed - they spread wisdom rather than hoard it.",
+  "Revati": "The 'wealthy' and final nakshatra - blessed, resourceful and equally at ease in good or ill, day or night (deity Pushan, the nourisher who lights the way). Benevolent, kind and imaginative (Pisces/Jupiter), optimistic and steady toward goals despite setbacks. Caring guardians and guides, a soul completing its journey to liberation."
+};
+
+const NAKSHATRA_DETAIL = {
+  "Ashwini": { "Meaning": "Star of transport", "Purushartha": "Dharma", "Varna": "Vaishya (merchant)", "Element": "Prithvi (Earth)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male horse", "Bird": "Hamsa (swan)", "Guna": "Tamas", "Tridosha": "Vata", "Direction": "South", "Gotra": "Marichi", "Body part": "Knees & upper feet", "Nature": "Kshipra (swift)", "Lucky colour": "Blood red" },
+  "Bharani": { "Purushartha": "Artha", "Varna": "Vaishya", "Element": "Prithvi (Earth)", "Animal (yoni)": "Elephant", "Yoni gender": "Female", "Bird": "Crow", "Guna": "Rajas", "Tridosha": "Pitta", "Body part": "Head / forehead", "Nature": "Ugra (fierce)", "Lucky colour": "Blood red", "Lucky stone": "Diamond", "Tree": "Amla (Amalaka)" },
+  "Krittika": { "Purushartha": "Kama", "Varna": "Brahmin (priest)", "Element": "Prithvi (Earth)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female sheep/goat", "Bird": "Peacock", "Tree": "Fig tree" },
+  "Rohini": { "Meaning": "The red one", "Element": "Prithvi (Earth)", "Animal (yoni)": "Male serpent (Sarpa)", "Bird": "Owl", "Tridosha": "Kapha", "Body part": "Legs / shanks (eyes)", "Nature": "Dhruva (fixed)", "Lucky colour": "White", "Lucky stone": "Pearl", "Tree": "Jamun" },
+  "Mrigashira": { "Meaning": "Deer's head / the searching star", "Purushartha": "Moksha", "Varna": "Farmer / servant", "Element": "Prithvi (Earth)", "Guna": "Tamas", "Tridosha": "Pitta", "Direction": "South", "Gotra": "Pulastya", "Body part": "Eyes & eyebrows", "Nature": "Mridu (soft)" },
+  "Ardra": { "Meaning": "Star of Sorrow", "Purushartha": "Kama", "Varna": "Butcher", "Element": "Jala (Water)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female dog", "Lucky colour": "Black", "Tree": "Agar wood (Krishnaguru)" },
+  "Punarvasu": { "Meaning": "Star of Renewal", "Purushartha": "Artha", "Varna": "Vaishya (merchant)", "Element": "Jala (Water)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Female cat", "Bird": "Swan", "Tree": "Bamboo" },
+  "Pushya": { "Meaning": "Star of Nourishment", "Purushartha": "Dharma", "Varna": "Kshatriya (warrior)", "Element": "Jala (Water)", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Male goat/ram", "Bird": "Crow", "Tree": "Sacred fig / Peepal" },
+  "Ashlesha": { "Meaning": "Clinging Star", "Purushartha": "Dharma", "Varna": "Mleccha (outcaste)", "Element": "Jala (Water)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Male cat", "Tree": "Nagakesar (champak)" },
+  "Magha": { "Meaning": "Star of Power", "Purushartha": "Artha", "Varna": "Shudra (worker)", "Element": "Jala (Water)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male rat", "Bird": "Eagle", "Tree": "Banyan (Vata)" },
+  "Purva Phalguni": { "Meaning": "Fruit of the Tree (star of fortune)", "Purushartha": "Kama", "Varna": "Brahmin (priest)", "Element": "Jala (Water)", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Female rat", "Bird": "Eagle", "Tree": "Palasha (Butea)" },
+  "Uttara Phalguni": { "Meaning": "Star of Patronage", "Purushartha": "Moksha", "Varna": "Kshatriya (warrior)", "Element": "Agni (Fire)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Male cow (bull)", "Bird": "Peacock", "Tree": "Rose laurel / Juvvi" },
+  "Hasta": { "Meaning": "Star of the Hand", "Purushartha": "Moksha", "Varna": "Vaishya (merchant)", "Element": "Agni (Fire)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Female buffalo", "Bird": "Vulture", "Tree": "Jasmine (Jaai)" },
+  "Chitra": { "Meaning": "The bright one (a pearl / shining jewel)", "Purushartha": "Kama", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Female tiger" },
+  "Swati": { "Meaning": "Independent / self-going (the first drop of rain; the sword)", "Purushartha": "Artha", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Male cow / buffalo" },
+  "Vishakha": { "Meaning": "Star of Purpose", "Purushartha": "Dharma", "Varna": "Mleccha (outcaste)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male tiger" },
+  "Anuradha": { "Meaning": "Star of Success", "Purushartha": "Dharma", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Female deer/hare" },
+  "Jyeshtha": { "Meaning": "The eldest / senior", "Purushartha": "Artha", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Male deer/hare", "Bird": "Brahmani duck", "Tree": "Red silk cotton" },
+  "Mula": { "Meaning": "The root", "Purushartha": "Kama", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male dog" },
+  "Purva Ashadha": { "Meaning": "The former invincible one (Aparajita)", "Purushartha": "Moksha", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Male monkey" },
+  "Uttara Ashadha": { "Meaning": "The latter invincible one", "Purushartha": "Moksha", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Male mongoose" },
+  "Shravana": { "Meaning": "The ability to hear (the learner)", "Purushartha": "Artha", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Female monkey" },
+  "Dhanishta": { "Meaning": "The wealthiest / most famous", "Purushartha": "Dharma", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Female lion" },
+  "Shatabhisha": { "Meaning": "Hundred healers / hundred medicines", "Purushartha": "Dharma", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female horse" },
+  "Purva Bhadrapada": { "Meaning": "The former lucky feet", "Purushartha": "Artha", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male lion" },
+  "Uttara Bhadrapada": { "Meaning": "The latter lucky feet", "Purushartha": "Kama", "Trimurti": "Vishnu (maintenance)", "Animal (yoni)": "Female cow" },
+  "Revati": { "Meaning": "The wealthy / prosperous (the nourisher)", "Purushartha": "Moksha", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female elephant" },
+};
+/* NAKSHATRA-END */
 const NAK_SIZE = 360 / 27;          // 13.3333° per nakshatra
 const PADA_SIZE = NAK_SIZE / 4;     // 3.3333° per pada
 function nakshatraOf(lonDeg) {
@@ -2262,29 +2432,51 @@ function houseFromLagna(lagnaRashi, planetRashi) {
 }
 
 /* Deep exalt/debil degrees + Moolatrikona ranges (Session 10, Table III) */
-const DIGNITY_DEG = {
-  Sun:     { exR:1,  exD:10, deR:7,  deD:10, mtR:5,  mt:[0,20] },
-  Moon:    { exR:2,  exD:3,  deR:8,  deD:3,  mtR:2,  mt:[3,30] },
-  Mars:    { exR:10, exD:28, deR:4,  deD:28, mtR:1,  mt:[0,12] },
-  Mercury: { exR:6,  exD:15, deR:12, deD:15, mtR:6,  mt:[15,20] },
-  Jupiter: { exR:4,  exD:5,  deR:10, deD:5,  mtR:9,  mt:[0,10] },
-  Venus:   { exR:12, exD:27, deR:6,  deD:27, mtR:7,  mt:[0,15] },
-  Saturn:  { exR:7,  exD:20, deR:1,  deD:20, mtR:11, mt:[0,20] }
+/* PLANETS-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Planet constants — from the 'Planets' sheet. */
+const GLYPH9 = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃", Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
+
+const KARAKATWAS = {
+  Sun: { qualities: "authority, confidence and a commanding nature", signifies: "the father, the soul, health and status" },
+  Moon: { qualities: "emotion, nurture and a receptive mind", signifies: "the mother, the mind and emotions" },
+  Mars: { qualities: "energy, courage and aggression", signifies: "the younger co-born (sibling), courage, land and property" },
+  Mercury: { qualities: "intellect, analysis and communication", signifies: "speech, intellect, education and business" },
+  Jupiter: { qualities: "wisdom, nobility, expansion and good fortune", signifies: "children, wealth, the guru and dharma" },
+  Venus: { qualities: "refinement, charm and a taste for comfort", signifies: "the spouse, marriage, vehicles and the arts" },
+  Saturn: { qualities: "discipline, delay, hard work and detachment", signifies: "longevity, profession, servants and the elderly" },
+  Rahu: { qualities: "obsession, amplification and unconventionality", signifies: "foreign matters, sudden gains and illusion" },
+  Ketu: { qualities: "detachment, spirituality and sudden severance", signifies: "moksha, mysticism and past-life karma" },
 };
+
+const NATURAL_FRIENDS = {
+  Sun: { friend: ["Moon", "Mars", "Jupiter"], enemy: ["Venus", "Saturn"] },
+  Moon: { friend: ["Sun", "Mercury"], enemy: [] },
+  Mars: { friend: ["Sun", "Moon", "Jupiter"], enemy: ["Mercury"] },
+  Mercury: { friend: ["Sun", "Venus"], enemy: ["Moon"] },
+  Jupiter: { friend: ["Sun", "Moon", "Mars"], enemy: ["Mercury", "Venus"] },
+  Venus: { friend: ["Mercury", "Saturn"], enemy: ["Sun", "Moon"] },
+  Saturn: { friend: ["Mercury", "Venus"], enemy: ["Sun", "Moon", "Mars"] },
+};
+
+const SPECIAL_ASPECTS = { Sun:[7], Moon:[7], Mars:[4,7,8], Mercury:[7], Jupiter:[5,7,9], Venus:[7], Saturn:[3,7,10], Rahu:[5,9,12], Ketu:[5,9,12] };
+
+const PLANET_ASPECTS = { Sun:[7], Moon:[7], Mars:[4,7,8], Mercury:[7], Jupiter:[5,7,9], Venus:[7], Saturn:[3,7,10], Rahu:[5,9,12], Ketu:[5,9,12] };
+
+const DIGNITY_DEG = {
+  Sun: { exR:1, exD:10, deR:7, deD:10, mtR:5, mt:[0, 20] },
+  Moon: { exR:2, exD:3, deR:8, deD:3, mtR:2, mt:[3, 30] },
+  Mars: { exR:10, exD:28, deR:4, deD:28, mtR:1, mt:[0, 12] },
+  Mercury: { exR:6, exD:15, deR:12, deD:15, mtR:6, mt:[15, 20] },
+  Jupiter: { exR:4, exD:5, deR:10, deD:5, mtR:9, mt:[0, 10] },
+  Venus: { exR:12, exD:27, deR:6, deD:27, mtR:7, mt:[0, 15] },
+  Saturn: { exR:7, exD:20, deR:1, deD:20, mtR:11, mt:[0, 20] },
+};
+/* PLANETS-END */
 
 /* Planet dignity for a given planet & rashi.
    deg (0-30 within the rashi) is optional; when supplied, refines
    Moolatrikona vs Own House by degree and flags Deep Exalt/Debil points. */
 /* Natural planetary friendships (Naisargika Maitri, BPHS) */
-const NATURAL_FRIENDS = {
-  Sun:     { friend:["Moon","Mars","Jupiter"],           enemy:["Venus","Saturn"] },
-  Moon:    { friend:["Sun","Mercury"],                   enemy:[] },
-  Mars:    { friend:["Sun","Moon","Jupiter"],            enemy:["Mercury"] },
-  Mercury: { friend:["Sun","Venus"],                     enemy:["Moon"] },
-  Jupiter: { friend:["Sun","Moon","Mars"],               enemy:["Mercury","Venus"] },
-  Venus:   { friend:["Mercury","Saturn"],                enemy:["Sun","Moon"] },
-  Saturn:  { friend:["Mercury","Venus"],                 enemy:["Sun","Moon","Mars"] }
-};
 function naturalRelation(planet, lord){
   const nf = NATURAL_FRIENDS[planet];
   if(!nf || planet===lord) return null;
@@ -2543,118 +2735,12 @@ function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
 
 /* North Indian rashi chakra (diamond chart). House 1 = Lagna at top center. */
 /* ===== Nakshatras (Session 16) — 27 nakshatras: deity, symbol, gana, naming syllables ===== */
-const GANA_TEMPERAMENT = {
-  Deva: "Sattvic \u2014 soft, refined, gentle; not aggressive (the devas\u2019 nature).",
-  Manushya: "Mixed \u2014 a human blend of sattvic, rajasic and tamasic; material and spiritual.",
-  Rakshasa: "Tamasic \u2014 aggressive, dominating, blunt, strong-willed and tough."
-};
-const NAKSHATRA_INFO = {
-  "Ashwini":             {deity:'Ashwini Kumaras', symbol:"Horse's head", gana:'Deva', syl:["Chu","Che","Cho","La"]},
-  "Bharani":             {deity:'Yama', symbol:'Yoni (womb)', gana:'Manushya', syl:["Li","Lu","Le","Lo"]},
-  "Krittika":            {deity:'Agni', symbol:'Razor / flame', gana:'Rakshasa', syl:["A","Ee","U","Ea"]},
-  "Rohini":              {deity:'Brahma (Prajapati)', symbol:'Cart / chariot', gana:'Manushya', syl:["O","Va","Vi","Vu"]},
-  "Mrigashira":          {deity:'Soma (Chandra)', symbol:"Deer's head", gana:'Deva', syl:["Ve","Vo","Ka","Ki"]},
-  "Ardra":               {deity:'Rudra', symbol:'Teardrop / diamond', gana:'Manushya', syl:["Ku","Gha","Nga","Chha"]},
-  "Punarvasu":           {deity:'Aditi', symbol:'Bow & quiver', gana:'Deva', syl:["Ke","Ko","Ha","Hi"]},
-  "Pushya":              {deity:'Brihaspati', symbol:"Cow's udder / lotus", gana:'Deva', syl:["Hu","He","Ho","Da"]},
-  "Ashlesha":            {deity:'Nagas (serpents)', symbol:'Coiled serpent', gana:'Rakshasa', syl:["Di","Du","De","Do"]},
-  "Magha":               {deity:'Pitris (ancestors)', symbol:'Royal throne', gana:'Rakshasa', syl:["Ma","Mi","Mu","Me"]},
-  "Purva Phalguni":      {deity:'Bhaga', symbol:'Front legs of a cot', gana:'Manushya', syl:["Mo","Ta","Ti","Tu"]},
-  "Uttara Phalguni":     {deity:'Aryaman', symbol:'Back legs of a cot', gana:'Manushya', syl:["Te","To","Pa","Pi"]},
-  "Hasta":               {deity:'Savitar (Sun)', symbol:'Hand / palm', gana:'Deva', syl:["Pu","Sha","Na","Tha"]},
-  "Chitra":              {deity:'Vishwakarma', symbol:'Bright jewel / pearl', gana:'Rakshasa', syl:["Pe","Po","Ra","Ri"]},
-  "Swati":               {deity:'Vayu', symbol:'Coral / young sprout', gana:'Deva', syl:["Ru","Re","Ro","Ta"]},
-  "Vishakha":            {deity:'Indra-Agni', symbol:'Triumphal archway', gana:'Rakshasa', syl:["Ti","Tu","Te","To"]},
-  "Anuradha":            {deity:'Mitra', symbol:'Staff / lotus', gana:'Deva', syl:["Na","Ni","Nu","Ne"]},
-  "Jyeshtha":            {deity:'Indra', symbol:'Talisman / umbrella', gana:'Rakshasa', syl:["No","Ya","Yi","Yu"]},
-  "Mula":                {deity:'Nirriti', symbol:'Tied bunch of roots', gana:'Rakshasa', syl:["Ye","Yo","Bha","Bhi"]},
-  "Purva Ashadha":       {deity:'Apas (the waters)', symbol:'Winnowing fan / tusk', gana:'Manushya', syl:["Bu","Dha","Bha","Dha"]},
-  "Uttara Ashadha":      {deity:'Vishwadevas', symbol:'Elephant tusk / planks', gana:'Manushya', syl:["Be","Bo","Ja","Ji"]},
-  "Shravana":            {deity:'Vishnu', symbol:'Ear / three footprints', gana:'Deva', syl:["Ju","Je","Jo","Gha"]},
-  "Dhanishta":           {deity:'Vasus (Ashta Vasu)', symbol:'Drum (mridangam)', gana:'Rakshasa', syl:["Ga","Gi","Gu","Ge"]},
-  "Shatabhisha":         {deity:'Varuna', symbol:'Empty circle (100 stars)', gana:'Rakshasa', syl:["Go","Sa","Si","Su"]},
-  "Purva Bhadrapada":    {deity:'Aja Ekapada', symbol:'Front of a funeral cot / two-faced', gana:'Manushya', syl:["Se","So","Da","Di"]},
-  "Uttara Bhadrapada":   {deity:'Ahir Budhnya', symbol:'Back of a funeral cot / water serpent', gana:'Manushya', syl:["Du","Tha","Jha","Nya"]},
-  "Revati":              {deity:'Pushan', symbol:'Fish / pair of fish', gana:'Deva', syl:["De","Do","Cha","Chi"]},
-};
 /* Picture glyphs for each nakṣatra symbol and its ruling deity (self-contained, no external images) */
-const NAK_SYMBOL_EMOJI = {
-  "Ashwini":"🐎","Bharani":"🔻","Krittika":"🔥","Rohini":"🐂","Mrigashira":"🦌","Ardra":"💧",
-  "Punarvasu":"🏹","Pushya":"🪷","Ashlesha":"🐍","Magha":"👑","Purva Phalguni":"🛏️","Uttara Phalguni":"🛏️",
-  "Hasta":"✋","Chitra":"💎","Swati":"🌱","Vishakha":"🏛️","Anuradha":"🌸","Jyeshtha":"☂️",
-  "Mula":"🌿","Purva Ashadha":"🪭","Uttara Ashadha":"🐘","Shravana":"👂","Dhanishta":"🥁","Shatabhisha":"⭕",
-  "Purva Bhadrapada":"🗡️","Uttara Bhadrapada":"🐉","Revati":"🐟"
-};
-const DEITY_EMOJI = {
-  "Ashwini Kumaras":"⚕️","Yama":"⚖️","Agni":"🔥","Brahma (Prajapati)":"🪷","Soma (Chandra)":"🌙","Rudra":"🔱",
-  "Aditi":"🌌","Brihaspati":"📿","Nagas (serpents)":"🐍","Pitris (ancestors)":"🕯️","Bhaga":"🌅","Aryaman":"☀️",
-  "Savitar (Sun)":"☀️","Vishwakarma":"🛠️","Vayu":"🌬️","Indra-Agni":"⚡","Mitra":"🤝","Indra":"⚡",
-  "Nirriti":"🌑","Apas (the waters)":"🌊","Vishwadevas":"🕉️","Vishnu":"🐚","Vasus (Ashta Vasu)":"✨",
-  "Varuna":"🌊","Aja Ekapada":"🐐","Ahir Budhnya":"🐍","Pushan":"☀️"
-};
 const CADUCEUS_SVG = `<svg viewBox="0 0 64 64" width="1em" height="1em" style="vertical-align:-0.14em" xmlns="http://www.w3.org/2000/svg" fill="#141414" role="img" aria-label="Caduceus — Aśvinī Kumāras"><circle cx="32" cy="6.5" r="3.4"/><rect x="30.6" y="8" width="2.8" height="50" rx="1.4"/><path d="M31 15 C22 10 12 10 4.5 16.5 C13 15.5 22 16.8 31 20 Z"/><path d="M33 15 C42 10 52 10 59.5 16.5 C51 15.5 42 16.8 33 20 Z"/><path d="M31 20.5 C23.5 16.5 15.5 16.5 9.5 21.5 C16.5 20.8 24 22 31 24 Z"/><path d="M33 20.5 C40.5 16.5 48.5 16.5 54.5 21.5 C47.5 20.8 40 22 33 24 Z"/><g fill="none" stroke="#141414" stroke-width="2.4" stroke-linecap="round"><path d="M32 13 C19 19 45 27 32 33 C19 39 45 47 32 55"/><path d="M32 13 C45 19 19 27 32 33 C45 39 19 47 32 55"/></g><circle cx="25.5" cy="13.5" r="1.7"/><circle cx="38.5" cy="13.5" r="1.7"/></svg>`;
 function nakSymGlyph(name){ return NAK_SYMBOL_EMOJI[name] || "✨"; }
 function nakDeityGlyph(deity){ if(deity==='Ashwini Kumaras') return CADUCEUS_SVG; return DEITY_EMOJI[deity] || "🕉️"; }
 /* Session 16 slide specifications for the 5 nakshatras taught in detail */
-const NAKSHATRA_DETAIL = {
-  'Ashwini': {'Meaning': 'Star of transport', 'Purushartha': 'Dharma', 'Varna': 'Vaishya (merchant)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male horse', 'Bird': 'Hamsa (swan)', 'Guna': 'Tamas', 'Tridosha': 'Vata', 'Direction': 'South', 'Gotra': 'Marichi', 'Body part': 'Knees & upper feet', 'Nature': 'Kshipra (swift)', 'Lucky colour': 'Blood red'},
-  'Bharani': {'Purushartha': 'Artha', 'Varna': 'Vaishya', 'Element': 'Prithvi (Earth)', 'Animal (yoni)': 'Elephant', 'Bird': 'Crow', 'Guna': 'Rajas', 'Tridosha': 'Pitta', 'Body part': 'Head / forehead', 'Nature': 'Ugra (fierce)', 'Yoni gender': 'Female', 'Lucky colour': 'Blood red', 'Lucky stone': 'Diamond', 'Tree': 'Amla (Amalaka)'},
-  'Krittika': {'Purushartha': 'Kama', 'Varna': 'Brahmin (priest)', 'Element': 'Prithvi (Earth)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Female sheep/goat', 'Bird': 'Peacock', 'Tree': 'Fig tree'},
-  'Rohini': {'Meaning': 'The red one', 'Element': 'Prithvi (Earth)', 'Animal (yoni)': 'Male serpent (Sarpa)', 'Bird': 'Owl', 'Tridosha': 'Kapha', 'Nature': 'Dhruva (fixed)', 'Body part': 'Legs / shanks (eyes)', 'Lucky colour': 'White', 'Lucky stone': 'Pearl', 'Tree': 'Jamun'},
-  'Mrigashira': {'Meaning': "Deer's head / the searching star", 'Purushartha': 'Moksha', 'Varna': 'Farmer / servant', 'Element': 'Prithvi (Earth)', 'Guna': 'Tamas', 'Tridosha': 'Pitta', 'Direction': 'South', 'Gotra': 'Pulastya', 'Body part': 'Eyes & eyebrows', 'Nature': 'Mridu (soft)'},
-  'Ardra': {'Meaning': 'Star of Sorrow', 'Purushartha': 'Kama', 'Varna': 'Butcher', 'Element': 'Jala (Water)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Female dog', 'Tree': 'Agar wood (Krishnaguru)', 'Lucky colour': 'Black'},
-  'Punarvasu': {'Meaning': 'Star of Renewal', 'Purushartha': 'Artha', 'Varna': 'Vaishya (merchant)', 'Element': 'Jala (Water)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Female cat', 'Bird': 'Swan', 'Tree': 'Bamboo'},
-  'Pushya': {'Meaning': 'Star of Nourishment', 'Purushartha': 'Dharma', 'Varna': 'Kshatriya (warrior)', 'Element': 'Jala (Water)', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Male goat/ram', 'Bird': 'Crow', 'Tree': 'Sacred fig / Peepal'},
-  'Ashlesha': {'Meaning': 'Clinging Star', 'Purushartha': 'Dharma', 'Varna': 'Mleccha (outcaste)', 'Element': 'Jala (Water)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male cat', 'Tree': 'Nagakesar (champak)'},
-  'Magha': {'Meaning': 'Star of Power', 'Purushartha': 'Artha', 'Varna': 'Shudra (worker)', 'Element': 'Jala (Water)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male rat', 'Bird': 'Eagle', 'Tree': 'Banyan (Vata)'},
-  'Purva Phalguni': {'Meaning': 'Fruit of the Tree (star of fortune)', 'Purushartha': 'Kama', 'Varna': 'Brahmin (priest)', 'Element': 'Jala (Water)', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female rat', 'Bird': 'Eagle', 'Tree': 'Palasha (Butea)'},
-  'Uttara Phalguni': {'Meaning': 'Star of Patronage', 'Purushartha': 'Moksha', 'Varna': 'Kshatriya (warrior)', 'Element': 'Agni (Fire)', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male cow (bull)', 'Bird': 'Peacock', 'Tree': 'Rose laurel / Juvvi'},
-  'Hasta': {'Meaning': 'Star of the Hand', 'Purushartha': 'Moksha', 'Varna': 'Vaishya (merchant)', 'Element': 'Agni (Fire)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Female buffalo', 'Bird': 'Vulture', 'Tree': 'Jasmine (Jaai)'},
-  'Chitra': {'Meaning': 'The bright one (a pearl / shining jewel)', 'Purushartha': 'Kama', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female tiger'},
-  'Swati': {'Meaning': 'Independent / self-going (the first drop of rain; the sword)', 'Purushartha': 'Artha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male cow / buffalo'},
-  'Vishakha': {'Meaning': 'Star of Purpose', 'Purushartha': 'Dharma', 'Varna': 'Mleccha (outcaste)', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male tiger'},
-  'Anuradha': {'Meaning': 'Star of Success', 'Purushartha': 'Dharma', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female deer/hare'},
-  'Jyeshtha': {'Meaning': 'The eldest / senior', 'Purushartha': 'Artha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male deer/hare', 'Bird': 'Brahmani duck', 'Tree': 'Red silk cotton'},
-  'Mula': {'Meaning': 'The root', 'Purushartha': 'Kama', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male dog'},
-  'Purva Ashadha': {'Meaning': 'The former invincible one (Aparajita)', 'Purushartha': 'Moksha', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Male monkey'},
-  'Uttara Ashadha': {'Meaning': 'The latter invincible one', 'Purushartha': 'Moksha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Male mongoose'},
-  'Shravana': {'Meaning': 'The ability to hear (the learner)', 'Purushartha': 'Artha', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Female monkey'},
-  'Dhanishta': {'Meaning': 'The wealthiest / most famous', 'Purushartha': 'Dharma', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female lion'},
-  'Shatabhisha': {'Meaning': 'Hundred healers / hundred medicines', 'Purushartha': 'Dharma', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Female horse'},
-  'Purva Bhadrapada': {'Meaning': 'The former lucky feet', 'Purushartha': 'Artha', 'Trimurti': 'Brahma (creation)', 'Animal (yoni)': 'Male lion'},
-  'Uttara Bhadrapada': {'Meaning': 'The latter lucky feet', 'Purushartha': 'Kama', 'Trimurti': 'Vishnu (maintenance)', 'Animal (yoni)': 'Female cow'},
-  'Revati': {'Meaning': 'The wealthy / prosperous (the nourisher)', 'Purushartha': 'Moksha', 'Trimurti': 'Shiva (dissolution)', 'Animal (yoni)': 'Female elephant'},
-};
 /* Native personality traits per nakshatra (Sessions 16-17) */
-const NAKSHATRA_TRAITS = {
-  'Ashwini': 'Quick, spontaneous and pioneering - natural initiators who love new beginnings and want immediate results. Strongly drawn to healing, medicine and helping others (the deity are the divine physicians). Independent, confident, youthful and adventurous, with Ketu lending detachment and sharp intuition. The watch-outs are impatience, impulsiveness, restlessness and starting more than they finish.',
-  'Bharani': 'Full of zest for life, usually prosperous and truthful, with a strong sense of justice and morality (deity Yama). Direct and frank - they say exactly what they think, which not everyone likes, yet they carry a pure heart. Dignified and majestic (the elephant), able to shoulder heavy responsibility like the nurturing womb. Watch-outs: bluntness that invites criticism and impulsive decisions.',
-  'Krittika': 'Sharp, fiery and critical (symbol a razor; deity Agni, the fire god). Determined, independent and straightforward - they do not beat around the bush, which can intimidate people. Adventurous, energetic and intelligent, capable in any situation, with strong likes and dislikes. Both creative and destructive tendencies; the cutting nature ultimately purifies.',
-  'Rohini': 'Attractive, charming and magnetic, with a gentle, courteous and modest nature. Level-headed and insightful, not easily swayed by emotion in decisions; honest, generous and charitable. Often the centre of attention socially and lucky in matters of the heart. Watch-outs: a strong pull toward material pleasures, possessiveness and attachment.',
-  'Mrigashira': 'Gentle, soft-natured and peaceful (Saumya), with a searching, questing mind. Learned, curious and research-minded, quick to think and act, and fond of clean, aesthetic surroundings. Introverted and simple-living, with money coming fairly easily. Watch-outs: timidity, suspicion, an inferiority streak and restlessness.',
-  'Ardra': 'Intense and transformative (the teardrop) - life brings hard-learned lessons that clear old patterns. Sharp minds with a real hunger for knowledge; bold, straightforward, quick thinkers with good memory and precise communication. Innovators drawn to renovation, recycling and improving things, with quick empathy. Watch-outs: stubbornness, impulsiveness, obsessive perfectionism and difficulty sticking to one job; emotions can cloud judgment.',
-  'Punarvasu': 'The return of light - renewal, hope and restoration after difficulty. Polite, tactful and clever in dealings, content with little, religiously inclined and simple in living. Associated with large families and groups; events tend to come in pairs, so they may fail on the first attempt and succeed on the second. Helpful and principled, resisting wrongdoing in themselves and others.',
-  'Pushya': 'The most auspicious and nourishing star (called the King of nakshatras) - caring, loving and emotionally supportive. Seekers of truth, devoted to God, with a balanced, calm mind; hardworking and dedicated to their work. Cannot tolerate injustice; kind-hearted protectors of dharma. Watch-outs: timid and over-cautious, trust too easily and can be taken advantage of, and at times lazy.',
-  'Ashlesha': 'Mentally very active, smart and deeply thoughtful (Mercury in Cancer), philosophical and academically gifted. Blessed with extraordinary intuition and observation; can appear social and friendly to get what they want. Chameleon-like, secretive and slow to trust, clinging strongly to family and close ones. Watch-outs: suspicion, coldness once their aim is met, and emotional bondage.',
-  'Magha': 'Royal, dignified and authoritative - born leaders who command respect (the throne; ruled by the Pitris, the ancestors). Deeply rooted in ancestral tradition and ritual; honest, achievement-oriented and never compromising on dignity. Financially shrewd, fond of luxury, with many friends and a love of stability over change. Reliable, with fail-safe, dependable work.',
-  'Purva Phalguni': 'Warm, sociable and generous, blessed with good luck and fortune (deity Bhaga). Creative, artistic and a little theatrical; light-hearted, hospitable and affectionate, closely tied to family. Loyal, honest friends who love relaxation, pleasure and the arts. Watch-outs: laziness, vanity and a carefree, do-nothing streak.',
-  'Uttara Phalguni': 'Noble, reliable and generous, with a civilized, cultured approach to life (deity Aryaman). Stable, rational and wise in both science and the arts; charitable yet prudent with money, and natural peacemakers who prefer reconciliation to conflict. Determined, self-respecting and knowledgeable. Watch-outs: an obsession with cleanliness and a streak of arrogance.',
-  'Hasta': 'Skilled with the hands, industrious, intelligent and reasonable (symbol the hand; deity Savitar). A calm nature and a magnetic smile that draws people in; helpful, honest and respected, with a strong dislike of deceit. Optimistic and highly creative, linked with crafts, skill and family life. Watch-outs: frequent ups and downs of fortune, effort often repaid with criticism, and a fondness for music or drink.',
-  'Chitra': 'Blessed with a good physique, attractive features and striking eyes. They value relationships and dislike breaking them; calm, composed and practical, using intellect for important decisions. Mars makes them energetic, powerful and a little short-tempered, slow to cool down. Loving toward parents and siblings, though somewhat doubtful and slow to trust.',
-  'Swati': "Refined, dignified and polished in manner, shy with great self-control, though they can be stubborn. Independent and self-going, linked with purity (the first drop of rain) and sharpness or talent (the sword). Like a plant-shoot in the wind, they grow slowly but steadily, surviving every obstacle. With Saraswati's grace they are gifted in knowledge, learning, music and speech; Rahu adds a restless worldly drive.",
-  'Vishakha': 'Attractive, bright-faced and personable, sharp and keen to learn, favouring modern ways over orthodox ones. Excellent speakers and orators who can convince others of their view. Ruled by Indra-Agni, they are ambitious and goal-focused, hungry for power, position and authority. Purpose-driven, determined and hard to deflect.',
-  'Anuradha': "The Star of Success - practical, analytical and persevering (Saturn), organizing and working with devotion. A deep capacity for friendship and cooperation (deity Mitra) lets them thrive in groups. They may get little help from father or siblings and carry heavy responsibility, but Scorpio's energy drives them to pursue and achieve their goals.",
-  'Jyeshtha': "Senior, mature and protective - the 'eldest' - and very conscious of reputation and how they are perceived. Sharp intellect, logic and administrative, managerial and diplomatic skill (Mercury), with the protective, warlike resolve of Indra. They carry an air of authority (the talisman) but can be secretive and shoulder hidden burdens.",
-  'Mula': 'Rooted, curious and intelligent, with a direct, straightforward approach - they get to the root of matters. Focused and persistent, trying until they succeed or exhaust themselves. Ruled by Ketu and the goddess Nirriti, life can bring upheaval that clears the way; yet they stay peaceful, wise and optimistic even in hard times.',
-  'Purva Ashadha': "The 'former invincible one' (also Aparajita, the undefeated). Strong will-power makes them mentally invincible, little bothered by failure or setback. Extraordinary communicators and orators - hard to win an argument against them. Ruled by the water-goddess Apah and Venus, they are secretive yet charming, with fine taste and creativity.",
-  'Uttara Ashadha': "The 'latter invincible one' - the victory that lasts. Respectful of tradition and ancestry, ruled by the ten Vishvadevas and the Sun, giving authority, intelligence and integrity. Responsible, principled and goal-oriented, they earn lasting success through sincere, sustained effort.",
-  'Shravana': 'The star of hearing and learning, ruled by Vishnu/Narayana and the Moon - gentle, receptive and able to connect with and influence the masses. Clever, organized, determined and flexible, achieving their ends without conflict. Patient and persevering, practical and hard to mislead.',
-  'Dhanishta': "Wealthy, famous and musical (symbol the drum), ruled by the eight Vasus and Mars - brave, energetic and enterprising, with a warrior's drive. Naturally drawn to music and rhythm, and to creating something from nothing. Generous and prosperous, they value name and status.",
-  'Shatabhisha': "The 'hundred healers' - drawn to healing, medicine and hidden knowledge, with the wisdom of a hundred experts and many resources to solve problems. Ruled by Varuna (god of the waters) and Rahu, they love mysteries, puzzles and research. Independent, secretive and highly guarded - it takes a lot to get inside their circle of trust.",
-  'Purva Bhadrapada': "Deep philosophical wisdom and independent behaviour (Jupiter), pushing toward spiritual progress; the fierce Aja Ekapada, a Rudra, destroys illusion and the mind's hypocrisy. They chafe at social constraints, love to travel, and can be intense and idealistic - the first step of the journey beyond death.",
-  'Uttara Bhadrapada': 'Wise, calm and far-seeing, working for the benefit of others rather than selfish motives (deity Ahir Budhnya, the deep serpent). Inclined to astrology, numerology, spirituality, yoga and meditation. Fixed on their goals yet unhurried and unobsessed - they spread wisdom rather than hoard it.',
-  'Revati': "The 'wealthy' and final nakshatra - blessed, resourceful and equally at ease in good or ill, day or night (deity Pushan, the nourisher who lights the way). Benevolent, kind and imaginative (Pisces/Jupiter), optimistic and steady toward goals despite setbacks. Caring guardians and guides, a soul completing its journey to liberation.",
-};
 function renderNakshatraSection(moonLon){
   const el=document.getElementById("nakshatraBody"); if(!el) return;
   const nk=nakshatraOf(moonLon);
@@ -3179,7 +3265,6 @@ function renderTithiSection(sidereal) {
    Reference points: Lagna (strongest), Venus, Moon (weakest).
    Dosha houses: 2, 4, 7, 8, 12. Severity highest in 7th/8th from Lagna.
    ============================================================ */
-const KUJA_HOUSES = new Set([2, 4, 7, 8, 12]);
 
 function kujaFromReference(label, refRashi, marsRashi) {
   const h = houseFromLagna(refRashi, marsRashi);   // same formula as house-from-reference
@@ -3287,39 +3372,11 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
    Every graha aspects the 7th. Special: Mars 4·7·8, Jupiter 5·7·9,
    Saturn 3·7·10. Rahu/Ketu given 5·7·9 per common convention.
    ============================================================ */
-const SPECIAL_ASPECTS = {
-  Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
-  Mars:[4,7,8], Jupiter:[5,7,9], Saturn:[3,7,10],
-  /* Nodes aspect the 2nd, 5th & 9th ANTI-CLOCKWISE (they are always retrograde);
-     anti-clockwise 2/5/9 == forward 5/9/12, which is what aspectedRashi counts. */
-  Rahu:[5,9,12], Ketu:[5,9,12]
-};
-const GLYPH9 = { Sun:"☉",Moon:"☾",Mars:"♂",Mercury:"☿",Jupiter:"♃",Venus:"♀",Saturn:"♄",Rahu:"☊",Ketu:"☋" };
 
 /* Karakatwas (significations). `qualities` = what an ASPECTING planet imparts;
    `signifies` = what an ASPECTED planet stands for. Blending the two gives the
    influence reading (Session 9: "Jup = wisdom, noble; Mars = younger coborn,
    so the younger coborn is a noble and wise person"). */
-const KARAKATWAS = {
-  Sun:     { qualities:"authority, confidence and a commanding nature",
-             signifies:"the father, the soul, health and status" },
-  Moon:    { qualities:"emotion, nurture and a receptive mind",
-             signifies:"the mother, the mind and emotions" },
-  Mars:    { qualities:"energy, courage and aggression",
-             signifies:"the younger co-born (sibling), courage, land and property" },
-  Mercury: { qualities:"intellect, analysis and communication",
-             signifies:"speech, intellect, education and business" },
-  Jupiter: { qualities:"wisdom, nobility, expansion and good fortune",
-             signifies:"children, wealth, the guru and dharma" },
-  Venus:   { qualities:"refinement, charm and a taste for comfort",
-             signifies:"the spouse, marriage, vehicles and the arts" },
-  Saturn:  { qualities:"discipline, delay, hard work and detachment",
-             signifies:"longevity, profession, servants and the elderly" },
-  Rahu:    { qualities:"obsession, amplification and unconventionality",
-             signifies:"foreign matters, sudden gains and illusion" },
-  Ketu:    { qualities:"detachment, spirituality and sudden severance",
-             signifies:"moksha, mysticism and past-life karma" }
-};
 
 /* Build the plain-English influence reading for an aspect. */
 function aspectReading(aspecting, aspected, house){
@@ -3477,7 +3534,6 @@ function renderAspectsSection(planetsByRashi){
 /* GURUBALA — transit Jupiter in the 2nd, 5th, 7th, 9th or 11th from the natal
    Moon (Janma Rashi). A period of divine grace (Daiva Bala); the best window for
    auspicious functions, marriage above all. */
-const GURUBALA_HOUSES = [2,5,7,9,11];
 function renderGurubalaSection(moonRashiNum, ayanType){
   const now=new Date();
   const jdNow=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
@@ -3529,17 +3585,28 @@ function renderSadeSatiSection(moonRashiNum, ayanType){
 
 /* Session 11 — Saturn combinations (Punarphoo, Sun–Saturn, Saturn–Mars) + remedies.
    Whole-sign special aspects: Saturn 3/7/10, Mars 4/7/8, Jupiter 5/7/9, others 7. */
-const PLANET_ASPECTS = { Sun:[7], Moon:[7], Mercury:[7], Venus:[7],
-                         Saturn:[3,7,10], Mars:[4,7,8], Jupiter:[5,7,9],
-                         Rahu:[5,9,12], Ketu:[5,9,12] };
 function grahaAspects(planet, fromR, toR){
   return (PLANET_ASPECTS[planet]||[7]).includes(houseFromLagna(fromR, toR));
 }
 
+/* LOOKUPS-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Small named lists & narrative strings — from the 'Lookups' sheet. */
+const GURUBALA_HOUSES = [2, 5, 7, 9, 11];
+
+const KUJA_HOUSES = new Set([2, 4, 7, 8, 12]);
+
+const PUNARPHOO_EFFECTS = "Postponement or obstruction of marriage; unhappiness and misunderstanding in relationships; a logical, calculative, fault-finding temperament (they make good critics and do well in quality control); results come only after hard tests, though the hurdles are not permanent; fear, anxiety, depression or melancholy — worse when Saturn aspects a waning Moon; frequent job changes and a preference for one's own business; worry over the mother or a troublesome mother-in-law; gastric, digestive or breathing complaints, cracked teeth or calcium deficiency. Such natives are often slow learners yet good achievers and social workers.";
+
+const SUN_SATURN_EFFECT_M = "A strained relationship between father and son, or separation between them (Sun = father, Saturn = son).";
+
+const SUN_SATURN_EFFECT_F = "In a female chart the effect is reversed — the native is usually very close to her father.";
+
+const SATURN_MARS_EFFECT = "Harassment, tension or quarrels in the profession; disputes with brothers or blood relatives; hard physical work with little reward; frequent leg injuries, fractures or accident-proneness and decayed teeth; a leaning toward old property / real estate, or technical, dental or uniformed (police/security) work. In a female chart the husband may dwell on the past or be lazy, and servants may dominate and be short-tempered.";
+
 const PUNARPHOO_REMEDIES = [
   "Perform Milk Abhisheka to Lord Chandramouleeswara (Shiva) regularly on Mondays.",
   "Perform Rudra Abhisheka to Lord Shiva (Shani = Ishwaramsha) for at least 5 consecutive Mondays in a temple.",
-  "Chant \u201cOm Namah Shivaya\u201d 108 times and do a milk abhisheka to a Shivalinga at home on Mondays and Saturdays.",
+  "Chant “Om Namah Shivaya” 108 times and do a milk abhisheka to a Shivalinga at home on Mondays and Saturdays.",
   "Chant the Maha Mrityunjaya Mantra 108 times on Mondays.",
   "Visit a Hanuman temple on Saturdays; fast on Mondays or Saturdays if your health permits.",
   "Meditate daily and practise pranayama.",
@@ -3552,12 +3619,9 @@ const PUNARPHOO_REMEDIES = [
   "Eat the previous day's rice (tangala anna) — Saturn is of the cold and stale, the Moon of rice.",
   "Do service to, and take the blessings of, your mother and elderly women.",
   "Eat from a silver plate and drink water from a silver tumbler.",
-  "If the Moon is weak (debilitated / Krishna Paksha), keep a \u201cGratitude Diary\u201d, thanking for every help received — to soften the fault-finding tendency."
+  "If the Moon is weak (debilitated / Krishna Paksha), keep a “Gratitude Diary”, thanking for every help received — to soften the fault-finding tendency."
 ];
-const PUNARPHOO_EFFECTS = "Postponement or obstruction of marriage; unhappiness and misunderstanding in relationships; a logical, calculative, fault-finding temperament (they make good critics and do well in quality control); results come only after hard tests, though the hurdles are not permanent; fear, anxiety, depression or melancholy — worse when Saturn aspects a waning Moon; frequent job changes and a preference for one's own business; worry over the mother or a troublesome mother-in-law; gastric, digestive or breathing complaints, cracked teeth or calcium deficiency. Such natives are often slow learners yet good achievers and social workers.";
-const SUN_SATURN_EFFECT_M = "A strained relationship between father and son, or separation between them (Sun = father, Saturn = son).";
-const SUN_SATURN_EFFECT_F = "In a female chart the effect is reversed — the native is usually very close to her father.";
-const SATURN_MARS_EFFECT = "Harassment, tension or quarrels in the profession; disputes with brothers or blood relatives; hard physical work with little reward; frequent leg injuries, fractures or accident-proneness and decayed teeth; a leaning toward old property / real estate, or technical, dental or uniformed (police/security) work. In a female chart the husband may dwell on the past or be lazy, and servants may dominate and be short-tempered.";
+/* LOOKUPS-END */
 
 function detectPunarphoo(moonR, satR){
   const reasons=[];
@@ -3649,7 +3713,6 @@ function renderPunarphooSection(moonRashiNum, satRashiNum, sunRashiNum, marsRash
 
   document.getElementById("punarphoo-body").innerHTML = html;
 }
-
 
 /* Combustion (Astangata) — planet too close to the Sun.
    Course convention: within ±5° of the Sun (tight orb, as taught in session:
@@ -4837,7 +4900,6 @@ document.querySelectorAll("#reportTabs .rtab").forEach(btn=>{
     });
   });
 });
-
 
 /* North / South chart toggle */
 document.querySelectorAll("#chartTabs .chart-tab").forEach(btn => {
