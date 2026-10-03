@@ -1,0 +1,10 @@
+# Local-only working files — live in OneDrive, never committed
+Classification_for_Horoscope_Analysis_*.xlsx
+scripts/
+data.json
+
+# Common ephemera
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

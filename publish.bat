@@ -1,0 +1,96 @@
+@echo off
+REM =====================================================================
+REM  Jyotisha publish — one-click rebuild & push.
+REM
+REM  Workflow:
+REM    1. You edit Classification_for_Horoscope_Analysis_v7_1.xlsx and save.
+REM    2. You click the "PUBLISH TO GITHUB" button on the Input sheet.
+REM    3. This script runs the Python extractor, commits the regenerated
+REM       index.html, and pushes to GitHub. GitHub Pages republishes.
+REM
+REM  Requirements on this machine:
+REM    - Python 3 on PATH         (python --version)
+REM    - openpyxl                 (pip install openpyxl)
+REM    - git configured to push   (git push works from this folder)
+REM =====================================================================
+setlocal
+cd /d "%~dp0"
+
+echo.
+echo === Jyotisha publish ===
+echo.
+
+REM Check Python
+where python >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Python not found on PATH. Install Python 3 from python.org
+    echo         and re-run.
+    pause
+    exit /b 1
+)
+
+REM Ensure openpyxl is available (cheap check; install if missing)
+python -c "import openpyxl" 2>nul
+if errorlevel 1 (
+    echo openpyxl not installed. Installing...
+    python -m pip install --user --quiet openpyxl
+    if errorlevel 1 (
+        echo [ERROR] Could not install openpyxl. Run manually:
+        echo         pip install openpyxl
+        pause
+        exit /b 1
+    )
+)
+
+REM Rebuild index.html from the workbook
+echo [1/4] Rebuilding index.html from the workbook...
+python scripts\build_data.py
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Build failed. See message above.
+    pause
+    exit /b 1
+)
+
+REM Stage only the file that goes into git
+echo.
+echo [2/4] Staging index.html...
+git add index.html
+
+REM If nothing changed, stop here with a friendly note
+git diff --cached --quiet
+if %errorlevel%==0 (
+    echo.
+    echo No changes to publish — the workbook produced the same index.html.
+    echo Nothing was committed.
+    pause
+    exit /b 0
+)
+
+echo.
+echo [3/4] Committing...
+for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set DT=%%a
+set STAMP=%DT:~0,4%-%DT:~4,2%-%DT:~6,2% %DT:~8,2%:%DT:~10,2%
+git commit -m "Rebuild index.html from workbook (%STAMP%)"
+if errorlevel 1 (
+    echo [ERROR] Commit failed. See message above.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [4/4] Pushing to GitHub...
+git push
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Push failed. See message above.
+    echo         Common causes: no network, auth not configured, protected branch.
+    pause
+    exit /b 1
+)
+
+echo.
+echo === DONE ===
+echo The horoscope page will republish on GitHub Pages within ~1 minute.
+echo.
+pause
