@@ -1319,6 +1319,51 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <div class="section-body" id="akshara-body"></div>
       </details>
 
+      <details class="section">
+        <summary>
+          <span class="section-num">X</span>
+          <span class="section-title">Combustion (Astaṅgata) — Planets Burnt by the Sun</span>
+          <span class="section-sub">Rule, which planets are combust in this chart, and the effect</span>
+        </summary>
+        <div class="section-body" id="combust-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">XI</span>
+          <span class="section-title">Budhāditya &amp; Named Yogas</span>
+          <span class="section-sub">Named planetary combinations — formation, condition, effect, remedy</span>
+        </summary>
+        <div class="section-body" id="yogas-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">XII</span>
+          <span class="section-title">Karakatwas — Detailed Planet Reference</span>
+          <span class="section-sub">Full master table per planet: significations, body parts, places, remedies, mantras</span>
+        </summary>
+        <div class="section-body" id="profile-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">XIII</span>
+          <span class="section-title">Rāśi Classifications — How Each Is Used</span>
+          <span class="section-sub">Twenty-one classifications explained for Lagna &amp; Moon rāśi</span>
+        </summary>
+        <div class="section-body" id="classif-body"></div>
+      </details>
+
+      <details class="section">
+        <summary>
+          <span class="section-num">XIV</span>
+          <span class="section-title">Rāhu &amp; Ketu — Nature Comparison</span>
+          <span class="section-sub">Side-by-side nature of the two shadow planets</span>
+        </summary>
+        <div class="section-body" id="nodes-body"></div>
+      </details>
+
       <div class="report-footer">
         <div>Drawn from the classifications of <em>Janma Lagna</em>, <em>Janma Rāśi</em>, the Tatwas and the Trigunas — as preserved in the classical Phalita Jyotisha tradition.</div>
         <div class="tag-row">
@@ -1731,6 +1776,524 @@ const REMEDY_BY_TATWA = {
   Jala: "Abhisheka / Teertha Yatra — visit holy water bodies, perform Abhisheka on Mondays.",
 };
 /* DATA-END */
+
+/* COMBUST-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Combustion effects per planet — from 'Combust Effects' sheet. */
+const COMBUST_EFFECTS = {
+  Moon: { signifies: "Mind", effect: "Mind is filled with ego — the person cannot think with clarity." },
+  Mars: { signifies: "Stamina", effect: "Overconfidence — feels they can beat anyone, in a real fight or with words." },
+  Mercury: { signifies: "Intellect", effect: "Person feels he is the most intelligent." },
+  Jupiter: { signifies: "Wisdom", effect: "Feels he knows everything — no need of a Guru, God or any guidance." },
+  Venus: { signifies: "Comforts", effect: "Lot of unnecessary expenditure on comforts, sexual pleasures, love and entertainment." },
+  Saturn: { signifies: "Work", effect: "Postpones things — thinks they can finish in time even if they start late." },
+};
+/* COMBUST-END */
+
+/* PLANET-PROFILE-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Detailed per-planet reference — from 'Planet Profile' sheet. */
+const PLANET_PROFILE = {
+  Sun: {
+    "Sanskrit Name": "Surya / Ravi",
+    Symbol: "☉",
+    "English Name": "Sun",
+    "Inner / Outer": "Inner",
+    "Days per Rashi": "~30 days",
+    "Time for Full Zodiac": "~1 year",
+    "Direction of Motion": "Direct",
+    "Aspects (Drishti)": "7th only (Inner)",
+    "Exaltation Rashi": "Mesha",
+    "Deep Exaltation Degree": "10° Mesha",
+    "Debilitation Rashi": "Tula",
+    "Deep Debilitation Degree": "10° Tula",
+    "Moola Trikona Range": "0°–20° Simha",
+    "Own House (Swakshetra)": "Simha",
+    "Soul / Mind / Body": "Soul (Atma)",
+    Relationships: "Father, Father-in-law",
+    "Profession / Status": "Authority, Government, Leadership, Boss, Administration, Management, Influential persons",
+    Reputation: "Name & Fame, Reputation, Visibility, Permanent Income",
+    "Personality Traits": "Ego, Vitality, Open-hearted, Equality, Generous, High Expectations, Punctual, Vertical",
+    "Body Parts Ruled": "Eyes, Heart, Spine, Bones",
+    "Constitution (Tridosha)": "Pitta (Hot)",
+    "General Health Indicator": "General Health, Vitality",
+    Nature: "Separative planet; causes combustion to nearby planets",
+    "Dasha Avatara": "Lord Rama",
+    "Birthday (Tithi)": "Prabhava Samvatsara, Magha Masa, Shukla Sapthami",
+    Gothra: "Kashyapa",
+    "Consorts / Wives": "Sanjna & Chaya",
+    "Vehicle (Vahana)": "7 horses",
+    "Numerology Number": "1",
+    "Combustion Effect": "— (Sun is the combustor)"
+  },
+  Moon: {
+    "Sanskrit Name": "Chandra",
+    Symbol: "☽",
+    "English Name": "Moon",
+    "Inner / Outer": "Inner",
+    "Days per Rashi": "~2¼ days",
+    "Time for Full Zodiac": "~27 days",
+    "Direction of Motion": "Direct",
+    "Aspects (Drishti)": "7th only (Inner)",
+    "Exaltation Rashi": "Vrishabha",
+    "Deep Exaltation Degree": "3° Vrishabha",
+    "Debilitation Rashi": "Vrischika",
+    "Deep Debilitation Degree": "3° Vrischika",
+    "Moola Trikona Range": "3°–30° Vrishabha",
+    "Own House (Swakshetra)": "Karkataka",
+    "Soul / Mind / Body": "Mind (Manas), Emotions",
+    Relationships: "Mother, Mother-in-law, Elderly ladies",
+    "Profession / Status": "Travel agent, Agriculture, Hotel Industry, Nurse, Sailor, Dairy business, Grocery shop, Edible oil merchant, BWSSB",
+    Reputation: "Queen (Portfolio); emotional reputation; popularity with public",
+    "Personality Traits": "Gentle, soft, caring, emotional; feminine energy; sensitive; imaginative; changes quickly like emotions",
+    "Body Parts Ruled": "Left eye, Breast, Heart, Mind, Uterus, Urinary bladder",
+    "Constitution (Tridosha)": "Kapha",
+    "General Health Indicator": "Mental health, fluids, immunity; Diseases: Cold, Cough, Phlegm, Mental disorders, Sinus, Swellings",
+    Nature: "Benefic (when waxing/strong); feminine; water element; rules Karkataka",
+    "Dasha Avatara": "Lord Krishna",
+    "Birthday (Tithi)": "Nandana Samvatsara, Karthika Masa, Shukla Pournami",
+    Gothra: "Atreya",
+    "Consorts / Wives": "27 Nakshatras (Rohini is his favourite)",
+    "Vehicle (Vahana)": "Sea Horse",
+    "Numerology Number": "2",
+    "Combustion Effect": "Mind filled with ego; cannot think clearly",
+    Portfolio: "Queen",
+    "Tatwa (Element)": "Jala (Water)",
+    Triguna: "Sathwa",
+    Varna: "Vysya",
+    Color: "White",
+    Metal: "Lead",
+    "Nava Dhanya": "Rice",
+    "Navarathna (Gemstone)": "Pearl",
+    Devatha: "Goddess Gouri, Rajarajeshwari",
+    Taste: "Salt",
+    "Drishti / Aspect": "7th house",
+    Flower: "White Lily",
+    Direction: "North West",
+    Letters: "य र ल व श ष स ह (Ya, Ra, La, Va, Sha, Sha, Sa, Ha)",
+    Education: "Psychology, Hotel Management, Marine Engineering, Hydraulics",
+    "Season (Ritu)": "Varsha (Rainy season)",
+    Gender: "Female",
+    Shape: "Crescent",
+    Parayana: "Soundarya Lahari",
+    Plants: "Banana Tree, Drumstick, Paddy Crops, Sugarcane",
+    "Months of Pregnancy": "5th & 9th month",
+    Spices: "Salt, Rice",
+    "Household Articles": "Washing machine, Cooking vessels, Water filter",
+    Animals: "Aquatic creatures",
+    Places: "Bathrooms, Tanks, Wells, Rivers, Distilleries, Ponds, Swimming pool",
+    "Beejakshari Mantra": "Om Shraam Shreem Shroum Sah Chandramase Namah"
+  },
+  Mars: {
+    "Sanskrit Name": "Mangala / Kuja",
+    Symbol: "♂",
+    "English Name": "Mars",
+    "Inner / Outer": "Outer",
+    "Days per Rashi": "~45–49 days",
+    "Time for Full Zodiac": "~1½ years",
+    "Direction of Motion": "Direct (occ. retrograde)",
+    "Aspects (Drishti)": "4th, 7th, 8th",
+    "Exaltation Rashi": "Makara",
+    "Deep Exaltation Degree": "28° Makara",
+    "Debilitation Rashi": "Karkataka",
+    "Deep Debilitation Degree": "28° Karkataka",
+    "Moola Trikona Range": "0°–12° Mesha",
+    "Own House (Swakshetra)": "Mesha, Vrischika",
+    "Soul / Mind / Body": "Protection (Key Word); Courage, Energy, Action",
+    Relationships: "Younger Brother",
+    "Profession / Status": "Commander in Chief; Dentist, Surgeon, Mechanic, Army, Security, Police, Fire engine dept, Supervisor, Engineer",
+    Reputation: "Bhoomi Karaka — Landed property; recognition through valour",
+    "Personality Traits": "Courageous, Aggressive, Energetic / Action-oriented, Adventurous, Hasty & Quick / Dynamic, Impulsive, Faithful, Egoistic / Arrogant, Stubborn / Dominating, Quarrelsome, Anger, Retaliating",
+    "Body Parts Ruled": "Muscle, Bone marrow, RBC, Eyebrow, Teeth, Menstrual cycle",
+    "Constitution (Tridosha)": "Pitta (Bile)",
+    "General Health Indicator": "Diseases: Cuts, Wounds, Bleeding, BP, Piles, Anemia, Accidents",
+    Nature: "Malefic; fiery; outer planet; karaka of energy, accidents, electricity, machinery, volcanic eruption",
+    "Dasha Avatara": "Lord Narasimha",
+    "Birthday (Tithi)": "Akshaya Samvatsara, Shravana Masa, Shukla Trayodashi",
+    Gothra: "Bharadwaja",
+    "Consorts / Wives": "Shakthi",
+    "Vehicle (Vahana)": "Red Ram",
+    "Numerology Number": "9",
+    "Combustion Effect": "Overconfident; feels can beat anyone",
+    Portfolio: "Commander in Chief",
+    "Tatwa (Element)": "Agni (Fire)",
+    Triguna: "Tamasik",
+    Varna: "Kshatriya",
+    Color: "Blood Red",
+    Metal: "Copper",
+    "Nava Dhanya": "Toor dhal",
+    "Navarathna (Gemstone)": "Red Coral",
+    Devatha: "Lord Karthikeya",
+    Taste: "Bitter",
+    "Drishti / Aspect": "4th, 7th & 8th house",
+    Flower: "Red rose, Champaka",
+    Direction: "South",
+    Letters: "क ख ग घ ङ (Ka, Kha, Ga, Gha, Nga)",
+    Education: "Engineering, Surgeon",
+    "Season (Ritu)": "Grishma (Summer season)",
+    Gender: "Male",
+    Shape: "Triangle",
+    Parayana: "Skanda Sashi Kavacham",
+    Plants: "Neem tree",
+    "Months of Pregnancy": "2nd month of Pregnancy",
+    Spices: "Red chilli, Onion, Garlic, Red gram",
+    "Household Articles": "Stove, Oven, Iron box, Heater, Grinder, Knives, Forks, Burnt cloth, Tools, Weapons, Electric meter",
+    Animals: "Dogs",
+    Places: "Operation theatres, Gym, Sports club, Subramanya temple, Battle field, Hospitals, Accident zones",
+    "Beejakshari Mantra": "Om Kraam Kreem Kroum Sah Bhaumaya Namah"
+  },
+  Mercury: {
+    "Sanskrit Name": "Budha",
+    Symbol: "☿",
+    "English Name": "Mercury",
+    "Inner / Outer": "Inner",
+    "Days per Rashi": "~24 days",
+    "Time for Full Zodiac": "~288 days",
+    "Direction of Motion": "Direct (occ. retrograde)",
+    "Aspects (Drishti)": "7th only (Saptama Drishti / Opposition, 180°)",
+    "Exaltation Rashi": "Kanya",
+    "Deep Exaltation Degree": "15° Kanya",
+    "Debilitation Rashi": "Meena",
+    "Deep Debilitation Degree": "15° Meena",
+    "Moola Trikona Range": "15°–20° Kanya",
+    "Own House (Swakshetra)": "Mithuna; Kanya (20°–30°)",
+    "Soul / Mind / Body": "Connection (Key Word); Intelligence, Knowledge / Information",
+    Relationships: "Maternal Uncle, Boy friend, Girl friend, Lover, Brokers",
+    "Profession / Status": "Prince (Portfolio); Teacher, Writer, Author, Broker, Publisher, Public speaker, Journalist, Trader, Ambassador, Accountant, Book seller",
+    Reputation: "Reputation through communication, speech, intellect and business",
+    "Personality Traits": "Intelligent, Educated, Knowledgeable, Speech-oriented, Business-minded, Friendly & Fun-loving, Cunning / Tricky, Diplomatic, Calculative, Smart, Adaptable",
+    "Body Parts Ruled": "Skin, Nerves, Tongue, Throat, Neck, Shoulder, Hands, Little finger, Forehead",
+    "Constitution (Tridosha)": "Vatha (Wind)",
+    "General Health Indicator": "Diseases: Skin disease, Itches, Sore throat, Tonsils, Dumbness, Leprosy",
+    Nature: "Neutral planet — takes the nature of the planet it associates with; Rajasic; karaka of communication and intellect",
+    "Dasha Avatara": "Buddha (Balarama)",
+    "Birthday (Tithi)": "Soumya Samvatsara, Jyeshta Masa, Krishna Ekadashi",
+    Gothra: "Atreya",
+    "Consorts / Wives": "Gnaani",
+    "Vehicle (Vahana)": "Yellow Lion",
+    "Numerology Number": "5",
+    "Combustion Effect": "Feels most intelligent",
+    Portfolio: "Prince",
+    "Tatwa (Element)": "Prithvi (Earth)",
+    Triguna: "Rajasic",
+    Varna: "Vysya",
+    Color: "Green",
+    Metal: "Brass",
+    "Nava Dhanya": "Green gram",
+    "Navarathna (Gemstone)": "Emerald",
+    Devatha: "Lord Vishnu",
+    Taste: "Mixed taste",
+    "Drishti / Aspect": "7th house",
+    Flower: "Yellow Flowers",
+    Direction: "North",
+    Letters: "त थ द ध न (Ta, Tha, Da, Dha, Na)",
+    Education: "Mathematics, Statistics",
+    "Season (Ritu)": "Sharad Ritu (Autumn)",
+    Gender: "Eunuch (Napumsaka)",
+    Shape: "Arrow",
+    Parayana: "Vishnu Sahasranama",
+    Plants: "Tulsi, Amala",
+    "Months of Pregnancy": "7th month of Pregnancy",
+    Spices: "Green gram",
+    "Household Articles": "Books, Pens, Study room, Hall, Documents",
+    Animals: "Cat, Fox (Cunning)",
+    Places: "Schools, Colleges, Commercial places, Library, Recreation clubs, Vishnu temple, Book stalls, Registration office, Printing press",
+    "Beejakshari Mantra": "Om Bram Breem Brown Sah Budhayay Namah"
+  },
+  Jupiter: {
+    "Sanskrit Name": "Guru / Brihaspati",
+    Symbol: "♃",
+    "English Name": "Jupiter",
+    "Inner / Outer": "Outer",
+    "Days per Rashi": "~1 year",
+    "Time for Full Zodiac": "~12 years",
+    "Direction of Motion": "Direct (occ. retrograde)",
+    "Aspects (Drishti)": "5th, 7th, 9th",
+    "Exaltation Rashi": "Karkataka",
+    "Deep Exaltation Degree": "5° Karkataka",
+    "Debilitation Rashi": "Makara",
+    "Deep Debilitation Degree": "5° Makara",
+    "Moola Trikona Range": "0°–10° Dhanur",
+    "Own House (Swakshetra)": "Dhanur, Meena",
+    "Soul / Mind / Body": "Wisdom & Knowledge (Gnana Karaka); Auspiciousness, Expansion, Divinity",
+    Relationships: "Children (Putra / Santana Karaka), Grandchildren, Elder Brother, Teachers",
+    "Profession / Status": "DevaGuru / Minister (Portfolio); Priest, Banker, Judge, Teacher, Counsellor, Financier, Auditor, Bullion trader",
+    Reputation: "Honour & Respect (Gauravam); reputation through wisdom, wealth (Dhana Karaka) and benevolence",
+    "Personality Traits": "Wise, Knowledgeable, Benevolent, Optimistic, Respectable, Generous, Spiritual, Just, Expansive",
+    "Body Parts Ruled": "Liver, Pancreas, Gall bladder, Stomach, Thighs, Index finger, Nose, Fat, Ear",
+    "Constitution (Tridosha)": "Vatha (Wind)",
+    "General Health Indicator": "Diseases: Jaundice, Liver complaints, Diabetes, Indigestion, Obesity, Flatulence",
+    Nature: "Most benevolent planet — greatest natural benefic (Subha Graha); Sathwik; Akasha tatwa",
+    "Dasha Avatara": "Vamana",
+    "Birthday (Tithi)": "Angirasa Samvatsara, Vaishaka Masa, Shukla Ekadashi",
+    Gothra: "Angirasa",
+    "Consorts / Wives": "Tara",
+    "Vehicle (Vahana)": "(later session)",
+    "Numerology Number": "3",
+    "Combustion Effect": "Feels he knows everything; no need of Guru/God",
+    Portfolio: "DevaGuru (Minister)",
+    "Tatwa (Element)": "Akasha (Ether)",
+    Triguna: "Sathwik",
+    Varna: "Brahmana",
+    Color: "Yellow",
+    Metal: "Gold",
+    "Nava Dhanya": "Bengal gram (Chana)",
+    "Navarathna (Gemstone)": "Yellow Sapphire (Kanaka Pushyaraga)",
+    Devatha: "Dakshina Murthy (Guru form of Shiva)",
+    Taste: "Sweet",
+    "Drishti / Aspect": "5th, 7th & 9th house (special aspects)",
+    Direction: "North East",
+    Letters: "त थ द ध न (Ta, Tha, Da, Dha, Na)",
+    Education: "Philosophy, Audit, Counselling",
+    "Season (Ritu)": "Hemantha Ritu",
+    Gender: "Male",
+    Shape: "Rectangle",
+    Parayana: "Dakshina Murthy Stotram",
+    Plants: "Peepal / Aswath Vruksha, Coconut tree, Apple tree",
+    "Months of Pregnancy": "3rd month",
+    Spices: "Honey, Coconut, Betel nut, Ghee, Turmeric",
+    "Household Articles": "Photographs of deities, articles used for Pooja, Pooja room",
+    Animals: "Cow, Swan, Elephant",
+    Places: "Treasury, Bank, Temples, Hermitage, Courts, Yoga & Meditation centres",
+    "Beejakshari Mantra": "ॐ ग्रां ग्रीं ग्रौं सः गुरुवे नमः ॥ (Om Graam Greem Groum Sah Gurave Namah)"
+  },
+  Venus: {
+    "Sanskrit Name": "Shukra",
+    Symbol: "♀",
+    "English Name": "Venus",
+    "Inner / Outer": "Inner",
+    "Days per Rashi": "~25–27 days",
+    "Time for Full Zodiac": "~324 days",
+    "Direction of Motion": "Direct (occ. retrograde)",
+    "Aspects (Drishti)": "7th only (Inner)",
+    "Exaltation Rashi": "Meena",
+    "Deep Exaltation Degree": "27° Meena",
+    "Debilitation Rashi": "Kanya",
+    "Deep Debilitation Degree": "27° Kanya",
+    "Moola Trikona Range": "0°–15° Tula",
+    "Own House (Swakshetra)": "Vrishabha, Tula",
+    "Soul / Mind / Body": "Pleasure & Love (Bhoga Karaka); Beauty, Romance, Artistic talent, Luxury",
+    Relationships: "Spouse / Wife (Kalatra Karaka), Daughter, Daughter-in-law, Aunt",
+    "Profession / Status": "Asura Guru / Shukracharya (Portfolio); Beautician, Costume designer, Artist, Musician, Singer, Dancer, Poet, Painter, Jeweller, Silk trader, Hotel & Event Management",
+    Reputation: "Reputation through beauty, artistic talent, luxury and charm",
+    "Personality Traits": "Pleasant, Artistic, Romantic, Charming, Sensual, Luxury-loving, Beauty-conscious, Refined",
+    "Body Parts Ruled": "Cheeks, Semen / Reproductive fluids, Kidneys, Luster of the eyes",
+    "Constitution (Tridosha)": "Kapha (Phlegmatic)",
+    "General Health Indicator": "Diseases: Diabetes, Kidney / Bladder stones, Urinary & hormonal disorders, Thyroid, Venereal diseases",
+    Nature: "Natural benefic; karaka of luxury, love & material comforts; Rajasic; Jala tatwa",
+    "Dasha Avatara": "Parashurama",
+    "Birthday (Tithi)": "Manmatha Samvatsara, Chaitra Masa, Shukla Ekadashi",
+    Gothra: "Bhargava",
+    "Consorts / Wives": "Sukeerthi",
+    "Vehicle (Vahana)": "(later session)",
+    "Numerology Number": "6",
+    "Combustion Effect": "Unnecessary expenses on comforts, pleasures, entertainment",
+    Portfolio: "Asura Guru (Shukracharya)",
+    "Tatwa (Element)": "Jala (Water)",
+    Triguna: "Rajasik",
+    Varna: "Brahmin",
+    Color: "Silky White",
+    Metal: "Silver",
+    "Nava Dhanya": "Cow gram (Avarebele)",
+    "Navarathna (Gemstone)": "Diamond",
+    Devatha: "Goddess Lakshmi (Mahalakshmi)",
+    Taste: "Sour",
+    "Drishti / Aspect": "7th house",
+    Direction: "South East",
+    Letters: "च छ ज झ ञ (Cha, Chha, Ja, Jha, Nya)",
+    Education: "Hotel Management, Event Management",
+    "Season (Ritu)": "Vasantha Ritu (Spring)",
+    Gender: "Female",
+    Shape: "Pentagonal",
+    Parayana: "Ashta Lakshmi Stotram",
+    Plants: "Fig tree (Audumbara Vriksha), White lotus",
+    "Months of Pregnancy": "1st month",
+    Spices: "Tamarind, Sugar",
+    "Household Articles": "Cot, bed, mat, clothes, dressing table, cosmetics, flower vase, perfume, mirror, musical instruments, silver articles, sandalwood, jewellery, silk, vehicles",
+    Animals: "Cow, Peacock",
+    Places: "Cinema theatres, Marriage halls, Discotheques, Malls, Beauty parlours, Pubs, Amusement parks, Gift shops, Liquor shops",
+    "Beejakshari Mantra": "ॐ द्रां द्रीं द्रौं सः शुक्राय नमः । (Om Draam Dreem Droum Sah Shukraya Namah)"
+  },
+  Saturn: {
+    "Sanskrit Name": "Shani",
+    Symbol: "♄",
+    "English Name": "Saturn",
+    "Inner / Outer": "Outer",
+    "Days per Rashi": "~2½ years",
+    "Time for Full Zodiac": "~30 years",
+    "Direction of Motion": "Direct (occ. retrograde)",
+    "Aspects (Drishti)": "3rd, 7th, 10th",
+    "Exaltation Rashi": "Tula",
+    "Deep Exaltation Degree": "20° Tula",
+    "Debilitation Rashi": "Mesha",
+    "Deep Debilitation Degree": "20° Mesha",
+    "Moola Trikona Range": "0°–20° Kumbha",
+    "Own House (Swakshetra)": "Makara, Kumbha",
+    "Soul / Mind / Body": "Body / Longevity (Ayus); dispenser of Karma",
+    Relationships: "Elder brother, elderly & poor people, servants, handicapped, masses, employees",
+    "Profession / Status": "Servants, labourers, cleaners, cobblers, iron/oil merchants, jailors, coffin makers, waste disposal",
+    Reputation: "Earned slowly through hard work; humble / low status",
+    "Personality Traits": "If strong: patient, disciplined, hardworking, philosophical. If weak: lazy, melancholic, inferiority complex",
+    "Body Parts Ruled": "Chin, middle finger, knees, knee-caps, buttocks, foreleg, feet",
+    "Constitution (Tridosha)": "Vatha",
+    "General Health Indicator": "Arthritis, chronic ailments, constipation, rheumatism, defective limbs, lethargy",
+    Nature: "Natural Malefic; Karma Phala Daata (hard task-master)",
+    "Dasha Avatara": "Koorma (Tortoise)",
+    "Birthday (Tithi)": "Vibhava Samvatsara, Jyeshta Masa, Krishna Paksha – Amavasya",
+    Gothra: "Kashyapa",
+    "Consorts / Wives": "Jyeshta Devi",
+    "Vehicle (Vahana)": "Crow / Buffalo",
+    "Numerology Number": "8",
+    "Combustion Effect": "Postpones work; thinks can finish in time even if late",
+    Portfolio: "Servants",
+    "Tatwa (Element)": "Vayu (Air)",
+    Triguna: "Tamasik",
+    Varna: "Sudra",
+    Color: "Dark Blue / Black",
+    Metal: "Iron",
+    "Nava Dhanya": "Black Til (Sesame)",
+    "Navarathna (Gemstone)": "Blue Sapphire (Neelam)",
+    Devatha: "Shiva / Hanuman",
+    Taste: "Astringent (Kashaya)",
+    "Drishti / Aspect": "3rd, 7th, 10th (Special Aspects)",
+    Direction: "West",
+    Letters: "प फ ब भ म (Pa, Pha, Ba, Bha, Ma)",
+    Education: "Mining, excavation",
+    "Season (Ritu)": "Shishira Ritu (Winter)",
+    Gender: "Eunuch (Napumsaka)",
+    Shape: "Bilva",
+    Parayana: "Rudra Suktam / Hanuman Chalisa",
+    Plants: "Banni tree (Shami)",
+    "Months of Pregnancy": "6th month of pregnancy",
+    Spices: "Oil, Mustard, Black Til, Coffee seed, Tobacco, bitter fruits & vegetables",
+    "Household Articles": "Door mat, dustbin, coal, cement, iron & steel, old articles, petrol, minerals, lead, footwear, cold items, ice",
+    Animals: "Buffalo, Bear, Pig, Crow",
+    Places: "Hospitals, garbage dumps, old buildings, remote/dark/dirty areas, graveyards, slums, oil mines",
+    "Beejakshari Mantra": "ॐ प्रां प्रीं प्रौं सः शनैश्चराय नमः । (Om Praam Preem Proum Sah Shanaishcharaya Namah)"
+  },
+  Rahu: {
+    "Sanskrit Name": "Rahu",
+    Symbol: "☊",
+    "English Name": "Ascending Node / Dragon Head",
+    "Inner / Outer": "Shadow planet",
+    "Days per Rashi": "~1½ years",
+    "Time for Full Zodiac": "~18 years",
+    "Direction of Motion": "Always Retrograde",
+    "Aspects (Drishti)": "(later session)",
+    "Exaltation Rashi": "Vrishabha",
+    "Deep Exaltation Degree": "(later session)",
+    "Debilitation Rashi": "Vrischika",
+    "Deep Debilitation Degree": "(later session)",
+    "Moola Trikona Range": "— (no MTR)",
+    "Own House (Swakshetra)": "— (no rulership)",
+    "Soul / Mind / Body": "(later session)",
+    Relationships: "(later session)",
+    "Profession / Status": "(later session)",
+    Reputation: "(later session)",
+    "Personality Traits": "(later session)",
+    "Body Parts Ruled": "(later session)",
+    "Constitution (Tridosha)": "(later session)",
+    "General Health Indicator": "(later session)",
+    Nature: "(later session)",
+    "Dasha Avatara": "(later session)",
+    "Birthday (Tithi)": "(later session)",
+    Gothra: "(later session)",
+    "Consorts / Wives": "(later session)",
+    "Vehicle (Vahana)": "(later session)",
+    "Numerology Number": "(later session)",
+    "Combustion Effect": "(later session)"
+  },
+  Ketu: {
+    "Sanskrit Name": "Ketu",
+    Symbol: "☋",
+    "English Name": "Descending Node / Dragon Tail",
+    "Inner / Outer": "Shadow planet",
+    "Days per Rashi": "~1½ years",
+    "Time for Full Zodiac": "~18 years",
+    "Direction of Motion": "Always Retrograde",
+    "Aspects (Drishti)": "(later session)",
+    "Exaltation Rashi": "Vrischika",
+    "Deep Exaltation Degree": "(later session)",
+    "Debilitation Rashi": "Vrishabha",
+    "Deep Debilitation Degree": "(later session)",
+    "Moola Trikona Range": "— (no MTR)",
+    "Own House (Swakshetra)": "— (no rulership)",
+    "Soul / Mind / Body": "(later session)",
+    Relationships: "(later session)",
+    "Profession / Status": "(later session)",
+    Reputation: "(later session)",
+    "Personality Traits": "(later session)",
+    "Body Parts Ruled": "(later session)",
+    "Constitution (Tridosha)": "(later session)",
+    "General Health Indicator": "(later session)",
+    Nature: "(later session)",
+    "Dasha Avatara": "(later session)",
+    "Birthday (Tithi)": "(later session)",
+    Gothra: "(later session)",
+    "Consorts / Wives": "(later session)",
+    "Vehicle (Vahana)": "(later session)",
+    "Numerology Number": "(later session)",
+    "Combustion Effect": "(later session)"
+  },
+};
+/* PLANET-PROFILE-END */
+
+/* CLASSIFICATION-USAGE-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* How each rāśi classification is used — from 'Classification Usage'. */
+const CLASSIFICATION_USAGE = [
+  { classification: "Odd / Even", usage: "Masculine (odd) = assertive outer energy; Feminine (even) = receptive. Used to find gender of siblings, children, etc., and shades Lagna/Moon personality." },
+  { classification: "Chara / Sthira / Dwisabhava", usage: "Chara = moveable, dynamic (travel often). Sthira = fixed (stable, stay in one place, determined). Dwisabhava = dual (adaptable or indecisive, calculative). More planets in Chara → frequent travel." },
+  { classification: "Tatwa (Agni/Vayu/Prithvi/Jala)", usage: "Elemental quality of the sign. Used for pariharas: Homa / lamps for Agni; Chanting mantras for Vayu; Charity for Prithvi; Abhisheka / Teertha for Jala. Also used in mundane astrology to flag natural-calamity signs." },
+  { classification: "Direction (NSEW)", usage: "Cardinal direction associated with the rāśi — favoured direction for the native in travel, residence and Prashna (missing-object queries)." },
+  { classification: "Varna", usage: "Brahmin (knowledge/spirituality), Kshatriya (leadership/valour), Vysya (trade/wealth), Shudra (service/craft). Used in match-making (Varna Koota) — male should be of equal or higher varna than female." },
+  { classification: "Purushartha", usage: "Dharma triangle (Mesha, Simha, Dhanur), Artha (Vrishaba, Kanya, Makara), Kama (Mithuna, Tula, Kumbha), Moksha (Karkataka, Vrischika, Meena). Direction of the native's outer-life orientation." },
+  { classification: "Triguna", usage: "Sathvik (religious, selfless), Rajasika (desires, pride, materialistic), Tamasika (lazy, carelessness, anger). Describes the inner-nature quality attached to the rāśi." },
+  { classification: "Constitution (Dhatu/Moola/Jeeva)", usage: "Dhatu = non-living (metals, minerals). Moola = plant-kingdom (life but no movement). Jeeva = living beings (humans, animals). Used in remedial purposes and in Prashna to identify a query category." },
+  { classification: "Fertility (Barren/Fruitful)", usage: "Jala-tatwa rāśis are the most fruitful; used to assess marriage/children. Barren signs can delay or deny progeny unless strongly supported." },
+  { classification: "Day / Night Strength", usage: "Diurnal signs are strongest during day; nocturnal during night. Used for timing (Muhūrta) and to pick auspicious hours for undertakings." },
+  { classification: "Rising Position (Shirsodaya / Prushtodaya / Ubhayodaya)", usage: "Shirsodaya (head-first rise) — favourable for undertakings. Prushtodaya (back-first) — less favourable at the start. Ubhayodaya (both) — mixed, depends on supporting planets." },
+  { classification: "Legs (Chatuspada / Dwipada / etc.)", usage: "Classification by number/kind of legs: 0-15° first half, 15-30° second half. Order of favourability: Vanachara > Dwipada > (Jalachara = Keeta = Chatuspada)." },
+  { classification: "Tridosha (Vatha/Pitha/Kapha)", usage: "Medical astrology: the body constitution and the dosha most likely to be disturbed. Pitha = heat/digestion/anger; Vatha = wind/nervous; Kapha = phlegm/water." },
+  { classification: "Colour", usage: "Lucky colour of the rāśi; wearing it strengthens that sign's significations and the ascendant's outer well-being." },
+  { classification: "Place", usage: "The physical/environmental place associated with the rāśi — where the body/mind feels most comfortable or at home." },
+  { classification: "Jyothirlinga", usage: "One of the 12 sacred Shiva Jyothirlingas associated with the rāśi — visiting this temple strengthens that house/body-part and brings peace." },
+  { classification: "Body Part (Kāla Puruṣa)", usage: "Body part of Kāla Puruṣa mapped to the rāśi — primary health focus area when that rāśi is the Lagna or holds difficult planets." },
+  { classification: "Mindset / Personality", usage: "Core personality traits (via Lagna) or mental landscape (via Moon rāśi) — read Lagna classifications outwardly, Moon classifications inwardly." },
+];
+/* CLASSIFICATION-USAGE-END */
+
+/* YOGA-RULES-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Named yogas (Budhaditya and future additions) — from 'Yoga Rules'. */
+const YOGA_RULES = [
+  {
+    name: "Budhaditya Yoga",
+    formation: "Sun and Mercury conjoin in the same rāśi.",
+    condition: "Mercury should not be combust (within 5° of Sun) for the yoga to give its full result; a wider orb is tolerable but the quality drops.",
+    effect: "Grants intellect, scholarship, articulation and good speech. Favours education, writing, teaching, business communication, publishing and administrative work. If the yoga sits in Kendra (1,4,7,10) or Trikona (1,5,9), the results are prominent; in Dusthana (6,8,12) results are muted or redirected toward research/the hidden.",
+    remedy: "Chant Mercury's mantra (\"Om Bram Breem Braum Sah Budhayay Namah\") and/or Aditya Hrudayam for Sun; study classical texts; respect teachers; donate green moong-dal on Wednesdays and copper or wheat on Sundays.",
+    notes: "If Mercury is combust the yoga becomes Nicha-Sambandha — overconfidence in intellect, difficulty accepting other viewpoints. See Combustion section."
+  },
+];
+/* YOGA-RULES-END */
+
+/* NODE-COMPARISON-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Rāhu vs Ketu side-by-side comparison — from 'Node Comparison'. */
+const NODE_COMPARISON = [
+  { attr: "Nature", rahu: "Shadow planet (chāyā graha), tangible / grasping / magnifying", ketu: "Shadow planet (chāyā graha), de-materialising / letting-go / spiritualising" },
+  { attr: "Astronomical", rahu: "Ascending (North) node of the Moon", ketu: "Descending (South) node of the Moon" },
+  { attr: "Motion", rahu: "Always retrograde — moves anti-clockwise", ketu: "Always retrograde — always opposite Rahu" },
+  { attr: "Direction (Karma)", rahu: "Looks outward — future-oriented, worldly ambition", ketu: "Looks inward — past-life karma, moksha-oriented" },
+  { attr: "Materialistic / Spiritual", rahu: "Materialistic — hunger for recognition, wealth, status", ketu: "Spiritual — detachment, renunciation, mysticism" },
+  { attr: "Illegal / Legal", rahu: "Breaks tradition and rules — unconventional, foreign, illegal shortcuts", ketu: "Does not care about rules — anchorite, outside the system" },
+  { attr: "Physical / Mental", rahu: "Primarily physical: strong appetites, obsession, bodily illness, intoxication", ketu: "Primarily mental: confusion, phobias, headaches, visions, electric-type ailments" },
+  { attr: "Ancestry / Lineage", rahu: "Paternal grandfather lineage; foreign ancestry; immigration", ketu: "Maternal grandfather lineage; ancestry of priests/sages" },
+  { attr: "Technology", rahu: "Modern technology, electronics, software, media, aviation, chemicals, poisons", ketu: "Occult sciences, mathematics, computer languages, surgery, forensics, alternative healing" },
+  { attr: "Age / Dasha window", rahu: "Rāhu daśā is 18 years long; peak material pursuit", ketu: "Ketu daśā is 7 years long; peak detachment / loss / unexpected release" },
+  { attr: "Body signification", rahu: "Big, swollen, bloated; teeth, bones (upper), ascending part of body", ketu: "Thin, small, fragmented; ankles, feet, descending part of body" },
+  { attr: "Food / Habits", rahu: "Over-eating, intoxicants, non-vegetarian, convenience food", ketu: "Fasting, austerity, fire-related food, bitter / strange tastes" },
+  { attr: "Negative keyword", rahu: "Illusion (māyā), obsession, deceit, addictions, foreign land disputes", ketu: "Confusion, isolation, loss, unexpected endings, cuts/injuries" },
+  { attr: "Positive keyword", rahu: "Fame, sudden gains, political power, mastery over foreign domains", ketu: "Mokṣa, spiritual insight, mystical ability, past-life recall" },
+  { attr: "Remedy family", rahu: "Durga worship; feed outcastes; keep home clean (Rahu = dust); surya namaskar", ketu: "Ganapathi worship (removes obstacles); feed stray dogs; keep horse-gram overnight; tonsure" },
+];
+/* NODE-COMPARISON-END */
 
 /* ============================================================
    2. CITIES DATABASE  (built-in geocoder)
@@ -4037,6 +4600,147 @@ function renderGrahaReference() {
   html += `<p class="akshara-note">Remedies are given in the course decks for Jupiter, Venus and Saturn; other grahas will be added as their session slides are supplied.</p>`;
   document.getElementById("akshara-body").innerHTML = html;
 }
+
+/* ===== Combustion (Astaṅgata) ===== */
+function renderCombustSection(sidereal) {
+  const el = document.getElementById("combust-body"); if (!el) return;
+  const order = ["Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+  const combust = [];
+  for (const p of order) {
+    if (isCombust(p, sidereal)) combust.push({ p, gap: sunGap(p, sidereal) });
+  }
+  let h = `<p>A planet within <strong>±5°</strong> of the Sun loses its lustre and is <em>combust</em> (Astaṅgata).
+    Because the Sun is ego, the combust planet's signification gets infused with ego.</p>`;
+  if (combust.length === 0) {
+    h += `<p><span class="section-flag flag-friend">No combust planets in this chart.</span></p>`;
+  } else {
+    h += `<div class="table-scroll"><table class="rtable"><thead><tr><th>Planet</th><th>Gap from Sun</th><th>Signifies</th><th>Effect while combust</th></tr></thead><tbody>`;
+    for (const c of combust) {
+      const ce = COMBUST_EFFECTS[c.p] || {};
+      h += `<tr><td><strong>${c.p}</strong></td><td>${c.gap.toFixed(2)}°</td>
+            <td>${_esc(ce.signifies || "")}</td><td>${_esc(ce.effect || "—")}</td></tr>`;
+    }
+    h += `</tbody></table></div>`;
+  }
+  h += `<p class="rnote">Combust Mercury (within 5° of Sun) is a special case — see the Budhāditya section below.</p>`;
+  el.innerHTML = h;
+}
+
+/* ===== Yoga Rules (Budhāditya + any added via workbook) ===== */
+function detectBudhaditya(sidereal) {
+  const sunR = rashiOf(sidereal.Sun).n;
+  const merR = rashiOf(sidereal.Mercury).n;
+  if (sunR !== merR) return { present:false, text:"Sun and Mercury are in different rāśis — Budhāditya not formed." };
+  const combust = isCombust("Mercury", sidereal);
+  return { present:true, combust, rashi:getRashi(sunR),
+    text: combust
+      ? "Sun and Mercury conjoin in the same rāśi, but Mercury is <strong>combust</strong> — the yoga is weakened; intellect is coloured by ego."
+      : "Sun and Mercury conjoin in the same rāśi, Mercury is not combust — Budhāditya is fully formed." };
+}
+
+function renderYogasSection(sidereal) {
+  const el = document.getElementById("yogas-body"); if (!el) return;
+  let h = "";
+  for (const y of YOGA_RULES) {
+    const isBudha = /budh.*ditya/i.test(y.name);
+    const det = isBudha ? detectBudhaditya(sidereal) : null;
+    h += `<div style="margin:0 0 22px; padding:14px 16px; border:1px solid var(--line); border-radius:8px; background:var(--parchment-2);">
+      <h4 class="pane-h" style="margin:0 0 8px;">${_esc(y.name)}</h4>`;
+    if (det) {
+      h += `<p>${det.present ? `<span class="section-flag flag-${det.combust ? 'debilitated' : 'friend'}">${det.combust ? 'Weakened' : 'Present'}</span>` : `<span class="section-flag">Not present</span>`} ${det.text}</p>`;
+    }
+    if (y.formation) h += `<p><strong>Formation:</strong> ${_esc(y.formation)}</p>`;
+    if (y.condition) h += `<p><strong>Condition:</strong> ${_esc(y.condition)}</p>`;
+    if (y.effect)    h += `<p><strong>Effect:</strong> ${_esc(y.effect)}</p>`;
+    if (y.remedy)    h += `<p><strong>Remedy:</strong> ${_esc(y.remedy)}</p>`;
+    if (y.notes)     h += `<p class="rnote">${_esc(y.notes)}</p>`;
+    h += `</div>`;
+  }
+  if (!YOGA_RULES.length) {
+    h = `<p class="rnote">No yogas defined yet in the workbook's <em>Yoga Rules</em> sheet.</p>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ===== Detailed Karakatwas (Planet Profile) ===== */
+function renderPlanetProfileSection() {
+  const el = document.getElementById("profile-body"); if (!el) return;
+  const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
+  let h = `<p>Full master table per planet — significations, body parts, places, remedies, mantras and other attributes. Source: workbook sheet <em>Planet Profile</em> (which copies from <em>Planet Characteristics</em>). Edit the Excel and re-publish to update.</p>`;
+  for (const p of order) {
+    const prof = PLANET_PROFILE[p]; if (!prof) continue;
+    const kvs = Object.entries(prof).filter(([_,v]) => v && v !== "(later session)");
+    if (!kvs.length) continue;
+    h += `<details style="margin:12px 0; border:1px solid var(--line); border-radius:8px; background:var(--parchment-2);">
+      <summary style="padding:10px 14px; font-family:'Cinzel',serif; cursor:pointer; color:var(--maroon);">
+        <strong>${GLYPH9[p] || ''} ${p}</strong> — ${_esc(prof['Sanskrit Name'] || prof['English Name'] || p)}
+      </summary>
+      <div class="table-scroll" style="padding:0 14px 14px;"><table class="rtable"><tbody>`;
+    for (const [k, v] of kvs) {
+      h += `<tr><th style="width:36%;">${_esc(k)}</th><td>${_esc(v)}</td></tr>`;
+    }
+    h += `</tbody></table></div></details>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ===== Rāśi Classifications usage ===== */
+function renderClassificationSection(lagnaRashi, moonRashi) {
+  const el = document.getElementById("classif-body"); if (!el) return;
+  let h = `<p>Each rāśi is classified in 21 ways in the <em>Reference Data</em> sheet. Here is how each classification is used in a reading — your Lagna rāśi (<strong>${lagnaRashi.sanskrit}</strong>) and your Moon rāśi (<strong>${moonRashi.sanskrit}</strong>) are shown for context.</p>`;
+  h += `<div class="table-scroll"><table class="rtable"><thead>
+    <tr><th>Classification</th><th>Lagna value</th><th>Moon-rāśi value</th><th>How it is used</th></tr></thead><tbody>`;
+  // Map classification to RASHI field name
+  const FIELD = {
+    "Odd / Even": "oddEven",
+    "Chara / Sthira / Dwisabhava": "mode",
+    "Tatwa (Agni/Vayu/Prithvi/Jala)": "tatwa",
+    "Direction (NSEW)": "direction",
+    "Varna": "varna",
+    "Purushartha": "purushartha",
+    "Triguna": "triguna",
+    "Constitution (Dhatu/Moola/Jeeva)": "constitution",
+    "Fertility (Barren/Fruitful)": "fertility",
+    "Day / Night Strength": "dayNight",
+    "Rising Position (Shirsodaya / Prushtodaya / Ubhayodaya)": "rising",
+    "Legs (Chatuspada / Dwipada / etc.)": "legs",
+    "Tridosha (Vatha/Pitha/Kapha)": "tridosha",
+    "Colour": "colour",
+    "Place": "place",
+    "Jyothirlinga": "jyothirlinga",
+    "Body Part (Kāla Puruṣa)": "bodyPart",
+    "Mindset / Personality": "traits",
+  };
+  for (const c of CLASSIFICATION_USAGE) {
+    const f = FIELD[c.classification];
+    let lv = "", mv = "";
+    if (f) {
+      lv = lagnaRashi[f]; mv = moonRashi[f];
+      if (Array.isArray(lv)) lv = lv.join(", ");
+      if (Array.isArray(mv)) mv = mv.join(", ");
+    }
+    h += `<tr><td><strong>${_esc(c.classification)}</strong></td>
+      <td>${_esc(lv || "—")}</td>
+      <td>${_esc(mv || "—")}</td>
+      <td>${_esc(c.usage)}</td></tr>`;
+  }
+  h += `</tbody></table></div>`;
+  el.innerHTML = h;
+}
+
+/* ===== Rāhu & Ketu Nature Comparison ===== */
+function renderNodeComparisonSection() {
+  const el = document.getElementById("nodes-body"); if (!el) return;
+  let h = `<p>Side-by-side nature of the two shadow planets. Source: workbook sheet <em>Node Comparison</em>.</p>`;
+  h += `<div class="table-scroll"><table class="rtable"><thead>
+    <tr><th>Attribute</th><th>Rāhu ☊</th><th>Ketu ☋</th></tr></thead><tbody>`;
+  for (const r of NODE_COMPARISON) {
+    h += `<tr><td><strong>${_esc(r.attr)}</strong></td><td>${_esc(r.rahu)}</td><td>${_esc(r.ketu)}</td></tr>`;
+  }
+  h += `</tbody></table></div>`;
+  el.innerHTML = h;
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -4214,6 +4918,13 @@ function generate() {
                          planetsByRashi);
   renderRemedies(lagnaRashi.tatwa, moonRashi.tatwa);
   renderGrahaReference();
+
+  // Five new sections (print-safe — rendered unconditionally so PDFs include them)
+  renderCombustSection(chart.sidereal);
+  renderYogasSection(chart.sidereal);
+  renderPlanetProfileSection();
+  renderClassificationSection(lagnaRashi, moonRashi);
+  renderNodeComparisonSection();
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName, lagnaLon };
   renderPredictive();
