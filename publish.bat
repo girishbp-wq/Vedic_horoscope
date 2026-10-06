@@ -4,9 +4,16 @@ REM  Jyotisha publish — one-click rebuild & push.
 REM
 REM  Workflow:
 REM    1. You edit Classification_for_Horoscope_Analysis_v7_1.xlsx and save.
-REM    2. You click the "PUBLISH TO GITHUB" button on the Input sheet.
+REM    2. In File Explorer, open:
+REM         C:\Users\bp_gi\OneDrive\Documents\GitHub\Vedic_horoscope
+REM       Double-click this file (publish.bat).
 REM    3. This script runs the Python extractor, commits the regenerated
-REM       index.html, and pushes to GitHub. GitHub Pages republishes.
+REM       index.html, and pushes to GitHub. GitHub Pages republishes
+REM       within ~1 minute at https://girishbp-wq.github.io/Vedic_horoscope/
+REM
+REM  (The Excel "PUBLISH TO GITHUB" button only works when the workbook is
+REM   opened in Desktop Excel, not Excel Online. Running this .bat
+REM   directly from File Explorer always works.)
 REM
 REM  Requirements on this machine:
 REM    - Python 3 on PATH         (python --version)
