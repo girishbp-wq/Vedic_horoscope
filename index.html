@@ -4713,7 +4713,12 @@ function detectBudhaditya(sidereal) {
 
 function renderYogasSection(sidereal) {
   const el = document.getElementById("yogas-body"); if (!el) return;
-  let h = "";
+  let h = `<p class="rnote" style="background:#fff5e5; border-left:3px solid var(--saffron); padding:10px 14px; margin:0 0 18px;">
+    <strong>Note:</strong> Named yogas (Budhāditya, Gaja Kesari, the Pañcha Mahā Puruṣa yogas, etc.) are
+    <em>not</em> taught in AVCI Sessions 1–22. The content below is a <strong>classical reference</strong>
+    from standard Vedic sources, provided as a working seed. When later sessions by Jyothish Āchārya
+    A.N. Śānti cover these topics, each row will be re-aligned to her exact wording.
+  </p>`;
   for (const y of YOGA_RULES) {
     const isBudha = /budh.*ditya/i.test(y.name);
     const det = isBudha ? detectBudhaditya(sidereal) : null;
