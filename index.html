@@ -894,7 +894,19 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
   font-family:inherit!important; font-size:12.5px!important; letter-spacing:.01em; padding:6px 6px!important; min-height:auto!important; }
 #btn-test-log:hover,#btn-manual:hover,#btn-clear:hover{ color:var(--maroon)!important; }
 .field .hint{ font-style:normal; color:var(--muted); font-size:12px; line-height:1.45; }
-@media print{ #reportNav{ display:none!important; } #report details.section{ display:block!important; box-shadow:none!important; } }
+@media print{
+  #reportNav{ display:none!important; }
+  #report details.section{ display:block!important; box-shadow:none!important; }
+  /* Reveal every tab pane in the Predictive & Remedies section so Daśā-Bhukti,
+     Transit, Rahu/Ketu, Kaala Sarpa, Remedies, Rahu Kaalam, Tārā Bala and
+     Muhūrta all print, not just the one that happened to be active on screen. */
+  #report .rpane{ display:block!important; margin-top:14px; }
+  /* Keep each pane headed by its tab name on print, since the tab bar is noise on paper. */
+  #report .rtab-bar{ display:none!important; }
+  #report .rpane::before{ content:attr(data-print-title); display:block;
+    font-family:'Cinzel',serif; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--maroon); margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+}
 @media (max-width:680px){ #reportNav{ top:0; padding:6px; } #reportNav button{ padding:8px 12px; font-size:10.5px; } #btn-generate{ margin-left:0; width:100%; } }
 </style>
 </head>
@@ -1071,7 +1083,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
           <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta</span>
         </summary>
         <div class="section-body">
-          <div class="report-tabs" id="reportTabs">
+          <div class="report-tabs rtab-bar" id="reportTabs">
             <button type="button" class="rtab active" data-tab="dasha">Daśā–Bhukti</button>
             <button type="button" class="rtab" data-tab="transit">Transit</button>
             <button type="button" class="rtab" data-tab="combos">Rahu / Ketu Combos</button>
@@ -1081,14 +1093,14 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
             <button type="button" class="rtab" data-tab="tarabala">Tārā Bala</button>
             <button type="button" class="rtab" data-tab="muhurta">Muhūrta</button>
           </div>
-          <div class="rpane" id="pane-dasha"></div>
-          <div class="rpane" id="pane-transit" style="display:none"></div>
-          <div class="rpane" id="pane-combos" style="display:none"></div>
-          <div class="rpane" id="pane-ksarpa" style="display:none"></div>
-          <div class="rpane" id="pane-remedies" style="display:none"></div>
-          <div class="rpane" id="pane-rahukaal" style="display:none"></div>
-          <div class="rpane" id="pane-tarabala" style="display:none"></div>
-          <div class="rpane" id="pane-muhurta" style="display:none"></div>
+          <div class="rpane" id="pane-dasha" data-print-title="Daśā–Bhukti"></div>
+          <div class="rpane" id="pane-transit" data-print-title="Transit (Gochara)" style="display:none"></div>
+          <div class="rpane" id="pane-combos" data-print-title="Rāhu / Ketu Combinations" style="display:none"></div>
+          <div class="rpane" id="pane-ksarpa" data-print-title="Kaala Sarpa" style="display:none"></div>
+          <div class="rpane" id="pane-remedies" data-print-title="Remedies" style="display:none"></div>
+          <div class="rpane" id="pane-rahukaal" data-print-title="Rāhu Kaalam" style="display:none"></div>
+          <div class="rpane" id="pane-tarabala" data-print-title="Tārā Bala" style="display:none"></div>
+          <div class="rpane" id="pane-muhurta" data-print-title="Muhūrta" style="display:none"></div>
         </div>
       </details>
 
