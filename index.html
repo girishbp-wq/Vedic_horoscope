@@ -1364,6 +1364,15 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <div class="section-body" id="nodes-body"></div>
       </details>
 
+      <details class="section">
+        <summary>
+          <span class="section-num">XV</span>
+          <span class="section-title">Face Mapping — Planets in the Human Face</span>
+          <span class="section-sub">Session 14 · each facial feature and its planetary ruler</span>
+        </summary>
+        <div class="section-body" id="face-body"></div>
+      </details>
+
       <div class="report-footer">
         <div>Drawn from the classifications of <em>Janma Lagna</em>, <em>Janma Rāśi</em>, the Tatwas and the Trigunas — as preserved in the classical Phalita Jyotisha tradition.</div>
         <div class="tag-row">
@@ -2340,6 +2349,24 @@ const NODE_COMPARISON = [
   { attr: "Birthday (Tithi)", rahu: "Pārthiva Saṁvatsara, Bhādrapada Māsa, Śukla Pūrṇamī", ketu: "Keelaka Saṁvatsara, Mārgaśira Māsa, Amāvāsyā" },
 ];
 /* NODE-COMPARISON-END */
+
+/* FACE-MAPPING-START — auto-generated from the Classification workbook by scripts/build_data.py */
+/* Planets in the human face — from 'Face Mapping' (Session 14). */
+const FACE_MAPPING = [
+  { feature: "Hair", planet: "Ketu", notes: "Hair quality, hair fall, premature greying, etc." },
+  { feature: "Forehead", planet: "Mercury", notes: "Shape and size of the forehead; intellectual visibility." },
+  { feature: "Eyebrows", planet: "Mars", notes: "Density, shape and expression of the eyebrows." },
+  { feature: "Right eye", planet: "Sun", notes: "Vision and health of the right eye; vitality." },
+  { feature: "Left eye", planet: "Moon", notes: "Vision and health of the left eye; emotional state." },
+  { feature: "Nose", planet: "Jupiter", notes: "Shape of the nose and the sense of smell." },
+  { feature: "Cheeks", planet: "Venus", notes: "Fullness, complexion and glow of the cheeks." },
+  { feature: "Mustache", planet: "Ketu", notes: "Mustache growth; keeping/removing it is a Venus–Ketu signal." },
+  { feature: "Beard", planet: "Ketu", notes: "Beard growth; related to Ketu-signified habits." },
+  { feature: "Mouth / Lips", planet: "Rahu", notes: "Shape of the lips; speech-related ailments; appetite." },
+  { feature: "Chin", planet: "Saturn", notes: "Shape of the chin; discipline and age shown here." },
+  { feature: "Neck", planet: "Mercury", notes: "Shape and strength of the neck; thyroid, voice, communication." },
+];
+/* FACE-MAPPING-END */
 
 /* ============================================================
    2. CITIES DATABASE  (built-in geocoder)
@@ -4787,6 +4814,23 @@ function renderNodeComparisonSection() {
   el.innerHTML = h;
 }
 
+/* ===== Face Mapping (Session 14 — Planets in the Human Face) ===== */
+function renderFaceMappingSection() {
+  const el = document.getElementById("face-body"); if (!el) return;
+  let h = `<p>Each facial feature is ruled by a specific graha. Problems or peculiarities of a feature are read via its planetary kāraka. Source: workbook sheet <em>Face Mapping</em> (Session 14).</p>`;
+  h += `<div class="table-scroll"><table class="rtable"><thead>
+    <tr><th>Facial feature</th><th>Planet (Kāraka)</th><th>Glyph</th><th>Reading notes</th></tr></thead><tbody>`;
+  for (const r of FACE_MAPPING) {
+    const glyph = (GLYPH9 && GLYPH9[r.planet]) ? GLYPH9[r.planet] : '';
+    h += `<tr><td><strong>${_esc(r.feature)}</strong></td>
+      <td>${_esc(r.planet)}</td>
+      <td style="text-align:center; font-size:1.1em;">${_esc(glyph)}</td>
+      <td>${_esc(r.notes)}</td></tr>`;
+  }
+  h += `</tbody></table></div>`;
+  el.innerHTML = h;
+}
+
 let currentChart = null;
 let selectedCity = null;
 
@@ -4971,6 +5015,7 @@ function generate() {
   renderPlanetProfileSection();
   renderClassificationSection(lagnaRashi, moonRashi);
   renderNodeComparisonSection();
+  renderFaceMappingSection();
 
   currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName, lagnaLon };
   renderPredictive();
