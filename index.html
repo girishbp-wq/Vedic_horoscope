@@ -522,6 +522,31 @@ details.section[open] > summary::after { content: "−"; }
 .rpane h4.pane-h { font-family: 'Cinzel', serif; color: var(--maroon); font-size: 15px; margin: 4px 0 10px; }
 .rlist { margin: 6px 0 10px 0; padding-left: 20px; }
 .rlist li { margin: 3px 0; }
+/* Ashtakavarga tab */
+.av-table th, .av-table td { text-align: center; padding: 5px 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.av-table th small { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.av-table th small.av-lag { color: var(--saffron); font-weight: 700; }
+.av-table td.av-planet { text-align: left; font-weight: 600; white-space: nowrap; padding-left: 9px; }
+.av-table td.av-planet small { font-weight: 500; color: var(--muted); }
+.av-table td.av-strong { background: #dcefd5; }
+.av-table td.av-avg { background: #fdf0c8; }
+.av-table td.av-weak { background: #f6d9d2; }
+.av-table td.av-self { outline: 2px solid var(--maroon); outline-offset: -2px; font-weight: 700; }
+.av-ok { color: var(--teal); }
+.av-table .av-abbr { display: none; }
+/* On paper nothing can scroll: fit both tables to the A4 page (English sign names only). */
+@media print {
+  #report .av-scroll { overflow: visible; border: 0; break-inside: avoid; page-break-inside: avoid; }
+  #report .av-table { table-layout: fixed; width: 100%; font-size: 9.5px; }
+  #report .av-table th, #report .av-table td { padding: 3px 1px; letter-spacing: 0; }
+  #report .av-table th { font-size: 7px; }
+  #report .av-table th small { font-size: 7.5px; color: var(--maroon); text-transform: uppercase; }
+  #report .av-table .av-skt, #report .av-table .av-eng { display: none; }
+  #report .av-table .av-abbr { display: inline; }
+  #report .av-table td.av-planet { white-space: normal; font-size: 9px; padding-left: 4px; }
+  #report .av-table th:first-child, #report .av-table td.av-planet { width: 17%; }
+  #report .av-table th:last-child { width: 8%; }
+}
 /* Horizontal-scroll wrapper for wide tables (e.g. Graha Attributes) */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 4px 0 8px; border: 1px solid var(--line); border-radius: 8px; }
 .table-scroll table { margin: 0; border: 0; }
@@ -898,8 +923,8 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
   #reportNav{ display:none!important; }
   #report details.section{ display:block!important; box-shadow:none!important; }
   /* Reveal every tab pane in the Predictive & Remedies section so Daśā-Bhukti,
-     Transit, Rahu/Ketu, Kaala Sarpa, Remedies, Rahu Kaalam, Tārā Bala and
-     Muhūrta all print, not just the one that happened to be active on screen. */
+     Transit, Rahu/Ketu, Kaala Sarpa, Remedies, Rahu Kaalam, Tārā Bala,
+     Muhūrta and Ashtakavarga all print, not just the one that happened to be active on screen. */
   #report .rpane{ display:block!important; margin-top:14px; }
   /* Keep each pane headed by its tab name on print, since the tab bar is noise on paper. */
   #report .rtab-bar{ display:none!important; }
@@ -1080,7 +1105,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
         <summary>
           <span class="section-num">P</span>
           <span class="section-title">Predictive &amp; Remedies</span>
-          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta</span>
+          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta · Ashtakavarga</span>
         </summary>
         <div class="section-body">
           <div class="report-tabs rtab-bar" id="reportTabs">
@@ -1092,6 +1117,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
             <button type="button" class="rtab" data-tab="rahukaal">Rahu Kaalam</button>
             <button type="button" class="rtab" data-tab="tarabala">Tārā Bala</button>
             <button type="button" class="rtab" data-tab="muhurta">Muhūrta</button>
+            <button type="button" class="rtab" data-tab="ashtakavarga">Ashtakavarga</button>
           </div>
           <div class="rpane" id="pane-dasha" data-print-title="Daśā–Bhukti"></div>
           <div class="rpane" id="pane-transit" data-print-title="Transit (Gochara)" style="display:none"></div>
@@ -1101,6 +1127,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
           <div class="rpane" id="pane-rahukaal" data-print-title="Rāhu Kaalam" style="display:none"></div>
           <div class="rpane" id="pane-tarabala" data-print-title="Tārā Bala" style="display:none"></div>
           <div class="rpane" id="pane-muhurta" data-print-title="Muhūrta" style="display:none"></div>
+          <div class="rpane" id="pane-ashtakavarga" data-print-title="Ashtakavarga" style="display:none"></div>
         </div>
       </details>
 
@@ -5693,6 +5720,161 @@ function renderMuhurtaPane(){
   try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){ console.warn('choghadiya',e); }
 }
 
+/* ===== Ashtakavarga — Bhinnāṣṭakavarga (BAV) & Sarvāṣṭakavarga (SAV) ===== */
+/* ASHTAKAVARGA-START — Parāśara tables; hand-maintained, mirrors ashtakavarga.py (test_cross_impl.py keeps them identical) */
+const ASHTAKAVARGA_PLANETS=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+const ASHTAKAVARGA_CONTRIBUTORS=[...ASHTAKAVARGA_PLANETS,"Lagna"];
+const ASHTAKAVARGA_EXPECTED={Sun:48,Moon:49,Mars:39,Mercury:54,Jupiter:56,Venus:52,Saturn:39};
+const ASHTAKAVARGA_SAV_TOTAL=337;
+/* RULES[target][contributor] = houses (counted from the contributor, 1 = its own sign) that give a bindu to the target planet. */
+const ASHTAKAVARGA_RULES={
+  Sun:{
+    Sun:[1,2,4,7,8,9,10,11],
+    Moon:[3,6,10,11],
+    Mars:[1,2,4,7,8,9,10,11],
+    Mercury:[3,5,6,9,10,11,12],
+    Jupiter:[5,6,9,11],
+    Venus:[6,7,12],
+    Saturn:[1,2,4,7,8,9,10,11],
+    Lagna:[3,4,6,10,11,12]
+  },
+  Moon:{
+    Sun:[3,6,7,8,10,11],
+    Moon:[1,3,6,7,9,10,11],
+    Mars:[2,3,5,6,10,11],
+    Mercury:[1,3,4,5,7,8,10,11],
+    Jupiter:[1,2,4,7,8,10,11],
+    Venus:[3,4,5,7,9,10,11],
+    Saturn:[3,5,6,11],
+    Lagna:[3,6,10,11]
+  },
+  Mars:{
+    Sun:[3,5,6,10,11],
+    Moon:[3,6,11],
+    Mars:[1,2,4,7,8,10,11],
+    Mercury:[3,5,6,11],
+    Jupiter:[6,10,11,12],
+    Venus:[6,8,11,12],
+    Saturn:[1,4,7,8,9,10,11],
+    Lagna:[1,3,6,10,11]
+  },
+  Mercury:{
+    Sun:[5,6,9,11,12],
+    Moon:[2,4,6,8,10,11],
+    Mars:[1,2,4,7,8,9,10,11],
+    Mercury:[1,3,5,6,9,10,11,12],
+    Jupiter:[6,8,11,12],
+    Venus:[1,2,3,4,5,8,9,11],
+    Saturn:[1,2,4,7,8,9,10,11],
+    Lagna:[1,2,4,6,8,10,11]
+  },
+  Jupiter:{
+    Sun:[1,2,3,4,7,8,9,10,11],
+    Moon:[2,5,7,9,11],
+    Mars:[1,2,4,7,8,10,11],
+    Mercury:[1,2,4,5,6,9,10,11],
+    Jupiter:[1,2,3,4,7,8,10,11],
+    Venus:[2,5,6,9,10,11],
+    Saturn:[3,5,6,12],
+    Lagna:[1,2,4,5,6,7,9,10,11]
+  },
+  Venus:{
+    Sun:[8,11,12],
+    Moon:[1,2,3,4,5,8,9,11,12],
+    Mars:[3,4,6,9,11,12],
+    Mercury:[3,5,6,9,11],
+    Jupiter:[5,8,9,10,11],
+    Venus:[1,2,3,4,5,8,9,10,11],
+    Saturn:[3,4,5,8,9,10,11],
+    Lagna:[1,2,3,4,5,8,9,11]
+  },
+  Saturn:{
+    Sun:[1,2,4,7,8,10,11],
+    Moon:[3,6,11],
+    Mars:[3,5,6,10,11,12],
+    Mercury:[6,8,9,10,11,12],
+    Jupiter:[5,6,11,12],
+    Venus:[6,11,12],
+    Saturn:[3,5,6,11],
+    Lagna:[1,3,4,6,10,11]
+  }
+};
+
+/* signs: {Sun..Saturn, Lagna} -> integer 0-11 (0 = Aries). Returns {bav:{planet:[12]}, sav:[12]}.
+   Throws if a sign is invalid or a rule table fails its classical bindu total. */
+function computeAshtakavarga(signs, rules=ASHTAKAVARGA_RULES){
+  const P=ASHTAKAVARGA_PLANETS, C=ASHTAKAVARGA_CONTRIBUTORS;
+  for(const k of Object.keys(signs)) if(!C.includes(k)) throw new Error(`unknown contributor: ${k}`);
+  for(const c of C){
+    if(!(c in signs)) throw new Error(`missing sign for ${c}`);
+    const v=signs[c];
+    if(!Number.isInteger(v)||v<0||v>11) throw new Error(`${c}: sign must be an integer 0-11, got ${v}`);
+  }
+  for(const t of P){
+    let total=0;
+    for(const c of C){
+      const hs=rules[t]&&rules[t][c];
+      if(!Array.isArray(hs)) throw new Error(`${t}: table must list all eight contributors`);
+      if(new Set(hs).size!==hs.length||!hs.every(h=>Number.isInteger(h)&&h>=1&&h<=12))
+        throw new Error(`${t} <- ${c}: houses must be unique, 1-12`);
+      total+=hs.length;
+    }
+    if(total!==ASHTAKAVARGA_EXPECTED[t])
+      throw new Error(`${t}: table has ${total} bindus, but the classical total is ${ASHTAKAVARGA_EXPECTED[t]}.`);
+  }
+  const bav={};
+  for(const t of P){
+    const counts=Array(12).fill(0);
+    for(const c of C) for(const h of rules[t][c]) counts[(signs[c]+h-1)%12]++;
+    bav[t]=counts;
+  }
+  const sav=Array.from({length:12},(_,s)=>P.reduce((a,t)=>a+bav[t][s],0));
+  return {bav, sav};
+}
+function ashtakavargaBavClass(v){ return v>=5?"av-strong":v>=3?"av-avg":"av-weak"; }
+function ashtakavargaSavClass(v){ return v>=30?"av-strong":v>=25?"av-avg":"av-weak"; }
+
+function renderAshtakavargaPane(sid, lagnaN){
+  const el=document.getElementById("pane-ashtakavarga"); if(!el) return;
+  const P=ASHTAKAVARGA_PLANETS, sum=a=>a.reduce((x,y)=>x+y,0);
+  let h=`<h4 class="pane-h">Ashtakavarga — bindus by sign</h4>`;
+  if(!(lagnaN>=1&&lagnaN<=12)){
+    el.innerHTML=h+`<p class="rnote">Ashtakavarga needs the Lagna, which is one of its eight contributors. Generate the horoscope with a birth time and place.</p>`;
+    return;
+  }
+  const signs={Lagna:lagnaN-1};
+  for(const p of P) signs[p]=rashiOf(sid[p]).n-1;
+  let r;
+  try{ r=computeAshtakavarga(signs); }
+  catch(e){ el.innerHTML=h+`<p class="rnote">Calculation stopped — ${_esc(e.message)}</p>`; return; }
+
+  const rs=Array.from({length:12},(_,i)=>getRashi(i+1));
+  const signHead=rs.map((x,i)=>`<th title="${_esc(x.english)}"><span class="av-skt">${_esc(x.sanskrit)}<br></span><small class="av-eng">${_esc(x.english)}</small><small class="av-abbr">${_esc(x.english.slice(0,3))}</small>${i===signs.Lagna?`<br><small class="av-lag">Lagna</small>`:""}</th>`).join("");
+
+  h+=`<p>Each of the eight contributors — the seven planets and the Lagna — gives a bindu to a planet's chart in the signs that fall in its favourable houses, counted from the contributor's own sign. Rāhu and Ketu take no part. Tables follow Bṛhat Parāśara Horā Śāstra, ch. 66.</p>`;
+  h+=`<h4 class="pane-h">Bhinnāṣṭakavarga (BAV) — one row per planet</h4>`;
+  h+=`<div class="table-scroll av-scroll"><table class="rtable av-table"><thead><tr><th>Planet</th>${signHead}<th>Total</th></tr></thead><tbody>`;
+  for(const p of P){
+    const row=r.bav[p], tot=sum(row);
+    h+=`<tr><td class="av-planet">${p} <small>in ${_esc(rs[signs[p]].english)}</small></td>`
+      +row.map((v,i)=>`<td class="${ashtakavargaBavClass(v)}${i===signs[p]?" av-self":""}">${v}</td>`).join("")
+      +`<td><strong>${tot}</strong>${tot===ASHTAKAVARGA_EXPECTED[p]?` <span class="av-ok" title="matches the classical total">✓</span>`:""}</td></tr>`;
+  }
+  h+=`</tbody></table></div>`;
+  h+=`<p class="rnote">Outlined cell = the planet's own natal sign. Shading: 5 or more bindus strong, 3–4 average, fewer than 3 weak.</p>`;
+
+  const savTotal=sum(r.sav);
+  h+=`<h4 class="pane-h">Sarvāṣṭakavarga (SAV) — all seven planets together</h4>`;
+  h+=`<div class="table-scroll av-scroll"><table class="rtable av-table"><thead><tr><th></th>${signHead}<th>Total</th></tr></thead><tbody>`;
+  h+=`<tr><td class="av-planet">House from Lagna</td>${rs.map((_,i)=>`<td>${(i-signs.Lagna+12)%12+1}</td>`).join("")}<td></td></tr>`;
+  h+=`<tr><td class="av-planet">SAV bindus</td>${r.sav.map(v=>`<td class="${ashtakavargaSavClass(v)}"><strong>${v}</strong></td>`).join("")}`
+    +`<td><strong>${savTotal}</strong>${savTotal===ASHTAKAVARGA_SAV_TOTAL?` <span class="av-ok" title="matches the classical total">✓</span>`:""}</td></tr>`;
+  h+=`</tbody></table></div>`;
+  h+=`<p class="rnote">The SAV always totals ${ASHTAKAVARGA_SAV_TOTAL} (average ≈ 28 per sign). Shading: 30 or more strong, 25–29 average, fewer than 25 weak. These are the unreduced (pre-śodhana) figures.</p>`;
+  el.innerHTML=h;
+}
+/* ASHTAKAVARGA-END */
+
 function renderPredictive(){
   if(!currentChart || !currentChart.chart) return;
   const sid=currentChart.chart.sidereal;
@@ -5706,6 +5888,7 @@ function renderPredictive(){
   renderRahukaalPane();
   renderTarabalaPane();
   renderMuhurtaPane();
+  renderAshtakavargaPane(sid, (currentChart.lagnaRashi && currentChart.lagnaRashi.n) || 0);
 }
 
 /* report-tab switching */
@@ -5714,7 +5897,7 @@ document.querySelectorAll("#reportTabs .rtab").forEach(btn=>{
     document.querySelectorAll("#reportTabs .rtab").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     const which=btn.dataset.tab;
-    ["dasha","transit","combos","ksarpa","remedies","rahukaal","tarabala","muhurta"].forEach(k=>{
+    ["dasha","transit","combos","ksarpa","remedies","rahukaal","tarabala","muhurta","ashtakavarga"].forEach(k=>{
       const pane=document.getElementById("pane-"+k); if(pane) pane.style.display=(k===which)?"":"none";
     });
   });
