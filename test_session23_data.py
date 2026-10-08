@@ -165,6 +165,23 @@ class CuratedContent(unittest.TestCase):
             self.assertIsNone(banned.search(t), t)
 
 
+class TaughtLayerExamples(unittest.TestCase):
+    def test_second_lord_in_seventh_is_taught_from_the_recording(self):
+        rows = [x for x in rules()["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (2, 7)]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["status"], "taught")
+        for frag in ("family business", "source of income", "income from your spouse"):
+            self.assertIn(frag, rows[0]["text"])
+        self.assertTrue(rows[0]["source"].strip())
+
+    def test_sun_in_mesha_is_taught_from_the_recording(self):
+        rows = [x for x in rules()["graha_rashi"] if (x["planet"], x["rashi"]) == ("Sun", 1)]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["status"], "taught")
+        for frag in ("Agni", "eastern", "Kshatriya", "courage", "hilly", "exalted", "full potential"):
+            self.assertIn(frag, rows[0]["text"])
+
+
 class WorkbookRoundTrip(unittest.TestCase):
     def test_json_matches_workbook(self):
         from_xlsx = b23.read_workbook(XLSX)
@@ -175,7 +192,7 @@ class WorkbookRoundTrip(unittest.TestCase):
         import openpyxl
         names = openpyxl.load_workbook(XLSX).sheetnames
         for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala",
-                  "DashaRoleText", "GrahaInBhava", "GrahaPair"):
+                  "DashaRoleText", "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi"):
             self.assertIn(n, names)
 
     def test_build_is_deterministic(self):

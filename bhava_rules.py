@@ -285,3 +285,161 @@ def watch_periods(rules, dasha, roles, now, years=10):
             out.append({"start": b["start"], "end": b["end"], "maha": t["lord"], "bhukti": b["lord"],
                         "roles": ordered, "kind": "caution" if "caution" in kinds else "favourable"})
     return sorted(out, key=lambda w: w["start"])
+
+
+# ---------------------------------------------------------------- prediction layers
+def ordinal(n):
+    if 10 <= n % 100 <= 20:
+        return f"{n}th"
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }"
+
+
+def _clean(text):
+    return text.strip().rstrip(".")
+
+
+def _pair_row(rules, a, b):
+    a, b = sorted((a, b), key=PLANET_ORDER.index)
+    return next(x for x in rules["graha_pair"] if (x["a"], x["b"]) == (a, b))
+
+
+def _dignity_texts(rules, d):
+    eff = rules["dignity_effect"].get(d["label"])
+    return (f"{d['label']}: {eff['text']}", eff["status"]) if eff else ("", None)
+
+
+def graha_bhava(rules, lagna, signs, planet, deg, waxing):
+    """Layer 1: the planet's cell text for its house, dignity line, digbala line and class readings."""
+    house = house_of(lagna, signs[planet])
+    cell = next(x for x in rules["graha_in_bhava"] if x["planet"] == planet and x["house"] == house)
+    dig = dignity(rules, planet, signs[planet], deg)
+    dignity_line, dignity_status = _dignity_texts(rules, dig)
+    reading = next(r for r in class_readings(rules, lagna, signs, waxing) if r["planet"] == planet)
+    dg = digbala(rules, planet, house)
+    row = rules["digbala"].get(planet)
+    if dg == "strong":
+        digbala_line = f"{planet} gains directional strength (digbala) in the {ordinal(house)} house."
+    elif dg == "lost":
+        digbala_line = (f"{planet} loses directional strength (digbala) in the {ordinal(house)} house, "
+                        f"opposite its strongest house, the {ordinal(row['strong'])}.")
+    else:
+        digbala_line = ""
+    return {"planet": planet, "house": house, "status": cell["status"], "points": cell["points"],
+            "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
+            "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
+            "classes": reading["classes"], "class_texts": reading["texts"]}
+
+
+def _short_name(nm):
+    return nm.split(" · ")[0].split(" (")[0]
+
+
+def _position_wording(rules, lagna, lord_of, sits_in):
+    if lord_of == sits_in:
+        return "The lord sits in its own bhava, so the matters of this house are protected and strengthened."
+    classes = [c for c in ("Kendra", "Trikona", "Dusthana") if sits_in in class_houses(rules, c, lagna)]
+    if not classes:
+        return f"The lord is placed in the {ordinal(sits_in)} house."
+    texts = [r["text"] for c in classes for r in rules["class_rules"]
+             if r["class"] == c and r["applies"] == "any" and sits_in not in r["exclude_houses"]]
+    return f"Placed in the {ordinal(sits_in)} house, a {' and '.join(classes)} bhava: " + " ".join(texts)
+
+
+def bhava_bhava(rules, lagna, signs):
+    """Layer 2: one entry per bhava lord — the lord's own bhava blended with the bhava it sits in."""
+    info = rules["reference"]["BHAVA_INFO"]
+    out = []
+    for h in range(1, 13):
+        lord = house_lord(rules, lagna, h)
+        sits = house_of(lagna, signs[lord])
+        taught = next((x for x in rules["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (h, sits)), None)
+        if taught:
+            text, status = taught["text"], taught["status"]
+        else:
+            a, b = info[str(h)], info[str(sits)]
+            text = (f"The lord of the {ordinal(h)} house ({_short_name(a['nm'])}) is placed in the {ordinal(sits)} house "
+                    f"({_short_name(b['nm'])}). Blend their karakatwas — {ordinal(h)} house: {_clean(a['sig'])}. "
+                    f"{ordinal(sits)} house: {_clean(b['sig'])}. People: {a['rel']} with {b['rel']}. "
+                    f"Body: {a['body']} with {b['body']}. {_position_wording(rules, lagna, h, sits)}")
+            status = "blend"
+        out.append({"lord_of": h, "lord": lord, "sits_in": sits, "text": text, "status": status})
+    return out
+
+
+def graha_rashi(rules, lagna, signs, degs):
+    """Layer 3: each planet in its rāśi — tatwa, direction, varna, mode — with the dignity strength line."""
+    out = []
+    for p in PLANET_ORDER:
+        if p not in signs:
+            continue
+        r = rules["reference"]["RASHI"][signs[p]]
+        dig = dignity(rules, p, signs[p], degs.get(p))
+        strength_line, _ = _dignity_texts(rules, dig)
+        taught = next((x for x in rules["graha_rashi"] if (x["planet"], x["rashi"]) == (p, signs[p] + 1)), None)
+        if taught:
+            text, status = taught["text"], taught["status"]
+        else:
+            text = (f"{p} in {r['sanskrit']} ({r['english']}): {r['tatwa']} tatwa, {r['direction']} direction, "
+                    f"{r['varna']} varna, {r['mode']} rāśi. The rāśi's traits: {', '.join(r['traits'])}. {strength_line}")
+            status = "blend"
+        out.append({"planet": p, "sign": signs[p], "rashi": r["sanskrit"], "english": r["english"],
+                    "house": house_of(lagna, signs[p]), "tatwa": r["tatwa"], "direction": r["direction"],
+                    "varna": r["varna"], "mode": r["mode"], "dignity": dig["label"], "strength_line": strength_line,
+                    "text": text, "status": status})
+    return out
+
+
+def graha_graha(rules, lagna, signs, degs=None):
+    """Layer 4: conjunctions (same rāśi) and special aspects between planets.
+
+    `degs` (planet -> degree in its sign) is optional; without it the combustion flag of a Sun conjunction is None."""
+    ref = rules["reference"]
+    combustible = set(ref["COMBUST_PLANETS"])
+    placed = [p for p in PLANET_ORDER if p in signs]
+    conjunctions = []
+    for i, a in enumerate(placed):
+        for b in placed[i + 1:]:
+            if signs[a] != signs[b]:
+                continue
+            row = _pair_row(rules, a, b)
+            combust, note = False, ""
+            if a == "Sun" and b in combustible:
+                if degs and degs.get(a) is not None and degs.get(b) is not None:
+                    combust = abs(degs[a] - degs[b]) <= ref["COMBUST_ORB"]
+                    if combust:
+                        effect = ref["PLANET_PROFILE"][b]["Combustion Effect"]
+                        note = f"{b} is within {ref['COMBUST_ORB']}° of the Sun (combust): {effect}."
+                else:
+                    combust = None
+            conjunctions.append({"a": a, "b": b, "house": house_of(lagna, signs[a]), "text": row["conjunction"],
+                                 "status": row["status"], "combust": combust, "combust_note": note})
+    aspects = []
+    for p in placed:
+        for h in ref["SPECIAL_ASPECTS"][p]:
+            target = (signs[p] + h - 1) % 12
+            for q in placed:
+                if q == p or signs[q] != target:
+                    continue
+                row = _pair_row(rules, p, q)
+                k = ref["KARAKATWAS"]
+                text = (f"{p}'s {ordinal(h)} aspect falls on {q}: {p}'s qualities ({k[p]['qualities']}) colour what "
+                        f"{q} signifies ({k[q]['signifies']}).")
+                if row["aspect"].strip():
+                    text += " " + row["aspect"]
+                aspects.append({"by": p, "to": q, "house_aspect": h, "house": house_of(lagna, signs[q]),
+                                "text": text, "status": row["status"] if row["aspect"].strip() else "blend",
+                                "jupiter_flag": p == "Jupiter"})
+    return {"conjunctions": conjunctions, "aspects": aspects}
+
+
+def five_step(rules, lagna, signs, house):
+    """The slide-25 checklist for one bhava: the bhava, its lord's position, occupants, aspects onto it, karakas."""
+    info = rules["reference"]["BHAVA_INFO"][str(house)]
+    sign = house_sign(lagna, house)
+    lord = house_lord(rules, lagna, house)
+    aspecting = [{"by": p, "house_aspect": h} for p in PLANET_ORDER if p in signs
+                 for h in rules["reference"]["SPECIAL_ASPECTS"][p] if (signs[p] + h - 1) % 12 == sign]
+    return {"house": house, "name": info["nm"], "significations": info["sig"], "sign": sign, "lord": lord,
+            "lord_house": house_of(lagna, signs[lord]) if lord in signs else None,
+            "occupants": occupants(lagna, signs)[house], "aspecting": aspecting,
+            "karakas": [{"planet": k, "house": house_of(lagna, signs[k])} for k in info["karaka"] if k in signs]}

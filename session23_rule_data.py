@@ -218,3 +218,23 @@ TAUGHT_PAIRS = [
          conjunction="Jupiter is the jiva karaka — the individual; Mercury is intelligence, education, communication, oration and business. Together the individual is very intelligent, or likes business, or is very good in communication.",
          aspect=""),
 ]
+
+
+# Layer 2 (bhava + bhava): the one combination the teacher worked through, from the recording (18:56).
+TAUGHT_BHAVA_LORD_IN = [
+    dict(lord_of=2, sits_in=7, status="taught", source="Recording, Session 23 (18:56–18:57): second lord in the seventh house",
+         text="Blend the karakatwas of the two bhavas. The 2nd talks about your family, your wealth, your speech, food; "
+              "the 7th is your spouse or your business. So the second lord in the seventh means you are in your family "
+              "business — second is family, seventh is business, so you might be continuing your family business. "
+              "Or the 2nd is your income, your source of income, and the 7th is your business, so your source of income "
+              "might be your business. The 7th is also the house of the spouse, so you might be getting income from your spouse."),
+]
+
+# Layer 3 (graha + rashi): the one combination the teacher worked through, from the recording (18:58).
+TAUGHT_GRAHA_RASHI = [
+    dict(planet="Sun", rashi=1, status="taught", source="Recording, Session 23 (18:58): Sun in Mesha rashi",
+         text="Mesha is an Agni tatwa rashi; it depicts the eastern direction, it is Kshatriya varna, it talks about courage "
+              "and it depicts hilly areas. When the Sun is in Mesha the Sun becomes exalted. The Sun is name and fame, "
+              "brightness, authority, leadership — the Sun is strong, so he is able to give his full potential when "
+              "he is posted in Mesha rashi."),
+]

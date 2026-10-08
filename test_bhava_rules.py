@@ -398,5 +398,124 @@ class DashaLinking(unittest.TestCase):
         self.assertEqual(moon_under_venus[0]["roles"], ["Dusthana lord", "Trishadaya lord"])
 
 
+MEENA = 11
+
+
+class PredictionLayers(unittest.TestCase):
+    def test_taught_examples_are_verbatim(self):
+        # layer 2: second lord (Mercury for Simha Lagna) in the 7th (Kumbha)
+        in7 = dict(SIGNS, Mercury=10)
+        row = next(r for r in br.bhava_bhava(RULES, LAGNA, in7) if (r["lord_of"], r["sits_in"]) == (2, 7))
+        want = next(x for x in RULES["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (2, 7))
+        self.assertEqual((row["status"], row["text"]), ("taught", want["text"]))
+        # layer 4: Jupiter and Mercury in one sign
+        both = dict(SIGNS, Jupiter=1)
+        pair = next(c for c in br.graha_graha(RULES, LAGNA, both)["conjunctions"] if (c["a"], c["b"]) == ("Mercury", "Jupiter"))
+        taught = next(x for x in RULES["graha_pair"] if (x["a"], x["b"]) == ("Mercury", "Jupiter"))
+        self.assertEqual((pair["status"], pair["text"]), ("taught", taught["conjunction"]))
+        # layer 3: Sun in Mesha
+        sun = next(r for r in br.graha_rashi(RULES, LAGNA, dict(SIGNS, Sun=0), {}) if r["planet"] == "Sun")
+        self.assertEqual(sun["status"], "taught")
+        self.assertIn("exalted", sun["text"])
+        self.assertIn("full potential", sun["text"])
+
+    def test_dignity_line_for_sun_in_meena_lagna(self):
+        exalted = br.graha_bhava(RULES, MEENA, dict(SIGNS, Sun=0), "Sun", None, True)       # Mesha is the 2nd
+        self.assertEqual(exalted["house"], 2)
+        self.assertTrue(exalted["dignity_line"].startswith("Exalted"))
+        self.assertIn("full force", exalted["dignity_line"])
+        weak = br.graha_bhava(RULES, MEENA, dict(SIGNS, Sun=6), "Sun", None, True)          # Tula is the 8th
+        self.assertEqual(weak["house"], 8)
+        self.assertTrue(weak["dignity_line"].startswith("Debilitated"))
+        self.assertIn("diminished", weak["dignity_line"])
+        deep = br.graha_bhava(RULES, MEENA, dict(SIGNS, Sun=0), "Sun", 10.4, True)
+        self.assertTrue(deep["dignity_line"].startswith("Deep Exalted"))
+
+    def test_graha_bhava_uses_the_cell_digbala_and_class_texts(self):
+        tenth = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Sun=1), "Sun", None, True)         # Vrishabha = 10th
+        self.assertEqual((tenth["house"], tenth["status"]), (10, "taught"))
+        self.assertIn("gains directional strength", tenth["digbala_line"])
+        self.assertEqual(tenth["digbala_status"], "taught")
+        self.assertTrue(tenth["points"] and tenth["extra"])
+        fourth = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Sun=7), "Sun", None, True)
+        self.assertIn("loses directional strength", fourth["digbala_line"])
+        jup = br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)                    # curated, 7th, Kendra
+        self.assertEqual((jup["house"], jup["status"]), (7, "curated"))
+        self.assertEqual(jup["classes"], ["Kendra", "Apachaya", "Maraka"])
+        self.assertEqual(jup["class_texts"], next(r for r in br.class_readings(RULES, LAGNA, SIGNS, True)
+                                                    if r["planet"] == "Jupiter")["texts"])
+        self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Venus", None, True)["digbala_line"], "")
+
+    def test_aspect_pairs_for_the_oracle_chart(self):
+        got = [(a["by"], a["to"], a["house_aspect"]) for a in br.graha_graha(RULES, LAGNA, SIGNS)["aspects"]]
+        self.assertEqual(got, [
+            ("Mars", "Moon", 4), ("Mars", "Saturn", 7), ("Mars", "Jupiter", 8), ("Mercury", "Ketu", 7),
+            ("Jupiter", "Sun", 5), ("Jupiter", "Venus", 5), ("Jupiter", "Moon", 9), ("Saturn", "Mars", 7),
+            ("Saturn", "Moon", 10), ("Rahu", "Saturn", 9), ("Ketu", "Mars", 9), ("Ketu", "Moon", 12)])
+        flags = {a["by"]: a["jupiter_flag"] for a in br.graha_graha(RULES, LAGNA, SIGNS)["aspects"]}
+        self.assertEqual([k for k, v in flags.items() if v], ["Jupiter"])
+
+    def test_oracle_conjunctions(self):
+        conj = br.graha_graha(RULES, LAGNA, SIGNS)["conjunctions"]
+        self.assertEqual([(c["a"], c["b"], c["house"]) for c in conj], [("Sun", "Venus", 11), ("Mercury", "Rahu", 10)])
+        self.assertTrue(all(c["text"] and c["status"] == "curated" for c in conj))
+
+    def test_combustion_note_only_for_a_close_sun_conjunction(self):
+        unknown = br.graha_graha(RULES, LAGNA, SIGNS)["conjunctions"][0]
+        self.assertIsNone(unknown["combust"])
+        near = br.graha_graha(RULES, LAGNA, SIGNS, {"Sun": 10.0, "Venus": 14.9})["conjunctions"][0]
+        self.assertTrue(near["combust"])
+        self.assertIn(RULES["reference"]["PLANET_PROFILE"]["Venus"]["Combustion Effect"], near["combust_note"])
+        far = br.graha_graha(RULES, LAGNA, SIGNS, {"Sun": 10.0, "Venus": 15.1})["conjunctions"][0]
+        self.assertFalse(far["combust"])
+        self.assertEqual(far["combust_note"], "")
+        nodes = br.graha_graha(RULES, LAGNA, dict(SIGNS, Rahu=2), {"Sun": 10.0, "Rahu": 11.0})["conjunctions"]
+        self.assertFalse(next(c for c in nodes if (c["a"], c["b"]) == ("Sun", "Rahu"))["combust"])
+
+    def test_five_step_for_the_seventh_house(self):
+        f = br.five_step(RULES, LAGNA, SIGNS, 7)
+        self.assertEqual((f["house"], f["sign"], f["lord"], f["lord_house"]), (7, 10, "Saturn", 6))
+        self.assertEqual(f["occupants"], ["Jupiter"])
+        self.assertEqual(f["aspecting"], [{"by": "Mars", "house_aspect": 8}])
+        self.assertEqual(f["karakas"], [{"planet": "Venus", "house": 11}])
+        self.assertIn("Spouse", f["significations"])
+
+    def test_bhava_bhava_blends_and_marks_own_house(self):
+        rows = br.bhava_bhava(RULES, LAGNA, SIGNS)
+        self.assertEqual([r["lord_of"] for r in rows], list(range(1, 13)))
+        mars = next(r for r in rows if r["lord_of"] == 4)                    # Mars owns the 4th, sits in the 12th
+        self.assertEqual((mars["lord"], mars["sits_in"], mars["status"]), ("Mars", 12, "blend"))
+        self.assertIn("Dusthana", mars["text"])
+        self.assertIn(RULES["reference"]["BHAVA_INFO"]["4"]["sig"].rstrip("."), mars["text"])
+        self.assertIn(RULES["reference"]["BHAVA_INFO"]["12"]["sig"].rstrip("."), mars["text"])
+        own = next(r for r in br.bhava_bhava(RULES, LAGNA, dict(SIGNS, Sun=4)) if r["lord_of"] == 1)
+        self.assertEqual(own["sits_in"], 1)
+        self.assertIn("own bhava", own["text"])
+
+    def test_graha_rashi_blends_rashi_fields_and_dignity(self):
+        moon = next(r for r in br.graha_rashi(RULES, LAGNA, SIGNS, {"Moon": 5.0}) if r["planet"] == "Moon")
+        tula = RULES["reference"]["RASHI"][6]
+        self.assertEqual((moon["tatwa"], moon["direction"], moon["varna"], moon["mode"]),
+                         (tula["tatwa"], tula["direction"], tula["varna"], tula["mode"]))
+        self.assertEqual(moon["status"], "blend")
+        self.assertEqual(moon["dignity"], "Neutral House")                   # Libra is Venus's; Moon-Venus are neutral
+        self.assertTrue(moon["strength_line"].startswith("Neutral House"))
+        self.assertIn(tula["sanskrit"], moon["text"])
+
+    def test_every_status_tag_present(self):
+        chart = dict(SIGNS, Mercury=10, Sun=0, Jupiter=1, Moon=7)
+        seen = set()
+        for p in br.PLANET_ORDER:
+            g = br.graha_bhava(RULES, LAGNA, chart, p, None, True)
+            seen |= {g["status"], g["digbala_status"], g["dignity_status"]}
+        seen |= {r["status"] for r in br.bhava_bhava(RULES, LAGNA, chart)}
+        seen |= {r["status"] for r in br.graha_rashi(RULES, LAGNA, chart, {})}
+        gg = br.graha_graha(RULES, LAGNA, chart)
+        seen |= {c["status"] for c in gg["conjunctions"]} | {a["status"] for a in gg["aspects"]}
+        seen.discard(None)
+        self.assertTrue({"taught", "curated", "blend", "standard"} <= seen, seen)
+        self.assertLessEqual(seen, {"taught", "curated", "blend", "standard"})
+
+
 if __name__ == "__main__":
     unittest.main()

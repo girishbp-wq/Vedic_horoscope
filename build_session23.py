@@ -55,6 +55,8 @@ SHEETS = {
     "DashaRoleText": ["Role", "Kind", "Text", "Slide"],
     "GrahaInBhava": ["Planet", "House", "Points", "Extra", "Status", "Source"],
     "GrahaPair": ["A", "B", "Conjunction", "Aspect", "Status", "Source"],
+    "BhavaLordIn": ["LordOf", "SitsIn", "Text", "Status", "Source"],
+    "GrahaRashi": ["Planet", "Rashi", "Text", "Status", "Source"],
 }
 
 
@@ -82,6 +84,9 @@ def seed_rows():
                           r["status"], r["source"]] for r in d.SUN_ROWS],
         "GrahaPair": [[r["a"], r["b"], r["conjunction"], r["aspect"], r["status"], r["source"]]
                       for r in d.TAUGHT_PAIRS],
+        "BhavaLordIn": [[r["lord_of"], r["sits_in"], r["text"], r["status"], r["source"]]
+                        for r in d.TAUGHT_BHAVA_LORD_IN],
+        "GrahaRashi": [[r["planet"], r["rashi"], r["text"], r["status"], r["source"]] for r in d.TAUGHT_GRAHA_RASHI],
     }
     try:  # rows authored in later tasks
         import session23_curated as cur
@@ -153,6 +158,10 @@ def read_workbook(path):
                                   status=r[4], source=_s(r[5])) for r in _sheet_rows(wb, "GrahaInBhava")]
     out["graha_pair"] = [dict(a=r[0], b=r[1], conjunction=_s(r[2]), aspect=_s(r[3]), status=r[4], source=_s(r[5]))
                          for r in _sheet_rows(wb, "GrahaPair")]
+    out["bhava_lord_in"] = [dict(lord_of=int(r[0]), sits_in=int(r[1]), text=_s(r[2]), status=r[3], source=_s(r[4]))
+                            for r in _sheet_rows(wb, "BhavaLordIn")]
+    out["graha_rashi"] = [dict(planet=r[0], rashi=int(r[1]), text=_s(r[2]), status=r[3], source=_s(r[4]))
+                          for r in _sheet_rows(wb, "GrahaRashi")]
     return out
 
 
