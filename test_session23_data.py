@@ -9,7 +9,6 @@ import unittest
 import build_session23 as b23
 
 ROOT = pathlib.Path(__file__).resolve().parent
-XLSX = ROOT / "Session23_Rules.xlsx"
 JSON_PATH = ROOT / "session23_rules.json"
 INDEX = ROOT / "index.html"
 STATUSES = {"taught", "curated", "blend", "standard"}
@@ -203,24 +202,69 @@ class TaughtLayerExamples(unittest.TestCase):
 
 
 class WorkbookRoundTrip(unittest.TestCase):
-    def test_json_matches_workbook(self):
-        from_xlsx = b23.read_workbook(XLSX)
+    """The S23_ sheets are the source of truth; these tests check that writing them and reading them back is lossless."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+        import make_session23_xlsx as mx
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.xlsx = pathlib.Path(cls.tmp.name, "export.xlsx")
+        mx.build_workbook(cls.xlsx)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_json_matches_an_exported_workbook(self):
+        from_xlsx = b23.read_workbook(self.xlsx)
         from_json = {k: v for k, v in rules().items() if k not in ("reference", "meta")}
         self.assertEqual(from_xlsx, from_json)
 
-    def test_workbook_sheets(self):
+    def test_exported_workbook_has_the_prefixed_sheets(self):
         import openpyxl
-        names = openpyxl.load_workbook(XLSX).sheetnames
-        for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala",
-                  "DashaRoleText", "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi"):
-            self.assertIn(n, names)
+        names = openpyxl.load_workbook(self.xlsx).sheetnames
+        for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala", "DashaRoleText",
+                  "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi", "Chart", "Classes_Calc", "Roles_Calc",
+                  "Dasha_Calc", "Predict_Calc", "Ref_Calc"):
+            self.assertIn("S23_" + n, names)
 
-    def test_build_is_deterministic(self):
+    def test_build_reproduces_the_json_from_a_workbook(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:
-            x, j = pathlib.Path(d, "r.xlsx"), pathlib.Path(d, "r.json")
-            b23.build(x, j, INDEX, seed=True)
+            j = pathlib.Path(d, "r.json")
+            b23.build(self.xlsx, j, INDEX, reference=rules()["reference"])
             self.assertEqual(json.loads(j.read_text(encoding="utf-8")), rules())
+
+    def test_reference_is_assembled_from_the_master_sheets_with_the_page_builders_loaders(self):
+        ref = rules()["reference"]
+
+        class BuildData:       # stands in for scripts/build_data.py; returns what its loaders return for this workbook
+            load_rashi = staticmethod(lambda wb: [{k: v for k, v in r.items() if k != "lord"} for r in ref["RASHI"]])
+            load_dignity = staticmethod(lambda wb: ({int(n): v for n, v in ref["RASHI_DIGNITY"].items()},
+                                                    {r["n"]: r["lord"] for r in ref["RASHI"]}))
+            load_planets = staticmethod(lambda wb: {k: ref[k] for k in ("DIGNITY_DEG", "NATURAL_FRIENDS", "KARAKATWAS", "SPECIAL_ASPECTS")})
+            derive_own_houses = staticmethod(lambda lords: ref["PLANET_OWN_HOUSES"])
+            load_bhava_info = staticmethod(lambda wb: {int(h): v for h, v in ref["BHAVA_INFO"].items()})
+            load_nakshatras = staticmethod(lambda wb: {"NAKSHATRAS": ref["NAKSHATRAS"]})
+            load_planet_profile = staticmethod(lambda wb: ref["PLANET_PROFILE"])
+
+        self.assertEqual(b23.reference_from_workbook(None, BuildData), ref)
+
+    def test_master_workbook_is_found_the_way_build_data_finds_it(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            for name in ("Classification_for_Horoscope_Analysis_v7_1.before-session23-2026-10-08.xlsx",
+                         "Classification_for_Horoscope_Analysis_v8.xlsx", "Classification_for_Horoscope_Analysis_v7_1.xlsx"):
+                pathlib.Path(d, name).write_bytes(b"x")
+            self.assertEqual(b23.find_master(d).name, "Classification_for_Horoscope_Analysis_v7_1.xlsx")
+            pathlib.Path(d, "Classification_for_Horoscope_Analysis_v7_1.xlsx").unlink()
+            self.assertEqual(b23.find_master(d).name, "Classification_for_Horoscope_Analysis_v8.xlsx")
+
+    def test_publish_bat_builds_session23_after_the_page_data_and_stages_the_json(self):
+        bat = (ROOT / "publish.bat").read_text(encoding="utf-8")
+        self.assertLess(bat.index("scripts\\build_data.py"), bat.index("build_session23.py"))
+        self.assertIn("git add index.html session23_rules.json", bat)
 
 
 NODE = shutil.which("node")

@@ -7,8 +7,9 @@ REM    1. You edit Classification_for_Horoscope_Analysis_v7_1.xlsx and save.
 REM    2. In File Explorer, open:
 REM         C:\Users\bp_gi\OneDrive\Documents\GitHub\Vedic_horoscope
 REM       Double-click this file (publish.bat).
-REM    3. This script runs the Python extractor, commits the regenerated
-REM       index.html, and pushes to GitHub. GitHub Pages republishes
+REM    3. This script runs the Python extractors (scripts\build_data.py and
+REM       build_session23.py), commits the regenerated index.html and
+REM       session23_rules.json, and pushes to GitHub. GitHub Pages republishes
 REM       within ~1 minute at https://girishbp-wq.github.io/Vedic_horoscope/
 REM
 REM  (The Excel "PUBLISH TO GITHUB" button only works when the workbook is
@@ -50,7 +51,7 @@ if errorlevel 1 (
 )
 
 REM Rebuild index.html from the workbook
-echo [1/4] Rebuilding index.html from the workbook...
+echo [1/5] Rebuilding index.html from the workbook...
 python scripts\build_data.py
 if errorlevel 1 (
     echo.
@@ -59,10 +60,21 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Session 23 (bhava classes, prediction layers, dasha roles): the S23_ sheets of the same workbook
+echo.
+echo [2/5] Rebuilding the Session 23 data from the S23_ sheets...
+python build_session23.py
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Session 23 build failed. See message above.
+    pause
+    exit /b 1
+)
+
 REM Stage only the file that goes into git
 echo.
-echo [2/4] Staging index.html...
-git add index.html
+echo [3/5] Staging index.html and session23_rules.json...
+git add index.html session23_rules.json
 
 REM If nothing changed, stop here with a friendly note
 git diff --cached --quiet
@@ -75,7 +87,7 @@ if %errorlevel%==0 (
 )
 
 echo.
-echo [3/4] Committing...
+echo [4/5] Committing...
 for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set DT=%%a
 set STAMP=%DT:~0,4%-%DT:~4,2%-%DT:~6,2% %DT:~8,2%:%DT:~10,2%
 git commit -m "Rebuild index.html from workbook (%STAMP%)"
@@ -86,7 +98,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/4] Pushing to GitHub...
+echo [5/5] Pushing to GitHub...
 git push
 if errorlevel 1 (
     echo.

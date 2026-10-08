@@ -756,7 +756,6 @@ try:
 except ImportError:  # pragma: no cover
     openpyxl = None
 
-SHIPPED_XLSX = ROOT / "Session23_Rules.xlsx"
 CALC_NOW = None
 
 
@@ -851,7 +850,7 @@ class ExcelSession23(unittest.TestCase):
     def test_class_tables_equal_python(self):
         mx = self.mx
         for i, c, wb in self.each(24):
-            ws = wb["Classes_Calc"]
+            ws = wb[mx.PREFIX + "Classes_Calc"]
             want = br.classification_tables(RULES, c["lagna"], c["signs"])
             for name in br.CLASS_ORDER:
                 rows = [r for r in range(mx.CLASS_ROW0, mx.CLASS_ROW0 + mx.CLASS_ROWS) if ws.cell(row=r, column=1).value == name]
@@ -864,7 +863,7 @@ class ExcelSession23(unittest.TestCase):
     def test_matrix_and_badhaka_equal_python(self):
         mx = self.mx
         for i, c, wb in self.each(24):
-            ws = wb["Classes_Calc"]
+            ws = wb[mx.PREFIX + "Classes_Calc"]
             want = br.house_class_matrix(RULES, c["lagna"])
             got = [[ws.cell(row=mx.MATRIX_ROW0 + 1 + h, column=3 + k).value for k in range(10)] for h in range(12)]
             self.assertEqual(got, [[1 if n in r["classes"] else 0 for n in br.CLASS_ORDER] for r in want], i)
@@ -879,7 +878,7 @@ class ExcelSession23(unittest.TestCase):
     def test_roles_equal_python(self):
         mx = self.mx
         for i, c, wb in self.each(24):
-            ws = wb["Roles_Calc"]
+            ws = wb[mx.PREFIX + "Roles_Calc"]
             want = br.planet_roles(RULES, c["lagna"], c["signs"])
             for k, p in enumerate(br.PLANET_ORDER):
                 r = mx.ROLES_ROW0 + k
@@ -891,7 +890,7 @@ class ExcelSession23(unittest.TestCase):
     def test_graha_bhava_text_equals_python(self):
         mx = self.mx
         for i, c, wb in self.each(24):
-            ws = wb["Predict_Calc"]
+            ws = wb[mx.PREFIX + "Predict_Calc"]
             for k, p in enumerate(br.PLANET_ORDER):
                 r = mx.PREDICT_ROW0 + k
                 want = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
@@ -912,7 +911,7 @@ class ExcelSession23(unittest.TestCase):
         mx = self.mx
         seen = set()
         for i, c, wb in self.each():
-            ws = wb["Predict_Calc"]
+            ws = wb[mx.PREFIX + "Predict_Calc"]
             for k, p in enumerate(br.PLANET_ORDER):
                 got = ws.cell(row=mx.PREDICT_ROW0 + k, column=mx.PREDICT_COLS["dignity"]).value
                 want = br.dignity(RULES, p, c["signs"][p], c["degs"][p])["label"]
@@ -924,7 +923,7 @@ class ExcelSession23(unittest.TestCase):
     def test_dasha_dates_equal_python(self):
         mx = self.mx
         for i, c, wb in self.each(24):
-            ws = wb["Dasha_Calc"]
+            ws = wb[mx.PREFIX + "Dasha_Calc"]
             moon_lon = c["signs"]["Moon"] * 30 + c["degs"]["Moon"]
             d = br.vimshottari(RULES, moon_lon, c["birth"], self.now)
             rows = [(t["lord"], b["lord"], b["start"], b["end"]) for t in d["timeline"] for b in t["bhuktis"]]
@@ -943,38 +942,117 @@ class ExcelSession23(unittest.TestCase):
         for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala", "DashaRoleText",
                   "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi", "Chart", "Classes_Calc", "Roles_Calc",
                   "Dasha_Calc", "Predict_Calc", "Ref_Calc"):
-            self.assertIn(n, wb.sheetnames)
-        self.assertEqual([wb["Roles_Calc"].cell(row=2, column=2 + j).value for j in range(6)], br.ROLE_ORDER)
-        self.assertEqual([wb["Classes_Calc"].cell(row=mx.MATRIX_ROW0, column=3 + k).value for k in range(10)], br.CLASS_ORDER)
-        self.assertEqual(wb["GrahaInBhava"].cell(row=1, column=3).value, "Points")
+            self.assertIn(mx.PREFIX + n, wb.sheetnames)
+        self.assertEqual([wb[mx.PREFIX + "Roles_Calc"].cell(row=2, column=2 + j).value for j in range(6)], br.ROLE_ORDER)
+        self.assertEqual([wb[mx.PREFIX + "Classes_Calc"].cell(row=mx.MATRIX_ROW0, column=3 + k).value for k in range(10)], br.CLASS_ORDER)
+        self.assertEqual(wb[mx.PREFIX + "GrahaInBhava"].cell(row=1, column=3).value, "Points")
         for k, p in enumerate(br.PLANET_ORDER):
-            self.assertEqual(wb["Chart"].cell(row=mx.PLANET_ROW0 + k, column=1).value, p)
+            self.assertEqual(wb[mx.PREFIX + "Chart"].cell(row=mx.PLANET_ROW0 + k, column=1).value, p)
 
 
-@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
-class ShippedSession23Workbook(unittest.TestCase):
-    def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
+@unittest.skipUnless(openpyxl, "openpyxl is needed for the workbook checks")
+class MasterWorkbookInstall(unittest.TestCase):
+    """`make_session23_xlsx.py --install` adds the S23_ sheets to the master workbook and touches nothing else."""
+
+    @staticmethod
+    def make_master(path):
+        from openpyxl.formatting.rule import CellIsRule
+        from openpyxl.styles import PatternFill
+        from openpyxl.worksheet.datavalidation import DataValidation
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Input"
+        ws["A1"], ws["B1"], ws["C1"] = "Name", 21, "=B1*2"
+        ws.merge_cells("E1:F2")
+        ws["E1"] = "merged"
+        dv = DataValidation(type="list", formula1='"a,b"')
+        ws.add_data_validation(dv)
+        dv.add("A3")
+        ws.conditional_formatting.add("B1", CellIsRule(operator="greaterThan", formula=["5"], fill=PatternFill("solid", fgColor="FFFF00")))
+        ws.column_dimensions["A"].width = 33
+        wb.create_sheet("Reference Data")["A1"] = "House"
+        wb.save(path)
+
+    def setUp(self):
+        import tempfile
         import make_session23_xlsx as mx
-        dvs = [d for d in openpyxl.load_workbook(SHIPPED_XLSX)["Chart"].data_validations.dataValidation if d.type == "decimal"]
+        self.mx = mx
+        self.tmp = tempfile.TemporaryDirectory()
+        self.master = pathlib.Path(self.tmp.name, "Classification_for_Horoscope_Analysis_v7_1.xlsx")
+        self.make_master(self.master)
+        self.original = self.master.read_bytes()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_install_adds_the_sheets_keeps_a_backup_and_leaves_other_sheets_alone(self):
+        done = self.mx.install_in_master(self.master)
+        self.assertEqual(done["backup"].read_bytes(), self.original)
+        self.assertTrue(done["wrote_data"])
+        wb = openpyxl.load_workbook(self.master)
+        self.assertEqual(wb.sheetnames[:2], ["Input", "Reference Data"])
+        for n in ("README", "Chart", "Classes_Calc", "Roles_Calc", "Dasha_Calc", "Predict_Calc", "Ref_Calc", "Classes",
+                  "ClassRules", "Badhaka", "DignityEffect", "Digbala", "DashaRoleText", "GrahaInBhava", "GrahaPair",
+                  "BhavaLordIn", "GrahaRashi"):
+            self.assertIn("S23_" + n, wb.sheetnames)
+        old = openpyxl.load_workbook(done["backup"])
+        for ws in old.worksheets:
+            new = wb[ws.title]
+            self.assertEqual([[c.value for c in row] for row in ws.iter_rows()], [[c.value for c in row] for row in new.iter_rows()])
+            self.assertEqual(sorted(map(str, ws.merged_cells.ranges)), sorted(map(str, new.merged_cells.ranges)))
+            self.assertEqual(len(ws.data_validations.dataValidation), len(new.data_validations.dataValidation))
+            self.assertEqual(len(ws.conditional_formatting), len(new.conditional_formatting))
+            self.assertEqual({k: v.width for k, v in ws.column_dimensions.items()}, {k: v.width for k, v in new.column_dimensions.items()})
+
+    def test_the_installed_data_sheets_read_back_as_the_committed_rules(self):
+        self.mx.install_in_master(self.master)
+        got = b23_read(self.master)
+        self.assertEqual(got, {k: v for k, v in RULES_JSON().items() if k not in ("reference", "meta")})
+
+    def test_reinstall_keeps_your_edits_unless_you_reset(self):
+        self.mx.install_in_master(self.master)
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_GrahaInBhava"]
+        row = next(r for r in range(2, ws.max_row + 1) if ws.cell(row=r, column=1).value == "Moon" and ws.cell(row=r, column=2).value == 1)
+        ws.cell(row=row, column=3).value = "My own reading of the Moon in the 1st."
+        wb.save(self.master)
+        done = self.mx.install_in_master(self.master)
+        self.assertFalse(done["wrote_data"])
+        self.assertEqual(openpyxl.load_workbook(self.master)["S23_GrahaInBhava"].cell(row=row, column=3).value, "My own reading of the Moon in the 1st.")
+        self.assertEqual(b23_read(self.master)["graha_in_bhava"][row - 2]["points"], ["My own reading of the Moon in the 1st."])
+        self.mx.install_in_master(self.master, reset_data=True)
+        self.assertNotEqual(openpyxl.load_workbook(self.master)["S23_GrahaInBhava"].cell(row=row, column=3).value, "My own reading of the Moon in the 1st.")
+
+    def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
+        self.mx.install_in_master(self.master)
+        dvs = [d for d in openpyxl.load_workbook(self.master)["S23_Chart"].data_validations.dataValidation if d.type == "decimal"]
         self.assertEqual(len(dvs), 1)
-        self.assertIn(f"C{mx.PLANET_ROW0}:C{mx.PLANET_ROW0 + 8}", str(dvs[0].sqref))
+        self.assertIn(f"C{self.mx.PLANET_ROW0}:C{self.mx.PLANET_ROW0 + 8}", str(dvs[0].sqref))
         self.assertEqual((float(dvs[0].formula1), float(dvs[0].formula2)), (0.0, 29.999999))
         self.assertEqual(dvs[0].showErrorMessage, True)
 
-    def test_committed_xlsx_has_formulas_and_cached_values_for_its_own_inputs(self):
-        import make_session23_xlsx as mx
-        self.assertTrue(SHIPPED_XLSX.exists(), "run: python3 build_session23.py --seed && python3 make_session23_xlsx.py")
-        live = openpyxl.load_workbook(SHIPPED_XLSX)
-        cached = openpyxl.load_workbook(SHIPPED_XLSX, data_only=True)
-        self.assertTrue(str(live["Chart"].cell(row=mx.PLANET_ROW0, column=4).value).startswith("="), "formulas must survive")
-        self.assertTrue(str(live["Roles_Calc"].cell(row=mx.ROLES_ROW0, column=2).value).startswith("="))
-        lagna = [r["sanskrit"] for r in RULES["reference"]["RASHI"]].index(cached["Chart"][mx.LAGNA_CELL].value)
-        signs = {p: [r["sanskrit"] for r in RULES["reference"]["RASHI"]].index(cached["Chart"].cell(row=mx.PLANET_ROW0 + k, column=2).value)
-                 for k, p in enumerate(br.PLANET_ORDER)}
-        want = br.planet_roles(RULES, lagna, signs)
-        got = {p: cached["Roles_Calc"].cell(row=mx.ROLES_ROW0 + k, column=8).value or "" for k, p in enumerate(br.PLANET_ORDER)}
+    @unittest.skipUnless(SOFFICE, "LibreOffice is needed to recalculate the installed calculator")
+    def test_installed_calculator_gives_the_slide_chart_roles(self):
+        import tempfile
+        mx = self.mx
+        mx.install_in_master(self.master)
+        with tempfile.TemporaryDirectory() as out:
+            _lo_recalc([self.master], out)
+            wb = openpyxl.load_workbook(pathlib.Path(out, self.master.name), data_only=True)
+        want = br.planet_roles(RULES, 4, {"Moon": 6, "Ketu": 7, "Saturn": 9, "Jupiter": 10, "Mars": 3, "Sun": 2,
+                                          "Venus": 2, "Mercury": 1, "Rahu": 1})
+        got = {p: wb["S23_Roles_Calc"].cell(row=mx.ROLES_ROW0 + k, column=8).value or "" for k, p in enumerate(br.PLANET_ORDER)}
         self.assertEqual(got, {p: ", ".join(want[p]) for p in br.PLANET_ORDER})
-        self.assertEqual(cached["Dasha_Calc"].cell(row=mx.DASHA_ROW0, column=3).value in br.PLANET_ORDER, True)
+        self.assertEqual(wb["Input"]["C1"].value, 42)                   # the master's own formulas still calculate
+
+
+def b23_read(path):
+    import build_session23 as b23
+    return b23.read_workbook(path)
+
+
+def RULES_JSON():
+    return json.loads(JSON_PATH.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
