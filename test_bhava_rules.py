@@ -262,5 +262,141 @@ class DignityPort(unittest.TestCase):
         self.assertEqual(br.dignity(RULES, "Sun", 4, 25)["label"], "Own House")
 
 
+import datetime as _dt
+import random as _random
+
+ORACLE_ROLES = {
+    "Sun": [], "Moon": ["Dusthana lord"], "Mars": ["Badhakadhipati"],
+    "Mercury": ["Maraka lord", "Trishadaya lord"], "Jupiter": ["Maraka occupant", "Dusthana lord"],
+    "Venus": ["Trishadaya lord"], "Saturn": ["Maraka lord", "Dusthana lord", "Trishadaya lord"],
+    "Rahu": [], "Ketu": []}
+BIRTH = _dt.datetime(1990, 5, 17, 6, 30)
+MOON_LON = 190.0                       # Moon in Tula, as in the slide chart
+NOW = _dt.datetime(2026, 10, 8, 12, 0)
+
+DASHA_JS = r"""
+const { chromium } = require(process.env.PW_MODULE);
+(async () => {
+  const cases = JSON.parse(process.argv[2]);
+  const b = await chromium.launch({headless: true});
+  const ctx = await b.newContext({timezoneId: 'UTC'});
+  await ctx.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+  const p = await ctx.newPage();
+  await p.goto('file://' + process.argv[1]);
+  const out = await p.evaluate(cases => cases.map(([lon, dob, tob]) => {
+    const D = buildDasha(lon, dob, tob);
+    return D.timeline.map(t => [t.lord, t.start.getTime(), t.end.getTime(),
+                                t.bhuktis.map(x => [x.lord, x.start.getTime(), x.end.getTime()])]);
+  }), cases);
+  console.log(JSON.stringify(out));
+  await b.close();
+})();
+"""
+
+
+def _ms(d):
+    return d.replace(tzinfo=_dt.timezone.utc).timestamp() * 1000
+
+
+class Vimshottari(unittest.TestCase):
+    def test_structure_and_lengths(self):
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)
+        self.assertEqual([t["lord"] for t in d["timeline"]].count("Mercury"), 1)
+        self.assertEqual(len(d["timeline"]), 9)
+        self.assertTrue(all(len(t["bhuktis"]) == 9 for t in d["timeline"]))
+        years = [(t["end"] - t["start"]).total_seconds() / (365.25 * 86400) for t in d["timeline"]]
+        self.assertEqual([round(y, 6) for y in years],
+                         [RULES["reference"]["VYEARS"][t["lord"]] for t in d["timeline"]])
+        first = d["timeline"][0]
+        self.assertEqual(first["bhuktis"][0]["lord"], first["lord"])      # a Mahādaśā opens with its own Bhukti
+        self.assertEqual(first["bhuktis"][0]["start"], first["start"])
+        self.assertAlmostEqual((first["bhuktis"][-1]["end"] - first["end"]).total_seconds(), 0, delta=1)
+
+    @unittest.skipUnless(_playwright(), "playwright + chromium needed to run the page's buildDasha")
+    def test_vimshottari_equals_the_page(self):
+        rnd = _random.Random(23)
+        cases = []
+        for _ in range(25):
+            b = _dt.datetime(rnd.randint(1930, 2015), rnd.randint(1, 12), rnd.randint(1, 28),
+                             rnd.randint(0, 23), rnd.randint(0, 59), 0)
+            cases.append((round(rnd.uniform(0, 360), 4), b))
+        arg = _json.dumps([[lon, b.strftime("%Y-%m-%d"), b.strftime("%H:%M:%S")] for lon, b in cases])
+        env = dict(_os.environ, PW_MODULE=_playwright(), PLAYWRIGHT_BROWSERS_PATH="/opt/pw-browsers")
+        index = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "index.html")
+        p = _subprocess.run(["node", "-e", DASHA_JS, index, arg], capture_output=True, text=True,
+                            timeout=180, env=env)
+        self.assertEqual(p.returncode, 0, p.stderr[-600:])
+        page = _json.loads(p.stdout.strip().splitlines()[-1])
+        for (lon, birth), timeline in zip(cases, page):
+            mine = br.vimshottari(RULES, lon, birth, NOW)["timeline"]
+            self.assertEqual([t["lord"] for t in mine], [t[0] for t in timeline], (lon, birth))
+            for t, (lord, s, e, bh) in zip(mine, timeline):
+                self.assertAlmostEqual(_ms(t["start"]), s, delta=1000, msg=(lon, birth, lord))
+                self.assertAlmostEqual(_ms(t["end"]), e, delta=1000, msg=(lon, birth, lord))
+                self.assertEqual([x["lord"] for x in t["bhuktis"]], [x[0] for x in bh])
+                for x, (_, bs, be) in zip(t["bhuktis"], bh):
+                    self.assertAlmostEqual(_ms(x["start"]), bs, delta=1000)
+                    self.assertAlmostEqual(_ms(x["end"]), be, delta=1000)
+
+    def test_running_pair_at_boundaries(self):
+        base = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)["timeline"]
+        edge = base[2]["start"]                                          # exactly on a Mahādaśā start
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, edge)
+        self.assertEqual(d["cur_maha"]["lord"], base[2]["lord"])
+        self.assertEqual(d["cur_bhukti"]["lord"], base[2]["lord"])       # ... and its first Bhukti
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, base[2]["end"])        # the end instant belongs to the next
+        self.assertEqual(d["cur_maha"]["lord"], base[3]["lord"])
+        for now in (BIRTH - _dt.timedelta(days=36525 * 2), BIRTH + _dt.timedelta(days=365.25 * 130)):
+            d = br.vimshottari(RULES, MOON_LON, BIRTH, now)              # outside the 120-year span
+            self.assertIn(d["cur_maha"]["lord"], br.PLANET_ORDER)
+            self.assertIn(d["cur_bhukti"], d["cur_maha"]["bhuktis"])
+
+    def test_current_pair_is_the_period_containing_now(self):
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)
+        self.assertTrue(d["cur_maha"]["start"] <= NOW < d["cur_maha"]["end"])
+        self.assertTrue(d["cur_bhukti"]["start"] <= NOW < d["cur_bhukti"]["end"])
+
+
+class DashaLinking(unittest.TestCase):
+    def test_dasha_role_text_uses_the_slide_wording(self):
+        pair = {"cur_maha": {"lord": "Saturn"}, "cur_bhukti": {"lord": "Venus"}}
+        run = br.running_roles(RULES, pair, ORACLE_ROLES)
+        self.assertEqual(run["maha"]["lord"], "Saturn")
+        self.assertEqual(run["maha"]["roles"], ["Maraka lord", "Dusthana lord", "Trishadaya lord"])
+        self.assertTrue(any("before the time of death is promised" in t for t in run["maha"]["text"]))
+        self.assertEqual(run["bhukti"]["roles"], [])                      # Trishadaya is taught as a Mahādaśā effect
+        self.assertEqual(run["bhukti"]["text"], [])
+
+    def test_watch_periods_flag_maraka_and_badhaka(self):
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)
+        watch = br.watch_periods(RULES, d, ORACLE_ROLES, NOW, years=10)
+        window_end = NOW + _dt.timedelta(days=365.25 * 10)
+        want = {}
+        for t in d["timeline"]:
+            for b in t["bhuktis"]:
+                if b["end"] > NOW and b["start"] < window_end:
+                    mine = set(ORACLE_ROLES[t["lord"]]) | (set(ORACLE_ROLES[b["lord"]]) - {"Trishadaya lord"})
+                    if mine:
+                        want[(t["lord"], b["lord"])] = [r for r in br.ROLE_ORDER if r in mine]
+        self.assertEqual({(w["maha"], w["bhukti"]): w["roles"] for w in watch}, want)
+        self.assertTrue(want)
+        for w in watch:
+            self.assertEqual(w["kind"], "favourable" if w["roles"] == ["Trishadaya lord"] else "caution", w)
+            self.assertLess(w["start"], w["end"])
+        self.assertEqual([w["start"] for w in watch], sorted(w["start"] for w in watch))
+        mars = [w for w in watch if "Mars" in (w["maha"], w["bhukti"])]
+        self.assertTrue(all("Badhakadhipati" in w["roles"] for w in mars))
+
+    def test_trishadaya_mahadasha_periods_are_favourable(self):
+        d = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)
+        venus = br.watch_periods(RULES, d, ORACLE_ROLES, d["timeline"][0]["start"], years=125)
+        vv = [w for w in venus if w["maha"] == "Venus" and w["bhukti"] in ("Venus", "Sun", "Rahu", "Ketu")]
+        self.assertTrue(vv)
+        self.assertTrue(all(w["kind"] == "favourable" and w["roles"] == ["Trishadaya lord"] for w in vv))
+        moon_under_venus = [w for w in venus if (w["maha"], w["bhukti"]) == ("Venus", "Moon")]
+        self.assertEqual([w["kind"] for w in moon_under_venus], ["caution"])
+        self.assertEqual(moon_under_venus[0]["roles"], ["Dusthana lord", "Trishadaya lord"])
+
+
 if __name__ == "__main__":
     unittest.main()

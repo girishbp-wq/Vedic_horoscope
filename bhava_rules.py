@@ -8,6 +8,7 @@ its `reference` block is a copy of the tables in index.html, so nothing is kept 
 The same logic exists as JavaScript in index.html (s23* functions) and as formulas in the Excel
 calculator; test_session23_cross_impl.py keeps all three identical.
 """
+import datetime
 import json
 import pathlib
 
@@ -208,3 +209,79 @@ def digbala(rules, planet, house):
     if not row:
         return None
     return "strong" if house == row["strong"] else "lost" if house == row["lost"] else None
+
+
+# ---------------------------------------------------------------- Vimshottari daśā and role linking
+_YEAR_DAYS = 365.25            # same civil-year length as buildDasha() in index.html
+_NAK_SIZE = 360 / 27
+
+
+def vimshottari(rules, moon_lon, birth, now):
+    """Port of buildDasha(): nine Mahādaśās with nine Bhuktis each, from the Moon's nakṣatra at birth.
+
+    Like the page, a `now` outside the 120-year span falls back to the first Mahādaśā / Bhukti."""
+    ref = rules["reference"]
+    order, years = ref["VORDER"], ref["VYEARS"]
+    lon = moon_lon % 360
+    idx = int(lon // _NAK_SIZE)
+    nak_lord = ref["NAKSHATRAS"][idx][1]
+    frac = (lon - idx * _NAK_SIZE) / _NAK_SIZE
+    add = lambda dt, y: dt + datetime.timedelta(days=y * _YEAR_DAYS)
+    start = add(birth, -frac * years[nak_lord])            # virtual start of the Mahādaśā running at birth
+    first = order.index(nak_lord)
+    timeline = []
+    for i in range(9):
+        lord = order[(first + i) % 9]
+        end = add(start, years[lord])
+        x, bhuktis, li = start, [], order.index(lord)
+        for j in range(9):
+            sub = order[(li + j) % 9]
+            be = add(x, years[lord] * years[sub] / 120)
+            bhuktis.append({"lord": sub, "start": x, "end": be, "cur": x <= now < be})
+            x = be
+        timeline.append({"lord": lord, "years": years[lord], "start": start, "end": end,
+                         "cur": start <= now < end, "bhuktis": bhuktis})
+        start = end
+    cur_maha = next((t for t in timeline if t["cur"]), timeline[0])
+    cur_bhukti = next((b for b in cur_maha["bhuktis"] if b["cur"]), cur_maha["bhuktis"][0])
+    return {"nak_index": idx + 1, "nak_lord": nak_lord, "birth": birth, "timeline": timeline,
+            "cur_maha": cur_maha, "cur_bhukti": cur_bhukti,
+            "span_start": timeline[0]["start"], "span_end": timeline[8]["end"]}
+
+
+def _applicable_roles(roles, as_maha):
+    """Trishadaya is taught as an effect of the Mahādaśā, so a Bhukti lord does not carry it."""
+    return [r for r in roles if as_maha or r != "Trishadaya lord"]
+
+
+def _role_texts(rules, roles):
+    return [rules["dasha_role_text"][r]["text"] for r in roles]
+
+
+def running_roles(rules, dasha, roles):
+    """The running Mahādaśā and Bhukti lords with their roles and the slides' wording for each role."""
+    out = {}
+    for key, period, as_maha in (("maha", dasha["cur_maha"], True), ("bhukti", dasha["cur_bhukti"], False)):
+        mine = _applicable_roles(roles[period["lord"]], as_maha)
+        out[key] = {"lord": period["lord"], "roles": mine, "text": _role_texts(rules, mine)}
+    return out
+
+
+def watch_periods(rules, dasha, roles, now, years=10):
+    """Bhuktis within `years` of `now` whose Mahādaśā or Bhukti lord holds one of the six roles.
+
+    kind is 'caution' when any caution role is present, 'favourable' when Trishadaya is the only one."""
+    window_end = now + datetime.timedelta(days=years * _YEAR_DAYS)
+    out = []
+    for t in dasha["timeline"]:
+        for b in t["bhuktis"]:
+            if not (b["end"] > now and b["start"] < window_end):
+                continue
+            mine = set(_applicable_roles(roles[t["lord"]], True)) | set(_applicable_roles(roles[b["lord"]], False))
+            ordered = [r for r in ROLE_ORDER if r in mine]
+            if not ordered:
+                continue
+            kinds = {rules["dasha_role_text"][r]["kind"] for r in ordered}
+            out.append({"start": b["start"], "end": b["end"], "maha": t["lord"], "bhukti": b["lord"],
+                        "roles": ordered, "kind": "caution" if "caution" in kinds else "favourable"})
+    return sorted(out, key=lambda w: w["start"])
