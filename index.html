@@ -583,6 +583,17 @@ details.section[open] > summary::after { content: "−"; }
 .s23-pairs li { margin: 8px 0; font-size: 13.5px; }
 .s23-combust { color: #8a1e22; font-size: 13px; }
 .s23-badhaka { border: 1px solid var(--line); border-left: 4px solid var(--maroon); border-radius: 8px; padding: 4px 14px; margin: 12px 0; background: #fffdf7; break-inside: avoid; }
+.s23-role { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); white-space: nowrap; margin: 1px 2px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.s23-role.caution { background: #fdeede; color: #8a4a1e; border-color: #e0b48f; }
+.s23-role.favourable { background: #e9f5d6; color: #466e1f; border-color: #b9d489; }
+.s23-running { border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 8px; padding: 6px 14px; margin: 8px 0 14px; background: #fffdf7; break-inside: avoid; }
+.s23-running > div { margin: 6px 0; }
+.s23-run-text { margin: 4px 0 4px; padding-left: 18px; font-size: 13px; }
+.s23-role-legend { list-style: none; padding: 0; margin: 4px 0 12px; font-size: 12.5px; color: var(--muted); }
+.s23-role-legend li { margin: 4px 0; }
+#s23-watch tr.favourable td { background: #f4faea; }
+#s23-watch tr.caution td { background: #fffaf3; }
+.maha-head .s23-role { margin-left: 4px; }
 /* On paper nothing can scroll: fit every Session 23 table to the A4 page (English sign names only). */
 @media print {
   #report .s23-scroll { overflow: visible; border: 0; }
@@ -600,7 +611,7 @@ details.section[open] > summary::after { content: "−"; }
   #report .s23-table th.w8 { width: 8%; } #report .s23-table th.w10 { width: 10%; } #report .s23-table th.w12 { width: 12%; }
   #report .s23-table th.w14 { width: 14%; } #report .s23-table th.w16 { width: 16%; } #report .s23-table th.w18 { width: 18%; }
   #report .s23-table th.w20 { width: 20%; } #report .s23-table th.w22 { width: 22%; } #report .s23-table th.w24 { width: 24%; }
-  #report .s23-table th.w34 { width: 34%; } #report .s23-table th.w38 { width: 38%; } #report .s23-table th.w46 { width: 46%; }
+  #report .s23-table th.w34 { width: 34%; } #report .s23-table th.w38 { width: 38%; } #report .s23-table th.w46 { width: 46%; } #report .s23-table th.w54 { width: 54%; }
   #report .s23-table th.w82 { width: 82%; }
 }
 /* Horizontal-scroll wrapper for wide tables (e.g. Graha Attributes) */
@@ -978,7 +989,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
 @media print{
   #reportNav{ display:none!important; }
   #report details.section{ display:block!important; box-shadow:none!important; }
-  /* Reveal every tab pane in the Predictive & Remedies section so Daśā-Bhukti,
+  /* Reveal every tab pane in the Predictive & Remedies section so
      Transit, Rahu/Ketu, Kaala Sarpa, Remedies, Rahu Kaalam, Tārā Bala,
      Muhūrta and Ashtakavarga all print, not just the one that happened to be active on screen. */
   #report .rpane{ display:block!important; margin-top:14px; }
@@ -1159,14 +1170,22 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
 
       <details class="section" open>
         <summary>
+          <span class="section-num">D</span>
+          <span class="section-title">Daśā–Bhukti — Vimśottarī</span>
+          <span class="section-sub">Running Mahādaśā and Bhukti · Maraka, Badhaka, Dusthana and Trishadaya lords · watch periods (Session 23)</span>
+        </summary>
+        <div class="section-body" id="s23-dasha-body"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
           <span class="section-num">P</span>
           <span class="section-title">Predictive &amp; Remedies</span>
-          <span class="section-sub">Daśā–Bhukti · Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta · Ashtakavarga</span>
+          <span class="section-sub">Transit · Rahu/Ketu combinations · Kaala Sarpa · Remedies · Rahu Kaalam · Tārā Bala · Muhūrta · Ashtakavarga</span>
         </summary>
         <div class="section-body">
           <div class="report-tabs rtab-bar" id="reportTabs">
-            <button type="button" class="rtab active" data-tab="dasha">Daśā–Bhukti</button>
-            <button type="button" class="rtab" data-tab="transit">Transit</button>
+            <button type="button" class="rtab active" data-tab="transit">Transit</button>
             <button type="button" class="rtab" data-tab="combos">Rahu / Ketu Combos</button>
             <button type="button" class="rtab" data-tab="ksarpa">Kaala Sarpa</button>
             <button type="button" class="rtab" data-tab="remedies">Remedies</button>
@@ -1175,8 +1194,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
             <button type="button" class="rtab" data-tab="muhurta">Muhūrta</button>
             <button type="button" class="rtab" data-tab="ashtakavarga">Ashtakavarga</button>
           </div>
-          <div class="rpane" id="pane-dasha" data-print-title="Daśā–Bhukti"></div>
-          <div class="rpane" id="pane-transit" data-print-title="Transit (Gochara)" style="display:none"></div>
+          <div class="rpane" id="pane-transit" data-print-title="Transit (Gochara)"></div>
           <div class="rpane" id="pane-combos" data-print-title="Rāhu / Ketu Combinations" style="display:none"></div>
           <div class="rpane" id="pane-ksarpa" data-print-title="Kaala Sarpa" style="display:none"></div>
           <div class="rpane" id="pane-remedies" data-print-title="Remedies" style="display:none"></div>
@@ -5448,8 +5466,8 @@ function buildDasha(moonLon, dobISO, tobStr){
 }
 
 const DASHA_GLYPH = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃", Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
-function renderDashaPane(D){
-  const el=document.getElementById("pane-dasha"); if(!el) return;
+function renderDashaPane(D, roles){
+  const el=document.getElementById("s23-dasha-tables"); if(!el) return;
   if(!D){ el.innerHTML="<p>Provide date &amp; time of birth to compute the Vimśottarī daśā.</p>"; return; }
   const G=DASHA_GLYPH, now=new Date();
   let h=`<h4 class="pane-h">Vimśottarī Daśā</h4>`;
@@ -5470,12 +5488,12 @@ function renderDashaPane(D){
 
   /* full mahādaśā → bhukti (antardaśā) tables, current period highlighted */
   for(const t of D.timeline){
-    h+=`<div class="maha-block${t.cur?' cur':''}">`
-      +`<div class="maha-head">${G[t.lord]} <strong>${t.lord} Mahādaśā</strong>`
+    h+=`<div class="maha-block${t.cur?' cur':''}" data-maha="${t.lord}">`
+      +`<div class="maha-head">${G[t.lord]} <strong>${t.lord} Mahādaśā</strong>${roles?" "+s23RoleChips(roles[t.lord]):""}`
       +`<span class="maha-span">${_fdate(t.start)} — ${_fdate(t.end)} · ${t.years} yrs</span></div>`
       +`<table class="rtable dasha-table"><thead><tr><th>Bhukti (Antardaśā)</th><th>From</th><th>To</th></tr></thead><tbody>`;
     for(const b of t.bhuktis){
-      h+=`<tr class="${b.cur?'now':''}"><td>${G[t.lord]}–${G[b.lord]} ${t.lord}–${b.lord}</td>`
+      h+=`<tr class="${b.cur?'now':''}" data-bhukti="${b.lord}"><td>${G[t.lord]}–${G[b.lord]} ${t.lord}–${b.lord}${roles?" "+s23RoleChips(s23ApplicableRoles(roles[b.lord], false)):""}</td>`
         +`<td>${_fdate(b.start)}</td><td>${_fdate(b.end)}</td></tr>`;
     }
     h+=`</tbody></table></div>`;
@@ -6350,6 +6368,56 @@ function renderS23Sections(sid, lagnaN){
   c.innerHTML=s23BuildClasses(sid, lagnaN);
   p.innerHTML=s23BuildPredictions(sid, lagnaN);
 }
+
+/* ---- Daśā–Bhukti section: roles linked to the running Mahādaśā / Bhukti ---- */
+function s23RoleChip(role){
+  const r=S23.dasha_role_text[role];
+  return `<span class="s23-role ${r.kind}" data-role="${role}" title="${_esc(r.text)}">${role}</span>`;
+}
+function s23RoleChips(list){ return list.map(s23RoleChip).join(" "); }
+function s23RunPart(key, label, part){
+  const G=DASHA_GLYPH;
+  return `<div class="s23-run-${key}" data-lord="${part.lord}"><strong>${G[part.lord]} ${part.lord} ${label}</strong> `
+    +(part.roles.length ? s23RoleChips(part.roles)+`<ul class="s23-run-text">${part.text.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`
+                        : `<span class="rnote">holds none of the six roles in this chart.</span>`)+`</div>`;
+}
+function renderS23Dasha(D, roles, now){
+  const el=document.getElementById("s23-dasha-body"); if(!el) return;
+  if(!D){ el.innerHTML="<p>Provide date &amp; time of birth to compute the Vimśottarī daśā.</p>"; return; }
+  const G=DASHA_GLYPH;
+  let h=`<p>The Vimśottarī daśā below runs from the Moon's birth-star. Session 23 links it to the houses: the lords of the Maraka, Badhaka, Dusthana and Trishadaya houses colour the periods in which they operate. `
+    +`These links are <strong>indicative</strong> — tendencies to weigh with the whole chart, never certainties.</p>`;
+  if(!roles){
+    h+=`<p class="rnote">The role links need the Lagna, which needs the birth time and place; the daśā below is shown without them.</p>`;
+  } else {
+    const run=s23RunningRoles(D, roles);
+    h+=`<h4 class="pane-h">Running now</h4><div class="s23-running" data-maha="${run.maha.lord}" data-bhukti="${run.bhukti.lord}">`
+      +s23RunPart("maha","Mahādaśā",run.maha)+s23RunPart("bhukti","Bhukti",run.bhukti)+`</div>`;
+    h+=`<h4 class="pane-h">Roles of the nine grahas in this chart</h4><div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-roles"><thead><tr><th class="w16">Graha</th><th class="w16">Owns (houses)</th><th class="w14">Sits in</th><th class="w54">Roles</th></tr></thead><tbody>`;
+    const lg=currentChart.lagnaRashi.n, pbr=s23Inputs(currentChart.chart.sidereal).pbr;
+    for(const p of S23_PLANETS){
+      const owns=[]; for(let hh=1; hh<=12; hh++) if(s23HouseLord(lg-1,hh)===p) owns.push(hh);
+      const inHouse=s23HouseOf(lg-1, pbr[p]-1);
+      h+=`<tr data-planet="${p}" data-roles="${roles[p].join(",")}" data-owns="${owns.join(",")}" data-in="${inHouse}">`
+        +`<td>${G[p]} <strong>${p}</strong></td><td>${owns.length?owns.map(ord).join(", "):"— (owns no house)"}</td><td>${ord(inHouse)}</td>`
+        +`<td>${roles[p].length?s23RoleChips(roles[p]):"—"}</td></tr>`;
+    }
+    h+=`</tbody></table></div><ul class="s23-role-legend" id="s23-role-legend">`
+      +S23_ROLE_ORDER.map(r=>`<li>${s23RoleChip(r)} ${_esc(S23.dasha_role_text[r].text)}</li>`).join("")+`</ul>`;
+    const watch=s23WatchPeriods(D, roles, now, 10);
+    h+=`<h4 class="pane-h">Watch periods — the next 10 years</h4>`
+      +`<p class="rnote">Every Bhukti from ${_fdate(now)} whose Mahādaśā or Bhukti lord holds one of these roles. A Trishadaya lord counts as a Mahādaśā lord only; the dates are approximate.</p>`;
+    h+=watch.length
+      ? `<div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-watch"><thead><tr><th class="w16">From</th><th class="w16">To</th><th class="w22">Mahādaśā – Bhukti</th><th class="w46">Roles</th></tr></thead><tbody>`
+        +watch.map(w=>`<tr class="${w.kind}" data-maha="${w.maha}" data-bhukti="${w.bhukti}" data-kind="${w.kind}" data-start="${w.start.getTime()}" data-end="${w.end.getTime()}" data-roles="${w.roles.join(",")}">`
+          +`<td>${_fdate(w.start)}</td><td>${_fdate(w.end)}</td><td>${G[w.maha]}–${G[w.bhukti]} ${w.maha}–${w.bhukti}</td><td>${s23RoleChips(w.roles)}</td></tr>`).join("")
+        +`</tbody></table></div>`
+      : `<p class="rnote" id="s23-watch">No Bhukti in the next ten years carries one of these roles.</p>`;
+  }
+  h+=`<div id="s23-dasha-tables"></div>`;
+  el.innerHTML=h;
+  renderDashaPane(D, roles);
+}
 /* SESSION23-RENDER-END */
 
 function renderPredictive(){
@@ -6357,7 +6425,9 @@ function renderPredictive(){
   const sid=currentChart.chart.sidereal;
   const natalMoonR=rashiOf(sid.Moon).n;
   const lagnaN=(currentChart.lagnaRashi && currentChart.lagnaRashi.n) || natalMoonR;
-  renderDashaPane(buildDasha(sid.Moon, currentChart.dob, currentChart.tob));
+  const hasLagna=!!(currentChart.lagnaRashi && currentChart.lagnaRashi.n);
+  renderS23Dasha(buildDasha(sid.Moon, currentChart.dob, currentChart.tob),
+                 hasLagna ? s23Roles(lagnaN, s23Inputs(sid).pbr) : null, new Date());
   renderTransitPane(sid, natalMoonR, lagnaN);
   renderCombosPane(sid);
   renderKsarpaPane(sid);
@@ -6374,7 +6444,7 @@ document.querySelectorAll("#reportTabs .rtab").forEach(btn=>{
     document.querySelectorAll("#reportTabs .rtab").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
     const which=btn.dataset.tab;
-    ["dasha","transit","combos","ksarpa","remedies","rahukaal","tarabala","muhurta","ashtakavarga"].forEach(k=>{
+    ["transit","combos","ksarpa","remedies","rahukaal","tarabala","muhurta","ashtakavarga"].forEach(k=>{
       const pane=document.getElementById("pane-"+k); if(pane) pane.style.display=(k===which)?"":"none";
     });
   });
@@ -6422,6 +6492,7 @@ function runUxRefine(){
       ["Charts",["Rāśi Chakra"]],
       ["Planetary Details",["Graha Placements","Graha Drishti","Tatwa","Chara","Exaltation","Kuja","Classification"]],
       ["Bhāvas (Houses)",["Bhāva Analysis"]],
+      ["Daśā–Bhukti",["Daśā–Bhukti"]],
       ["Predictive & Remedies",["Predictive","Jyothirlinga","Gurubala","Sade Sati","Saturn Combinations","Parihara"]],
       ["Choughadiya",["Choughadiya"]],
       ["Mantras",["Akshara","Beejakshari","Mantra"]]

@@ -520,5 +520,205 @@ class BrowserSession23(unittest.TestCase):
                 self.assertLessEqual(h["sw"], h["cw"] + 1, (w["id"], h))
 
 
+DASHA_SCRIPT = r"""
+const { chromium } = require(process.env.PW_MODULE);
+const indexUrl = 'file://' + process.argv[2];
+const shots = process.env.S23_ARTIFACT_DIR || '';
+const NOW = '2026-10-08T12:00:00Z';
+const BIRTHS = [
+  {dob:'1990-05-15', tob:'06:30:00', lat:'19.08',  lon:'72.88',  tz:'5.5'},
+  {dob:'1975-11-02', tob:'22:10:00', lat:'13.0',   lon:'77.6',   tz:'5.5'},
+  {dob:'2001-02-28', tob:'13:45:00', lat:'51.5',   lon:'-0.12',  tz:'0'},
+];
+const EXTRACT = () => {
+  const $ = (s, r = document) => [...r.querySelectorAll(s)];
+  const norm = s => s.replace(/\s+/g, ' ').trim();
+  const body = document.getElementById('s23-dasha-body');
+  const run = body.querySelector('.s23-running');
+  const part = k => { const e = run && run.querySelector('.s23-run-' + k);
+    return e ? {lord: e.dataset.lord, roles: $('.s23-role', e).map(c => c.dataset.role), text: $('.s23-run-text li', e).map(li => norm(li.innerText))} : null; };
+  return {
+    sid: currentChart.chart.sidereal, lagna: currentChart.lagnaRashi.n, dob: currentChart.dob, tob: currentChart.tob,
+    nav: $('#reportNav button').map(b => b.textContent),
+    sectionTitles: $('#report details.section .section-title').map(x => x.textContent),
+    dashaSection: (() => { const s = body.closest('details'); return {grp: s.dataset.grp, shown: getComputedStyle(s).display !== 'none', title: s.querySelector('.section-title').textContent}; })(),
+    predictiveTabs: $('#reportTabs .rtab').map(b => b.dataset.tab), activeTab: $('#reportTabs .rtab.active').map(b => b.dataset.tab),
+    panes: $('#report .rpane').map(p => ({id: p.id, display: getComputedStyle(p).display})),
+    oldPane: !!document.getElementById('pane-dasha'),
+    heads: $('#report h4.pane-h').filter(h => /Vimśottarī Daśā/.test(h.textContent)).length,
+    running: run ? {maha: part('maha'), bhukti: part('bhukti'), dataMaha: run.dataset.maha, dataBhukti: run.dataset.bhukti} : null,
+    roles: $('#s23-roles tbody tr[data-planet]').map(tr => ({planet: tr.dataset.planet, roles: tr.dataset.roles ? tr.dataset.roles.split(',') : [],
+              owns: tr.dataset.owns ? tr.dataset.owns.split(',').map(Number) : [], in: +tr.dataset.in})),
+    watch: $('#s23-watch tbody tr[data-maha]').map(tr => ({maha: tr.dataset.maha, bhukti: tr.dataset.bhukti, kind: tr.dataset.kind,
+              start: +tr.dataset.start, end: +tr.dataset.end, roles: tr.dataset.roles.split(',')})),
+    blocks: $('#s23-dasha-body .maha-block').map(b => ({maha: b.dataset.maha, headRoles: $('.maha-head .s23-role', b).map(c => c.dataset.role),
+              rows: $('tbody tr[data-bhukti]', b).map(tr => ({bhukti: tr.dataset.bhukti, now: tr.classList.contains('now'),
+                                                              roles: $('.s23-role', tr).map(c => c.dataset.role)}))})),
+    text: body.innerText,
+  };
+};
+(async () => {
+  const browser = await chromium.launch({headless: true});
+  const ctx = await browser.newContext({viewport: {width: 1280, height: 900}, timezoneId: 'UTC'});
+  const blocked = [];
+  await ctx.route('**/*', r => r.request().url().startsWith('file:') ? r.continue()
+                                : (blocked.push(r.request().url()), r.abort()));
+  const page = await ctx.newPage();
+  const jsErrors = [];
+  page.on('pageerror', e => jsErrors.push(String(e)));
+  await page.clock.install({time: new Date(NOW)});
+  await page.goto(indexUrl);
+  await page.click('#btn-manual');
+  const out = {charts: [], jsErrors, now: NOW};
+  for (const [i, b] of BIRTHS.entries()) {
+    await page.fill('#f-dob', b.dob);
+    await page.fill('#f-tob', b.tob);
+    await page.fill('#f-lat', b.lat); await page.press('#f-lat', 'Tab');
+    await page.fill('#f-lon', b.lon); await page.press('#f-lon', 'Tab');
+    await page.fill('#f-tz', b.tz);
+    await page.click('#btn-generate');
+    await page.waitForSelector('#report.show');
+    await page.click('#reportNav button:has-text("Daśā")');
+    const d = await page.evaluate(EXTRACT);
+    out.charts.push(d);
+    if (i === 0) {
+      if (shots) await page.locator('#s23-dasha-body').screenshot({path: shots + '/s23_dasha_desktop.png'});
+      out.predictiveHiddenOnDasha = await page.evaluate(() => [...document.querySelectorAll('#report details.section')]
+        .filter(s => /Predictive/.test(s.querySelector('.section-title').textContent)).map(s => getComputedStyle(s).display));
+      await page.click('#reportNav button:has-text("Predictive")');
+      out.predictiveShown = await page.evaluate(() => ({
+        dasha: getComputedStyle(document.getElementById('s23-dasha-body').closest('details')).display,
+        transit: getComputedStyle(document.getElementById('pane-transit')).display,
+        active: [...document.querySelectorAll('#reportTabs .rtab.active')].map(b => b.dataset.tab)}));
+      await page.emulateMedia({media: 'print'});
+      out.print = await page.evaluate(() => ({dasha: getComputedStyle(document.getElementById('s23-dasha-body').closest('details')).display,
+        heads: [...document.querySelectorAll('#report h4.pane-h')].filter(h => /Vimśottarī Daśā/.test(h.textContent)).length}));
+      await page.setViewportSize({width: 375, height: 800});
+      out.phone = await page.evaluate(() => ({vw: window.innerWidth, pageScrollW: document.documentElement.scrollWidth}));
+      await page.setViewportSize({width: 1280, height: 900});
+      if (shots) await page.pdf({path: shots + '/s23_dasha_print.pdf', format: 'A4', printBackground: true});
+      await page.emulateMedia({media: 'screen'});
+      out.noLagna = await page.evaluate(() => { renderS23Dasha(buildDasha(currentChart.chart.sidereal.Moon, currentChart.dob, currentChart.tob), null, new Date());
+        return document.getElementById('s23-dasha-body').innerText; });
+      await page.evaluate(() => renderPredictive());
+    }
+  }
+  out.blocked = blocked;
+  console.log(JSON.stringify(out));
+  await browser.close();
+})().catch(e => { console.error(e); process.exit(1); });
+"""
+
+
+def _ms_naive(d):
+    return d.replace(tzinfo=__import__("datetime").timezone.utc).timestamp() * 1000
+
+
+@unittest.skipUnless(PW, "playwright + chromium needed")
+class BrowserDasha(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        env = dict(os.environ, PW_MODULE=PW, PLAYWRIGHT_BROWSERS_PATH="/opt/pw-browsers")
+        import tempfile
+        cls.tmp_dir = tempfile.TemporaryDirectory()
+        script = pathlib.Path(cls.tmp_dir.name) / "dasha.js"
+        script.write_text(DASHA_SCRIPT, encoding="utf-8")
+        p = subprocess.run([NODE, str(script), str(INDEX)], capture_output=True, text=True, timeout=600, env=env)
+        if p.returncode != 0:
+            raise AssertionError(p.stderr[-2000:])
+        cls.out = json.loads(p.stdout.strip().splitlines()[-1])
+        import datetime
+        cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+
+    def python_dasha(self, d):
+        import datetime
+        lg, signs, degs, w = page_chart(d)
+        y, m, dd = map(int, d["dob"].split("-"))
+        hh, mm, ss = (list(map(int, d["tob"].split(":"))) + [0, 0, 0])[:3]
+        birth = datetime.datetime(y, m, dd, hh, mm, ss)
+        dasha = br.vimshottari(RULES, d["sid"]["Moon"], birth, self.now)
+        return lg, signs, dasha, br.planet_roles(RULES, lg, signs)
+
+    def test_no_js_errors(self):
+        self.assertEqual(self.out["jsErrors"], [])
+
+    def test_top_level_nav_has_dasha_button(self):
+        for d in self.out["charts"]:
+            self.assertIn("Daśā–Bhukti", d["nav"])
+            self.assertEqual(d["nav"].index("Daśā–Bhukti") + 1, d["nav"].index("Predictive & Remedies"))
+            self.assertEqual(d["dashaSection"]["title"], "Daśā–Bhukti — Vimśottarī")
+            self.assertTrue(d["dashaSection"]["shown"])
+        self.assertEqual(self.out["predictiveHiddenOnDasha"], ["none"])
+
+    def test_pill_removed_and_dasha_printed_once(self):
+        for d in self.out["charts"]:
+            self.assertNotIn("dasha", d["predictiveTabs"])
+            self.assertFalse(d["oldPane"])
+            self.assertEqual(d["heads"], 1)
+            self.assertEqual(d["predictiveTabs"][0], "transit")
+            self.assertEqual(d["activeTab"], ["transit"])
+        self.assertEqual(self.out["print"], {"dasha": "block", "heads": 1})
+        ps = self.out["predictiveShown"]
+        self.assertEqual((ps["dasha"], ps["transit"], ps["active"]), ("none", "block", ["transit"]))
+        self.assertLessEqual(self.out["phone"]["pageScrollW"], self.out["phone"]["vw"] + 1)
+
+    def test_running_pair_matches_python(self):
+        for d in self.out["charts"]:
+            lg, signs, dasha, roles = self.python_dasha(d)
+            want = br.running_roles(RULES, dasha, roles)
+            run = d["running"]
+            self.assertEqual((run["dataMaha"], run["dataBhukti"]), (dasha["cur_maha"]["lord"], dasha["cur_bhukti"]["lord"]))
+            for k in ("maha", "bhukti"):
+                self.assertEqual(run[k]["lord"], want[k]["lord"])
+                self.assertEqual(run[k]["roles"], want[k]["roles"])
+                self.assertEqual(run[k]["text"], [_norm(x) for x in want[k]["text"]])
+
+    def test_roles_table_equals_python(self):
+        for d in self.out["charts"]:
+            lg, signs, dasha, roles = self.python_dasha(d)
+            self.assertEqual([r["planet"] for r in d["roles"]], br.PLANET_ORDER)
+            for r in d["roles"]:
+                self.assertEqual(r["roles"], roles[r["planet"]])
+                self.assertEqual(r["owns"], [h for h in range(1, 13) if br.house_lord(RULES, lg, h) == r["planet"]])
+                self.assertEqual(r["in"], br.house_of(lg, signs[r["planet"]]))
+
+    def test_watch_periods_equal_python(self):
+        for d in self.out["charts"]:
+            lg, signs, dasha, roles = self.python_dasha(d)
+            want = br.watch_periods(RULES, dasha, roles, self.now, years=10)
+            self.assertEqual(len(d["watch"]), len(want))
+            for g, w in zip(d["watch"], want):
+                self.assertEqual((g["maha"], g["bhukti"], g["kind"], g["roles"]), (w["maha"], w["bhukti"], w["kind"], w["roles"]))
+                self.assertAlmostEqual(g["start"], _ms_naive(w["start"]), delta=1000)
+                self.assertAlmostEqual(g["end"], _ms_naive(w["end"]), delta=1000)
+
+    def test_role_chips_on_bhukti_rows(self):
+        for d in self.out["charts"]:
+            lg, signs, dasha, roles = self.python_dasha(d)
+            self.assertEqual([b["maha"] for b in d["blocks"]], [t["lord"] for t in dasha["timeline"]])
+            for b, t in zip(d["blocks"], dasha["timeline"]):
+                self.assertEqual(b["headRoles"], roles[t["lord"]])
+                self.assertEqual([r["bhukti"] for r in b["rows"]], [x["lord"] for x in t["bhuktis"]])
+                for r in b["rows"]:
+                    self.assertEqual(r["roles"], br._applicable_roles(roles[r["bhukti"]], False))
+            current = [(b["maha"], r["bhukti"]) for b in d["blocks"] for r in b["rows"] if r["now"]]
+            self.assertEqual(current, [(dasha["cur_maha"]["lord"], dasha["cur_bhukti"]["lord"])])
+
+    def test_indicative_wording_present(self):
+        for d in self.out["charts"]:
+            self.assertIn("indicative", d["text"].lower())
+            self.assertNotRegex(d["text"].lower(), r"will die|certainly|definitely")
+        for d in self.out["charts"]:
+            self.assertIn("before the time of death is promised", d["text"])      # the role legend quotes the slide
+
+    def test_missing_lagna_still_shows_the_daśā_with_a_note(self):
+        self.assertIn("Lagna", self.out["noLagna"])
+        self.assertIn("Mahādaśā", self.out["noLagna"])
+
+
 if __name__ == "__main__":
     unittest.main()

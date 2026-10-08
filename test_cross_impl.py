@@ -122,7 +122,7 @@ class HtmlTabIsWired(unittest.TestCase):
             r'<div class="rpane" id="pane-ashtakavarga" data-print-title="[^"]+" style="display:none"></div>')
 
     def test_tab_switcher_knows_the_new_pane(self):
-        sw = re.search(r'\[("dasha".*?)\]\.forEach\(k=>', self.html, re.S).group(1)
+        sw = re.search(r'\[("transit".*?)\]\.forEach\(k=>', self.html, re.S).group(1)
         self.assertIn('"ashtakavarga"', sw)
 
     def test_predictive_render_calls_the_new_renderer(self):
