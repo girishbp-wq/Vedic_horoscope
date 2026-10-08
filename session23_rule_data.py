@@ -103,23 +103,23 @@ BADHAKA_BY_MODE = {"Chara": 11, "Sthira": 9, "Dwisabhava": 7}   # the page spell
 
 DIGNITY_EFFECT = {
     "Deep Exalted": dict(band="strong", status="taught", slide="31",
-                         text="Exalted at the deep-exaltation degree: the karakatwas of the graha are bestowed in full force."),
+                         text="at the deep-exaltation degree the karakatwas of the graha are bestowed in full force."),
     "Exalted": dict(band="strong", status="taught", slide="31",
-                    text="Exalted: the karakatwas of the graha are bestowed in full force on this bhava's karakatwas."),
+                    text="the karakatwas of the graha are bestowed in full force on this bhava's karakatwas."),
     "Own (Moolatrikona)": dict(band="strong", status="taught", slide="31",
-                               text="In its Moolatrikona sign: exaltation / own house / MT sign quantify the results — the graha gives its karakatwas well."),
+                               text="in its Moolatrikona sign — exaltation / own house / MT sign quantify the results; the graha gives its karakatwas well."),
     "Own House": dict(band="strong", status="taught", slide="31",
-                      text="In its own house: exaltation / own house / MT sign quantify the results — the graha gives its karakatwas well."),
+                      text="in its own house — exaltation / own house / MT sign quantify the results; the graha gives its karakatwas well."),
     "Friend's House": dict(band="medium", status="blend", slide="12",
-                           text="In a friend's house: the graha is supported and gives its karakatwas with ease."),
+                           text="the graha is supported and gives its karakatwas with ease."),
     "Neutral House": dict(band="medium", status="blend", slide="12",
-                          text="In a neutral house: the results of the graha are moderate."),
+                          text="the results of the graha are moderate."),
     "Enemy's House": dict(band="weak", status="blend", slide="12",
-                          text="In an enemy's house: the graha gives its karakatwas with difficulty."),
+                          text="the graha gives its karakatwas with difficulty."),
     "Debilitated": dict(band="weak", status="taught", slide="31",
-                        text="Debilitated: the karakatwas come through diminished — when the Sun is strong there is confidence, when weak there is ego."),
+                        text="the karakatwas of the graha come through diminished."),
     "Deep Debilitated": dict(band="weak", status="taught", slide="31",
-                             text="Deep debilitation (near the exact degree) is the strongest form of debilitation: the karakatwas are heavily diminished, though the graha still gives results."),
+                             text="the strongest form of debilitation (near the exact degree): the karakatwas are heavily diminished, though the graha still gives results."),
 }
 
 DIGBALA = {   # house of directional strength; `lost` = the opposite house
