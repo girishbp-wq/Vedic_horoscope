@@ -329,6 +329,17 @@ const EXTRACT = () => {
       out.hiddenElsewhere = await page.evaluate(() => [...document.querySelectorAll('#report details.section')]
         .filter(s => /Bhāva Analysis/.test(s.querySelector('.section-title').textContent)).map(s => getComputedStyle(s).display));
       await page.click('#reportNav button:has-text("Bhāvas")');
+      out.crowded = await page.evaluate(() => {
+        // every planet in one rāśi (Karka, 100°) with Rahu/Ketu in the same sign: all tables must still render
+        const sid = {}; for (const p of S23_PLANETS) sid[p] = 100 + S23_PLANETS.indexOf(p) * 0.1;
+        renderS23Sections(sid, 4);     // Lagna Karka: every planet in the 1st house
+        const q = document.querySelector('#s23-classes-body table[data-class="Kendra"]');
+        return {tables: document.querySelectorAll('#s23-classes-body table, #s23-predict-body table').length,
+                kendraPlanets: [...q.querySelectorAll('.s23-pl')].map(x => x.dataset.p),
+                cards: document.querySelectorAll('#s23-predict-body .s23-gb').length,
+                conj: document.querySelectorAll('#s23-conj > li[data-a]').length,
+                text: document.getElementById('s23-predict-body').innerText.length}; });
+      await page.evaluate(() => renderS23Sections(currentChart.chart.sidereal, currentChart.lagnaRashi.n));
       out.noLagna = await page.evaluate(() => { renderS23Sections(currentChart.chart.sidereal, 0);
         return {classes: document.getElementById('s23-classes-body').innerText, predict: document.getElementById('s23-predict-body').innerText,
                 tables: document.querySelectorAll('#s23-classes-body table, #s23-predict-body table').length}; });
@@ -492,6 +503,14 @@ class BrowserSession23(unittest.TestCase):
                              [(a["by"], a["to"], a["h"], a["status"], a["text"], a["jup"]) for a in d["asp"]])
             self.assertIn("taught", d["predictText"].lower())      # the legend explains the tags
             self.assertIn("curated", d["predictText"].lower())
+
+    def test_crowded_chart_still_renders(self):
+        c = self.out["crowded"]
+        self.assertEqual(c["tables"], 15)                      # matrix, ten classes, readings, five-step, bhava+bhava, graha+rashi
+        self.assertEqual(c["cards"], 9)
+        self.assertEqual(c["conj"], 36)                      # nine planets in one sign: every pair is a conjunction
+        self.assertEqual(c["kendraPlanets"], br.PLANET_ORDER)  # Lagna 4 is Karka, so all nine sit in the 1st, a Kendra
+        self.assertGreater(c["text"], 5000)
 
     def test_sections_explain_missing_lagna(self):
         n = self.out["noLagna"]
