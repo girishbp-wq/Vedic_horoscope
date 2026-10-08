@@ -272,7 +272,7 @@
    "class": "Trishadaya",
    "applies": "malefic",
    "exclude_houses": [],
-   "text": "Natural malefics (Saturn, Mars, Sun) in the Trishadaya houses give very good material results during their Maha Dasha.",
+   "text": "Slide 23: when the lord of a Trishadaya house is a natural malefic (Saturn, Mars or Sun) and sits in its own house, the results are simply amazing during its Maha Dasha.",
    "slide": "23"
   }
  ],
@@ -347,7 +347,7 @@
   "Saturn": {
    "strong": 7,
    "lost": 1,
-   "status": "standard",
+   "status": "taught",
    "source": "Recording: Saturn is powerful in the 7th (example given); the opposite house is the standard rule"
   },
   "Moon": {
@@ -1955,7 +1955,7 @@
   {
    "a": "Sun",
    "b": "Rahu",
-   "conjunction": "The Sun is the soul and authority; Rahu is obsession and amplification. Together ego can swell, and the person may seek status, power or recognition with intensity; the father's influence may be unusual. This is called a grahana (eclipse) yoga and asks for humility.",
+   "conjunction": "The Sun is the soul and authority; Rahu is obsession and amplification. Together ego can swell, and the person may seek status, power or recognition with intensity; the father's influence may be unusual. This asks for humility.",
    "aspect": "When the Sun and Rahu look at each other, ambition and illusion mingle: there is a pull towards unconventional paths and recognition, with the need to guard against ego and confusion about identity.",
    "status": "curated",
    "source": "KARAKATWAS[Sun, Rahu: qualities, signifies] + PLANET_PROFILE[Sun, Rahu: Nature]"
@@ -1971,7 +1971,7 @@
   {
    "a": "Moon",
    "b": "Mars",
-   "conjunction": "The Moon is the mind and emotion; Mars is energy and courage. Together feelings turn into action: a passionate, courageous, quick-tempered mind; good for property, real estate and energetic work. Called Chandra-Mangala yoga, it favours earning, though moods and impulsiveness need steadying.",
+   "conjunction": "The Moon is the mind and emotion; Mars is energy and courage. Together feelings turn into action: a passionate, courageous, quick-tempered mind; good for property, real estate and energetic work. It favours earning, though moods and impulsiveness need steadying.",
    "aspect": "When the Moon and Mars look at each other, emotion and drive influence one another: the person acts on feelings, can be enterprising and short-tempered, and the mother and younger siblings play an active role.",
    "status": "curated",
    "source": "KARAKATWAS[Moon, Mars: qualities, signifies] + PLANET_PROFILE[Moon, Mars: Nature]"
@@ -1987,7 +1987,7 @@
   {
    "a": "Moon",
    "b": "Jupiter",
-   "conjunction": "The Moon is the mind and nurture; Jupiter is wisdom and good fortune. Together they give a kind, optimistic, generous mind — Gaja-Kesari yoga when in a kendra — which favours respect, wisdom, family happiness and prosperity.",
+   "conjunction": "The Moon is the mind and nurture; Jupiter is wisdom and good fortune. Together they give a kind, optimistic, generous mind — which favours respect, wisdom, family happiness and prosperity.",
    "aspect": "When the Moon and Jupiter look at each other, the mind is blessed with wisdom and optimism; the person is respected, calm and supported by teachers and family.",
    "status": "curated",
    "source": "KARAKATWAS[Moon, Jupiter: qualities, signifies] + PLANET_PROFILE[Moon, Jupiter: Nature]"
@@ -2003,7 +2003,7 @@
   {
    "a": "Moon",
    "b": "Saturn",
-   "conjunction": "The Moon is the mind and emotion; Saturn is delay, discipline and detachment. Together they bring a serious, reserved, worry-prone mind (Punarphoo yoga); emotional heaviness and a hard early life can mature into patience and resilience.",
+   "conjunction": "The Moon is the mind and emotion; Saturn is delay, discipline and detachment. Together they bring a serious, reserved, worry-prone mind; emotional heaviness and a hard early life can mature into patience and resilience.",
    "aspect": "When the Moon and Saturn look at each other, the mind is tested by restraint: caution, worry and isolation are possible, but so are discipline, endurance and depth.",
    "status": "curated",
    "source": "KARAKATWAS[Moon, Saturn: qualities, signifies] + PLANET_PROFILE[Moon, Saturn: Nature]"
@@ -2011,7 +2011,7 @@
   {
    "a": "Moon",
    "b": "Rahu",
-   "conjunction": "The Moon is the mind; Rahu is obsession and illusion. Together they can amplify emotions, anxieties and fears and bring an unconventional mind, a pull towards foreign matters and mental restlessness (grahana yoga on the mind); steadiness and meditation help.",
+   "conjunction": "The Moon is the mind; Rahu is obsession and illusion. Together they can amplify emotions, anxieties and fears and bring an unconventional mind, a pull towards foreign matters and mental restlessness; steadiness and meditation help.",
    "aspect": "When the Moon and Rahu look at each other, the mind is stirred by desire and imagination; vivid dreams, anxieties and unusual attractions are possible, and the mother's influence may be unconventional.",
    "status": "curated",
    "source": "KARAKATWAS[Moon, Rahu: qualities, signifies] + PLANET_PROFILE[Moon, Rahu: Nature]"
@@ -2059,7 +2059,7 @@
   {
    "a": "Mars",
    "b": "Rahu",
-   "conjunction": "Mars is courage and aggression; Rahu is obsession and amplification. Together they intensify anger, risk-taking and ambition (Angaraka yoga); the person is daring and unconventional but prone to impulse, accidents and conflict.",
+   "conjunction": "Mars is courage and aggression; Rahu is obsession and amplification. Together they intensify anger, risk-taking and ambition; the person is daring and unconventional but prone to impulse, accidents and conflict.",
    "aspect": "When Mars and Rahu look at each other, aggression and obsession feed each other: bold, risk-taking energy, with the need to guard against accidents, anger and rash decisions.",
    "status": "curated",
    "source": "KARAKATWAS[Mars, Rahu: qualities, signifies] + PLANET_PROFILE[Mars, Rahu: Nature]"
@@ -2123,7 +2123,7 @@
   {
    "a": "Jupiter",
    "b": "Rahu",
-   "conjunction": "Jupiter is wisdom and the guru; Rahu is obsession and unconventionality. Together (guru-chandala yoga) they can give an unorthodox or foreign-influenced path of belief, big ambitions and doubt about teachers; ethics need care.",
+   "conjunction": "Jupiter is wisdom and the guru; Rahu is obsession and unconventionality. Together they can give an unorthodox or foreign-influenced path of belief, big ambitions and doubt about teachers; ethics need care.",
    "aspect": "When Jupiter and Rahu look at each other, wisdom meets amplification: an adventurous, boundary-pushing mind, with the need to guard against exaggeration and misplaced faith.",
    "status": "curated",
    "source": "KARAKATWAS[Jupiter, Rahu: qualities, signifies] + PLANET_PROFILE[Jupiter, Rahu: Nature]"
@@ -2163,7 +2163,7 @@
   {
    "a": "Saturn",
    "b": "Rahu",
-   "conjunction": "Saturn is discipline and delay; Rahu is obsession and amplification. Together they intensify worry, ambition and the drive for worldly success through hard work (shrapit yoga); the person can be driven, unconventional and burdened by fears.",
+   "conjunction": "Saturn is discipline and delay; Rahu is obsession and amplification. Together they intensify worry, ambition and the drive for worldly success through hard work; the person can be driven, unconventional and burdened by fears.",
    "aspect": "When Saturn and Rahu look at each other, restraint meets obsession: heavy responsibilities and anxieties, with great determination and the need for patient, ethical effort.",
    "status": "curated",
    "source": "KARAKATWAS[Saturn, Rahu: qualities, signifies] + PLANET_PROFILE[Saturn, Rahu: Nature]"

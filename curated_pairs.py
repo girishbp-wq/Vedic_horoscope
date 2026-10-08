@@ -28,28 +28,28 @@ DATA = {
         "The Sun is authority, the father and ego; Saturn is discipline, delay and hard work. Being natural enemies, they can bring tension between ego and duty, or between father and son, and a hard-won, late-maturing success.",
         "When the Sun and Saturn look at each other, willpower meets restraint: there is struggle and delay, but it matures into responsibility, perseverance and respect over time."),
     ("Sun", "Rahu"): (
-        "The Sun is the soul and authority; Rahu is obsession and amplification. Together ego can swell, and the person may seek status, power or recognition with intensity; the father's influence may be unusual. This is called a grahana (eclipse) yoga and asks for humility.",
+        "The Sun is the soul and authority; Rahu is obsession and amplification. Together ego can swell, and the person may seek status, power or recognition with intensity; the father's influence may be unusual. This asks for humility.",
         "When the Sun and Rahu look at each other, ambition and illusion mingle: there is a pull towards unconventional paths and recognition, with the need to guard against ego and confusion about identity."),
     ("Sun", "Ketu"): (
         "The Sun is the soul and ego; Ketu is detachment and spirituality. Together the sense of self is turned inward: the person may be introspective, spiritual or indifferent to status, and the relationship with the father may be distant.",
         "When the Sun and Ketu look at each other, ego meets detachment: the person questions identity and authority, and may find purpose in spiritual or research pursuits."),
     ("Moon", "Mars"): (
-        "The Moon is the mind and emotion; Mars is energy and courage. Together feelings turn into action: a passionate, courageous, quick-tempered mind; good for property, real estate and energetic work. Called Chandra-Mangala yoga, it favours earning, though moods and impulsiveness need steadying.",
+        "The Moon is the mind and emotion; Mars is energy and courage. Together feelings turn into action: a passionate, courageous, quick-tempered mind; good for property, real estate and energetic work. It favours earning, though moods and impulsiveness need steadying.",
         "When the Moon and Mars look at each other, emotion and drive influence one another: the person acts on feelings, can be enterprising and short-tempered, and the mother and younger siblings play an active role."),
     ("Moon", "Mercury"): (
         "The Moon is emotion and the mind; Mercury is intellect and communication. Together they give a quick, imaginative, communicative mind with a gift for writing, trading and learning, though it can be restless and over-thinking.",
         "When the Moon and Mercury look at each other, feeling and reasoning work together: the person is a sensitive communicator, adaptable, curious and inventive."),
     ("Moon", "Jupiter"): (
-        "The Moon is the mind and nurture; Jupiter is wisdom and good fortune. Together they give a kind, optimistic, generous mind — Gaja-Kesari yoga when in a kendra — which favours respect, wisdom, family happiness and prosperity.",
+        "The Moon is the mind and nurture; Jupiter is wisdom and good fortune. Together they give a kind, optimistic, generous mind — which favours respect, wisdom, family happiness and prosperity.",
         "When the Moon and Jupiter look at each other, the mind is blessed with wisdom and optimism; the person is respected, calm and supported by teachers and family."),
     ("Moon", "Venus"): (
         "The Moon is emotion and the mother; Venus is charm, love and comfort. Together they give a loving, artistic, pleasure-seeking nature with a taste for music, beauty and comfort; relationships with women are important, and excess indulgence is the caution.",
         "When the Moon and Venus look at each other, feeling and charm blend: the person is affectionate, tasteful and sociable, with warm family bonds."),
     ("Moon", "Saturn"): (
-        "The Moon is the mind and emotion; Saturn is delay, discipline and detachment. Together they bring a serious, reserved, worry-prone mind (Punarphoo yoga); emotional heaviness and a hard early life can mature into patience and resilience.",
+        "The Moon is the mind and emotion; Saturn is delay, discipline and detachment. Together they bring a serious, reserved, worry-prone mind; emotional heaviness and a hard early life can mature into patience and resilience.",
         "When the Moon and Saturn look at each other, the mind is tested by restraint: caution, worry and isolation are possible, but so are discipline, endurance and depth."),
     ("Moon", "Rahu"): (
-        "The Moon is the mind; Rahu is obsession and illusion. Together they can amplify emotions, anxieties and fears and bring an unconventional mind, a pull towards foreign matters and mental restlessness (grahana yoga on the mind); steadiness and meditation help.",
+        "The Moon is the mind; Rahu is obsession and illusion. Together they can amplify emotions, anxieties and fears and bring an unconventional mind, a pull towards foreign matters and mental restlessness; steadiness and meditation help.",
         "When the Moon and Rahu look at each other, the mind is stirred by desire and imagination; vivid dreams, anxieties and unusual attractions are possible, and the mother's influence may be unconventional."),
     ("Moon", "Ketu"): (
         "The Moon is emotion and the mother; Ketu is detachment and mysticism. Together they give an intuitive, spiritual and withdrawn mind that can find the emotional world confusing; sudden emotional severances and sensitivity are possible.",
@@ -67,7 +67,7 @@ DATA = {
         "Mars is energy and impulse; Saturn is delay and discipline. Together they bring friction — drive held back by restraint — which can build endurance and technical skill but also frustration, accidents and harshness.",
         "When Mars and Saturn look at each other, impulse meets caution: there are tests of patience, delays and tensions, and the result can be sustained, disciplined effort."),
     ("Mars", "Rahu"): (
-        "Mars is courage and aggression; Rahu is obsession and amplification. Together they intensify anger, risk-taking and ambition (Angaraka yoga); the person is daring and unconventional but prone to impulse, accidents and conflict.",
+        "Mars is courage and aggression; Rahu is obsession and amplification. Together they intensify anger, risk-taking and ambition; the person is daring and unconventional but prone to impulse, accidents and conflict.",
         "When Mars and Rahu look at each other, aggression and obsession feed each other: bold, risk-taking energy, with the need to guard against accidents, anger and rash decisions."),
     ("Mars", "Ketu"): (
         "Mars is courage and action; Ketu is detachment and severance. Together the courage can turn into fearless, sharp, sometimes reckless action, and interest in surgery, spiritual discipline or martial work; sudden cuts, injuries and quarrels need care.",
@@ -91,7 +91,7 @@ DATA = {
         "Jupiter is wisdom and expansion; Saturn is discipline and restraint. Together they balance growth and caution, giving a practical, wise and patient person who builds slowly and steadily; delays are followed by lasting success.",
         "When Jupiter and Saturn look at each other, expansion meets structure: sound judgement, responsibility and a methodical path to wisdom and security."),
     ("Jupiter", "Rahu"): (
-        "Jupiter is wisdom and the guru; Rahu is obsession and unconventionality. Together (guru-chandala yoga) they can give an unorthodox or foreign-influenced path of belief, big ambitions and doubt about teachers; ethics need care.",
+        "Jupiter is wisdom and the guru; Rahu is obsession and unconventionality. Together they can give an unorthodox or foreign-influenced path of belief, big ambitions and doubt about teachers; ethics need care.",
         "When Jupiter and Rahu look at each other, wisdom meets amplification: an adventurous, boundary-pushing mind, with the need to guard against exaggeration and misplaced faith."),
     ("Jupiter", "Ketu"): (
         "Jupiter is wisdom; Ketu is detachment and moksha. Together they give a spiritual, philosophical mind with an interest in mysticism, meditation and the inner life; worldly ambition may be low.",
@@ -106,7 +106,7 @@ DATA = {
         "Venus is love and comfort; Ketu is detachment. Together the pleasure drive is turned towards the spiritual: refined taste with disinterest in worldly comfort, and relationships that carry a past-life or karmic tone.",
         "When Venus and Ketu look at each other, love meets detachment: a spiritual, introspective approach to relationships, with sudden changes in love life possible."),
     ("Saturn", "Rahu"): (
-        "Saturn is discipline and delay; Rahu is obsession and amplification. Together they intensify worry, ambition and the drive for worldly success through hard work (shrapit yoga); the person can be driven, unconventional and burdened by fears.",
+        "Saturn is discipline and delay; Rahu is obsession and amplification. Together they intensify worry, ambition and the drive for worldly success through hard work; the person can be driven, unconventional and burdened by fears.",
         "When Saturn and Rahu look at each other, restraint meets obsession: heavy responsibilities and anxieties, with great determination and the need for patient, ethical effort."),
     ("Saturn", "Ketu"): (
         "Saturn is discipline and detachment; Ketu is mysticism and severance. Together they give a deeply austere, spiritual and reserved temperament, interested in solitude and renunciation; coldness and isolation are the caution.",

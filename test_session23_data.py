@@ -40,6 +40,20 @@ class RuleSheets(unittest.TestCase):
         idx = [order.index(r["class"]) for r in rules()["class_rules"]]
         self.assertEqual(idx, sorted(idx))
 
+    def test_trishadaya_malefic_rule_states_its_condition(self):
+        # slide 23: amazing results only when the lord of a Trishadaya house is a natural malefic in its own house
+        rule = next(x for x in rules()["class_rules"] if x["class"] == "Trishadaya" and x["applies"] == "malefic")
+        self.assertIn("own house", rule["text"])
+        self.assertIn("lord", rule["text"])
+
+    def test_curated_pair_text_adds_no_named_yogas(self):
+        for x in rules()["graha_pair"]:
+            if x["status"] == "curated":
+                self.assertNotIn("yoga", (x["conjunction"] + " " + x["aspect"]).lower(), (x["a"], x["b"]))
+
+    def test_sun_and_saturn_digbala_are_taught(self):
+        self.assertEqual({p: rules()["digbala"][p]["status"] for p in ("Sun", "Saturn")}, {"Sun": "taught", "Saturn": "taught"})
+
     def test_apoklima_wording_is_kept_as_printed(self):
         apok = next(c for c in rules()["classes"] if c["name"] == "Apoklima")
         self.assertIn("Except 9th house, it is considered as bad position to the planets", apok["rule"])

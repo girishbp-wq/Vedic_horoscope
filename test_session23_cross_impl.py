@@ -620,6 +620,9 @@ const EXTRACT = () => {
       out.noLagna = await page.evaluate(() => { renderS23Dasha(buildDasha(currentChart.chart.sidereal.Moon, currentChart.dob, currentChart.tob), null, new Date());
         return document.getElementById('s23-dasha-body').innerText; });
       await page.evaluate(() => renderPredictive());
+      out.runPart = await page.evaluate(() => ({
+        onlyMahaRole: document.createElement('div').appendChild(Object.assign(document.createElement('div'), {innerHTML: s23RunPart("bhukti", "Bhukti", {lord: "Venus", roles: [], text: []}, ["Trishadaya lord"])})).innerText,
+        noRole: document.createElement('div').appendChild(Object.assign(document.createElement('div'), {innerHTML: s23RunPart("bhukti", "Bhukti", {lord: "Sun", roles: [], text: []}, [])})).innerText}));
     }
   }
   out.blocked = blocked;
@@ -733,6 +736,13 @@ class BrowserDasha(unittest.TestCase):
             self.assertNotRegex(d["text"].lower(), r"will die|certainly|definitely")
         for d in self.out["charts"]:
             self.assertIn("before the time of death is promised", d["text"])      # the role legend quotes the slide
+
+    def test_running_bhukti_whose_only_role_is_mahadasha_only_is_explained(self):
+        p = self.out["runPart"]
+        self.assertIn("Trishadaya", p["onlyMahaRole"])
+        self.assertIn("Mahādaśā only", p["onlyMahaRole"])
+        self.assertNotIn("holds none of the six roles", p["onlyMahaRole"])
+        self.assertIn("holds none of the six roles", p["noRole"])
 
     def test_missing_lagna_still_shows_the_daśā_with_a_note(self):
         self.assertIn("Lagna", self.out["noLagna"])
@@ -891,6 +901,7 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(got["nature"], br.nature(p, c["signs"], c["waxing"]), (i, p))
                 self.assertEqual(got["status"], want["status"], (i, p))
                 self.assertEqual(got["points"], "\n\n".join(want["points"]), (i, p))
+                self.assertEqual(got["extra"] or "", "\n".join(want["extra"]), (i, p))
                 self.assertEqual(got["dignity"], want["dignity"]["label"], (i, p))
                 self.assertEqual(got["dignity_line"] or "", want["dignity_line"], (i, p))
                 self.assertEqual(got["digbala_line"] or "", want["digbala_line"], (i, p))
@@ -942,6 +953,14 @@ class ExcelSession23(unittest.TestCase):
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
 class ShippedSession23Workbook(unittest.TestCase):
+    def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
+        import make_session23_xlsx as mx
+        dvs = [d for d in openpyxl.load_workbook(SHIPPED_XLSX)["Chart"].data_validations.dataValidation if d.type == "decimal"]
+        self.assertEqual(len(dvs), 1)
+        self.assertIn(f"C{mx.PLANET_ROW0}:C{mx.PLANET_ROW0 + 8}", str(dvs[0].sqref))
+        self.assertEqual((float(dvs[0].formula1), float(dvs[0].formula2)), (0.0, 29.999999))
+        self.assertEqual(dvs[0].showErrorMessage, True)
+
     def test_committed_xlsx_has_formulas_and_cached_values_for_its_own_inputs(self):
         import make_session23_xlsx as mx
         self.assertTrue(SHIPPED_XLSX.exists(), "run: python3 build_session23.py --seed && python3 make_session23_xlsx.py")

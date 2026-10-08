@@ -303,9 +303,14 @@ def _pair_row(rules, a, b):
     return next(x for x in rules["graha_pair"] if (x["a"], x["b"]) == (a, b))
 
 
+NODE_OWN_NOTE = "node treats its occupied rashi as own"      # the page's convention, not something the teacher taught
+
+
 def _dignity_texts(rules, d):
     eff = rules["dignity_effect"].get(d["label"])
-    return (f"{d['label']}: {eff['text']}", eff["status"]) if eff else ("", None)
+    if not eff:
+        return "", None
+    return f"{d['label']}: {eff['text']}", "standard" if d["note"] == NODE_OWN_NOTE else eff["status"]
 
 
 def graha_bhava(rules, lagna, signs, planet, deg, waxing):

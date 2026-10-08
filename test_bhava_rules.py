@@ -502,6 +502,16 @@ class PredictionLayers(unittest.TestCase):
         self.assertTrue(moon["strength_line"].startswith("Neutral House"))
         self.assertIn(tula["sanskrit"], moon["text"])
 
+    def test_node_own_house_line_is_not_tagged_taught(self):
+        # the teacher did not teach "a node treats its occupied rāśi as own"; the card must not claim she did
+        third = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Rahu=6), "Rahu", None, True)           # Tula, the 3rd
+        self.assertEqual(third["dignity"]["label"], "Own House")
+        self.assertEqual(third["dignity_status"], "standard")
+        exalted = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Rahu=1), "Rahu", None, True)          # Vrishabha: exalted
+        self.assertEqual((exalted["dignity"]["label"], exalted["dignity_status"]), ("Exalted", "taught"))
+        sun = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Sun=4), "Sun", 25.0, True)                 # own sign, outside MT
+        self.assertEqual((sun["dignity"]["label"], sun["dignity_status"]), ("Own House", "taught"))
+
     def test_every_status_tag_present(self):
         chart = dict(SIGNS, Mercury=10, Sun=0, Jupiter=1, Moon=7)
         seen = set()

@@ -96,7 +96,7 @@ CLASS_RULES = [
     dict(**{"class": "Trishadaya"}, applies="any", exclude_houses=[], slide="23",
          text="The 3rd, 6th and 11th stand for desire, anger and greed; they are opposite to the 9th, 12th and 5th."),
     dict(**{"class": "Trishadaya"}, applies="malefic", exclude_houses=[], slide="23",
-         text="Natural malefics (Saturn, Mars, Sun) in the Trishadaya houses give very good material results during their Maha Dasha."),
+         text="Slide 23: when the lord of a Trishadaya house is a natural malefic (Saturn, Mars or Sun) and sits in its own house, the results are simply amazing during its Maha Dasha."),
 ]
 
 BADHAKA_BY_MODE = {"Chara": 11, "Sthira": 9, "Dwisabhava": 7}   # the page spells the mode "Dwisabhava"
@@ -124,7 +124,7 @@ DIGNITY_EFFECT = {
 
 DIGBALA = {   # house of directional strength; `lost` = the opposite house
     "Sun": dict(strong=10, lost=4, status="taught", source="Slides 33 and 39: Sun loses directional strength in the 4th and gains it in the 10th"),
-    "Saturn": dict(strong=7, lost=1, status="standard", source="Recording: Saturn is powerful in the 7th (example given); the opposite house is the standard rule"),
+    "Saturn": dict(strong=7, lost=1, status="taught", source="Recording: Saturn is powerful in the 7th (example given); the opposite house is the standard rule"),
     "Moon": dict(strong=4, lost=10, status="standard", source="Standard digbala table"),
     "Venus": dict(strong=4, lost=10, status="standard", source="Standard digbala table"),
     "Mercury": dict(strong=1, lost=7, status="standard", source="Standard digbala table"),

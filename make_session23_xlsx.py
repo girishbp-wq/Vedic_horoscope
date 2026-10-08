@@ -48,7 +48,7 @@ ROLES_ROW0 = 3                               # Roles_Calc (header row 2)
 DASHA_ROW0, DASHA_CUR_ROW = 24, 8            # Dasha_Calc: 81 Bhukti rows; running Mahādaśā in B8, Bhukti in B9
 PREDICT_ROW0 = 3                             # Predict_Calc (header row 2); 9 planets
 PREDICT_COLS = dict(planet=1, house=2, nature=3, status=4, points=5, dignity=6, dignity_line=7,
-                    digbala_line=8, classes=9, class_texts=10)
+                    digbala_line=8, classes=9, class_texts=10, extra=11)
 FLAG_ROW0 = 16                               # Predict_Calc: class-rule flags, one row per planet (header row 15)
 
 HEAD_FILL = PatternFill("solid", fgColor="6B1D2B")
@@ -153,12 +153,18 @@ def _chart_sheet(ws, rules):
     for c in (BIRTH_CELL, NOW_CELL):
         ws[c].number_format, ws[c].fill = DATE_FMT, INPUT_FILL
     ws["A21"] = ("Yellow cells are inputs. The Lagna and signs have drop-downs (page spelling). "
-                 "Houses count from the Lagna sign. Degrees decide Deep Exalted / Deep Debilitated and Moolatrikona.")
+                 "Houses count from the Lagna sign. Enter each degree as the degree within its sign (0 to under 30), "
+                 "not the absolute longitude; degrees decide Deep Exalted / Deep Debilitated and Moolatrikona.")
     ws["A21"].alignment = WRAP
     dv = DataValidation(type="list", formula1="=Ref_Calc!$B$3:$B$14", allow_blank=False)
     ws.add_data_validation(dv)
     dv.add("B3")
     dv.add(f"B{PLANET_ROW0}:B{PLANET_ROW0 + 8}")
+    deg = DataValidation(type="decimal", operator="between", formula1="0", formula2="29.999999", allow_blank=False,
+                         showErrorMessage=True, errorTitle="Degree within the sign",
+                         error="Enter the degree inside the sign: 0 up to (but not including) 30.")
+    ws.add_data_validation(deg)
+    deg.add(f"C{PLANET_ROW0}:C{PLANET_ROW0 + 8}")
     ws.column_dimensions["A"].width = 30
     for c in "BCDE":
         ws.column_dimensions[c].width = 18
@@ -314,7 +320,7 @@ def _predict_sheet(ws, rules):
     ws["A1"] = "Graha + bhāva for this chart — the text is looked up in GrahaInBhava, ClassRules, DignityEffect and Digbala"
     ws["A1"].font = Font(bold=True, color="6B1D2B")
     _head(ws, 2, ["Graha", "House", "Nature", "Status", "Reading (taught / curated text)", "Dignity", "Dignity line",
-                  "Digbala line", "Classes of the house", "Class-rule texts", "", "Row in GrahaInBhava", "Digbala house", "Digbala lost"])
+                  "Digbala line", "Classes of the house", "Class-rule texts", "Recording extra points", "Row in GrahaInBhava", "Digbala house", "Digbala lost"])
     for k, p in enumerate(br.PLANET_ORDER):
         r = PREDICT_ROW0 + k
         pc = _planet_cells(k)
@@ -345,6 +351,7 @@ def _predict_sheet(ws, rules):
         fr = FLAG_ROW0 + k
         joined = "&".join(f'IF({L(2 + m)}{fr}=1,CHAR(10)&ClassRules!$D${2 + m},"")' for m in range(n_rules))
         ws.cell(row=r, column=10, value=f"=MID({joined},2,32000)")
+        ws.cell(row=r, column=11, value=f"=INDEX(GrahaInBhava!$D$1:$D$300,$L{r})")
         ws.cell(row=r, column=12, value=(f"=SUMPRODUCT((GrahaInBhava!$A$2:$A$300=$A{r})*(GrahaInBhava!$B$2:$B$300=$B{r})"
                                          f"*ROW(GrahaInBhava!$A$2:$A$300))"))
         ws.cell(row=r, column=13, value=f"=IFERROR(INDEX(Digbala!$B$2:$B$8,MATCH($A{r},Digbala!$A$2:$A$8,0)),0)")
@@ -362,10 +369,10 @@ def _predict_sheet(ws, rules):
                  f'OR(ClassRules!$B${cr}="any",ClassRules!$B${cr}=$C{pr}),'
                  f'NOT(ISNUMBER(SEARCH(", "&$B{pr}&",",", "&ClassRules!$C${cr}&",")))),1,0)')
             ws.cell(row=fr, column=2 + m, value=f)
-    for c, w in zip("ABCDEFGHIJ", (12, 7, 9, 10, 60, 20, 50, 50, 28, 60)):
+    for c, w in zip("ABCDEFGHIJK", (12, 7, 9, 10, 60, 20, 50, 50, 28, 60, 60)):
         ws.column_dimensions[c].width = w
     for r in range(PREDICT_ROW0, PREDICT_ROW0 + 9):
-        for c in (5, 7, 8, 10):
+        for c in (5, 7, 8, 10, 11):
             ws.cell(row=r, column=c).alignment = WRAP
 
 
