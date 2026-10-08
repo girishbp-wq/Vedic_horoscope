@@ -205,8 +205,44 @@ def extract_reference(index_path=INDEX):
     return ref
 
 
-def build(xlsx_path=XLSX, json_path=JSON_PATH, index_path=INDEX, seed=False):
-    """Workbook -> JSON. `seed=True` first rewrites the workbook from session23_rule_data.py."""
+DATA_START = "/* SESSION23-DATA-START — generated from Session23_Rules.xlsx by build_session23.py; do not edit by hand */"
+DATA_END = "/* SESSION23-DATA-END */"
+ENGINE_START = "/* SESSION23-ENGINE-START"
+
+
+def page_data_block(rules):
+    """The generated `const S23 = {...}` block: the rules without `reference` (the page has those tables itself)."""
+    lines = [DATA_START, "const S23 = {"]
+    keys = [k for k in rules if k not in ("reference", "meta")]
+    for i, k in enumerate(keys):
+        body = json.dumps(rules[k], ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+        lines.append(f" {json.dumps(k)}: {body}{',' if i < len(keys) - 1 else ''}")
+    lines += ["};", DATA_END]
+    return "\n".join(lines) + "\n"
+
+
+def write_page_block(index_path, rules):
+    """Replace (or, the first time, insert before the engine block) the SESSION23-DATA block in index.html."""
+    index_path = pathlib.Path(index_path)
+    page = index_path.read_text(encoding="utf-8")
+    block = page_data_block(rules)
+    if DATA_START in page:
+        a = page.index(DATA_START)
+        z = page.index(DATA_END, a) + len(DATA_END) + 1
+        new = page[:a] + block + page[z:]
+    else:
+        if ENGINE_START not in page:
+            raise RuntimeError("index.html has no SESSION23-ENGINE block to anchor the data block")
+        i = page.index(ENGINE_START)
+        new = page[:i] + block + page[i:]
+    if new != page:
+        index_path.write_text(new, encoding="utf-8")
+    return new != page
+
+
+def build(xlsx_path=XLSX, json_path=JSON_PATH, index_path=INDEX, seed=False, write_page=False):
+    """Workbook -> JSON (and, with write_page, the index.html data block).
+    `seed=True` first rewrites the workbook from session23_rule_data.py."""
     xlsx_path, json_path = pathlib.Path(xlsx_path), pathlib.Path(json_path)
     if seed or not xlsx_path.exists():
         seed_workbook(xlsx_path)
@@ -215,13 +251,15 @@ def build(xlsx_path=XLSX, json_path=JSON_PATH, index_path=INDEX, seed=False):
     rules["meta"] = {"source": "Session 23 slides + recording (8 Oct 2026)", "version": 1,
                      "statuses": ["taught", "curated", "blend", "standard"]}
     json_path.write_text(json.dumps(rules, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    if write_page:
+        write_page_block(index_path, rules)
     return rules
 
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    build(seed="--seed" in argv)
-    print(f"wrote {JSON_PATH.name} from {XLSX.name}")
+    build(seed="--seed" in argv, write_page=True)
+    print(f"wrote {JSON_PATH.name} from {XLSX.name} and the SESSION23-DATA block of {INDEX.name}")
     return 0
 
 
