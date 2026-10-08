@@ -91,6 +91,80 @@ class RuleSheets(unittest.TestCase):
         self.assertIn("intelligent", pair["conjunction"])
 
 
+PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+
+
+class CuratedContent(unittest.TestCase):
+    def test_every_graha_bhava_cell_exists_once(self):
+        keys = [(x["planet"], x["house"]) for x in rules()["graha_in_bhava"]]
+        self.assertEqual(len(keys), 108)
+        self.assertEqual(sorted(set(keys)), sorted((p, h) for p in PLANETS for h in range(1, 13)))
+
+    def test_sun_rows_are_taught_and_equal_the_slide_text(self):
+        import session23_sun_slides as slides
+        for x in (r for r in rules()["graha_in_bhava"] if r["planet"] == "Sun"):
+            self.assertEqual(x["status"], "taught")
+            self.assertEqual("\n\n".join(x["points"]), slides.SUN_SLIDE_TEXT[x["house"]][1], x["house"])
+
+    def test_other_rows_are_curated_with_3_to_5_points(self):
+        for x in (r for r in rules()["graha_in_bhava"] if r["planet"] != "Sun"):
+            self.assertEqual(x["status"], "curated", (x["planet"], x["house"]))
+            self.assertTrue(3 <= len(x["points"]) <= 5, (x["planet"], x["house"], len(x["points"])))
+            self.assertTrue(all(len(p.split()) >= 5 for p in x["points"]), (x["planet"], x["house"]))
+
+    def test_no_two_rows_share_text(self):
+        # taught Sun slides legitimately repeat lines ("Every planet has something good and something bad")
+        points = [p for x in rules()["graha_in_bhava"] if x["status"] != "taught" for p in x["points"]]
+        self.assertEqual(len(points), len(set(points)))
+        pairs = [t for x in rules()["graha_pair"] for t in (x["conjunction"], x["aspect"]) if t]
+        self.assertEqual(len(pairs), len(set(pairs)))
+
+    def test_curated_rows_cite_their_source_fields(self):
+        for x in (r for r in rules()["graha_in_bhava"] if r["status"] == "curated"):
+            self.assertIn(f"BHAVA_INFO[{x['house']}:", x["source"], x)
+            self.assertTrue(f"PLANET_PROFILE[{x['planet']}:" in x["source"] or f"KARAKATWAS[{x['planet']}:" in x["source"], x)
+        for x in (r for r in rules()["graha_pair"] if r["status"] == "curated"):
+            self.assertIn("KARAKATWAS[", x["source"])
+            self.assertIn(x["a"], x["source"])
+            self.assertIn(x["b"], x["source"])
+
+    def test_curated_points_draw_on_the_blended_fields(self):
+        import re
+        ref = rules()["reference"]
+        words = lambda s: set(re.findall(r"[a-z]{5,}", s.lower()))
+        for x in (r for r in rules()["graha_in_bhava"] if r["status"] == "curated"):
+            b = ref["BHAVA_INFO"][str(x["house"])]
+            pool = words(" ".join([b["nm"], b["body"], b["rel"], b["sig"]] + list(ref["KARAKATWAS"][x["planet"]].values())
+                                  + [str(v) for v in ref["PLANET_PROFILE"][x["planet"]].values()]))
+            pool |= words("self personality health wealth speech family courage communication home mother property "
+                          "children creativity intellect enemies debts disease spouse partnerships marriage longevity "
+                          "dharma fortune father career status profession gains friends desires losses foreign sleep "
+                          "spiritual moksha mind body money savings travel studies education")
+            grounded = [pt for pt in x["points"] if words(pt) & pool]
+            self.assertGreaterEqual(len(grounded) * 2, len(x["points"]), (x["planet"], x["house"]))
+
+    def test_pair_rows_cover_all_36_and_jupiter_mercury_is_taught(self):
+        pairs = rules()["graha_pair"]
+        keys = [(x["a"], x["b"]) for x in pairs]
+        want = [(a, b) for i, a in enumerate(PLANETS) for b in PLANETS[i + 1:]]
+        self.assertEqual(len(keys), 36)
+        self.assertEqual(sorted(keys, key=want.index), want)
+        for x in pairs:
+            self.assertEqual(x["status"], "taught" if (x["a"], x["b"]) == ("Mercury", "Jupiter") else "curated")
+            self.assertTrue(x["conjunction"].strip())
+            if x["status"] == "curated":
+                self.assertTrue(x["aspect"].strip(), (x["a"], x["b"]))
+
+    def test_tone_has_no_certainty_words(self):
+        import re
+        banned = re.compile(r"will die|certainly|definitely|surely|guaranteed|inevitabl|cannot fail", re.I)
+        r = rules()
+        texts = [p for x in r["graha_in_bhava"] if x["status"] == "curated" for p in x["points"]]
+        texts += [t for x in r["graha_pair"] if x["status"] == "curated" for t in (x["conjunction"], x["aspect"])]
+        for t in texts:
+            self.assertIsNone(banned.search(t), t)
+
+
 class WorkbookRoundTrip(unittest.TestCase):
     def test_json_matches_workbook(self):
         from_xlsx = b23.read_workbook(XLSX)
