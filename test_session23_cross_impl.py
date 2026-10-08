@@ -720,5 +720,224 @@ class BrowserDasha(unittest.TestCase):
         self.assertIn("Mahādaśā", self.out["noLagna"])
 
 
+# ------------------------------------------------------------------------------------------ Excel calculator
+SOFFICE = shutil.which("soffice") or shutil.which("libreoffice")
+try:
+    import openpyxl
+except ImportError:  # pragma: no cover
+    openpyxl = None
+
+SHIPPED_XLSX = ROOT / "Session23_Rules.xlsx"
+CALC_NOW = None
+
+
+def _lo_recalc(paths, outdir):
+    import tempfile
+    profile = tempfile.mkdtemp(prefix="lo_profile_")
+    try:
+        subprocess.run([SOFFICE, f"-env:UserInstallation=file://{profile}", "--headless",
+                        "--convert-to", "xlsx", "--outdir", str(outdir), *map(str, paths)],
+                       check=True, capture_output=True, timeout=900)
+    finally:
+        shutil.rmtree(profile, ignore_errors=True)
+
+
+def _waxing_of(c):
+    lon = lambda p: c["signs"][p] * 30 + c["degs"][p]
+    return br.moon_waxing(lon("Sun"), lon("Moon"))
+
+
+def calc_charts(n, seed):
+    import datetime
+    rnd = random.Random(seed)
+    out = []
+    for c in random_charts(n, seed):
+        c["birth"] = datetime.datetime(rnd.randint(1940, 2010), rnd.randint(1, 12), rnd.randint(1, 28),
+                                       rnd.randint(0, 23), rnd.randint(0, 59), 0)
+        c["waxing"] = _waxing_of(c)       # the sheet derives it from the Sun and Moon longitudes
+        out.append(c)
+    return out
+
+
+def dignity_boundary_charts(n=36):
+    """Every planet placed at sign/degree values that straddle the exaltation, debilitation and MT boundaries."""
+    import datetime
+    ref = RULES["reference"]
+    charts = []
+    for k in range(n):
+        signs, degs = {}, {}
+        for i, p in enumerate(br.PLANET_ORDER):
+            dd = ref["DIGNITY_DEG"].get(p)
+            pool = [0.0, 0.5, 14.99, 29.99]
+            if dd:
+                pool += [dd["exD"], dd["exD"] - 1, dd["exD"] + 1, dd["exD"] - 1.01, dd["exD"] + 1.01,
+                         dd["deD"], dd["deD"] - 1, dd["deD"] + 1, dd["mt"][0], dd["mt"][1], dd["mt"][1] + 0.01,
+                         max(dd["mt"][0] - 0.01, 0)]
+            degs[p] = round(min(pool[(k * 5 + i * 3) % len(pool)], 29.99), 2)     # a degree in a sign is below 30
+            home = [dd["exR"], dd["deR"], dd["mtR"]][k % 3] - 1 if dd else (k + i) % 12
+            signs[p] = home if (k // 3 + i) % 2 == 0 else (home + k // 3 + i) % 12
+        c = {"lagna": k % 12, "signs": signs, "degs": degs, "birth": datetime.datetime(1990, 1, 1)}
+        c["waxing"] = _waxing_of(c)
+        charts.append(c)
+    return charts
+
+
+@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
+class ExcelSession23(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        cls.mx = mx
+        cls.tmp_dir = tempfile.TemporaryDirectory()
+        tmp = pathlib.Path(cls.tmp_dir.name)
+        cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
+        base = tmp / "base.xlsx"
+        mx.build_workbook(base)
+        cls.charts = calc_charts(24, 77) + dignity_boundary_charts()
+        src = tmp / "in"
+        src.mkdir()
+        paths = []
+        for i, c in enumerate(cls.charts):
+            wb = openpyxl.load_workbook(base)
+            mx.set_inputs(wb, c, cls.now)
+            f = src / f"chart{i:02d}.xlsx"
+            wb.save(f)
+            paths.append(f)
+        out = tmp / "out"
+        out.mkdir()
+        _lo_recalc(paths, out)
+        cls.books = [openpyxl.load_workbook(out / p.name, data_only=True) for p in paths]
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+
+    def each(self, count=None):
+        for i, (c, wb) in enumerate(zip(self.charts, self.books)):
+            if count is None or i < count:
+                yield i, c, wb
+
+    def test_class_tables_equal_python(self):
+        mx = self.mx
+        for i, c, wb in self.each(24):
+            ws = wb["Classes_Calc"]
+            want = br.classification_tables(RULES, c["lagna"], c["signs"])
+            for name in br.CLASS_ORDER:
+                rows = [r for r in range(mx.CLASS_ROW0, mx.CLASS_ROW0 + mx.CLASS_ROWS) if ws.cell(row=r, column=1).value == name]
+                got = [(ws.cell(row=r, column=2).value, ws.cell(row=r, column=3).value,
+                        ws.cell(row=r, column=4).value or "", ws.cell(row=r, column=5).value, ws.cell(row=r, column=6).value) for r in rows]
+                exp = [(r["house"], RULES["reference"]["RASHI"][r["sign"]]["sanskrit"], ", ".join(r["planets"]), r["lord"], r["lord_house"])
+                       for r in want[name]]
+                self.assertEqual(got, exp, (i, name))
+
+    def test_matrix_and_badhaka_equal_python(self):
+        mx = self.mx
+        for i, c, wb in self.each(24):
+            ws = wb["Classes_Calc"]
+            want = br.house_class_matrix(RULES, c["lagna"])
+            got = [[ws.cell(row=mx.MATRIX_ROW0 + 1 + h, column=3 + k).value for k in range(10)] for h in range(12)]
+            self.assertEqual(got, [[1 if n in r["classes"] else 0 for n in br.CLASS_ORDER] for r in want], i)
+            self.assertEqual([ws.cell(row=mx.MATRIX_ROW0 + 1 + h, column=13).value or "" for h in range(12)],
+                             [", ".join(r["classes"]) for r in want], i)
+            b = br.badhaka(RULES, c["lagna"], c["signs"])
+            self.assertEqual((ws.cell(row=mx.BADHAKA_ROW, column=2).value, ws.cell(row=mx.BADHAKA_ROW, column=3).value,
+                              ws.cell(row=mx.BADHAKA_ROW, column=4).value, ws.cell(row=mx.BADHAKA_ROW, column=5).value,
+                              ws.cell(row=mx.BADHAKA_ROW, column=6).value or ""),
+                             (b["mode"], b["house"], RULES["reference"]["RASHI"][b["sign"]]["sanskrit"], b["lord"], ", ".join(b["occupants"])), i)
+
+    def test_roles_equal_python(self):
+        mx = self.mx
+        for i, c, wb in self.each(24):
+            ws = wb["Roles_Calc"]
+            want = br.planet_roles(RULES, c["lagna"], c["signs"])
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.ROLES_ROW0 + k
+                self.assertEqual(ws.cell(row=r, column=1).value, p)
+                flags = [ws.cell(row=r, column=2 + j).value for j in range(6)]
+                self.assertEqual(flags, [1 if role in want[p] else 0 for role in br.ROLE_ORDER], (i, p))
+                self.assertEqual(ws.cell(row=r, column=8).value or "", ", ".join(want[p]), (i, p))
+
+    def test_graha_bhava_text_equals_python(self):
+        mx = self.mx
+        for i, c, wb in self.each(24):
+            ws = wb["Predict_Calc"]
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.PREDICT_ROW0 + k
+                want = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
+                got = {name: ws.cell(row=r, column=col).value for name, col in mx.PREDICT_COLS.items()}
+                self.assertEqual(got["planet"], p)
+                self.assertEqual(got["house"], want["house"], (i, p))
+                self.assertEqual(got["nature"], br.nature(p, c["signs"], c["waxing"]), (i, p))
+                self.assertEqual(got["status"], want["status"], (i, p))
+                self.assertEqual(got["points"], "\n\n".join(want["points"]), (i, p))
+                self.assertEqual(got["dignity"], want["dignity"]["label"], (i, p))
+                self.assertEqual(got["dignity_line"] or "", want["dignity_line"], (i, p))
+                self.assertEqual(got["digbala_line"] or "", want["digbala_line"], (i, p))
+                self.assertEqual(got["classes"] or "", ", ".join(want["classes"]), (i, p))
+                self.assertEqual(got["class_texts"] or "", "\n".join(want["class_texts"]), (i, p))
+
+    def test_dignity_labels_equal_python(self):
+        mx = self.mx
+        seen = set()
+        for i, c, wb in self.each():
+            ws = wb["Predict_Calc"]
+            for k, p in enumerate(br.PLANET_ORDER):
+                got = ws.cell(row=mx.PREDICT_ROW0 + k, column=mx.PREDICT_COLS["dignity"]).value
+                want = br.dignity(RULES, p, c["signs"][p], c["degs"][p])["label"]
+                self.assertEqual(got, want, (i, p, c["signs"][p], c["degs"][p]))
+                seen.add(want)
+        self.assertTrue({"Deep Exalted", "Exalted", "Deep Debilitated", "Debilitated", "Own (Moolatrikona)", "Own House",
+                         "Friend's House", "Enemy's House"} <= seen, seen)
+
+    def test_dasha_dates_equal_python(self):
+        mx = self.mx
+        for i, c, wb in self.each(24):
+            ws = wb["Dasha_Calc"]
+            moon_lon = c["signs"]["Moon"] * 30 + c["degs"]["Moon"]
+            d = br.vimshottari(RULES, moon_lon, c["birth"], self.now)
+            rows = [(t["lord"], b["lord"], b["start"], b["end"]) for t in d["timeline"] for b in t["bhuktis"]]
+            for k, (maha, bhukti, start, end) in enumerate(rows):
+                r = mx.DASHA_ROW0 + k
+                self.assertEqual((ws.cell(row=r, column=3).value, ws.cell(row=r, column=4).value), (maha, bhukti), (i, k))
+                for col, want in ((5, start), (6, end)):
+                    got = ws.cell(row=r, column=col).value
+                    self.assertLess(abs((got - want).total_seconds()), 2, (i, k, col, got, want))
+            self.assertEqual((ws.cell(row=mx.DASHA_CUR_ROW, column=2).value, ws.cell(row=mx.DASHA_CUR_ROW + 1, column=2).value),
+                             (d["cur_maha"]["lord"], d["cur_bhukti"]["lord"]), i)
+
+    def test_workbook_keeps_the_data_sheets_and_row_labels(self):
+        mx = self.mx
+        wb = self.books[0]
+        for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala", "DashaRoleText",
+                  "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi", "Chart", "Classes_Calc", "Roles_Calc",
+                  "Dasha_Calc", "Predict_Calc", "Ref_Calc"):
+            self.assertIn(n, wb.sheetnames)
+        self.assertEqual([wb["Roles_Calc"].cell(row=2, column=2 + j).value for j in range(6)], br.ROLE_ORDER)
+        self.assertEqual([wb["Classes_Calc"].cell(row=mx.MATRIX_ROW0, column=3 + k).value for k in range(10)], br.CLASS_ORDER)
+        self.assertEqual(wb["GrahaInBhava"].cell(row=1, column=3).value, "Points")
+        for k, p in enumerate(br.PLANET_ORDER):
+            self.assertEqual(wb["Chart"].cell(row=mx.PLANET_ROW0 + k, column=1).value, p)
+
+
+@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
+class ShippedSession23Workbook(unittest.TestCase):
+    def test_committed_xlsx_has_formulas_and_cached_values_for_its_own_inputs(self):
+        import make_session23_xlsx as mx
+        self.assertTrue(SHIPPED_XLSX.exists(), "run: python3 build_session23.py --seed && python3 make_session23_xlsx.py")
+        live = openpyxl.load_workbook(SHIPPED_XLSX)
+        cached = openpyxl.load_workbook(SHIPPED_XLSX, data_only=True)
+        self.assertTrue(str(live["Chart"].cell(row=mx.PLANET_ROW0, column=4).value).startswith("="), "formulas must survive")
+        self.assertTrue(str(live["Roles_Calc"].cell(row=mx.ROLES_ROW0, column=2).value).startswith("="))
+        lagna = [r["sanskrit"] for r in RULES["reference"]["RASHI"]].index(cached["Chart"][mx.LAGNA_CELL].value)
+        signs = {p: [r["sanskrit"] for r in RULES["reference"]["RASHI"]].index(cached["Chart"].cell(row=mx.PLANET_ROW0 + k, column=2).value)
+                 for k, p in enumerate(br.PLANET_ORDER)}
+        want = br.planet_roles(RULES, lagna, signs)
+        got = {p: cached["Roles_Calc"].cell(row=mx.ROLES_ROW0 + k, column=8).value or "" for k, p in enumerate(br.PLANET_ORDER)}
+        self.assertEqual(got, {p: ", ".join(want[p]) for p in br.PLANET_ORDER})
+        self.assertEqual(cached["Dasha_Calc"].cell(row=mx.DASHA_ROW0, column=3).value in br.PLANET_ORDER, True)
+
+
 if __name__ == "__main__":
     unittest.main()

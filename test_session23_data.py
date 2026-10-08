@@ -34,6 +34,12 @@ class RuleSheets(unittest.TestCase):
         self.assertEqual(got, CLASS_HOUSES)
         self.assertEqual([c["no"] for c in rules()["classes"]], list(range(1, 11)))
 
+    def test_class_rules_stay_grouped_in_class_order(self):
+        # the Excel calculator joins rule texts in sheet order; Python joins them class by class
+        order = ["Kendra", "Trikona", "Panapara", "Apoklima", "Upachaya", "Apachaya", "Maraka", "Dusthana", "Badhaka", "Trishadaya"]
+        idx = [order.index(r["class"]) for r in rules()["class_rules"]]
+        self.assertEqual(idx, sorted(idx))
+
     def test_apoklima_wording_is_kept_as_printed(self):
         apok = next(c for c in rules()["classes"] if c["name"] == "Apoklima")
         self.assertIn("Except 9th house, it is considered as bad position to the planets", apok["rule"])
