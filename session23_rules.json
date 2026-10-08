@@ -1,0 +1,1801 @@
+{
+ "classes": [
+  {
+   "no": 1,
+   "name": "Kendra",
+   "slide_name": "Kendra or Angular houses",
+   "houses": [
+    1,
+    4,
+    7,
+    10
+   ],
+   "other_names": "Vishnu Sthanas; Pillars of the Horoscope",
+   "nature": "Very powerful, energetic and decisive houses; they give power for achievement and a strong will in life. 1st = person / self, 4th = happiness and comforts, 7th = interaction with the society and spouse, 10th = profession. Lagna is both a Kendra and a Trikona, hence extra strong and important. The distance between adjacent Kendras is always 90 degrees.",
+   "rule": "Benefic grahas in Kendras lead to powerful manifestations with smaller efforts, while malefic grahas can cause struggle and pose challenges for accomplishments. Grahas placed here are highly active. Benefic planets in a Kendra enhance the internal strength of an individual.",
+   "slides": "3-5"
+  },
+  {
+   "no": 2,
+   "name": "Trikona",
+   "slide_name": "Trikona or Trines houses",
+   "houses": [
+    1,
+    5,
+    9
+   ],
+   "other_names": "Lakshmi Sthanas; Dharmasthanas",
+   "nature": "The most auspicious houses (and their lords) in the chart. They bring spirituality, knowledge, goodness, generosity and well-being if well placed and unafflicted. 1st = self (Kendra and Trikona), 5th = intelligence and purva punya (Panapara), 9th = religion, fortune, inherited characters (Apoklima) — Kendra, Panapara and Apoklima indicate the balance. Adjacent Trikonas are 120 degrees apart; Trikona houses belong to the same tatwa, the same direction and the same varna.",
+   "rule": "The planets posited in the Trikonas get closely associated with destiny and hence gain strength. Benefics here ease the flow of destiny; malefics could cause challenges to be faced.",
+   "slides": "6-9"
+  },
+  {
+   "no": 3,
+   "name": "Panapara",
+   "slide_name": "Panapara or Succedent houses",
+   "houses": [
+    2,
+    5,
+    8,
+    11
+   ],
+   "other_names": "Succedent; money related / wealth related",
+   "nature": "Important for calculating one's financial status; they indicate the resources of the native. 2nd = one's own money, 5th = money earned by speculation, 8th = unexpected money, 11th = gain from profession or business. Panapara = accumulated or promised in future.",
+   "rule": "Grahas posited in these places are moderately strong.",
+   "slides": "10-11"
+  },
+  {
+   "no": 4,
+   "name": "Apoklima",
+   "slide_name": "Apoklima or Cadent houses",
+   "houses": [
+    3,
+    6,
+    9,
+    12
+   ],
+   "other_names": "Cadent",
+   "nature": "Apoklima houses indicate 'weakness', 'becoming less', 'expenditure' or 'destruction'. We spend money for ourselves and the body (12th), for family and relatives (3rd), for partner and to fulfil our desires (6th), and for parents and to maintain profession and status (9th) — each decreases the wealth.",
+   "rule": "Planets placed in these signs are considered weak. Except 9th house, it is considered as bad position to the planets. Grahas in these houses are weak, very delicate, sensitive, highly intelligent, fluctuating, undecided and provide spiritual inclination to the native.",
+   "slides": "12-13"
+  },
+  {
+   "no": 5,
+   "name": "Upachaya",
+   "slide_name": "Upachaya or Increasing houses",
+   "houses": [
+    3,
+    6,
+    10,
+    11
+   ],
+   "other_names": "Houses of growth and prosperity; bending / self-effort houses",
+   "nature": "Upachaya means improvement, growth or progress. They create a certain amount of urge / tension which drives one to improve life's situations and get better over time. 3rd = neck, 6th = waist, 10th = knees, 11th = ankle — body parts that can bend. The strength of Kendra and Trikona decides name, fame and monetary position; the strength of Upachaya shows potential and opportunities for personal growth / gains and refers to courage, duties, profession and gains.",
+   "rule": "Planets placed in these houses grow and improve over time. Particularly, malefic planets placed in these houses bestow good results during their dasa period. Benefics in Kendra and malefics in Upachaya houses will provide good results.",
+   "slides": "14-15"
+  },
+  {
+   "no": 6,
+   "name": "Apachaya",
+   "slide_name": "Apachaya or Decreasing houses",
+   "houses": [
+    1,
+    2,
+    4,
+    7,
+    8
+   ],
+   "other_names": "Decreasing houses",
+   "nature": "Houses 1, 2, 4, 7, 8 are Apachaya (decreasing) houses.",
+   "rule": "Planets located in them lose their strength through time. Natural malefics do not do well in these houses.",
+   "slides": "16"
+  },
+  {
+   "no": 7,
+   "name": "Maraka",
+   "slide_name": "Maraka or Death-Inflicting (2nd and 7th) houses",
+   "houses": [
+    2,
+    7
+   ],
+   "other_names": "Marakasthanas; their lords are the Marakadipathis",
+   "nature": "The 2nd and the 7th houses from the lagna are the marakasthanas (the death-inflicting houses), and the lords of the 2nd and the 7th are designated as the principal Marakas (the inflictors of death).",
+   "rule": "Planets occupying or owning these houses can cause death during their dasa periods. If they operate before the time of death is promised, they can bring death like suffering, disturbance of the health etc.",
+   "slides": "17-18"
+  },
+  {
+   "no": 8,
+   "name": "Dusthana",
+   "slide_name": "Duhsthana or Evil houses",
+   "houses": [
+    6,
+    8,
+    12
+   ],
+   "other_names": "Trika houses; malefic houses",
+   "nature": "The 6th, 8th and 12th houses are called evil houses. They are said to be evil and malefic houses; houses 6, 8 and 12 are extremely malefic (on the recording the 8th is the most malefic of the three).",
+   "rule": "Lords of these houses bring problems, impediments, enemies, lawsuits, accidents, injuries, surgeries and death like experiences into our lives during their dasa-bukti period.",
+   "slides": "19-20"
+  },
+  {
+   "no": 9,
+   "name": "Badhaka",
+   "slide_name": "Badhaka or Obstruction houses",
+   "houses": null,
+   "other_names": "Badhakasthana; its lord is the Badhakadipathi",
+   "nature": "Badhaka means that which obstructs. Each sign has a particular sign corresponding to it which obstructs it. If Lagna falls in Chara Rashi, the 11th house is Badhakasthana and the 11th lord is Badhakadipathi; in Sthira Rashi, the 9th house and the 9th lord; in Dwiswabhava Rashi, the 7th house and the 7th lord.",
+   "rule": "The Badhaka obstructs; it brings about barriers and disabilities or ends. But remember, badhaka obstructs a sign, it does not obstruct the horoscope. (Recording: its effects come in the dasa / bhukti of the Badhaka lord or of planets posted there — health issues, suffering; Yogakaraka and Badhaka are different concepts.)",
+   "slides": "21-22"
+  },
+  {
+   "no": 10,
+   "name": "Trishadaya",
+   "slide_name": "Trishadaya or Evil houses",
+   "houses": [
+    3,
+    6,
+    11
+   ],
+   "other_names": "Evil houses",
+   "nature": "The 3rd, 6th and 11th houses represent the three evil factors — desire, anger and greed respectively. They are entirely opposite to the most important houses for spiritual advancement: the 9th, 12th and 5th houses respectively. The 11th house is the most powerful of the group as it is the last member.",
+   "rule": "A person can achieve materialistic success and make lots of money only during the Maha Dasha period of the trishadaya houses. If the lord of a trishadaya house is a natural malefic like Saturn, Mars or Sun, and the malefic planet is also placed in its own house, the results given are simply amazing during its Maha Dasha.",
+   "slides": "23-24"
+  }
+ ],
+ "class_rules": [
+  {
+   "class": "Kendra",
+   "applies": "benefic",
+   "exclude_houses": [],
+   "text": "Benefic grahas in Kendras lead to powerful manifestations with smaller efforts; they enhance the internal strength of the individual.",
+   "slide": "4"
+  },
+  {
+   "class": "Kendra",
+   "applies": "malefic",
+   "exclude_houses": [],
+   "text": "Malefic grahas in Kendras can cause struggle and pose challenges for accomplishments.",
+   "slide": "4"
+  },
+  {
+   "class": "Kendra",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "Grahas placed in a Kendra are highly active.",
+   "slide": "4"
+  },
+  {
+   "class": "Trikona",
+   "applies": "benefic",
+   "exclude_houses": [],
+   "text": "Benefics in a Trikona ease the flow of destiny.",
+   "slide": "7"
+  },
+  {
+   "class": "Trikona",
+   "applies": "malefic",
+   "exclude_houses": [],
+   "text": "Malefics in a Trikona could cause challenges to be faced.",
+   "slide": "7"
+  },
+  {
+   "class": "Trikona",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "Planets posited in a Trikona get closely associated with destiny and gain strength.",
+   "slide": "7"
+  },
+  {
+   "class": "Panapara",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "Grahas posited in the Panapara houses are moderately strong; these are money-related houses.",
+   "slide": "10"
+  },
+  {
+   "class": "Apoklima",
+   "applies": "any",
+   "exclude_houses": [
+    9
+   ],
+   "text": "Planets placed in the Apoklima houses are considered weak — delicate, sensitive, highly intelligent, fluctuating, undecided, with a spiritual inclination.",
+   "slide": "12"
+  },
+  {
+   "class": "Apoklima",
+   "applies": "any",
+   "exclude_houses": [
+    3,
+    6,
+    12
+   ],
+   "text": "The 9th house is the exception among the Apoklima houses: it is not counted as a bad position for the planets.",
+   "slide": "12"
+  },
+  {
+   "class": "Upachaya",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "Planets placed in the Upachaya houses grow and improve over time.",
+   "slide": "14"
+  },
+  {
+   "class": "Upachaya",
+   "applies": "malefic",
+   "exclude_houses": [],
+   "text": "A malefic planet placed here bestows good results during its dasa period.",
+   "slide": "14"
+  },
+  {
+   "class": "Apachaya",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "Planets located in the Apachaya houses lose their strength through time.",
+   "slide": "16"
+  },
+  {
+   "class": "Apachaya",
+   "applies": "malefic",
+   "exclude_houses": [],
+   "text": "Natural malefics do not do well in these houses.",
+   "slide": "16"
+  },
+  {
+   "class": "Maraka",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "A planet occupying the 2nd or 7th can cause death-like suffering or disturbance of the health during its dasa, if it operates before the time of death is promised.",
+   "slide": "17"
+  },
+  {
+   "class": "Dusthana",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "The 6th, 8th and 12th are evil and malefic houses; their lords bring problems, impediments, enemies, lawsuits, accidents, injuries and surgeries during their dasa-bukti period.",
+   "slide": "19"
+  },
+  {
+   "class": "Badhaka",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "A planet in the Badhakasthana obstructs that sign and can bring barriers and disabilities.",
+   "slide": "21"
+  },
+  {
+   "class": "Trishadaya",
+   "applies": "any",
+   "exclude_houses": [],
+   "text": "The 3rd, 6th and 11th stand for desire, anger and greed; they are opposite to the 9th, 12th and 5th.",
+   "slide": "23"
+  },
+  {
+   "class": "Trishadaya",
+   "applies": "malefic",
+   "exclude_houses": [],
+   "text": "Natural malefics (Saturn, Mars, Sun) in the Trishadaya houses give very good material results during their Maha Dasha.",
+   "slide": "23"
+  }
+ ],
+ "badhaka": {
+  "Chara": 11,
+  "Sthira": 9,
+  "Dwisabhava": 7
+ },
+ "dignity_effect": {
+  "Deep Exalted": {
+   "band": "strong",
+   "text": "Exalted at the deep-exaltation degree: the karakatwas of the graha are bestowed in full force.",
+   "status": "taught",
+   "slide": "31"
+  },
+  "Exalted": {
+   "band": "strong",
+   "text": "Exalted: the karakatwas of the graha are bestowed in full force on this bhava's karakatwas.",
+   "status": "taught",
+   "slide": "31"
+  },
+  "Own (Moolatrikona)": {
+   "band": "strong",
+   "text": "In its Moolatrikona sign: exaltation / own house / MT sign quantify the results — the graha gives its karakatwas well.",
+   "status": "taught",
+   "slide": "31"
+  },
+  "Own House": {
+   "band": "strong",
+   "text": "In its own house: exaltation / own house / MT sign quantify the results — the graha gives its karakatwas well.",
+   "status": "taught",
+   "slide": "31"
+  },
+  "Friend's House": {
+   "band": "medium",
+   "text": "In a friend's house: the graha is supported and gives its karakatwas with ease.",
+   "status": "blend",
+   "slide": "12"
+  },
+  "Neutral House": {
+   "band": "medium",
+   "text": "In a neutral house: the results of the graha are moderate.",
+   "status": "blend",
+   "slide": "12"
+  },
+  "Enemy's House": {
+   "band": "weak",
+   "text": "In an enemy's house: the graha gives its karakatwas with difficulty.",
+   "status": "blend",
+   "slide": "12"
+  },
+  "Debilitated": {
+   "band": "weak",
+   "text": "Debilitated: the karakatwas come through diminished — when the Sun is strong there is confidence, when weak there is ego.",
+   "status": "taught",
+   "slide": "31"
+  },
+  "Deep Debilitated": {
+   "band": "weak",
+   "text": "Deep debilitation (near the exact degree) is the strongest form of debilitation: the karakatwas are heavily diminished, though the graha still gives results.",
+   "status": "taught",
+   "slide": "31"
+  }
+ },
+ "digbala": {
+  "Sun": {
+   "strong": 10,
+   "lost": 4,
+   "status": "taught",
+   "source": "Slides 33 and 39: Sun loses directional strength in the 4th and gains it in the 10th"
+  },
+  "Saturn": {
+   "strong": 7,
+   "lost": 1,
+   "status": "standard",
+   "source": "Recording: Saturn is powerful in the 7th (example given); the opposite house is the standard rule"
+  },
+  "Moon": {
+   "strong": 4,
+   "lost": 10,
+   "status": "standard",
+   "source": "Standard digbala table"
+  },
+  "Venus": {
+   "strong": 4,
+   "lost": 10,
+   "status": "standard",
+   "source": "Standard digbala table"
+  },
+  "Mercury": {
+   "strong": 1,
+   "lost": 7,
+   "status": "standard",
+   "source": "Standard digbala table"
+  },
+  "Jupiter": {
+   "strong": 1,
+   "lost": 7,
+   "status": "standard",
+   "source": "Standard digbala table"
+  },
+  "Mars": {
+   "strong": 10,
+   "lost": 4,
+   "status": "standard",
+   "source": "Standard digbala table"
+  }
+ },
+ "dasha_role_text": {
+  "Maraka lord": {
+   "kind": "caution",
+   "text": "Lord of the 2nd or 7th — a principal Maraka. In its dasa / bhukti it can bring death-like suffering or disturbance of the health, if it operates before the time of death is promised.",
+   "slide": "17"
+  },
+  "Maraka occupant": {
+   "kind": "caution",
+   "text": "Occupies a Maraka house (2nd or 7th). Planets occupying these houses can bring suffering or disturbance of the health during their dasa periods.",
+   "slide": "17"
+  },
+  "Badhakadhipati": {
+   "kind": "caution",
+   "text": "Lord of the Badhaka house. In its dasa / bhukti it can obstruct — barriers, health issues and suffering may show up.",
+   "slide": "21"
+  },
+  "Badhaka occupant": {
+   "kind": "caution",
+   "text": "Occupies the Badhakasthana. In its period the obstruction of that sign can be felt.",
+   "slide": "21"
+  },
+  "Dusthana lord": {
+   "kind": "caution",
+   "text": "Lord of the 6th, 8th or 12th. In its dasa-bukti it can bring problems, impediments, enemies, lawsuits, accidents, injuries and surgeries.",
+   "slide": "19"
+  },
+  "Trishadaya lord": {
+   "kind": "favourable",
+   "text": "Lord of the 3rd, 6th or 11th. Material success and money come in the Maha Dasha of such a lord; if it is a natural malefic (Saturn, Mars, Sun) in its own house, the results are simply amazing.",
+   "slide": "23"
+  }
+ },
+ "graha_in_bhava": [
+  {
+   "planet": "Sun",
+   "house": 1,
+   "points": [
+    "1st house/Ascendant is your self, personality, overall health, life path etc.",
+    "So, when Sun is in the 1st house, it can make a person very confident but at the same time very authoritative. They can be highly egoist. Wherever Sun is in your chart, that's where your ego is. He feels like King and he wants others to treat him like King. So, that's why this planetary placement is very common with people in high position or high ego. As Sun also represents father, this placement also shows that their life path is highly impacted by their father.\nAlso, as Sun's basic feature is fire and 1st house is Head, Sun here burns the hairs of person, i.e. they can also be bald.",
+    "As they are so much egoist type of, it is always better for them to have their own work because due to their ego, they can't work with others. In business also, they should not have partnerships, as partnership is about standing on equal grounds and these people due to their ego, want other partner to boost their ego.",
+    "With aspect of Sun on 7th house, same thing goes into their marriage, they try to dominate their partner through their ego which leads to ego battles in relationship.",
+    "All in all, their ego is their life lesson and they need to learn how to accommodate, adjust and be flexible in their approach towards others."
+   ],
+   "extra": [
+    "Looks authoritative with a bright face (tejas); the first house is also the face.",
+    "Independent, self-made; does not like to take orders or work under anyone — a king cannot take orders.",
+    "Egoistic, gives a lot of importance to the body and takes good care of themselves.",
+    "Tendency to baldness or sparse hair (hot, pitta constitution; the Lagna is the head).",
+    "Does not mingle easily: sits at a distance in gatherings and likes people to come to them (a Mercury Lagna person would go and talk to everybody).",
+    "Royal bearing — walks upright and confident, often crosses the legs when sitting; very punctual; wants to be treated in a royal way; good name, fame and reputation."
+   ],
+   "status": "taught",
+   "source": "Slide 29 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 2,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "2nd house represents, Family, Wealth, Family Lineage, Speech, Throat, Values etc.",
+    "So, when Sun comes in 2nd house, these people can be very egoistic about their family, lineage and wealth. They are always very proud of their family history and love to show it to the world. Father becomes the central figure in family.",
+    "Their speech becomes very authoritative. Sun's 7th aspect on 8th house gives great interest in occult and these people want to achieve authority there or by service to other people.",
+    "Again, Sun also burns a house. So, many a times, when Sun is in 2nd house can burn the advantages of family, i.e. they can live away from family or due to ego battles in family they feel like lost in family environment, especially in early childhood. .",
+    "Every planet has something good and something bad with it."
+   ],
+   "extra": [
+    "Very proud of the family, lineage, family wealth and history, and likes to show it to the world.",
+    "Father becomes the most important person in the family; high expectation from the family and a separative influence — may stay away from the family because of ego issues.",
+    "Speech is commanding, authoritative and truthful, but the ego shows in it (boasting about self or family).",
+    "Income may come from the family, father, government or father-in-law; a source of permanent income; the family may have a very good, royal reputation.",
+    "Likes hot food, wheat-based food and spicy food.",
+    "Strong Sun (e.g. exalted for Meena Lagna) gives confidence and leadership in full force; weak Sun (e.g. debilitated for Kanya Lagna) gives ego and lack of confidence."
+   ],
+   "status": "taught",
+   "source": "Slide 30 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 3,
+   "points": [
+    "Sun in 3rd house makes one courageous, bold, adventurous person. He will have bold communication power and maturity, because of which he will have many friends. They will be expressive and communicate very effectively. He will not hesitate to take up any responsibility and courageously handles the situation. He will have a limited number of co-borns, well built personality. He may have a passion for writing especially for Government agencies."
+   ],
+   "extra": [
+    "Courageous and adventurous; bold, powerful communication; takes up responsibility and handles situations well; a limited number of co-borns.",
+    "Writing is bold — presses hard while writing; the letter \"I\" is written big or bold (a strong sense of self); written communication is authoritative and to the point.",
+    "Loves to initiate new projects; the efforts are visible to the outside world because the Sun cannot hide anything.",
+    "Neighbours may be influential or in government; the younger co-born may be influential, in a government job or famous; support from influential people or government; travel for government work.",
+    "May dominate the younger co-born, or be dominated by them."
+   ],
+   "status": "taught",
+   "source": "Slide 32 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 4,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "4th house represents your home, home environment, homeland, mother, nourishment, childhood friends, peace of mind, conveniences etc.",
+    "So, when Sun comes into 4th house, these people are very confident and proud of their home, home land and mother.",
+    "As Sun represents Father and Sun loses its directional strength in 4th house of Mother, this shows that Father remains absent from life and Mother takes the responsibilities of Father too. At the same time, it shows some ego battles in home and with Mother.",
+    "They can be in career related with home or real estate",
+    "As Sun also aspects the 10th house of career and fame and Sun represents authority, these people get their authority while working from home. As I said, if Sun illuminates things in a house, then it also burns it. So, it can lead to some ego conflicts at home and spoil the home environment. They can be working for local government too."
+   ],
+   "extra": [
+    "Confident and proud of the home, the native place and the mother; the mother may be authoritative, dominating, egoistic, punctual, from a royal or influential family, or a good administrator.",
+    "May live in a government-provided house, have stone cladding in front of the house or big windows with a lot of light; may use a government vehicle.",
+    "Education in political science, administrative services or medicine, especially the heart.",
+    "The 4th is the heart: an enlightened soul, good-hearted and balanced.",
+    "Wherever the Sun is, activity of that bhava gives atma-tripti (soul satisfaction)."
+   ],
+   "status": "taught",
+   "source": "Slide 33 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 5,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "5th house represents Creativity, Happiness, Children, Innovation, Sports, Movies, Stock Trading, Gambling and Betting, Education, Ancient Texts etc.",
+    "As 5th house is natural house of Leo, the 5th sign, and as Sun rules Leo, Sun actually likes the environment of 5th house.\nThey are the natural celebrities. They want to get the status of celebrity or at least people should treat them like celebrities even if they are not.",
+    "They are very proud of their interests, hobbies & creative pursuits and everything they achieve through it. Actually, their creative pursuits are the biggest ego satisfaction and source of confidence for them. .",
+    "But as I said if Sun illuminates things then it can also burn things related to that house. This position can cause scenario where people may face difficulties in having children or they can have ego conflicts with their children in later life. As it is also house of Romance, they can have ego issues with their love interests too which may even end the relation."
+   ],
+   "extra": [
+    "Natural celebrities — they want the status of a celebrity or to be treated like one; creative pursuits are a source of ego satisfaction and confidence.",
+    "The eldest child brings good name and fame; good relationship with children but high expectations and a separative influence (the Sun is a malefic planet).",
+    "Purva punya is delivered through children; very good creativity; can become a good politician; higher education.",
+    "Atma-tripti through creative activity and hobbies."
+   ],
+   "status": "taught",
+   "source": "Slide 34 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 6,
+   "points": [
+    "6th house is 1st of Dushthana Houses (houses # 6, 8 and 12) and 2nd of Upachaya Houses (houses # 3, 6, 10 & 11). 6th house represents things like diseases, debts, obstacles, enemies, disputes. litigations, daily routine life, colleagues at work place etc.",
+    "When Sun is in 6th house, this person likes to resolve the disputes between the two people and look for an amicable solution. That's why, 6th house actually signifies Career in Legal Field. 2nd Career it can give is Medical Field, as it is also a house of diseases.",
+    "This placement indicates many other things, like, person faces lots of obstacles in developing his career, his father also faces obstacles in his life. Person gets confidence in life after defeating his enemies and conflicts. It shows health issues to father and person himself.",
+    "Still, 6th house is an Upachaya House. So, best results of this placement can be seen in 30s. Before that, person has to fight head-on with all his competitors.",
+    "All in all, a very good placement for being a Lawyer or Doctor."
+   ],
+   "extra": [
+    "Can choose a career in the legal or medical field and shine there.",
+    "Diseases: eye, heart, bone or heat-related problems.",
+    "Debt (runa): can easily get loans from government organisations and banks.",
+    "Very powerful, influential enemies; creates enemies through ego; may get diseases through bad eating habits or lifestyle, so health matters.",
+    "Maternal uncle may be influential, proud or in government service.",
+    "Atma-tripti through selfless service."
+   ],
+   "status": "taught",
+   "source": "Slide 35 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 7,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "7th house is house of market place, other people (masses), business partnerships, marriage, spouse, marital happiness etc.",
+    "So, when Sun is in 7th house, it is complete conflict of 2 separate energies, i.e. Ego and Relation. Ego and Relation can't stay together. So, when Sun is in 7th house, one common theme is that person's relations are hammered by ego conflicts and ego battles with partner. Same fate can be seen for any partnership business too."
+   ],
+   "extra": [
+    "Ego issues in marriage and business partnerships — they should learn to be more humble; separations are possible.",
+    "The spouse is well recognised, independent, egoistic, dominating, authoritative, with good administrative capacity; the business partner may be influential too.",
+    "High expectation from the spouse or partner and a separative influence; the partner may try to dominate or control."
+   ],
+   "status": "taught",
+   "source": "Slide 36 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 8,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "8th house is house of secrecy, occult knowledge, death, transformation, death and re-birth, In laws family, joint wealth with spouse etc.",
+    "Sun is Confidence and 8th house is sudden ups and downs in life. So, when Sun is in 8th house, it shows that person's confidence will get a beating in early life due to sudden changes and ups/downs in life. They will meet such people or face such events which will naturally hurt their ego. Again, nothing can keep the Sun away from shinning all the time. More changes and challenges they face in life, more confident they become.",
+    "They can be in any career related with research, secrets and taxes. They can get into ego conflicts in matters of marriage and in-laws. This is something they need to work.",
+    "But this is again a placement which will give better result in 30s after person has seen through all the changes of life."
+   ],
+   "extra": [
+    "Confidence takes a beating through ups and downs and the ego is hurt, but they come out more confident through the hardships.",
+    "Good researchers and astrologers; good for occult subjects, pranic healing and alternative medicine.",
+    "One of the Moksha trikonas (4, 8, 12): the soul seeks enlightenment; they may become aware of the time of death and plan accordingly.",
+    "Should not fall into bad habits such as drinking or smoking.",
+    "Good fault finders — suited to quality control, since the bright Sun makes any fault visible.",
+    "Inheritance from the father."
+   ],
+   "status": "taught",
+   "source": "Slide 37 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 9,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "9th house represents Religion, Law, Faith, Fortune, Gurus, Teachings of Father etc.",
+    "Sun is Confidence and 9th house is house of Higher Education & Knowledge. So, these people will gain confidence in life with knowledge. The more knowledgeable they are, the more confident they are. And it is not only about gaining knowledge but also about sharing knowledge. The more they share the knowledge with others, better they will find themselves in career and authority in life.",
+    "They can be interested in any type of knowledge which can range from academics to religious to philosophical. They can easily become teachers, professors, lawyers and philosophers. They can be interested in becoming religious Guru too.",
+    "But as Sun also burns the house it sits in, it brings ego conflicts with their teachers and Gurus. They can get into situations that they know better than their teachers, which might even be true."
+   ],
+   "extra": [
+    "The father is dharmic and religious and gives importance to rituals and traditions; may be a good administrator; luck comes through the father (Bhagyasthana).",
+    "Good teachers, professors and lawyers, focused on their life path.",
+    "Confidence comes from knowledge and they love to share it — academic, religious, spiritual and philosophical; interest in a guru, and they get very good gurus."
+   ],
+   "status": "taught",
+   "source": "Slide 38 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 10,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "10th house almost represents the same things like Government, Father, Authority, Fame etc. Here, Authority should not be understood in literal sense, like someone got a Government job or became a Manager or CEO of a Firm. Here Authority means doing any work with complete perfection and your opinion matters when comes to making any decision related to that work, so even a good Hacker can be a person of authority as he is master of that particular work.\nAlso, it is good to keep in mind that it is basically house of Sun's enemy Saturn, as 10th zodiac sign is Capricorn, which represents the energy of 10th house, and Capricorn's lord is Saturn.",
+    "Sun in 10th house is a very strong position of Sun. It is because Sun gets directional strength in 10th house. These people can be working in high authoritative positions in Govt/Private Sector. Unless they gain such a position, they may not feel confident and good about themselves. Their ego lies in high positions. There is always a burning desire within them to be in top position in their work.",
+    "But as 10th house is again Upachaya House, they may not get such position in early career. They have to work really hard to get there in their 30s. Till then, it is all hard work and perseverance.",
+    "As always, Sun burns the significance of 10th house which can cause ego conflicts with father and other people of authority."
+   ],
+   "extra": [
+    "Digbala: a very powerful position — good name, fame and recognition; wonderful for politicians and people in the public eye.",
+    "Go into high positions such as CEO; administrative, authoritative, disciplined; their work is appreciated; they achieve their dreams through the profession.",
+    "A burning desire to rise to the top; they will rise with hard work, but must keep the ego in check and give weight to co-workers' views.",
+    "May be in a government job or a profession connected to the government; the mother-in-law may be dominating, egoistic and a good leader."
+   ],
+   "status": "taught",
+   "source": "Slide 39 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 11,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "11th house represents Elder Siblings, Large Organizations, Huge Structures, Network Circle, Friends, Gains, Income and Earnings etc.",
+    "Highest representation of 11th house is in serving humanity and serving a higher cause. So, if Sun is in 11th house, person can gain in career, confidence and authority only when he dedicates himself to a higher cause and towards serving the whole humanity itself. Other significance of this position is that they can be in high positions in large organisations.",
+    "But as 11th house is Upachaya House again, it shows that they will get the best results of Sun in 11th house in their 30s. Till then, it can be all about putting your best efforts.",
+    "As Sun naturally causes Ego Conflicts, here ego battles can be with your friends, networking circle and elder siblings. In many cases, person may not even have any elder sibling"
+   ],
+   "extra": [
+    "Focused on the fulfilment of desires; happy spending time with friends, who come from royal or influential families.",
+    "An active social life, recognised in society, with good name and fame; the elder sibling shares these qualities, but being a separative planet the Sun can mean a strained relationship or living apart from the elder sibling.",
+    "Atma-tripti through friendships and networking."
+   ],
+   "status": "taught",
+   "source": "Slide 40 (verbatim) + class recording"
+  },
+  {
+   "planet": "Sun",
+   "house": 12,
+   "points": [
+    "Sun represents King, Government, Father, Authority, Career, Top Positions, Ego, Self Esteem etc.",
+    "12th house is house of Losses, Expenses, Isolated Places, Foreign Lands, Asylums, Jails, Hospitals etc.",
+    "One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet.",
+    "Sun is Ego & Confidence and 12th house is house of losses. So, these people begin their lives with lack of confidence and lack of self-worth. They gain their confidence with life. Mostly, they gain confidence and authority only in foreign lands. So, if at all they get a chance to move to foreign lands or places away from birth place, they must grab that chance.",
+    "They can be working for foreign govt or their own govt in foreign lands. They will get best authority or career in foreign lands but after much delay and hard efforts. They will have to work really hard to get some confidence within.",
+    "They can have some ego conflicts with spiritual Gurus where they may feel that those people are not giving correct teachings."
+   ],
+   "extra": [
+    "Lacks confidence and does not know their own worth; they gain confidence and authority in foreign lands, so should move away from the birthplace if given the chance.",
+    "A Moksha trikona: the atma looks for moksha, so they are spiritual; spiritual activity gives atma-tripti.",
+    "The bright Sun illuminates the 12th, so hidden enemies become visible.",
+    "The relationship with the father may not be great, or they live far from the father; expenses may go towards the father or health."
+   ],
+   "status": "taught",
+   "source": "Slide 41 (verbatim) + class recording"
+  }
+ ],
+ "graha_pair": [
+  {
+   "a": "Mercury",
+   "b": "Jupiter",
+   "conjunction": "Jupiter is the jiva karaka — the individual; Mercury is intelligence, education, communication, oration and business. Together the individual is very intelligent, or likes business, or is very good in communication.",
+   "aspect": "",
+   "status": "taught",
+   "source": "Slide 26 example + recording (Session 23)"
+  }
+ ],
+ "reference": {
+  "BHAVA_INFO": {
+   "1": {
+    "nm": "Tanu Bhava (Lagna)",
+    "body": "Head; whole body & appearance",
+    "karaka": [
+     "Sun"
+    ],
+    "rel": "Self",
+    "sig": "Self, personality and temperament, physical appearance & constitution, health and vitality, name and fame, life purpose and life path, place of birth, the east direction."
+   },
+   "2": {
+    "nm": "Dhana · Kutumbha · Vaak · Anna · Netra · Māraka Sthana",
+    "body": "Face, eyes, teeth, mouth, throat",
+    "karaka": [
+     "Jupiter"
+    ],
+    "rel": "Family members",
+    "sig": "Accumulated wealth and savings, liquid assets (gold, gems), family and lineage, source of income, speech, food habits, early (school) education, eyes; what one values. (Also a māraka.)"
+   },
+   "3": {
+    "nm": "Bhratru · Parakrama Sthana (Sahaja)",
+    "body": "Neck, shoulders, throat, ears, arms, oesophagus",
+    "karaka": [
+     "Mars"
+    ],
+    "rel": "Younger siblings, neighbours",
+    "sig": "Stamina, courage, will-power and self-effort, younger siblings, neighbours, communication and writing, marketing and media, hobbies, short journeys, partition of property, the drive to do business."
+   },
+   "4": {
+    "nm": "Matru · Sukha · Vidya · Vāhana · Bandhu Sthana",
+    "body": "Chest, heart, lungs, upper stomach",
+    "karaka": [
+     "Moon",
+     "Venus"
+    ],
+    "rel": "Mother",
+    "sig": "Mother, home and motherland, domestic happiness & peace of mind, landed & ancestral property, fixed assets, vehicles, schooling up to under-graduate education, emotions."
+   },
+   "5": {
+    "nm": "Putra · Santāna · Poorva Punya · Mantra Sthana",
+    "body": "Lower heart, liver, gall bladder, spleen, stomach",
+    "karaka": [
+     "Jupiter"
+    ],
+    "rel": "Children; spouse's elder sibling",
+    "sig": "Children, creativity, love & romance, intellect, higher education (Master's), past-life merit (poorva punya), mantra & upāsana, speculation (stock market, lottery), entertainment — drama, music, dance, cinema."
+   },
+   "6": {
+    "nm": "Ari · Shatru · Roga · Runa · Ripu Sthana",
+    "body": "Waist, hip, small intestine",
+    "karaka": [
+     "Saturn",
+     "Mars"
+    ],
+    "rel": "Enemies; maternal uncle",
+    "sig": "Enemies, debts & loans, disease, obstacles, disputes & litigation (court cases), divorce / domination by the spouse, daily routine & colleagues, service (monthly salary), healing & medicine, competitive spirit."
+   },
+   "7": {
+    "nm": "Kalatra · Jaya Sthana",
+    "body": "Kidneys, urinary bladder, ovaries, urethra, prostate",
+    "karaka": [
+     "Venus"
+    ],
+    "rel": "Spouse, 2nd child, business partner, clients, the public",
+    "sig": "Spouse & marriage, all partnerships & business partners, social interactions, dealings with the masses / market, foreign travel & trade, recovery of lost articles, the west direction. (Also a māraka.)"
+   },
+   "8": {
+    "nm": "Ayur · Randhra · Mangalya Sthana",
+    "body": "Private parts, rectum",
+    "karaka": [
+     "Saturn"
+    ],
+    "rel": "Adopted children; spouse's family",
+    "sig": "Longevity & lifespan, the manner/cause of death, sudden & unexpected events, inheritance, insurance, unearned/hidden wealth (lottery), the occult & research, forensic & investigation, chronic illness, surgery, accidents, transformation; and the darker side — humiliation, sorrow, fear, obstruction, delays."
+   },
+   "9": {
+    "nm": "Dharma · Bhagya · Pitru Sthana",
+    "body": "Thighs",
+    "karaka": [
+     "Sun",
+     "Jupiter"
+    ],
+    "rel": "Father, gurus & teachers, grandchild",
+    "sig": "Fortune & luck (bhagya), dharma, deity & religion, father, gurus & higher wisdom, intuition & meditation, moral standards, higher studies, pilgrimage & temples, long-distance travel (beyond ~2000 miles), charity."
+   },
+   "10": {
+    "nm": "Karma · Keerti Sthana",
+    "body": "Knees",
+    "karaka": [
+     "Saturn"
+    ],
+    "rel": "Mother-in-law",
+    "sig": "Profession & livelihood (karma), name/fame & honour, recognition, social status, authority & administrative capacity, political power, public image."
+   },
+   "11": {
+    "nm": "Labha · Aaya Sthana",
+    "body": "Legs; left ear",
+    "karaka": [
+     "Saturn"
+    ],
+    "rel": "Elder siblings, friends, son-in-law, paternal uncle, well-wishers",
+    "sig": "Profits & gains (labha), income (the daily/monthly earnings whose savings become 2nd-house wealth), fulfilment of desires & ambitions, success in undertakings, friends & networks, large organisations, discharge from hospital, return of lent money with interest."
+   },
+   "12": {
+    "nm": "Vyaya · Moksha · Shayana Sthana",
+    "body": "Feet; left eye",
+    "karaka": [
+     "Ketu"
+    ],
+    "rel": "Paternal grandparents; secret enemies",
+    "sig": "Losses & wasteful expenditure, liberation (moksha) & spirituality, isolation & seclusion, foreign lands & residence abroad, bed comforts & sleep, investments; hospitals, jails & ashrams, secret enemies, confiscation, taxes & penalties."
+   }
+  },
+  "RASHI": [
+   {
+    "n": 1,
+    "sanskrit": "Mesha",
+    "english": "Aries",
+    "glyph": "♈",
+    "oddEven": "Odd (Male)",
+    "mode": "Chara",
+    "tatwa": "Agni",
+    "direction": "East",
+    "varna": "Kshatriya",
+    "purushartha": "Dharma",
+    "triguna": "Rajasika",
+    "constitution": "Dhatu",
+    "fertility": "Barren",
+    "dayNight": "Nocturnal",
+    "rising": "Prushtodaya",
+    "legs": "Chatuspada",
+    "tridosha": "Pitha",
+    "colour": "Red",
+    "place": "Forest",
+    "jyothirlinga": "Rameshwaram",
+    "bodyPart": "Head, Brain, Skull",
+    "traits": [
+     "Energetic",
+     "Active",
+     "Aggressive",
+     "Initiative",
+     "Impulsive",
+     "Restless",
+     "Bold",
+     "Wants to Lead"
+    ],
+    "lord": "Mars"
+   },
+   {
+    "n": 2,
+    "sanskrit": "Vrishaba",
+    "english": "Taurus",
+    "glyph": "♉",
+    "oddEven": "Even (Female)",
+    "mode": "Sthira",
+    "tatwa": "Prithvi",
+    "direction": "South",
+    "varna": "Vysya",
+    "purushartha": "Artha",
+    "triguna": "Rajasika",
+    "constitution": "Moola",
+    "fertility": "Semi Fruitful",
+    "dayNight": "Nocturnal",
+    "rising": "Prushtodaya",
+    "legs": "Chatuspada",
+    "tridosha": "Vatha",
+    "colour": "White",
+    "place": "Agricultural land",
+    "jyothirlinga": "Somnatheshwara",
+    "bodyPart": "Face, Eyes (right), Mouth, Throat, Vocal cords",
+    "traits": [
+     "Stability",
+     "Focused",
+     "Practical",
+     "Patience",
+     "Nourishment",
+     "Charming",
+     "Stubborn"
+    ],
+    "lord": "Venus"
+   },
+   {
+    "n": 3,
+    "sanskrit": "Mithuna",
+    "english": "Gemini",
+    "glyph": "♊",
+    "oddEven": "Odd (Male)",
+    "mode": "Dwisabhava",
+    "tatwa": "Vayu",
+    "direction": "West",
+    "varna": "Shudra",
+    "purushartha": "Kama",
+    "triguna": "Rajasika",
+    "constitution": "Jeeva",
+    "fertility": "Barren",
+    "dayNight": "Nocturnal",
+    "rising": "Shirsodaya",
+    "legs": "Dwipada",
+    "tridosha": "Tridosha",
+    "colour": "Green",
+    "place": "Bedroom",
+    "jyothirlinga": "Nageshwara",
+    "bodyPart": "Neck, Shoulders, Arms, Hands, Lungs (upper), Nervous system",
+    "traits": [
+     "Good communication",
+     "Intelligent",
+     "Artistic",
+     "Humorous",
+     "Multitasking",
+     "Creative",
+     "Adaptable",
+     "Fickle minded"
+    ],
+    "lord": "Mercury"
+   },
+   {
+    "n": 4,
+    "sanskrit": "Karkataka",
+    "english": "Cancer",
+    "glyph": "♋",
+    "oddEven": "Even (Female)",
+    "mode": "Chara",
+    "tatwa": "Jala",
+    "direction": "North",
+    "varna": "Brahmin",
+    "purushartha": "Moksha",
+    "triguna": "Sathvik",
+    "constitution": "Dhatu",
+    "fertility": "Fruitful",
+    "dayNight": "Nocturnal",
+    "rising": "Prushtodaya",
+    "legs": "Jalachara",
+    "tridosha": "Kapha",
+    "colour": "Pink",
+    "place": "River",
+    "jyothirlinga": "Omkareshwara",
+    "bodyPart": "Chest, Lungs, Breasts, Ribcage, Stomach (upper)",
+    "traits": [
+     "Emotional",
+     "Sensitive",
+     "Honest",
+     "Mood swings",
+     "Motherly nature",
+     "Peace loving",
+     "Nurturing",
+     "Psychic"
+    ],
+    "lord": "Moon"
+   },
+   {
+    "n": 5,
+    "sanskrit": "Simha",
+    "english": "Leo",
+    "glyph": "♌",
+    "oddEven": "Odd (Male)",
+    "mode": "Sthira",
+    "tatwa": "Agni",
+    "direction": "East",
+    "varna": "Kshatriya",
+    "purushartha": "Dharma",
+    "triguna": "Sathvik",
+    "constitution": "Moola",
+    "fertility": "Barren",
+    "dayNight": "Diurnal",
+    "rising": "Shirsodaya",
+    "legs": "Vanachara",
+    "tridosha": "Pitha",
+    "colour": "Off white",
+    "place": "Mountain",
+    "jyothirlinga": "Vaidyanath",
+    "bodyPart": "Heart, Spine, Upper back, Bones, Eyes (Sun's karaka)",
+    "traits": [
+     "Energetic",
+     "Aggressive",
+     "Egoistic",
+     "Good in administration",
+     "Generous",
+     "Dominating",
+     "Leaders",
+     "Self respect"
+    ],
+    "lord": "Sun"
+   },
+   {
+    "n": 6,
+    "sanskrit": "Kanya",
+    "english": "Virgo",
+    "glyph": "♍",
+    "oddEven": "Even (Female)",
+    "mode": "Dwisabhava",
+    "tatwa": "Prithvi",
+    "direction": "South",
+    "varna": "Vysya",
+    "purushartha": "Artha",
+    "triguna": "Tamasika",
+    "constitution": "Jeeva",
+    "fertility": "Barren",
+    "dayNight": "Diurnal",
+    "rising": "Shirsodaya",
+    "legs": "Dwipada",
+    "tridosha": "Vatha",
+    "colour": "Variegated",
+    "place": "Gardens",
+    "jyothirlinga": "Mallikarjuna",
+    "bodyPart": "Stomach (lower), Intestines, Digestive system, Abdomen, Navel",
+    "traits": [
+     "Practical",
+     "Critical",
+     "Perfectionist",
+     "Cleanliness",
+     "Observant",
+     "Intelligent",
+     "Reserved",
+     "Organised",
+     "Analytical"
+    ],
+    "lord": "Mercury"
+   },
+   {
+    "n": 7,
+    "sanskrit": "Tula",
+    "english": "Libra",
+    "glyph": "♎",
+    "oddEven": "Odd (Male)",
+    "mode": "Chara",
+    "tatwa": "Vayu",
+    "direction": "West",
+    "varna": "Shudra",
+    "purushartha": "Kama",
+    "triguna": "Rajasika",
+    "constitution": "Dhatu",
+    "fertility": "Semi Fruitful",
+    "dayNight": "Diurnal",
+    "rising": "Shirsodaya",
+    "legs": "Dwipada",
+    "tridosha": "Vatha",
+    "colour": "Black",
+    "place": "Business Place",
+    "jyothirlinga": "Mahakaleshwar",
+    "bodyPart": "Lower abdomen, Kidneys, Lumbar region, Lower back, Skin",
+    "traits": [
+     "Attractive",
+     "Extroverts",
+     "Well Mannered",
+     "Peace makers",
+     "Diplomatic",
+     "Good negotiators",
+     "Business minded"
+    ],
+    "lord": "Venus"
+   },
+   {
+    "n": 8,
+    "sanskrit": "Vrischika",
+    "english": "Scorpio",
+    "glyph": "♏",
+    "oddEven": "Even (Female)",
+    "mode": "Sthira",
+    "tatwa": "Jala",
+    "direction": "North",
+    "varna": "Brahmin",
+    "purushartha": "Moksha",
+    "triguna": "Rajasika",
+    "constitution": "Moola",
+    "fertility": "Fruitful",
+    "dayNight": "Diurnal",
+    "rising": "Shirsodaya",
+    "legs": "Keeta",
+    "tridosha": "Kapha",
+    "colour": "Saffron",
+    "place": "Hole / Cavity",
+    "jyothirlinga": "Grishneshwar",
+    "bodyPart": "Reproductive organs, Genitals, Bladder, Excretory system, Pelvis",
+    "traits": [
+     "Secretive",
+     "Pessimistic",
+     "Possessive",
+     "Good researchers",
+     "Revenge",
+     "Mood swings",
+     "Good imagination",
+     "Anxiety"
+    ],
+    "lord": "Mars"
+   },
+   {
+    "n": 9,
+    "sanskrit": "Dhanur",
+    "english": "Sagittarius",
+    "glyph": "♐",
+    "oddEven": "Odd (Male)",
+    "mode": "Dwisabhava",
+    "tatwa": "Agni",
+    "direction": "East",
+    "varna": "Kshatriya",
+    "purushartha": "Dharma",
+    "triguna": "Sathvik",
+    "constitution": "Jeeva",
+    "fertility": "Semi Fruitful",
+    "dayNight": "Nocturnal",
+    "rising": "Prushtodaya",
+    "legs": "Dwipada 1st / Chatuspada 2nd",
+    "tridosha": "Pitha",
+    "colour": "Golden",
+    "place": "Palace",
+    "jyothirlinga": "Kashi Vishwanath",
+    "bodyPart": "Thighs, Hips, Liver, Arterial system",
+    "traits": [
+     "Fun Loving",
+     "Adventurous",
+     "Very Optimistic",
+     "Confident",
+     "Attractive",
+     "Traditional",
+     "Active",
+     "Competitive"
+    ],
+    "lord": "Jupiter"
+   },
+   {
+    "n": 10,
+    "sanskrit": "Makara",
+    "english": "Capricorn",
+    "glyph": "♑",
+    "oddEven": "Even (Female)",
+    "mode": "Chara",
+    "tatwa": "Prithvi",
+    "direction": "South",
+    "varna": "Vysya",
+    "purushartha": "Artha",
+    "triguna": "Tamasika",
+    "constitution": "Dhatu",
+    "fertility": "Semi Fruitful",
+    "dayNight": "Nocturnal",
+    "rising": "Prushtodaya",
+    "legs": "Chatuspada 1st / Jalachara 2nd",
+    "tridosha": "Vatha",
+    "colour": "Various colours",
+    "place": "Marshlands",
+    "jyothirlinga": "Bhima Shankara",
+    "bodyPart": "Knees, Joints, Bones (lower body), Skin",
+    "traits": [
+     "Hard Workers",
+     "Straight Forward",
+     "Methodical",
+     "Ambitious",
+     "Practical",
+     "Rational",
+     "Perfectionist",
+     "Calculative"
+    ],
+    "lord": "Saturn"
+   },
+   {
+    "n": 11,
+    "sanskrit": "Kumbha",
+    "english": "Aquarius",
+    "glyph": "♒",
+    "oddEven": "Odd (Male)",
+    "mode": "Sthira",
+    "tatwa": "Vayu",
+    "direction": "West",
+    "varna": "Shudra",
+    "purushartha": "Kama",
+    "triguna": "Tamasika",
+    "constitution": "Moola",
+    "fertility": "Semi Fruitful",
+    "dayNight": "Diurnal",
+    "rising": "Shirsodaya",
+    "legs": "Dwipada",
+    "tridosha": "Vatha",
+    "colour": "Dark Brown",
+    "place": "Potters Place",
+    "jyothirlinga": "Kedarnath",
+    "bodyPart": "Calves, Ankles, Shins, Circulatory system",
+    "traits": [
+     "Sharp and quick",
+     "Emotional detachment",
+     "Stubborn",
+     "Mature",
+     "Creative",
+     "Friendly",
+     "Scientific",
+     "Philosophical",
+     "Rebel"
+    ],
+    "lord": "Saturn"
+   },
+   {
+    "n": 12,
+    "sanskrit": "Meena",
+    "english": "Pisces",
+    "glyph": "♓",
+    "oddEven": "Even (Female)",
+    "mode": "Dwisabhava",
+    "tatwa": "Jala",
+    "direction": "North",
+    "varna": "Brahmin",
+    "purushartha": "Moksha",
+    "triguna": "Sathvik",
+    "constitution": "Jeeva",
+    "fertility": "Fruitful",
+    "dayNight": "Diurnal",
+    "rising": "Ubhadaya",
+    "legs": "Jalachara",
+    "tridosha": "Kapha",
+    "colour": "White",
+    "place": "Ocean",
+    "jyothirlinga": "Tryambakeshwar",
+    "bodyPart": "Feet, Toes, Lymphatic system",
+    "traits": [
+     "Very Moody",
+     "Loyal",
+     "Loving",
+     "Hopeful",
+     "Spiritual",
+     "Influenced easily",
+     "Very emotional",
+     "Beautiful",
+     "Highly Satvik"
+    ],
+    "lord": "Jupiter"
+   }
+  ],
+  "RASHI_DIGNITY": {
+   "1": {
+    "lord": "Mars",
+    "mtr": true,
+    "exalted": [
+     "Sun"
+    ],
+    "debilitated": [
+     "Saturn"
+    ]
+   },
+   "2": {
+    "lord": "Venus",
+    "mtr": true,
+    "exalted": [
+     "Rahu",
+     "Moon"
+    ],
+    "debilitated": [
+     "Ketu"
+    ]
+   },
+   "3": {
+    "lord": "Mercury",
+    "mtr": false,
+    "exalted": [],
+    "debilitated": []
+   },
+   "4": {
+    "lord": "Moon",
+    "mtr": false,
+    "exalted": [
+     "Jupiter"
+    ],
+    "debilitated": [
+     "Mars"
+    ]
+   },
+   "5": {
+    "lord": "Sun",
+    "mtr": true,
+    "exalted": [],
+    "debilitated": []
+   },
+   "6": {
+    "lord": "Mercury",
+    "mtr": true,
+    "exalted": [
+     "Mercury"
+    ],
+    "debilitated": [
+     "Venus"
+    ]
+   },
+   "7": {
+    "lord": "Venus",
+    "mtr": true,
+    "exalted": [
+     "Saturn"
+    ],
+    "debilitated": [
+     "Sun"
+    ]
+   },
+   "8": {
+    "lord": "Mars",
+    "mtr": false,
+    "exalted": [
+     "Ketu"
+    ],
+    "debilitated": [
+     "Rahu",
+     "Moon"
+    ]
+   },
+   "9": {
+    "lord": "Jupiter",
+    "mtr": true,
+    "exalted": [],
+    "debilitated": []
+   },
+   "10": {
+    "lord": "Saturn",
+    "mtr": false,
+    "exalted": [
+     "Mars"
+    ],
+    "debilitated": [
+     "Jupiter"
+    ]
+   },
+   "11": {
+    "lord": "Saturn",
+    "mtr": true,
+    "exalted": [],
+    "debilitated": []
+   },
+   "12": {
+    "lord": "Jupiter",
+    "mtr": false,
+    "exalted": [
+     "Venus"
+    ],
+    "debilitated": [
+     "Mercury"
+    ]
+   }
+  },
+  "DIGNITY_DEG": {
+   "Sun": {
+    "exR": 1,
+    "exD": 10,
+    "deR": 7,
+    "deD": 10,
+    "mtR": 5,
+    "mt": [
+     0,
+     20
+    ]
+   },
+   "Moon": {
+    "exR": 2,
+    "exD": 3,
+    "deR": 8,
+    "deD": 3,
+    "mtR": 2,
+    "mt": [
+     3,
+     30
+    ]
+   },
+   "Mars": {
+    "exR": 10,
+    "exD": 28,
+    "deR": 4,
+    "deD": 28,
+    "mtR": 1,
+    "mt": [
+     0,
+     12
+    ]
+   },
+   "Mercury": {
+    "exR": 6,
+    "exD": 15,
+    "deR": 12,
+    "deD": 15,
+    "mtR": 6,
+    "mt": [
+     15,
+     20
+    ]
+   },
+   "Jupiter": {
+    "exR": 4,
+    "exD": 5,
+    "deR": 10,
+    "deD": 5,
+    "mtR": 9,
+    "mt": [
+     0,
+     10
+    ]
+   },
+   "Venus": {
+    "exR": 12,
+    "exD": 27,
+    "deR": 6,
+    "deD": 27,
+    "mtR": 7,
+    "mt": [
+     0,
+     15
+    ]
+   },
+   "Saturn": {
+    "exR": 7,
+    "exD": 20,
+    "deR": 1,
+    "deD": 20,
+    "mtR": 11,
+    "mt": [
+     0,
+     20
+    ]
+   }
+  },
+  "PLANET_OWN_HOUSES": {
+   "Sun": [
+    5
+   ],
+   "Moon": [
+    4
+   ],
+   "Mars": [
+    1,
+    8
+   ],
+   "Mercury": [
+    3,
+    6
+   ],
+   "Jupiter": [
+    9,
+    12
+   ],
+   "Venus": [
+    2,
+    7
+   ],
+   "Saturn": [
+    10,
+    11
+   ]
+  },
+  "NATURAL_FRIENDS": {
+   "Sun": {
+    "friend": [
+     "Moon",
+     "Mars",
+     "Jupiter"
+    ],
+    "enemy": [
+     "Venus",
+     "Saturn"
+    ]
+   },
+   "Moon": {
+    "friend": [
+     "Sun",
+     "Mercury"
+    ],
+    "enemy": []
+   },
+   "Mars": {
+    "friend": [
+     "Sun",
+     "Moon",
+     "Jupiter"
+    ],
+    "enemy": [
+     "Mercury"
+    ]
+   },
+   "Mercury": {
+    "friend": [
+     "Sun",
+     "Venus"
+    ],
+    "enemy": [
+     "Moon"
+    ]
+   },
+   "Jupiter": {
+    "friend": [
+     "Sun",
+     "Moon",
+     "Mars"
+    ],
+    "enemy": [
+     "Mercury",
+     "Venus"
+    ]
+   },
+   "Venus": {
+    "friend": [
+     "Mercury",
+     "Saturn"
+    ],
+    "enemy": [
+     "Sun",
+     "Moon"
+    ]
+   },
+   "Saturn": {
+    "friend": [
+     "Mercury",
+     "Venus"
+    ],
+    "enemy": [
+     "Sun",
+     "Moon",
+     "Mars"
+    ]
+   }
+  },
+  "KARAKATWAS": {
+   "Sun": {
+    "qualities": "authority, confidence and a commanding nature",
+    "signifies": "the father, the soul, health and status"
+   },
+   "Moon": {
+    "qualities": "emotion, nurture and a receptive mind",
+    "signifies": "the mother, the mind and emotions"
+   },
+   "Mars": {
+    "qualities": "energy, courage and aggression",
+    "signifies": "the younger co-born (sibling), courage, land and property"
+   },
+   "Mercury": {
+    "qualities": "intellect, analysis and communication",
+    "signifies": "speech, intellect, education and business"
+   },
+   "Jupiter": {
+    "qualities": "wisdom, nobility, expansion and good fortune",
+    "signifies": "children, wealth, the guru and dharma"
+   },
+   "Venus": {
+    "qualities": "refinement, charm and a taste for comfort",
+    "signifies": "the spouse, marriage, vehicles and the arts"
+   },
+   "Saturn": {
+    "qualities": "discipline, delay, hard work and detachment",
+    "signifies": "longevity, profession, servants and the elderly"
+   },
+   "Rahu": {
+    "qualities": "obsession, amplification and unconventionality",
+    "signifies": "foreign matters, sudden gains and illusion"
+   },
+   "Ketu": {
+    "qualities": "detachment, spirituality and sudden severance",
+    "signifies": "moksha, mysticism and past-life karma"
+   }
+  },
+  "SPECIAL_ASPECTS": {
+   "Sun": [
+    7
+   ],
+   "Moon": [
+    7
+   ],
+   "Mars": [
+    4,
+    7,
+    8
+   ],
+   "Mercury": [
+    7
+   ],
+   "Jupiter": [
+    5,
+    7,
+    9
+   ],
+   "Venus": [
+    7
+   ],
+   "Saturn": [
+    3,
+    7,
+    10
+   ],
+   "Rahu": [
+    5,
+    9,
+    12
+   ],
+   "Ketu": [
+    5,
+    9,
+    12
+   ]
+  },
+  "VORDER": [
+   "Ketu",
+   "Venus",
+   "Sun",
+   "Moon",
+   "Mars",
+   "Rahu",
+   "Jupiter",
+   "Saturn",
+   "Mercury"
+  ],
+  "VYEARS": {
+   "Ketu": 7,
+   "Venus": 20,
+   "Sun": 6,
+   "Moon": 10,
+   "Mars": 7,
+   "Rahu": 18,
+   "Jupiter": 16,
+   "Saturn": 19,
+   "Mercury": 17
+  },
+  "COMBUST_ORB": 5,
+  "COMBUST_PLANETS": [
+   "Moon",
+   "Mars",
+   "Mercury",
+   "Jupiter",
+   "Venus",
+   "Saturn"
+  ],
+  "NAKSHATRAS": [
+   [
+    "Ashwini",
+    "Ketu"
+   ],
+   [
+    "Bharani",
+    "Venus"
+   ],
+   [
+    "Krittika",
+    "Sun"
+   ],
+   [
+    "Rohini",
+    "Moon"
+   ],
+   [
+    "Mrigashira",
+    "Mars"
+   ],
+   [
+    "Ardra",
+    "Rahu"
+   ],
+   [
+    "Punarvasu",
+    "Jupiter"
+   ],
+   [
+    "Pushya",
+    "Saturn"
+   ],
+   [
+    "Ashlesha",
+    "Mercury"
+   ],
+   [
+    "Magha",
+    "Ketu"
+   ],
+   [
+    "Purva Phalguni",
+    "Venus"
+   ],
+   [
+    "Uttara Phalguni",
+    "Sun"
+   ],
+   [
+    "Hasta",
+    "Moon"
+   ],
+   [
+    "Chitra",
+    "Mars"
+   ],
+   [
+    "Swati",
+    "Rahu"
+   ],
+   [
+    "Vishakha",
+    "Jupiter"
+   ],
+   [
+    "Anuradha",
+    "Saturn"
+   ],
+   [
+    "Jyeshtha",
+    "Mercury"
+   ],
+   [
+    "Mula",
+    "Ketu"
+   ],
+   [
+    "Purva Ashadha",
+    "Venus"
+   ],
+   [
+    "Uttara Ashadha",
+    "Sun"
+   ],
+   [
+    "Shravana",
+    "Moon"
+   ],
+   [
+    "Dhanishta",
+    "Mars"
+   ],
+   [
+    "Shatabhisha",
+    "Rahu"
+   ],
+   [
+    "Purva Bhadrapada",
+    "Jupiter"
+   ],
+   [
+    "Uttara Bhadrapada",
+    "Saturn"
+   ],
+   [
+    "Revati",
+    "Mercury"
+   ]
+  ],
+  "PLANET_PROFILE": {
+   "Sun": {
+    "Relationships": "Father, Father-in-law",
+    "Profession / Status": "Authority, Government, Leadership, Boss, Administration, Management, Influential persons",
+    "Reputation": "Name & Fame, Reputation, Visibility, Permanent Income",
+    "Personality Traits": "Ego, Vitality, Open-hearted, Equality, Generous, High Expectations, Punctual, Vertical",
+    "Body Parts Ruled": "Eyes, Heart, Spine, Bones",
+    "General Health Indicator": "General Health, Vitality",
+    "Nature": "Separative planet; causes combustion to nearby planets",
+    "Combustion Effect": "— (Sun is the combustor)",
+    "Soul / Mind / Body": "Soul (Atma)"
+   },
+   "Moon": {
+    "Relationships": "Mother, Mother-in-law, Elderly ladies",
+    "Profession / Status": "Travel agent, Agriculture, Hotel Industry, Nurse, Sailor, Dairy business, Grocery shop, Edible oil merchant, BWSSB",
+    "Reputation": "Queen (Portfolio); emotional reputation; popularity with public",
+    "Personality Traits": "Gentle, soft, caring, emotional; feminine energy; sensitive; imaginative; changes quickly like emotions",
+    "Body Parts Ruled": "Left eye, Breast, Heart, Mind, Uterus, Urinary bladder",
+    "General Health Indicator": "Mental health, fluids, immunity; Diseases: Cold, Cough, Phlegm, Mental disorders, Sinus, Swellings",
+    "Nature": "Benefic (when waxing/strong); feminine; water element; rules Karkataka",
+    "Combustion Effect": "Mind filled with ego; cannot think clearly",
+    "Soul / Mind / Body": "Mind (Manas), Emotions"
+   },
+   "Mars": {
+    "Relationships": "Younger Brother",
+    "Profession / Status": "Commander in Chief; Dentist, Surgeon, Mechanic, Army, Security, Police, Fire engine dept, Supervisor, Engineer",
+    "Reputation": "Bhoomi Karaka — Landed property; recognition through valour",
+    "Personality Traits": "Courageous, Aggressive, Energetic / Action-oriented, Adventurous, Hasty & Quick / Dynamic, Impulsive, Faithful, Egoistic / Arrogant, Stubborn / Dominating, Quarrelsome, Anger, Retaliating",
+    "Body Parts Ruled": "Muscle, Bone marrow, RBC, Eyebrow, Teeth, Menstrual cycle",
+    "General Health Indicator": "Diseases: Cuts, Wounds, Bleeding, BP, Piles, Anemia, Accidents",
+    "Nature": "Malefic; fiery; outer planet; karaka of energy, accidents, electricity, machinery, volcanic eruption",
+    "Combustion Effect": "Overconfident; feels can beat anyone",
+    "Soul / Mind / Body": "Protection (Key Word); Courage, Energy, Action"
+   },
+   "Mercury": {
+    "Relationships": "Maternal Uncle, Boy friend, Girl friend, Lover, Brokers",
+    "Profession / Status": "Prince (Portfolio); Teacher, Writer, Author, Broker, Publisher, Public speaker, Journalist, Trader, Ambassador, Accountant, Book seller",
+    "Reputation": "Reputation through communication, speech, intellect and business",
+    "Personality Traits": "Intelligent, Educated, Knowledgeable, Speech-oriented, Business-minded, Friendly & Fun-loving, Cunning / Tricky, Diplomatic, Calculative, Smart, Adaptable",
+    "Body Parts Ruled": "Skin, Nerves, Tongue, Throat, Neck, Shoulder, Hands, Little finger, Forehead",
+    "General Health Indicator": "Diseases: Skin disease, Itches, Sore throat, Tonsils, Dumbness, Leprosy",
+    "Nature": "Neutral planet — takes the nature of the planet it associates with; Rajasic; karaka of communication and intellect",
+    "Combustion Effect": "Feels most intelligent",
+    "Soul / Mind / Body": "Connection (Key Word); Intelligence, Knowledge / Information"
+   },
+   "Jupiter": {
+    "Relationships": "Children (Putra / Santana Karaka), Grandchildren, Elder Brother, Teachers",
+    "Profession / Status": "DevaGuru / Minister (Portfolio); Priest, Banker, Judge, Teacher, Counsellor, Financier, Auditor, Bullion trader",
+    "Reputation": "Honour & Respect (Gauravam); reputation through wisdom, wealth (Dhana Karaka) and benevolence",
+    "Personality Traits": "Wise, Knowledgeable, Benevolent, Optimistic, Respectable, Generous, Spiritual, Just, Expansive",
+    "Body Parts Ruled": "Liver, Pancreas, Gall bladder, Stomach, Thighs, Index finger, Nose, Fat, Ear",
+    "General Health Indicator": "Diseases: Jaundice, Liver complaints, Diabetes, Indigestion, Obesity, Flatulence",
+    "Nature": "Most benevolent planet — greatest natural benefic (Subha Graha); Sathwik; Akasha tatwa",
+    "Combustion Effect": "Feels he knows everything; no need of Guru/God",
+    "Soul / Mind / Body": "Wisdom & Knowledge (Gnana Karaka); Auspiciousness, Expansion, Divinity"
+   },
+   "Venus": {
+    "Relationships": "Spouse / Wife (Kalatra Karaka), Daughter, Daughter-in-law, Aunt",
+    "Profession / Status": "Asura Guru / Shukracharya (Portfolio); Beautician, Costume designer, Artist, Musician, Singer, Dancer, Poet, Painter, Jeweller, Silk trader, Hotel & Event Management",
+    "Reputation": "Reputation through beauty, artistic talent, luxury and charm",
+    "Personality Traits": "Pleasant, Artistic, Romantic, Charming, Sensual, Luxury-loving, Beauty-conscious, Refined",
+    "Body Parts Ruled": "Cheeks, Semen / Reproductive fluids, Kidneys, Luster of the eyes",
+    "General Health Indicator": "Diseases: Diabetes, Kidney / Bladder stones, Urinary & hormonal disorders, Thyroid, Venereal diseases",
+    "Nature": "Natural benefic; karaka of luxury, love & material comforts; Rajasic; Jala tatwa",
+    "Combustion Effect": "Unnecessary expenses on comforts, pleasures, entertainment",
+    "Soul / Mind / Body": "Pleasure & Love (Bhoga Karaka); Beauty, Romance, Artistic talent, Luxury"
+   },
+   "Saturn": {
+    "Relationships": "Elder brother, elderly & poor people, servants, handicapped, masses, employees",
+    "Profession / Status": "Servants, labourers, cleaners, cobblers, iron/oil merchants, jailors, coffin makers, waste disposal",
+    "Reputation": "Earned slowly through hard work; humble / low status",
+    "Personality Traits": "If strong: patient, disciplined, hardworking, philosophical. If weak: lazy, melancholic, inferiority complex",
+    "Body Parts Ruled": "Chin, middle finger, knees, knee-caps, buttocks, foreleg, feet",
+    "General Health Indicator": "Arthritis, chronic ailments, constipation, rheumatism, defective limbs, lethargy",
+    "Nature": "Natural Malefic; Karma Phala Daata (hard task-master)",
+    "Combustion Effect": "Postpones work; thinks can finish in time even if late",
+    "Soul / Mind / Body": "Body / Longevity (Ayus); dispenser of Karma"
+   },
+   "Rahu": {
+    "Relationships": "(later session)",
+    "Profession / Status": "(later session)",
+    "Reputation": "(later session)",
+    "Personality Traits": "(later session)",
+    "Body Parts Ruled": "(later session)",
+    "General Health Indicator": "(later session)",
+    "Nature": "(later session)",
+    "Combustion Effect": "(later session)",
+    "Soul / Mind / Body": "(later session)"
+   },
+   "Ketu": {
+    "Relationships": "(later session)",
+    "Profession / Status": "(later session)",
+    "Reputation": "(later session)",
+    "Personality Traits": "(later session)",
+    "Body Parts Ruled": "(later session)",
+    "General Health Indicator": "(later session)",
+    "Nature": "(later session)",
+    "Combustion Effect": "(later session)",
+    "Soul / Mind / Body": "(later session)"
+   }
+  }
+ },
+ "meta": {
+  "source": "Session 23 slides + recording (8 Oct 2026)",
+  "version": 1,
+  "statuses": [
+   "taught",
+   "curated",
+   "blend",
+   "standard"
+  ]
+ }
+}
