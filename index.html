@@ -3521,10 +3521,9 @@ function distributionNarrative(label, counts, total) {
    5. RENDERING / UI
    ============================================================ */
 function fmtDeg(d) {
-  const deg = Math.floor(d);
-  const m = (d - deg) * 60;
-  const min = Math.floor(m);
-  const sec = Math.round((m - min) * 60);
+  // Round once, in whole seconds, so 29.99999° prints 30° 00' 00" rather than 29° 59' 60".
+  const t = Math.round(d * 3600);
+  const deg = Math.floor(t / 3600), min = Math.floor((t % 3600) / 60), sec = t % 60;
   return `${deg}° ${String(min).padStart(2, "0")}' ${String(sec).padStart(2, "0")}"`;
 }
 function fmtDate(d, time, placeName) {
@@ -3890,6 +3889,7 @@ function renderPlanetTable(sidereal, lagnaRashiNum, retroSet, lagnaLon) {
       ${r.traits.slice(0, 5).map(t => `<span class="trait">${t}</span>`).join(" ")}
       <em>Element: ${r.tatwa} · Modality: ${r.mode}</em></p>`;
   }
+  narr += `<p class="dig-note">Rāhu and Ketu are the mean lunar nodes (as in most Indian almanacs); the true node can differ by up to about 1.5°.</p>`;
   document.getElementById("planet-narrative").innerHTML = narr;
 }
 
@@ -4212,7 +4212,7 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob, sidereal) {
 /* ============================================================
    GRAHA DRISHTI — Special Aspects & Mutual Aspects (Session 10)
    Every graha aspects the 7th. Special: Mars 4·7·8, Jupiter 5·7·9,
-   Saturn 3·7·10. Rahu/Ketu given 5·7·9 per common convention.
+   Saturn 3·7·10. Rahu/Ketu 2·5·9 counted anti-clockwise (= forward 12·9·5).
    ============================================================ */
 
 /* Karakatwas (significations). `qualities` = what an ASPECTING planet imparts;
@@ -4224,11 +4224,16 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob, sidereal) {
 function aspectReading(aspecting, aspected, house){
   const A = KARAKATWAS[aspecting], B = KARAKATWAS[aspected];
   if(!A || !B) return "";
-  return `<strong>${aspecting}</strong> (${A.qualities}) casts its ${ord(house)} aspect on <strong>${aspected}</strong> (${B.signifies}) — so ${B.signifies} come under the influence of ${A.qualities}.`;
+  return `<strong>${aspecting}</strong> (${A.qualities}) casts its ${aspectOrd(aspecting, house)} aspect on <strong>${aspected}</strong> (${B.signifies}) — so ${B.signifies} come under the influence of ${A.qualities}.`;
 }
 
 function aspectedRashi(fromRashi, aspectHouse){ return ((fromRashi-1)+(aspectHouse-1))%12+1; }
 function ord(n){ const s=["th","st","nd","rd"], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+/* Name of a planet's aspect on the house h counted forward. Rāhu and Ketu count their
+   aspects anti-clockwise (teacher: 2nd, 5th, 9th), which land on forward houses 12, 9, 5. */
+function aspectOrd(planet, h){
+  return (planet === "Rahu" || planet === "Ketu") ? `${ord(((13 - h) % 12) + 1)} (anti-clockwise)` : ord(h);
+}
 
 /* ===== 12 Bhavas (Houses) — Sessions 21 & 22 (24 Sep & 1 Oct 2026) ===== */
 /* BHAVA-START — auto-generated from the Classification workbook by scripts/build_data.py */
@@ -4300,12 +4305,12 @@ function renderAspectsSection(planetsByRashi){
   let t=`<thead><tr><th>Planet (Rashi)</th><th>Special Aspects</th><th>Aspected Rashis</th><th>Planets Aspected</th></tr></thead><tbody>`;
   for(const p of order){
     const asp=aspects[p];
-    const aspRashiStr=asp.map(a=>`${ord(a.house)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
+    const aspRashiStr=asp.map(a=>`${aspectOrd(p, a.house)} → ${getRashi(a.rashi).sanskrit}`).join(", ");
     const hit=[];
-    for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${ord(a.house)})`);
+    for(const a of asp) for(const q of (inRashi[a.rashi]||[])) if(q!==p) hit.push(`${q} (${aspectOrd(p, a.house)})`);
     const jupTag = p==="Jupiter" ? ` <span class="section-flag flag-exalted flag-deep">Aspect &gt; placement</span>` : "";
     t+=`<tr><td><span class="glyph-mini">${GLYPH9[p]}</span><strong>${p}</strong> · ${getRashi(planetsByRashi[p]).sanskrit}${jupTag}</td>
-      <td>${SPECIAL_ASPECTS[p].join(", ")}</td><td>${aspRashiStr}</td>
+      <td>${(p==="Rahu"||p==="Ketu") ? "2, 5, 9 (anti-clockwise)" : SPECIAL_ASPECTS[p].join(", ")}</td><td>${aspRashiStr}</td>
       <td>${hit.length?hit.join(", "):"—"}</td></tr>`;
   }
   t+=`</tbody>`;
@@ -4341,7 +4346,7 @@ function renderAspectsSection(planetsByRashi){
         h += `<p class="rnote" style="margin:0 0 6px;">Its aspect brings these qualities to whichever planet it influences.</p>`;
         const houses = Object.keys(g.byHouse).map(Number).sort((a,b)=>a-b);
         for(const hh of houses){
-          h += `<p style="margin:4px 0 2px;"><strong>${ord(hh)} aspect →</strong></p><ul style="margin:0 0 6px;">`;
+          h += `<p style="margin:4px 0 2px;"><strong>${aspectOrd(g.p, hh)} aspect →</strong></p><ul style="margin:0 0 6px;">`;
           for(const q of g.byHouse[hh]) h += `<li>On <strong>${q}</strong> — ${KARAKATWAS[q].signifies}.</li>`;
           h += `</ul>`;
         }
@@ -4391,21 +4396,33 @@ function renderGurubalaSection(moonRashiNum, ayanType){
                   : `<span class="section-flag flag-neutral">Not active</span>`]
   ];
   const detail = on
-    ? `<p>Transit Jupiter is in the <strong>${h}${h===2?"nd":h===5||h===7||h===9?"th":"th"} house from your natal Moon</strong>, so <strong>Gurubala is running</strong>. This is a period of God's grace — you are under the influence of <em>Daiva Bala</em>, and it is a very good time to perform auspicious functions (marriage, housewarming, new ventures).</p>
+    ? `<p>Transit Jupiter is in the <strong>${ord(h)} house from your natal Moon</strong>, so <strong>Gurubala is running</strong>. This is a period of God's grace — you are under the influence of <em>Daiva Bala</em>, and it is a very good time to perform auspicious functions (marriage, housewarming, new ventures).</p>
        <p>In experience, suitors come knocking at the door to get married when there is Gurubala in the girl's chart — and vice versa. Gurubala is an opportunity given by God, and it should be harnessed.</p>`
-    : `<p>Transit Jupiter is in the ${h}th house from your natal Moon, which is outside the Gurubala houses (2, 5, 7, 9, 11). Auspicious functions are better timed for when Jupiter moves into one of those houses.</p>
+    : `<p>Transit Jupiter is in the ${ord(h)} house from your natal Moon, which is outside the Gurubala houses (2, 5, 7, 9, 11). Auspicious functions are better timed for when Jupiter moves into one of those houses.</p>
        <p style="font-size:13px;color:var(--muted);">Jupiter spends roughly a year in each rashi, so this changes over time.</p>`;
   document.getElementById("gurubala-body").innerHTML =
     `<div class="kv-grid">${kv.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("")}</div>
      <div class="narrative">${detail}</div>`;
 }
 
+/* When transit Saturn entered its present rāśi and when it leaves (day steps, up to
+   3 years each way; a retrograde re-entry counts as the latest entry). */
+function saturnSignStay(jd, ayanType){
+  const signAt = j => Math.floor(norm360(planetGeocentric("Saturn", j + deltaTSeconds(j) / 86400) - ayanamsa(j, ayanType)) / 30);
+  const s0 = signAt(jd);
+  let a = jd; while (a > jd - 1100 && signAt(a - 1) === s0) a -= 1;
+  let b = jd; while (b < jd + 1100 && signAt(b + 1) === s0) b += 1;
+  const fmt = j => { const d = new Date((j - 2440587.5) * 86400000);
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }); };
+  return { since: fmt(a), until: fmt(b + 1) };
+}
 function renderSadeSatiSection(moonRashiNum, ayanType){
   const now=new Date();
   const jdNow=julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(),
                         now.getUTCHours()+now.getUTCMinutes()/60);
   const satRashi=rashiOf(computeChart(jdNow,ayanType).sidereal.Saturn).n;
   const h=houseFromLagna(moonRashiNum, satRashi);
+  const stay=saturnSignStay(jdNow, ayanType);
   let status, detail;
   if([12,1,2].includes(h)){
     const phase = h===12?"Rising phase (first ~2½ yrs)":h===1?"Peak phase (middle ~2½ yrs)":"Setting phase (last ~2½ yrs)";
@@ -4413,7 +4430,7 @@ function renderSadeSatiSection(moonRashiNum, ayanType){
     detail="Saturn is transiting the 12th, 1st or 2nd from your natal Moon — the 7½-year Sade Sati. A demanding period of hard lessons, responsibility and maturation. With sincere effort and remedies it becomes a time of growth, not just difficulty.";
   } else if(h===8){ status="⚠ ASHTAMA SHANI (~2½ yrs)"; detail="Saturn transits the 8th from your natal Moon — a challenging ~2½-year period; take care of health, finances and avoid risks."; }
   else if(h===4){ status="⚠ ARDHA ASHTAMA SHANI / KANTAKA (~2½ yrs)"; detail="Saturn transits the 4th from your natal Moon (Ardha-Ashtama, 'half Sade Sati') — ~2½ years of domestic, property and mental pressure."; }
-  else { status="✅ No Sade Sati / Ashtama Shani at present"; detail=`Saturn is in the ${h}th from your natal Moon — outside the stressful transit houses (12, 1, 2 for Sade Sati; 8 and 4 for Ashtama/Ardha-Ashtama).`; }
+  else { status="✅ No Sade Sati / Ashtama Shani at present"; detail=`Saturn is in the ${ord(h)} from your natal Moon — outside the stressful transit houses (12, 1, 2 for Sade Sati; 8 and 4 for Ashtama/Ardha-Ashtama).`; }
   const kv=[
     ["Saturn's current transit Rashi", getRashi(satRashi).sanskrit],
     ["Your natal Moon Rashi",          getRashi(moonRashiNum).sanskrit],
@@ -4422,7 +4439,7 @@ function renderSadeSatiSection(moonRashiNum, ayanType){
   ];
   document.getElementById("sade-kv").innerHTML=kv.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
   document.getElementById("sade-narrative").innerHTML=
-    `<p>${detail}</p><p style="font-size:13px;color:var(--muted);">Saturn spends ~2½ years per rashi (≈30 years per zodiac). Sade Sati spans the 7½ years while Saturn crosses the 12th, 1st and 2nd from the natal Moon. This is a live transit computed for today (${now.toISOString().slice(0,10)}), so it changes over time. Saturn entered Meena (Pisces) on 29 Mar 2025. Conduct &amp; remedies (Session 11): stay humble and egoless, be honest, disciplined and hardworking, do selfless service to the underprivileged, the elderly and the differently-abled, and worship Lord Shiva (Saturn's presiding deity) — chanting <em>Om Namah Shivaya</em> is beneficial.</p>`;
+    `<p>${detail}</p><p style="font-size:13px;color:var(--muted);">Saturn spends ~2½ years per rashi (≈30 years per zodiac). Sade Sati spans the 7½ years while Saturn crosses the 12th, 1st and 2nd from the natal Moon. This is a live transit computed for today (${now.toISOString().slice(0,10)}), so it changes over time. Saturn has been in ${getRashi(satRashi).sanskrit} (${getRashi(satRashi).english}) since ${stay.since} and moves on around ${stay.until}. Conduct &amp; remedies (Session 11): stay humble and egoless, be honest, disciplined and hardworking, do selfless service to the underprivileged, the elderly and the differently-abled, and worship Lord Shiva (Saturn's presiding deity) — chanting <em>Om Namah Shivaya</em> is beneficial.</p>`;
 }
 
 /* Session 11 — Saturn combinations (Punarphoo, Sun–Saturn, Saturn–Mars) + remedies.
@@ -4587,7 +4604,7 @@ const GRAHA_REF = {
              mantra: "ॐ श्रां श्रीं श्रौं सः चन्द्रमसे नमः", mantraRoman: "Om Shraam Shreem Shroum Sah Chandramase Namah" },
   Mars:    { deva: "क ख ग घ ङ",        roman: "Ka, Kha, Ga, Gha, Nga",
              mantra: "ॐ क्रां क्रीं क्रौं सः भौमाय नमः", mantraRoman: "Om Kraam Kreem Kroum Sah Bhaumaya Namah" },
-  Mercury: { deva: "त थ द ध न",        roman: "Ta, Tha, Da, Dha, Na",
+  Mercury: { deva: "ट ठ ड ढ ण",        roman: "Ṭa, Ṭha, Ḍa, Ḍha, Ṇa",
              mantra: "ॐ ब्रां ब्रीं ब्रौं सः बुधाय नमः", mantraRoman: "Om Bram Breem Broum Sah Budhaya Namah" },
   Jupiter: { deva: "त थ द ध न",        roman: "Ta, Tha, Da, Dha, Na",
              mantra: "ॐ ग्रां ग्रीं ग्रौं सः गुरुवे नमः ॥", mantraRoman: "Om Graam Greem Groum Sah Gurave Namah" },
@@ -4595,8 +4612,8 @@ const GRAHA_REF = {
              mantra: "ॐ द्रां द्रीं द्रौं सः शुक्राय नमः ।", mantraRoman: "Om Draam Dreem Droum Sah Shukraya Namah" },
   Saturn:  { deva: "प फ ब भ म",        roman: "Pa, Pha, Ba, Bha, Ma",
              mantra: "ॐ प्रां प्रीं प्रौं सः शनैश्चराय नमः", mantraRoman: "Om Praam Preem Proum Sah Shanaishcharaya Namah" },
-  Rahu:    { deva: "—",                roman: "N/A",                        mantra: "ॐ भ्रां भ्रीं भ्रौं सः राहवे नमः", mantraRoman: "Om Bhraam Bhreem Bhroum Sah Rahave Namah" },
-  Ketu:    { deva: "—",                roman: "N/A",                        mantra: "ॐ स्रां स्रीं स्रौं सः केतवे नमः", mantraRoman: "Om Sraam Sreem Sroum Sah Ketave Namah" }
+  Rahu:    { deva: "—",                roman: "—",                          mantra: "ॐ भ्रां भ्रीं भ्रौं सः राहवे नमः", mantraRoman: "Om Bhraam Bhreem Bhroum Sah Rahave Namah" },
+  Ketu:    { deva: "—",                roman: "—",                          mantra: "ॐ स्रां स्रीं स्रौं सः केतवे नमः", mantraRoman: "Om Sraam Sreem Sroum Sah Ketave Namah" }
 };
 
 /* Per-graha reference attributes taken from the course decks (Sessions 9 & 10
@@ -4612,10 +4629,10 @@ const GRAHA_ATTRS = {
              masa:"Karthika Masa, Shukla Pournami", stotram:"Soundarya Lahari", gem:"Pearl", transit:"~2.25 days in each rashi",
              portfolio:"Queen" },
   Mars:    { day:"Tuesday",   metal:"Copper", dhanya:"Toor dhal", gothra:"Bharadwaja", avatar:"Narasimha",
-             masa:"Shravana Masa, Shukla Trayodashi", stotram:"Skanda Sashti Kavacham", gem:"Red Coral", transit:"—",
+             masa:"Shravana Masa, Shukla Trayodashi", stotram:"Skanda Sashti Kavacham", gem:"Red Coral", transit:"~45–49 days in each rashi",
              portfolio:"Commander-in-Chief" },
-  Mercury: { day:"Wednesday", metal:"—", dhanya:"—", gothra:"Atreya", avatar:"Buddha (Balarama)",
-             masa:"Jyeshta Masa, Shukla Ekadashi", stotram:"—", gem:"Emerald", transit:"25–27 days in each rashi",
+  Mercury: { day:"Wednesday", metal:"Brass", dhanya:"Green gram", gothra:"Atreya", avatar:"Buddha (Balarama)",
+             masa:"Jyeshta Masa, Krishna Ekadashi", stotram:"Vishnu Sahasranama", gem:"Emerald", transit:"~24 days in each rashi",
              portfolio:"Prince" },
   Jupiter: { day:"Thursday",  metal:"Gold", dhanya:"Bengal gram", gothra:"Angirasa",
              avatar:"Vamana", masa:"Vaishaka Masa, Shukla Ekadashi",
@@ -4820,7 +4837,7 @@ function renderGrahaReference() {
   html += `</tbody></table>
     <p class="akshara-note">Aksharas are the sound syllables (varga consonants) attributed to each graha — used in
     naming and in identifying the graha a name resonates with. The Beejakshari is the graha's seed-mantra,
-    chanted to strengthen it. Rahu and Ketu (shadow grahas) have no assigned aksharas or beejakshari mantra (N/A).</p>`;
+    chanted to strengthen it. Rahu and Ketu (shadow grahas) have no assigned aksharas (shown as —); their beejakshari mantras are listed.</p>`;
 
   /* Attribute panel from the course decks (Sessions 9 & 10). */
   html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Graha Attributes</h4>
@@ -5250,7 +5267,7 @@ function generate() {
   renderNodeComparisonSection();
   renderFaceMappingSection();
 
-  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName, lagnaLon };
+  currentChart = { chart, lagnaRashi, moonRashi, name, dob, tob, placeName, lagnaLon, JD };
   renderPredictive();
   saveForm();     // remember these details on this device
   saveToSheet();  // optional: log to your Google Sheet if an endpoint is configured
@@ -5517,7 +5534,7 @@ function _selfCheckRahu(){
   const fails = [];
   const eq = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 
-  // (a) node special aspects must be 5,7,9
+  // (a) node special aspects: 2/5/9 anti-clockwise = forward 5/9/12
   if(!eq(SPECIAL_ASPECTS.Rahu,[5,9,12])) fails.push("Rahu aspects must be [5,9,12]");
   if(!eq(SPECIAL_ASPECTS.Ketu,[5,9,12])) fails.push("Ketu aspects must be [5,9,12]");
   // Rahu in Cancer(4): 9th aspect -> Pisces(12), and NOT Virgo(6)
@@ -5548,7 +5565,7 @@ const RAHU_GENERAL_REMEDIES = ["Pray to Goddess Durga; chant 'Om Dum Durgayai Na
 const KETU_GENERAL_REMEDIES = ["Ganapathi pooja — offer durva grass (garike), do Gana Homa and wear a Ganapathi pendant; chant 'Om Gam Ganapataye Namah' 108 times daily.", "Visit pilgrimage centres and bathe in holy rivers.", "Feed horse gram to horses and fish; keep a handful of horse gram under the pillow overnight and feed it to the birds the next morning.", "Feed street dogs (Ketu = street dogs, unlike Mars = the pet dog), squirrels, rats and fish; on a Sunday, light 7 candles in a church.", "Offer a 108-cardamom (elaichi) haara to Ganapathi; fly a kite; donate a saffron flag bearing 'Om'.", "Gift creeper-grown vegetables to sanyasis, barbers, cobblers and tailors; do seva or donate to mutts and ashramas.", "Ketu Parihara: tonsure the head and give the hair to your family deity; at the ChitraGupta temple, Kanchipuram, light 7 ghee lamps set over horse gram for Ketu.", "Chant the Gayatri mantra of the planet Ketu is joined with, and do the tatwa remedy of Ketu's rashi (Vayu: fly a kite / hoist a flag / chant; Jala: Abhisheka to Ganapathi; Agni: Ganapathi Homa / light candles in a church; Prithvi: pooja, charity, feed sanyasis, cobblers, barbers)."];
 const KAALA_SARPA_RESULTS = ["Devotion to family and society, but repeated struggle and loneliness in times of need.", "Fear of heights, lonely places and snakes.", "Difficulty having children or little happiness from them; delay in marriage or an unhappy married life.", "Hurdles in life, health issues, lack of peace, tension and anxiety.", "Little support from friends and relatives; seldom rewarded for one's efforts.", "Dreams of dead ancestors or of bad things happening."];
 const KAALA_SARPA_REMEDIES = ["Kaala Sarpa Dosha Nivarana Pooja at Sri Kaalahasti, Rameshwaram, Thiru Nageshwaram, Kukke Subramanya or Ujjain.", "Rudrabhisheka to Lord Shiva; chant 'Om Namah Shivaya'.", "Chant the Maha Mrityunjaya mantra 108 times.", "Water a Peepal tree every Saturday.", "Visit the Garuda temple near Mulbagal (believed to relieve the 8 kinds of sarpa dosha).", "Chant the Hanuman Chalisa daily."];
-const KAALA_SARPA_NOTE = "Kaala Sarpa forms when ALL planets (and the Lagna) are hemmed within the Rahu–Ketu axis. If even one planet or the Lagna is outside the axis, it is NOT formed. Because the nodes are always retrograde (their degree keeps decreasing / moving anti-clockwise), a planet sitting in a node's OWN sign is judged by whether the node has already crossed it: if the planet's degree is HIGHER than the node's, the descending node has passed it, so it lies OUTSIDE the axis and breaks the yoga; if lower, the node is still approaching and the planet is inside. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga (kaala = time, amrita = nectar), giving detachment and a spiritual inclination — over time it yields beneficial results, and the intense karmic situations it brings become a source of strength for success.";
+const KAALA_SARPA_NOTE = "Kaala Sarpa forms when all seven grahas (Sun to Saturn) are hemmed on one side of the Rahu–Ketu axis; if even one graha is on the other side, it is NOT formed. The Lagna is not considered (Session 18): Rahu engulfs the planets, so the yoga holds even when the Lagna is outside. A graha in the same rashi as a node is placed by its degree: in Rahu's rashi it is on the Rahu→Ketu side when its degree is higher than Rahu's, and in Ketu's rashi when its degree is lower than Ketu's. Planets tend to lose effectiveness and life shows repeated ups and downs; results depend on past-life karma. It is most powerful up to about age 45. When RAHU leads it is the harsher Kaala Sarpa Dosha; when KETU leads it is the milder Kalamrit / Kaala Sarpa Yoga (kaala = time, amrita = nectar), giving detachment and a spiritual inclination — over time it yields beneficial results, and the intense karmic situations it brings become a source of strength for success.";
 
 /* ============================================================
    PREDICTIVE & REMEDIES  (Section X)
@@ -5560,13 +5577,21 @@ const VYEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, 
 const PRED_PLANETS = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
 const _esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const _fdate = d => d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+/* 7.37 years -> "7 y 4 m 13 d" (12 months of 30.4375 days). */
+function fmtYMD(years){
+  const days = Math.round(years * 365.25), y = Math.floor(days / 365.25);
+  let rem = days - Math.round(y * 365.25); const m = Math.floor(rem / 30.4375); rem = Math.round(rem - m * 30.4375);
+  return `${y} y ${m} m ${rem} d`;
+}
 
 /* Vimshottari mahadasha timeline + running bhukti */
-function buildDasha(moonLon, dobISO, tobStr){
+function buildDasha(moonLon, dobISO, tobStr, birthJD){
   if(!dobISO) return null;
   const YR = 365.25*24*3600*1000, add=(dt,y)=>new Date(dt.getTime()+y*YR);
   const p=dobISO.split("-").map(Number), t=(tobStr||"0:0:0").split(":").map(Number);
-  const birth=new Date(p[0],(p[1]||1)-1,p[2]||1,(t[0]||0),(t[1]||0),(t[2]||0));
+  // The birth instant: from the chart's Julian Day (birth-place time zone) when given.
+  const birth = birthJD != null ? new Date((birthJD - 2440587.5) * 86400000)
+                                : new Date(p[0],(p[1]||1)-1,p[2]||1,(t[0]||0),(t[1]||0),(t[2]||0));
   const nk=nakshatraOf(moonLon), lord=nk.lord, frac=nk.degIn/NAK_SIZE;
   const si=VORDER.indexOf(lord);
   let vs=add(birth,-frac*VYEARS[lord]);           // virtual start of the first (running) maha
@@ -5582,7 +5607,7 @@ function buildDasha(moonLon, dobISO, tobStr){
   }
   const curMaha  = timeline.find(x=>x.cur) || timeline[0];
   const curBhukti= curMaha.bhuktis.find(b=>b.cur) || curMaha.bhuktis[0];
-  return {nak:nk, birth, timeline, curMaha, curBhukti,
+  return {nak:nk, birth, timeline, curMaha, curBhukti, balance:{lord, years:(1-frac)*VYEARS[lord]},
           spanStart:timeline[0].start, spanEnd:timeline[8].end};
 }
 
@@ -5593,6 +5618,7 @@ function renderDashaPane(D, roles){
   const G=DASHA_GLYPH, now=new Date();
   let h=`<h4 class="pane-h">Vimśottarī Daśā</h4>`;
   h+=`<p>Birth-star <strong>${D.nak.name}</strong> (lord <strong>${D.nak.lord}</strong>, pada ${D.nak.pada}). `;
+  if(D.balance) h+=`Balance at birth: <strong>${fmtYMD(D.balance.years)}</strong> of ${D.balance.lord} mahādaśā. `;
   h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
   h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
 
@@ -5640,9 +5666,9 @@ function renderTransitPane(natalSid, natalMoonR, lagnaN){
   const natalByR={}; for(const p of order){ (natalByR[rashiOf(natalSid[p]).n] ||= []).push(p); }
   const rows=[];
   for(const t of order){ const tr=rashiOf(tsid[t]).n; const disps=(SPECIAL_ASPECTS[t]||[7]);
-    for(const hh of disps){ const tgt=aspectedRashi(tr,hh); const anti=(t==="Rahu"||t==="Ketu")?" (anti-clockwise)":"";
+    for(const hh of disps){ const tgt=aspectedRashi(tr,hh);
       for(const n of (natalByR[tgt]||[])){ rows.push({jup:t==="Jupiter",
-        html:`Transit <strong>${t}</strong> casts its ${ord(hh)}${anti} aspect on natal <strong>${n}</strong> (${getRashi(tgt).english}).`}); } } }
+        html:`Transit <strong>${t}</strong> casts its ${aspectOrd(t, hh)} aspect on natal <strong>${n}</strong> (${getRashi(tgt).english}).`}); } } }
   rows.sort((a,b)=>(a.jup?0:1)-(b.jup?0:1));
   h+=`<h4 class="pane-h">Transit aspects on natal planets</h4>`;
   h+= rows.length ? `<ul class="rlist">${rows.map(r=>`<li>${r.html}</li>`).join("")}</ul>`
@@ -5655,7 +5681,7 @@ function _nodeCombos(sid, node, DATA){
   const nR=rashiOf(sid[node]).n, out=[];
   for(const p of PRED_PLANETS){ const pR=rashiOf(sid[p]).n;
     const conj=(pR===nR);
-    const nodeSees=(SPECIAL_ASPECTS[node]||[5,7,9]).some(h=>aspectedRashi(nR,h)===pR);
+    const nodeSees=(SPECIAL_ASPECTS[node]||[5,9,12]).some(h=>aspectedRashi(nR,h)===pR);
     const pSees=(SPECIAL_ASPECTS[p]||[7]).some(h=>aspectedRashi(pR,h)===nR);
     if(!(conj||nodeSees||pSees)) continue;
     out.push(Object.assign({planet:p, how: conj?"conjunction":(nodeSees?node+" aspect":p+" aspect"), conj}, DATA[p]));
@@ -5672,7 +5698,7 @@ function renderCombosPane(sid){
   const el=document.getElementById("pane-combos"); if(!el) return;
   let h=`<h4 class="pane-h">Rāhu combinations</h4>`+_comboCards(_nodeCombos(sid,"Rahu",RAHU_COMBOS));
   h+=`<h4 class="pane-h">Ketu combinations</h4>`+_comboCards(_nodeCombos(sid,"Ketu",KETU_COMBOS));
-  h+=`<p class="rnote">Formed by conjunction (strongest — shown first) or by the node's 5/7/9 aspect / the planet's aspect on the node. Conjunction cards are highlighted.</p>`;
+  h+=`<p class="rnote">Formed by conjunction (strongest — shown first) or by the node's 2nd/5th/9th aspect (counted anti-clockwise) / the planet's aspect on the node. Conjunction cards are highlighted.</p>`;
   el.innerHTML=h;
 }
 
@@ -5697,7 +5723,6 @@ function renderKsarpaPane(sid){
     h+=`<h4 class="pane-h">Typical results</h4><ul class="rlist">${KAALA_SARPA_RESULTS.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
     h+=`<h4 class="pane-h">Remedies</h4><ul class="rlist">${KAALA_SARPA_REMEDIES.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`;
   }
-  h+=`<p class="rnote">Evaluated on the seven grahas only — the Lagna is not considered (Rāhu engulfs all the planets). All seven must sit within the same Rāhu–Ketu half.</p>`;
   el.innerHTML=h;
 }
 
@@ -6569,7 +6594,7 @@ function renderPredictive(){
   const natalMoonR=rashiOf(sid.Moon).n;
   const lagnaN=(currentChart.lagnaRashi && currentChart.lagnaRashi.n) || natalMoonR;
   const hasLagna=!!(currentChart.lagnaRashi && currentChart.lagnaRashi.n);
-  renderS23Dasha(buildDasha(sid.Moon, currentChart.dob, currentChart.tob),
+  renderS23Dasha(buildDasha(sid.Moon, currentChart.dob, currentChart.tob, currentChart.JD),
                  hasLagna ? s23Roles(lagnaN, s23Inputs(sid).pbr) : null, new Date());
   renderTransitPane(sid, natalMoonR, lagnaN);
   renderCombosPane(sid);

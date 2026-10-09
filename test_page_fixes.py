@@ -419,5 +419,85 @@ class DignityOnThePage(unittest.TestCase):
         self.assertIn("Every ~13 months", body)
 
 
+@needs_browser
+class LabelsAndText(unittest.TestCase):
+    """Node aspect names, ordinals, live Saturn dates, notes and reference text."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate(() => {
+              const txt = id => document.getElementById(id).textContent;
+              // Rahu in Karkataka: forward 5/9/12 = Vrischika, Meena, Mithuna; Sun in Meena, Moon in Mithuna
+              renderAspectsSection({Sun:12, Moon:3, Mars:1, Mercury:1, Jupiter:1, Venus:1, Saturn:1, Rahu:4, Ketu:10});
+              const aspects = txt('aspect-table') + ' ' + txt('aspect-influence');
+              const now = new Date();
+              const jd = julianDay(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(), 12);
+              const jup = rashiOf(computeChart(jd, 'lahiri').sidereal.Jupiter).n;
+              renderGurubalaSection(jup, 'lahiri');                       // Jupiter in the 1st from the Moon
+              const guru1 = document.getElementById('gurubala-body') ? txt('gurubala-body') : document.body.textContent;
+              renderGurubalaSection(jup % 12 + 1, 'lahiri');             // Jupiter in the 12th
+              const guru12 = document.getElementById('gurubala-body') ? txt('gurubala-body') : document.body.textContent;
+              renderPredictive();
+              return {
+                aspects, guru1, guru12,
+                ord: [1,2,3,4,11,12,13,21,22,23].map(ord),
+                nodeOrd: [5,9,12].map(h => aspectOrd('Rahu', h)), jupOrd: aspectOrd('Jupiter', 9),
+                fmt: [fmtDeg(29.99999999), fmtDeg(10.5), fmtDeg(0)],
+                sade: document.body.textContent.match(/Saturn has been in [^.]*\\./) ? document.body.textContent.match(/Saturn has been in [^.]*\\./)[0] : '',
+                old29: document.body.textContent.includes('Saturn entered Meena (Pisces) on 29 Mar 2025'),
+                ks: txt('pane-ksarpa'), combos: txt('pane-combos'),
+                dasha: txt('s23-dasha-tables'),
+                letters: GRAHA_REF.Mercury.deva, jupLetters: GRAHA_REF.Jupiter.deva,
+                merc: GRAHA_ATTRS.Mercury, marsTransit: GRAHA_ATTRS.Mars.transit,
+                aksharaNote: document.body.textContent.includes('beejakshari mantras are listed'),
+                meanNode: txt('planet-narrative').includes('mean lunar nodes'),
+              };
+            });
+        """)
+
+    def test_node_aspects_are_named_anti_clockwise(self):
+        self.assertEqual(self.r["nodeOrd"], ["9th (anti-clockwise)", "5th (anti-clockwise)", "2nd (anti-clockwise)"])
+        self.assertEqual(self.r["jupOrd"], "9th")
+        self.assertIn("2, 5, 9 (anti-clockwise)", self.r["aspects"])
+        self.assertIn("Moon (2nd (anti-clockwise))", self.r["aspects"])
+        self.assertNotIn("12th (anti-clockwise)", self.r["aspects"])
+        self.assertIn("2nd/5th/9th aspect (counted anti-clockwise)", self.r["combos"])
+
+    def test_ordinals(self):
+        self.assertEqual(self.r["ord"], ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd"])
+        self.assertIn("1st house from your natal Moon", self.r["guru1"])
+        self.assertIn("12th house from your natal Moon", self.r["guru12"])
+        self.assertNotRegex(self.r["guru1"] + self.r["guru12"], r"\b(1|2|3|21|22)th\b")
+
+    def test_saturn_dates_are_computed(self):
+        self.assertFalse(self.r["old29"])
+        self.assertRegex(self.r["sade"], r"Saturn has been in \w+ \(\w+\) since \d{1,2} \w{3} \d{4} and moves on around \d{1,2} \w{3} \d{4}\.")
+
+    def test_kaala_sarpa_note_follows_session_18(self):
+        self.assertIn("The Lagna is not considered (Session 18)", self.r["ks"])
+        self.assertNotIn("(and the Lagna)", self.r["ks"])
+        self.assertIn("in Rahu's rashi it is on the Rahu→Ketu side when its degree is higher than Rahu's", self.r["ks"])
+
+    def test_degree_format_never_shows_60(self):
+        self.assertEqual(self.r["fmt"], ["30° 00' 00\"", "10° 30' 00\"", "0° 00' 00\""])
+
+    def test_dasha_balance_is_shown(self):
+        self.assertRegex(self.r["dasha"], r"Balance at birth: \d+ y \d+ m \d+ d of \w+ mahādaśā")
+
+    def test_reference_text(self):
+        self.assertEqual(self.r["letters"], "ट ठ ड ढ ण")
+        self.assertEqual(self.r["jupLetters"], "त थ द ध न")
+        self.assertEqual((self.r["merc"]["metal"], self.r["merc"]["dhanya"], self.r["merc"]["stotram"]),
+                         ("Brass", "Green gram", "Vishnu Sahasranama"))
+        self.assertEqual(self.r["merc"]["masa"], "Jyeshta Masa, Krishna Ekadashi")
+        self.assertEqual(self.r["marsTransit"], "~45–49 days in each rashi")
+        self.assertTrue(self.r["aksharaNote"])
+        self.assertTrue(self.r["meanNode"])
+
+
 if __name__ == "__main__":
     unittest.main()
