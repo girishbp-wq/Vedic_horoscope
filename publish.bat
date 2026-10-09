@@ -8,7 +8,7 @@ REM    2. In File Explorer, open:
 REM         C:\Users\bp_gi\OneDrive\Documents\GitHub\Vedic_horoscope
 REM       Double-click this file (publish.bat).
 REM    3. This script checks that the folder is on the main branch, pulls the
-REM       latest main from GitHub, runs the Python extractors
+REM       latest main from GitHub, checks the S23_ sheets, runs the Python extractors
 REM       (scripts\build_data.py and build_session23.py), commits ONLY the
 REM       regenerated index.html and session23_rules.json, and pushes to
 REM       GitHub. GitHub Pages republishes within ~1 minute at
@@ -25,8 +25,16 @@ REM    - Python 3 on PATH         (python --version)
 REM    - openpyxl                 (pip install openpyxl)
 REM    - git configured to push   (git push works from this folder)
 REM =====================================================================
+
+REM Step 0 pulls from GitHub and may replace this very file, and cmd reads a running batch
+REM file line by line. So run from a copy in %TEMP%, working in this folder (passed as %2).
+if /i not "%~1"=="--from-copy" (
+    copy /y "%~f0" "%TEMP%\jyotisha_publish.bat" >nul
+    call "%TEMP%\jyotisha_publish.bat" --from-copy "%~dp0."
+    exit /b
+)
 setlocal
-cd /d "%~dp0"
+cd /d "%~2"
 
 echo.
 echo === Jyotisha publish ===
@@ -72,9 +80,16 @@ if errorlevel 1 (
     goto :fail
 )
 
-REM Rebuild index.html from the workbook
+REM Check the Session 23 sheets before anything is rebuilt, so a typo there leaves index.html untouched
 echo.
-echo [1/5] Rebuilding index.html from the workbook...
+echo [1/5] Checking the Session 23 sheets, then rebuilding index.html from the workbook...
+python build_session23.py --check
+if errorlevel 1 (
+    echo.
+    echo [ERROR] The Session 23 sheets need fixing - nothing was rebuilt or published.
+    echo         Fix the cells listed above in the workbook, save, and run publish.bat again.
+    goto :fail
+)
 python scripts\build_data.py
 if errorlevel 1 (
     echo.

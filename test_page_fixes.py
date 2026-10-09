@@ -524,5 +524,61 @@ class DashaOutsideItsSpan(unittest.TestCase):
         self.assertTrue(r["nowRunning"])
 
 
+@needs_browser
+class CurrentLocationDay(unittest.TestCase):
+    """Review follow-ups: the muhūrta date follows the city's own day; toggles; clock-change nights."""
+
+    def test_default_date_is_the_citys_day_from_sunrise(self):
+        r = run_page("""
+            const read = () => page.evaluate(() => ({date: document.getElementById('f-curdate').value,
+              now: [...document.querySelectorAll('#choghadiya-body tr.now')].map(tr => tr.textContent)}));
+            const out = {};
+            out.bengaluru = await read();                                    // 03:00 IST: before sunrise
+            await page.selectOption('#f-curcity', {label: 'London — UK'});  // 22:30 BST on the 9th
+            out.london = await read();
+            await page.fill('#f-curdate', '2026-10-08');
+            await page.dispatchEvent('#f-curdate', 'change');
+            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            out.kept = await read();
+            return out;
+        """, clock="2026-10-10T03:00:00+05:30", timezoneId="Asia/Kolkata")
+        self.assertEqual(r["bengaluru"]["date"], "2026-10-09")
+        self.assertEqual(len(r["bengaluru"]["now"]), 1)                     # the night in progress is highlighted
+        self.assertEqual(r["london"]["date"], "2026-10-09")
+        self.assertEqual(len(r["london"]["now"]), 1)
+        self.assertEqual(r["kept"]["date"], "2026-10-08")                    # a date picked by hand stays
+
+    def test_switching_back_from_manual_refreshes_the_offset(self):
+        r = run_page("""
+            await setBirth('1990-07-15', '10:00');
+            await pickCity('London');
+            const summer = await page.inputValue('#f-tz');
+            await page.click('#btn-manual');
+            await page.fill('#f-dob', '1990-01-15');
+            await page.click('#btn-manual');                               // back to the city lookup
+            return {summer, winter: await page.inputValue('#f-tz')};
+        """)
+        self.assertEqual((r["summer"], r["winter"]), ("1", "0"))
+
+    def test_night_with_a_clock_change_is_split_evenly(self):
+        r = run_page("""
+            await page.selectOption('#f-curcity', {label: 'London — UK'});
+            const rows = async (date) => { await page.fill('#f-curdate', date); await page.dispatchEvent('#f-curdate', 'change');
+              return page.evaluate(() => { const b = document.getElementById('choghadiya-body');
+                const t = b.querySelectorAll('table'); return {
+                  night: [...t[1].querySelectorAll('tbody tr')].map(tr => tr.children[0].textContent),
+                  rise: b.textContent.match(/Sunrise (\\d\\d:\\d\\d)/)[1]}; }); };
+            return {oct24: await rows('2026-10-24'), oct25: await rows('2026-10-25')};
+        """)
+        mins = lambda t: int(t[:2]) * 60 + int(t[3:5])
+        spans = [x.split(" – ") for x in r["oct24"]["night"]]
+        self.assertEqual(spans[-1][1], r["oct25"]["rise"])                    # the night ends at the next sunrise
+        lengths = [(mins(b) - mins(a)) % 1440 for a, b in spans]
+        # clocks go back at 02:00 BST: the window holding the change shows 60 minutes less than the others
+        rest = sorted(lengths)[1:]
+        self.assertLessEqual(max(rest) - min(rest), 1)                         # whole minutes: ±1 from rounding
+        self.assertAlmostEqual(min(rest) - min(lengths), 60, delta=1)
+
+
 if __name__ == "__main__":
     unittest.main()

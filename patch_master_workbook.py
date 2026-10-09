@@ -10,14 +10,14 @@ it again is safe: cells already fixed are reported as such. Afterwards open the 
 and save once, so the new formulas' results are stored with it.
 
 What it fixes:
-  Analysis   Chara/Sthira/Dwisabhava and element counts (B64:B71), the Kuja Dosha checks and
-             verdict (B90, A92:C92, B94, D84), the Vysya Moon text (C37), a deep-debilitated Moon
-             (B80), "House" with a blank Lagna (B46)
+  Analysis   Chara/Sthira/Dwisabhava and element counts (B64:B71); the Kuja Dosha checks and
+             verdict with the teacher's rule numbers (A90:A93, B90, C90, B92, C92, B94, D84); the Vysya
+             Moon text (C37); a deep-debilitated Moon (B80); "House" with a blank Lagna (B46)
   Input      #VALUE! in the house column with a blank Lagna (D13:D21), deep exaltation and
              debilitation within 1 degree as on the page (G13:G19), Rahu/Ketu outside exaltation
              or debilitation shown as "Node (no rulership)" (G20:G21), the degree header (E11)
   Tithi      tithi 15 is Purnima and 30 Amavasya (C18, C33); the first tithi spans 0-12 deg (C36)
-  Data       Kala Purusha body parts for Karkataka-Tula as in the teacher's table on Sheet1
+  Data       Kala Purusha body parts for Karkataka-Tula exactly as the teacher's table on Sheet1
              (Reference Data T5:T8); Mercury's letters are the retroflex Ta-varga; Mercury and
              Venus go round the zodiac in about a year; Bharani's yoni is male and its varna
              Mleccha (Revati is the female elephant); Rohini's purushartha is Moksha; Mercury's
@@ -84,37 +84,51 @@ P.append(Patch("Analysis", "C90", '=IF(Input!G15="","","Mars Dignity: "&Input!G1
 _SAT = "MOD(Input!C15-Input!C19,12)+1"                                  # Mars counted from Saturn
 _NAK = "MIN(27,INT(((Input!C14-1)*30+Input!E14)*3/40)+1)"               # Moon's nakshatra, 1-27
 _EXEMPT = "{1,5,7,8,9,12,15,17,22,26,27}"
+# ISNUMBER(...) is FALSE (not an error) when a sign or the Moon's degree is blank, so each rule stands alone.
+_R2 = f"ISNUMBER(MATCH({_SAT},{{1,3,7,10}},0))"                           # rule 2: Saturn conjoins/aspects Mars
+_R4 = f"ISNUMBER(MATCH({_NAK},{_EXEMPT},0))"                              # rule 4: exempt birth nakshatra
+_OK = '"✅ Cancelled"'
+# The rows carry the teacher's rule numbers (Planet Characteristics rows 114-119), as the page does.
+P.append(Patch("Analysis", "A90", "1. Mars in own house, exaltation, or friend's house",
+               "Rule 1: Mars in its own house, exaltation or a friend's house", "the teacher's rule numbers"))
+P.append(Patch("Analysis", "A91", "2. Karkataka or Simha Lagna (no Kuja Dosha)",
+               "Rule 3: Karkataka or Simha Lagna (no Kuja Dosha)", "the teacher's rule numbers"))
 P.append(Patch("Analysis", "A92", "3. Other cancellation factors (manual check)",
-               "3. Saturn conjoins or aspects Mars, or an exempt birth nakshatra (Mangalik partner: check at matching)",
+               "Rules 2 and 4: Saturn conjoins or aspects Mars, or an exempt birth nakshatra (rule 5, a Mangalik "
+               "partner: check at matching)",
                "rules 2 and 4 are now worked out"))
+P.append(Patch("Analysis", "A93", "4. Native is older than 28 years", "Rule 6: Native aged 28 or more (reduces the dosha)",
+               "the teacher's rule numbers"))
 P.append(Patch("Analysis", "B92", "ℹ Check manually",
-               f'=IF(OR(Input!C15="",Input!C19="",Input!C14="",Input!E14=""),"",IF(OR(ISNUMBER(MATCH({_SAT},{{1,3,7,10}},0)),'
-               f'ISNUMBER(MATCH({_NAK},{_EXEMPT},0))),"✅ Cancelled","❌ Not Met"))',
+               f'=IF(Input!C15="","",IF(OR({_R2},{_R4}),{_OK},IF(OR(Input!C14="",Input!E14=""),'
+               f'"ℹ Needs the Moon\'s degree","❌ Not Met")))',
                "Saturn conjunction/aspect and the birth nakshatra"))
 P.append(Patch("Analysis", "C92",
                "Also cancelled if: (a) Mars conjoined/aspected by Saturn; (b) Born in Ashwini, Mrigashira, Punarvasu, Pushya, "
                "Ashlesha, Uttara, Swati, Anuradha, Shravana, Uttara Bhadra, or Revathi nakshatra; (c) Marriage between two "
                "Mangalik individuals.",
-               f'=IF(OR(Input!C15="",Input!C19="",Input!C14="",Input!E14=""),"Needs the Mars, Saturn and Moon signs and the '
-               f'Moon\'s degree.","Saturn in "&Input!B19&": "&IF({_SAT}=1,"conjoins Mars ✅",IF(ISNUMBER(MATCH({_SAT},{{3,7,10}},0)),'
-               f'"casts its "&IF({_SAT}=3,"3rd",{_SAT}&"th")&" aspect on Mars ✅","no conjunction or aspect on Mars"))&". Birth '
-               f'nakshatra: "&INDEX(Nakshatras!$B$5:$B$31,{_NAK})&IF(ISNUMBER(MATCH({_NAK},{_EXEMPT},0))," — exempt ✅",'
-               f'" — not exempt")&". Exempt: Ashwini, Mrigashira, Punarvasu, Pushya, Ashlesha, Uttara (Phalguni), Swati, '
-               f'Anuradha, Shravana, Uttara Bhadra, Revathi. A marriage between two Mangaliks also cancels it — check at matching.")',
+               f'=IF(Input!C15="","Needs the Mars sign.","Rule 2 — Saturn "&IF(Input!C19="","sign not entered",'
+               f'"in "&Input!B19&": "&IF({_SAT}=1,"conjoins Mars ✅",IF({_R2},"casts its "&IF({_SAT}=3,"3rd",{_SAT}&"th")'
+               f'&" aspect on Mars ✅","no conjunction or aspect on Mars")))&". Rule 4 — birth nakshatra: "&'
+               f'IF(OR(Input!C14="",Input!E14=""),"enter the Moon\'s sign and degree",INDEX(Nakshatras!$B$5:$B$31,{_NAK})&'
+               f'IF({_R4}," — exempt ✅"," — not exempt"))&". Exempt: Ashwini, Mrigashira, Punarvasu, Pushya, Ashlesha, '
+               f'Uttara (Phalguni), Swati, Anuradha, Shravana, Uttara Bhadra, Revathi. Rule 5: a marriage between two '
+               f'Mangaliks also cancels it — check at matching.")',
                "explain rules 2 and 4 for this chart"))
+_LIST = (f'MID(IF(B90={_OK},", 1","")&IF({_R2},", 2","")&IF(B91={_OK},", 3","")&IF({_R4},", 4",""),3,20)')
 P.append(Patch("Analysis", "B94",
                '=IF(OR(B84="",B85="",B86=""),"",IF(OR(B90="✅ Cancelled",B91="✅ Cancelled"),"✅ Kuja Dosha CANCELLED '
                '(auto-detected). Verify manual cancellation factors as well.",IF(AND(LEFT(C84,1)="—",LEFT(C85,1)="—",'
                'LEFT(C86,1)="—"),"✅ No Kuja Dosha from any reference point.",IF(B93="✅ Reduced","⚠ Kuja Dosha PRESENT but '
                'REDUCED (native over 28). Verify other manual cancellations.","⚠ Kuja Dosha PRESENT. Severity depends on source '
                '(Lagna strongest). Verify manual cancellation factors (Saturn aspect, nakshatra, partner status)."))))',
-               '=IF(B84="","",IF(AND(LEFT(C84,1)<>"⚠",LEFT(C85,1)<>"⚠",LEFT(C86,1)<>"⚠"),"✅ No Kuja Dosha from any '
-               'reference point.",IF(OR(B90="✅ Cancelled",B91="✅ Cancelled",B92="✅ Cancelled"),"✅ Kuja Dosha present but '
-               'CANCELLED (rule "&SUBSTITUTE(TRIM(IF(B90="✅ Cancelled","1 ","")&IF(B91="✅ Cancelled","2 ","")&'
-               'IF(B92="✅ Cancelled","3",""))," ",", ")&").",IF(B93="✅ Reduced","⚠ Kuja Dosha PRESENT but REDUCED (native '
-               'over 28). At matching, a Mangalik partner also cancels it.","⚠ Kuja Dosha PRESENT and not cancelled by rules '
-               '1–3. Severity depends on the reference point (Lagna strongest). At matching, a Mangalik partner cancels it."))))',
-               "'no dosha' is decided before any cancellation; rule 3 is now worked out"))
+               f'=IF(B84="","",IF(AND(LEFT(C84,1)<>"⚠",LEFT(C85,1)<>"⚠",LEFT(C86,1)<>"⚠"),"✅ No Kuja Dosha from any '
+               f'reference point.",IF(OR(B90={_OK},B91={_OK},B92={_OK}),"✅ Kuja Dosha present but CANCELLED by rule"&'
+               f'IF(LEN({_LIST})>1,"s","")&" "&{_LIST}&".","⚠ Kuja Dosha present and not cancelled by rules 1–4."&'
+               f'IF(B93="✅ Reduced"," Being 28 or older, its intensity is also reduced (rule 6).","")&'
+               f'IF(LEFT(B92,1)="ℹ"," Enter the Moon\'s degree to check rule 4 (birth nakshatra).","")&'
+               f'" At marriage matching, check rule 5 (a Mangalik partner cancels it).")))',
+               "'no dosha' is decided before any cancellation; the verdict names the teacher's rules, as the page does"))
 
 # ---- Input: house numbers with a blank Lagna; deep degrees within 1 deg (the page's tolerance); nodes
 for r in range(13, 22):
@@ -145,10 +159,10 @@ P.append(Patch("Tithi", "C36", "When the Moon is 12 degrees ahead of the Sun, th
                "Pratipada is 0–12 degrees", part=True))
 
 # ---- Data: teacher's table and the workbook's own sheets
-for cell, old, new in (("T5", "Chest, Lungs, Breasts, Ribcage, Stomach (upper)", "Heart, Lungs, Chest, Breasts"),
-                       ("T6", "Heart, Spine, Upper back, Bones, Eyes (Sun's karaka)", "Stomach, Womb, Upper abdomen"),
-                       ("T7", "Stomach (lower), Intestines, Digestive system, Abdomen, Navel", "Hip, Waist, Intestines"),
-                       ("T8", "Lower abdomen, Kidneys, Lumbar region, Lower back, Skin", "Kidneys, Lower abdomen, Lumbar region")):
+for cell, old, new in (("T5", "Chest, Lungs, Breasts, Ribcage, Stomach (upper)", "Heart, Lungs"),
+                       ("T6", "Heart, Spine, Upper back, Bones, Eyes (Sun's karaka)", "Stomach, Womb"),
+                       ("T7", "Stomach (lower), Intestines, Digestive system, Abdomen, Navel", "Hip, Intestine"),
+                       ("T8", "Lower abdomen, Kidneys, Lumbar region, Lower back, Skin", "Kidneys")):
     P.append(Patch("Reference Data", cell, old, new, "Kala Purusha body part as in the teacher's table (Sheet1)"))
 _TA_OLD, _TA_NEW = "त थ द ध न (Ta, Tha, Da, Dha, Na)", "ट ठ ड ढ ण (Ṭa, Ṭha, Ḍa, Ḍha, Ṇa)"
 P.append(Patch("Planet Characteristics", "E60", _TA_OLD, _TA_NEW, "Mercury's letters are the Ta-varga (Jupiter has the ta-varga)"))

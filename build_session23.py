@@ -6,6 +6,7 @@
 
     python3 build_session23.py                  # master workbook found next to this file
     python3 build_session23.py --workbook FILE  # any workbook that has the S23_ sheets (e.g. an --export copy)
+    python3 build_session23.py --check          # only check the S23_ sheets (publish.bat runs this first)
 
 `publish.bat` runs this right after scripts/build_data.py, so one double-click rebuilds everything.
 The S23_ sheets are the editable source of truth (edit a text or a class rule, save, publish).
@@ -140,6 +141,7 @@ CLASS_NAMES = ["Kendra", "Trikona", "Panapara", "Apoklima", "Upachaya", "Apachay
 STATUSES = ["taught", "curated", "blend", "standard"]
 DIGNITY_LABELS = ["Deep Exalted", "Exalted", "Own (Moolatrikona)", "Own House", "Friend's House",
                   "Neutral House", "Enemy's House", "Debilitated", "Deep Debilitated"]
+NODE_LABEL = "Node (no rulership)"         # optional row: a dignity text for Rahu/Ketu outside exaltation
 DASHA_ROLES = ["Maraka lord", "Maraka occupant", "Badhakadhipati", "Badhaka occupant", "Dusthana lord",
                "Trishadaya lord"]
 BADHAKA_MODES = ["Chara", "Sthira", "Dwisabhava"]
@@ -251,7 +253,7 @@ def read_workbook(path_or_wb):
 
     out["dignity_effect"] = {}
     for sh, i, r in rd.rows("DignityEffect"):
-        out["dignity_effect"][rd.pick(sh, i, "Label", r[0], DIGNITY_LABELS)] = dict(
+        out["dignity_effect"][rd.pick(sh, i, "Label", r[0], DIGNITY_LABELS + [NODE_LABEL])] = dict(
             band=rd.pick(sh, i, "Band", r[1], ["strong", "medium", "weak"]), text=rd.text(sh, i, "Text", r[2]),
             status=rd.pick(sh, i, "Status", r[3], STATUSES), slide=_s(r[4]))
     _expect(rd, PREFIX + "DignityEffect", [r[0] for _, _, r in rd.rows("DignityEffect")], DIGNITY_LABELS,
@@ -286,6 +288,8 @@ def read_workbook(path_or_wb):
         a, b = rd.pick(sh, i, "A", r[0], PLANETS), rd.pick(sh, i, "B", r[1], PLANETS)
         if a == b:
             rd.bad(sh, i, f"A and B are both {a}")
+        elif a in PLANETS and b in PLANETS and PLANETS.index(a) > PLANETS.index(b):
+            a, b = b, a                       # the engines look pairs up in planet order (Sun … Ketu)
         out["graha_pair"].append(dict(a=a, b=b, conjunction=_s(r[2]), aspect=_s(r[3]),
                                       status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
     _expect(rd, PREFIX + "GrahaPair", [frozenset((x["a"], x["b"])) for x in out["graha_pair"]],
@@ -485,6 +489,13 @@ def main(argv=None):
             pass
     if "-h" in argv or "--help" in argv:
         print(__doc__)
+        return 0
+    if "--check" in argv:                       # validate the S23_ sheets only; write nothing
+        path = argv[argv.index("--workbook") + 1] if "--workbook" in argv else find_master()
+        if not path or not pathlib.Path(path).exists():
+            raise SystemExit(f"No {MASTER_GLOB} workbook found in {ROOT}")
+        read_workbook(path)
+        print("Session 23 sheets: OK")
         return 0
     wb = None
     if "--workbook" in argv:

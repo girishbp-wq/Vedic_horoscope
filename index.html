@@ -1618,7 +1618,7 @@ const RASHI = [
     colour: "Pink",
     place: "River",
     jyothirlinga: "Omkareshwara",
-    bodyPart: "Heart, Lungs, Chest, Breasts",
+    bodyPart: "Heart, Lungs",
     traits: ["Emotional", "Sensitive", "Honest", "Mood swings", "Motherly nature", "Peace loving", "Nurturing", "Psychic"],
     lord: "Moon"
   },
@@ -1643,7 +1643,7 @@ const RASHI = [
     colour: "Off white",
     place: "Mountain",
     jyothirlinga: "Vaidyanath",
-    bodyPart: "Stomach, Womb, Upper abdomen",
+    bodyPart: "Stomach, Womb",
     traits: ["Energetic", "Aggressive", "Egoistic", "Good in administration", "Generous", "Dominating", "Leaders", "Self respect"],
     lord: "Sun"
   },
@@ -1668,7 +1668,7 @@ const RASHI = [
     colour: "Variegated",
     place: "Gardens",
     jyothirlinga: "Mallikarjuna",
-    bodyPart: "Hip, Waist, Intestines",
+    bodyPart: "Hip, Intestine",
     traits: ["Practical", "Critical", "Perfectionist", "Cleanliness", "Observant", "Intelligent", "Reserved", "Organised", "Analytical"],
     lord: "Mercury"
   },
@@ -1693,7 +1693,7 @@ const RASHI = [
     colour: "Black",
     place: "Business Place",
     jyothirlinga: "Mahakaleshwar",
-    bodyPart: "Kidneys, Lower abdomen, Lumbar region",
+    bodyPart: "Kidneys",
     traits: ["Attractive", "Extroverts", "Well Mannered", "Peace makers", "Diplomatic", "Good negotiators", "Business minded"],
     lord: "Venus"
   },
@@ -5079,7 +5079,7 @@ function refreshCityTz(keepBox){
   else if (!wt) note = " · standard time (enter the birth date for daylight saving)";
   else if (info.kind === "skipped") note = " · ⚠ this clock time was skipped by a daylight-saving change — check the birth time";
   else if (info.kind === "repeated") note = " · ⚠ this clock time occurred twice (clocks went back) — the first, daylight-saving one is used";
-  else if (info.offset > info.std) note = " · daylight saving / war time on this date";
+  else if (info.offset > info.std) note = (wt[0] >= 1939 && wt[0] <= 1945) ? " · war time / daylight saving on this date" : " · daylight saving on this date";
   else if (info.offset !== info.std) note = " · historical local time on this date";
   if (hint) hint.innerHTML = `<em>${_escTz(c[0])}, ${_escTz(c[1])} — lat ${c[2]}°, lon ${c[3]}° · ${_escTz(info.zone)} ${fmtUtcOffset(info.offset)}${note}</em>`;
 }
@@ -5426,7 +5426,7 @@ function restoreForm(){
            tzf.addEventListener("blur", ()=>{ if(!tzf.value.trim()){ refreshCityTz(); saveForm(); } }); } }
 ["f-dob","f-tob"].forEach(id=>{ const el=document.getElementById(id);
   if(el){ el.addEventListener("change", ()=>{ refreshCityTz(); saveForm(); }); el.addEventListener("input", ()=>{ refreshCityTz(); saveForm(); }); } });
-{ const bm=document.getElementById("btn-manual"); if(bm) bm.addEventListener("click", refreshCityTz); }
+{ const bm=document.getElementById("btn-manual"); if(bm) bm.addEventListener("click", () => refreshCityTz()); }
 restoreForm();
 refreshCityTz();
 normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previous save
@@ -5934,17 +5934,19 @@ function computeChoghadiya(){
   const nd=new Date(Date.UTC(y,mo-1,d+1));
   const ny=nd.getUTCFullYear(), nm_=nd.getUTCMonth()+1, ndd=nd.getUTCDate();
   const st2=sunTimes(c[2],c[3],cityUtcOffset(c,ny,nm_,ndd,12,0,0),ny,nm_,ndd);
-  const riseNext=(st2?st2.rise:st.rise)+1440;
+  // All times below are minutes from the selected date's midnight on that day's clock (offset tz); the
+  // next sunrise is moved onto the same clock, so a night with a clock change is still split evenly.
+  const tz2=st2?cityUtcOffset(c,ny,nm_,ndd,12,0,0):tz;
+  const riseNext=(st2?st2.rise:st.rise)+1440-(tz2-tz)*60;
   const w=new Date(Date.UTC(y,mo-1,d)).getUTCDay();
   const dseg=(st.set-st.rise)/8, nseg=(riseNext-st.set)/8;
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  // "Now" in the city's clock, counted in minutes from the selected date's midnight, so a
-  // time before today's sunrise falls in the previous date's night (not tonight's).
-  const cn=cityNow(c);
-  const nowRel=Math.round((Date.UTC(cn.y,cn.m-1,cn.d)-Date.UTC(y,mo-1,d))/60000)+cn.min;
+  const day0=Date.UTC(y,mo-1,d)-tz*3600000;                 // the selected date's midnight, as a UTC instant
+  const nowRel=(Date.now()-day0)/60000;                     // before today's sunrise -> the previous date's night
+  const shown=m=>{ if(!c[5]) return m; try{ return m+(_zoneOffsetAtUtc(c[5], day0+m*60000)-tz)*60; }catch(e){ return m; } };
   const rows=(startIdx,step,seg,base)=>{ let h=''; for(let i=0;i<8;i++){ const nm=CHOG_CYCLE[((startIdx+step*i)%7+7)%7], m=CHOG_META[nm], v=_chogVerdict(m.cls);
     const s0=base+i*seg, s1=base+(i+1)*seg; const now=nowRel>=s0&&nowRel<s1;
-    h+=`<tr class="${now?'now':''}"><td>${_hm(s0)} – ${_hm(s1)}</td><td><strong>${nm}</strong> — ${m.en}</td><td>${m.planet}</td><td><span style="color:${v[0]};font-weight:600">${v[1]}</span></td></tr>`; } return h; };
+    h+=`<tr class="${now?'now':''}"><td>${_hm(shown(s0))} – ${_hm(shown(s1))}</td><td><strong>${nm}</strong> — ${m.en}</td><td>${m.planet}</td><td><span style="color:${v[0]};font-weight:600">${v[1]}</span></td></tr>`; } return h; };
   let h=`<h4 class="pane-h">Choughadiya — ${_esc(c[0])}, ${_dmy(y,mo,d)} (${days[w]})</h4>`;
   h+=`<p class="rnote">Sunrise ${_hm(st.rise)} · Sunset ${_hm(st.set)} (${_esc(c[0])} clock, ${_esc(fmtUtcOffset(tz))}). Day and night are each split into 8 parts (~4 ghaṭis). <span style="color:#1a7f37;font-weight:600">Good:</span> Amrit, Shubh, Labh · <span style="color:#9a6b00;font-weight:600">Neutral:</span> Char (good for travel) · <span style="color:#9a3b1b;font-weight:600">Avoid:</span> Udveg, Rog, Kaal.</p>`;
   if(nowRel>=0 && nowRel<st.rise) h+=`<p class="rnote">It is before sunrise in ${_esc(c[0])} — the window running now belongs to the previous date's night. Choose yesterday's date to see it highlighted.</p>`;
@@ -5977,7 +5979,7 @@ function renderMuhurtaPane(){
     h+=`<tr><td><strong>${_esc(g.label)}</strong></td><td>${_esc(g.act)}</td><td>${g.naks.map(n=>_tbMark(n,J)).join(", ")}</td></tr>`; }
   h+=`</tbody></table></div>`;
   h+=`<h4 class="pane-h">Abhijit Muhūrta — the daily victory window</h4>`;
-  h+=`<p>A ~48-minute window centred on <strong>local solar noon</strong> (solar noon ± 24 min), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
+  h+=`<p>The 8th of the day's 15 muhūrtas, centred on <strong>local solar noon</strong> — one-fifteenth of the daytime (about 48 minutes on a 12-hour day; longer in summer, shorter in winter), auspicious for almost any new start — journeys, ventures, negotiations, study — and able to override many minor blemishes. <strong>Exception:</strong> on a <em>Wednesday</em> the Abhijit window is held to be weak and is usually avoided for new ventures.</p>`;
   h+=`<p class="rnote">Abhijit is also the “invisible” 28th nakṣatra (6°40′–10°53′20″ of Makara), which is different from Abhijit Muhūrta. The exact daily window is computed above from your current-city sunrise/sunset.</p>`;
   el.innerHTML=h;
   try{ computeMhPanchanga(); }catch(e){ console.warn('panchanga',e); }
@@ -6364,7 +6366,7 @@ function s23GrahaGraha(lagnaN, pbr, degs){
     for(const q of placed){
       if(q===p || sg[q]!==target) continue;
       const row=s23PairRow(p,q), hasAspect=row.aspect.trim().length>0;
-      let text=`${p}'s ${ord(h)} aspect falls on ${q}: ${p}'s qualities (${KARAKATWAS[p].qualities}) colour what ${q} signifies (${KARAKATWAS[q].signifies}).`;
+      let text=`${p}'s ${aspectOrd(p, h)} aspect falls on ${q}: ${p}'s qualities (${KARAKATWAS[p].qualities}) colour what ${q} signifies (${KARAKATWAS[q].signifies}).`;
       if(hasAspect) text+=" "+row.aspect;
       aspects.push({by:p, to:q, house_aspect:h, house:s23HouseOf(lg,sg[q]), text, status:hasAspect?row.status:"blend", jupiter_flag:p==="Jupiter"});
     }
@@ -6465,7 +6467,7 @@ function s23BuildClasses(sid, lagnaN){
       +`data-aspecting="${f.aspecting.map(a=>a.by+":"+a.house_aspect).join(",")}" data-karakas="${f.karakas.map(k=>k.planet+":"+k.house).join(",")}">`
       +`<td><strong>${hh}</strong> · ${_esc(s23ShortName(f.name))} ${s23RashiCell(f.sign)}</td>`
       +`<td>${GLYPH9[f.lord]} ${f.lord} → ${ord(f.lord_house)}${f.lord_house===hh?" (own bhāva)":""}</td><td>${s23Planets(f.occupants)}</td>`
-      +`<td>${f.aspecting.length?f.aspecting.map(a=>`${a.by} (${ord(a.house_aspect)})`).join(", "):"—"}</td>`
+      +`<td>${f.aspecting.length?f.aspecting.map(a=>`${a.by} (${aspectOrd(a.by, a.house_aspect)})`).join(", "):"—"}</td>`
       +`<td>${f.karakas.length?f.karakas.map(k=>`${GLYPH9[k.planet]} ${k.planet} in ${ord(k.house)}`).join(", "):"—"}</td></tr>`;
   }
   return h+`</tbody></table></div>`;
@@ -6525,7 +6527,7 @@ function s23BuildPredictions(sid, lagnaN){
   h+=`<h5 class="s23-class-head">Aspects (special drishti, as in the Graha Drishti section)</h5>`;
   h+=gg.aspects.length
     ? `<ul class="s23-pairs" id="s23-asp">${gg.aspects.map(a=>`<li data-by="${a.by}" data-to="${a.to}" data-h="${a.house_aspect}" data-status="${a.status}">`
-        +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${ord(a.house_aspect)} aspect) ${s23Tag(a.status)}`
+        +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}`
         +(a.jupiter_flag?` <span class="section-flag flag-exalted flag-deep s23-jup">Aspect &gt; placement</span>`:"")
         +`<br><span class="s23-text">${_esc(a.text)}</span></li>`).join("")}</ul>`
     : `<ul class="s23-pairs" id="s23-asp"><li class="rnote">No planet-to-planet aspects in this chart.</li></ul>`;
@@ -6637,6 +6639,14 @@ document.querySelectorAll("#chartTabs .chart-tab").forEach(btn => {
 setupPlaceAutocomplete();
 
 /* Current-location controls (for Muhūrta / Pañcāṅga) on the birth-details form */
+/* The city's day for the muhūrta panes: its own calendar date, or the previous date before sunrise —
+   the Vedic day runs from sunrise to sunrise, so the night in progress belongs to yesterday. */
+function cityPanchangaDate(c){
+  const n=cityNow(c), pad=v=>String(v).padStart(2,"0");
+  const st=sunTimes(c[2],c[3],cityUtcOffset(c,n.y,n.m,n.d,12,0,0),n.y,n.m,n.d);
+  const d=new Date(Date.UTC(n.y,n.m-1,n.d) - ((st && n.min<st.rise) ? 86400000 : 0));
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+}
 function setupCurrentLocation(){
   const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
   if(sel && !sel.options.length){
@@ -6647,7 +6657,11 @@ function setupCurrentLocation(){
     sel.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
   }
   if(di){
-    if(!di.value){ const t=new Date(); di.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
+    // Until a date is picked by hand, follow the selected city's own day (see cityPanchangaDate).
+    if(!di.value){ di.value=cityPanchangaDate(CITIES[parseInt(sel && sel.value)] || CITIES[0]); di.dataset.auto="1"; }
+    if(sel) sel.addEventListener("change", ()=>{ if(di.dataset.auto==="1"){ di.value=cityPanchangaDate(CITIES[parseInt(sel.value)] || CITIES[0]);
+      try{ computeMhPanchanga(); computeChoghadiya(); renderRahukaalPane(); }catch(e){} } });
+    di.addEventListener("input", ()=>{ di.dataset.auto="0"; });
     di.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
   }
 }

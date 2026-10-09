@@ -168,6 +168,12 @@ class FixedFormulasCompute(unittest.TestCase):
         # Moon at 3° Mesha = Ashwini, an exempt nakshatra: rule 3
         "nakshatra": {"signs": dict({p: 1 for p in PLANETS}, Lagna=2, Mars=3, Saturn=2, Venus=4, Moon=1, Ketu=7),
                       "degs": {"Moon": 3.0}},
+        # Saturn's aspect cancels even when no degrees are entered
+        "saturn_no_degrees": {"signs": dict({p: 1 for p in PLANETS}, Lagna=2, Mars=3, Saturn=9, Venus=4, Moon=5, Ketu=7),
+                              "degs": {p: None for p in ["Lagna"] + PLANETS}},
+        # no cancellation, and the Moon's degree is missing: the verdict asks for it
+        "present_no_degree": {"signs": dict({p: 1 for p in PLANETS}, Lagna=2, Mars=3, Saturn=2, Venus=4, Moon=5, Ketu=7),
+                              "degs": {"Moon": None}},
         # dosha present, nothing cancels, native under 28
         "present": {"signs": dict({p: 1 for p in PLANETS}, Lagna=2, Mars=3, Saturn=2, Venus=4, Moon=5, Ketu=7),
                     "degs": {"Moon": 20.0}},
@@ -209,24 +215,37 @@ class FixedFormulasCompute(unittest.TestCase):
     def test_saturn_aspect_cancels(self):
         v = self.v["saturn"]
         self.assertEqual((v["Analysis!C84"], v["Analysis!B92"]), ("⚠ YES", "✅ Cancelled"))
-        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED (rule 3).")
+        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED by rule 2.")
         self.assertIn("casts its 7th aspect on Mars", v["Analysis!C92"])
         self.assertEqual(v["Analysis!D84"], "Strong (Lagna gives the strongest impact)")
 
     def test_friends_house_cancels(self):
         v = self.v["friend"]
         self.assertEqual(v["Analysis!B90"], "✅ Cancelled")
-        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED (rule 1).")
+        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED by rule 1.")
         self.assertIn("a friend's house", v["Analysis!C90"])
 
     def test_exempt_nakshatra_cancels(self):
         v = self.v["nakshatra"]
         self.assertEqual(v["Analysis!B92"], "✅ Cancelled")
-        self.assertIn("Birth nakshatra: Ashwini — exempt", v["Analysis!C92"])
+        self.assertIn("Rule 4 — birth nakshatra: Ashwini — exempt", v["Analysis!C92"])
+        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED by rule 4.")
+
+    def test_saturn_rule_does_not_need_the_moons_degree(self):
+        v = self.v["saturn_no_degrees"]
+        self.assertEqual(v["Analysis!B92"], "✅ Cancelled")
+        self.assertEqual(v["Analysis!B94"], "✅ Kuja Dosha present but CANCELLED by rule 2.")
+        self.assertIn("enter the Moon's sign and degree", v["Analysis!C92"])
+
+    def test_missing_moon_degree_is_asked_for(self):
+        v = self.v["present_no_degree"]
+        self.assertEqual(v["Analysis!B92"], "ℹ Needs the Moon's degree")
+        self.assertIn("Enter the Moon's degree to check rule 4", v["Analysis!B94"])
 
     def test_present_and_not_cancelled(self):
         v = self.v["present"]
-        self.assertTrue(v["Analysis!B94"].startswith("⚠ Kuja Dosha PRESENT and not cancelled by rules 1–3."))
+        self.assertTrue(v["Analysis!B94"].startswith("⚠ Kuja Dosha present and not cancelled by rules 1–4."))
+        self.assertIn("check rule 5", v["Analysis!B94"])
         self.assertIn("not exempt", v["Analysis!C92"])
 
     def test_blank_lagna_gives_blanks_not_errors(self):

@@ -294,6 +294,17 @@ class PublishScript(unittest.TestCase):
         self.assertTrue(self.bat.isascii())
         self.assertNotIn("pause\nexit /b 1\n)", self.bat)       # every failure goes through :fail
 
+    def test_runs_from_a_copy_so_a_pull_cannot_rewrite_it_mid_run(self):
+        head = self.bat[:self.bat.index("setlocal")]
+        self.assertIn('if /i not "%~1"=="--from-copy" (', head)
+        self.assertIn('copy /y "%~f0" "%TEMP%\\jyotisha_publish.bat" >nul', head)
+        self.assertIn('call "%TEMP%\\jyotisha_publish.bat" --from-copy "%~dp0."', head)
+        self.assertIn('cd /d "%~2"', self.bat)
+        self.assertLess(self.bat.index('cd /d "%~2"'), self.bat.index("git pull --ff-only"))
+
+    def test_checks_the_session23_sheets_before_rebuilding_the_page(self):
+        self.assertLess(self.bat.index("python build_session23.py --check"), self.bat.index("python scripts\\build_data.py"))
+
     def test_checked_out_with_windows_line_endings(self):
         attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
         self.assertIn("*.bat   text eol=crlf", attrs)
@@ -352,6 +363,53 @@ class SheetValidation(unittest.TestCase):
         msg = self.build_after(edit)
         self.assertRegex(msg, r"S23_GrahaPair: no row for \w+ and \w+")
         self.assertIn("S23_Classes row 2: Class 'Kendraa'", msg)
+
+    def test_pair_typed_in_reverse_order_is_stored_in_planet_order(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            ws = wb["S23_GrahaPair"]
+            r = self.find(wb, "GrahaPair", 1, "Sun")
+            a, b = ws.cell(row=r, column=1).value, ws.cell(row=r, column=2).value
+            ws.cell(row=r, column=1, value=b)
+            ws.cell(row=r, column=2, value=a)
+            x = pathlib.Path(d, "w.xlsx")
+            wb.save(x)
+            self.assertEqual(b23.read_workbook(x)["graha_pair"], rules()["graha_pair"])
+
+    def test_a_node_dignity_text_may_be_added(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            ws = wb["S23_DignityEffect"]
+            ws.append(["Node (no rulership)", "medium", "gives the results of its sign's lord.", "standard", ""])
+            x = pathlib.Path(d, "w.xlsx")
+            wb.save(x)
+            self.assertIn("Node (no rulership)", b23.read_workbook(x)["dignity_effect"])
+
+    def test_check_only_reads_and_writes_nothing(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            wb["S23_GrahaInBhava"].cell(row=5, column=2, value="x")
+            x = pathlib.Path(d, "Classification_for_Horoscope_Analysis_v7_1.xlsx")
+            wb.save(x)
+            with self.assertRaises(SystemExit) as cm:
+                b23.main(["--check", "--workbook", str(x)])
+            self.assertIn("S23_GrahaInBhava row 5", str(cm.exception.code))
+            self.assertEqual(sorted(p.name for p in pathlib.Path(d).iterdir()), [x.name])
+            wb["S23_GrahaInBhava"].cell(row=5, column=2, value=4)           # the Sun in the 4th again
+            wb.save(x)
+            before = (JSON_PATH.read_bytes(), INDEX.read_bytes())
+            self.assertEqual(b23.main(["--check", "--workbook", str(x)]), 0)
+            self.assertEqual((JSON_PATH.read_bytes(), INDEX.read_bytes()), before)
+            self.assertEqual(sorted(p.name for p in pathlib.Path(d).iterdir()), [x.name])
 
     def test_stray_spaces_are_tolerated(self):
         import tempfile

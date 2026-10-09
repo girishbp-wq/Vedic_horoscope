@@ -472,6 +472,11 @@ class PredictionLayers(unittest.TestCase):
             ("Mars", "Moon", 4), ("Mars", "Saturn", 7), ("Mars", "Jupiter", 8), ("Mercury", "Ketu", 7),
             ("Jupiter", "Sun", 5), ("Jupiter", "Venus", 5), ("Jupiter", "Moon", 9), ("Saturn", "Mars", 7),
             ("Saturn", "Moon", 10), ("Rahu", "Saturn", 9), ("Ketu", "Mars", 9), ("Ketu", "Moon", 12)])
+        texts = {(a["by"], a["to"]): a["text"] for a in br.graha_graha(RULES, LAGNA, SIGNS)["aspects"]}
+        # the nodes count anti-clockwise (teacher: 2nd, 5th, 9th): forward 9th is their 5th, forward 12th their 2nd
+        self.assertTrue(texts[("Ketu", "Mars")].startswith("Ketu's 5th (anti-clockwise) aspect falls on Mars"))
+        self.assertTrue(texts[("Ketu", "Moon")].startswith("Ketu's 2nd (anti-clockwise) aspect falls on Moon"))
+        self.assertTrue(texts[("Jupiter", "Moon")].startswith("Jupiter's 9th aspect falls on Moon"))
         flags = {a["by"]: a["jupiter_flag"] for a in br.graha_graha(RULES, LAGNA, SIGNS)["aspects"]}
         self.assertEqual([k for k, v in flags.items() if v], ["Jupiter"])
 

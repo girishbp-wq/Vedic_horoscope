@@ -295,6 +295,14 @@ def watch_periods(rules, dasha, roles, now, years=10):
 
 
 # ---------------------------------------------------------------- prediction layers
+def aspect_name(planet, h):
+    """The name of a planet's aspect on the house h counted forward. Rahu and Ketu count anti-clockwise
+    (teacher: 2nd, 5th, 9th), which lands on forward houses 12, 9, 5 — as aspectOrd() on the page."""
+    if planet in ("Rahu", "Ketu"):
+        return f"{ordinal((13 - h) % 12 + 1)} (anti-clockwise)"
+    return ordinal(h)
+
+
 def ordinal(n):
     if 10 <= n % 100 <= 20:
         return f"{n}th"
@@ -433,7 +441,7 @@ def graha_graha(rules, lagna, signs, degs=None):
                     continue
                 row = _pair_row(rules, p, q)
                 k = ref["KARAKATWAS"]
-                text = (f"{p}'s {ordinal(h)} aspect falls on {q}: {p}'s qualities ({k[p]['qualities']}) colour what "
+                text = (f"{p}'s {aspect_name(p, h)} aspect falls on {q}: {p}'s qualities ({k[p]['qualities']}) colour what "
                         f"{q} signifies ({k[q]['signifies']}).")
                 if row["aspect"].strip():
                     text += " " + row["aspect"]
