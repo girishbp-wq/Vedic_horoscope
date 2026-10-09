@@ -1087,8 +1087,8 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
       </div>
       <div class="field" style="grid-column: span 2;">
         <label for="f-tz">Birth timezone (UTC offset, hours)</label>
-        <input id="f-tz" type="number" step="0.25" placeholder="e.g. 5.5 (India) · 0 (UK winter/GMT) · 1 (UK summer/BST)" />
-        <span class="hint"><strong>Auto-filled when you pick a city.</strong> UK births: the default is <strong>0 (GMT)</strong> — if the birth was during British Summer Time (late March to late October) change this to <strong>1</strong> before generating. Only the birth chart needs this; today's muhūrta timings already adjust for daylight saving automatically.</span>
+        <input id="f-tz" type="number" step="any" placeholder="e.g. 5.5 (India) · 0 (UK winter/GMT) · 1 (UK summer/BST)" />
+        <span class="hint" id="tz-hint"><strong>Set automatically from the city and the birth date and time</strong> — daylight saving (e.g. British Summer Time) and India's 1942–45 war time (+6:30) are applied for you. Typing a value here overrides it for this city; picking another city switches back to automatic. With manual lat/lon, enter the offset yourself.</span>
       </div>
       <div class="field">
         <label for="f-gender">Gender (optional)</label>
@@ -2489,284 +2489,330 @@ const FACE_MAPPING = [
 
 /* ============================================================
    2. CITIES DATABASE  (built-in geocoder)
-   [name, region, lat, lon, tzOffsetHours]
+   [name, region, lat, lon, standard UTC offset (hours), IANA time zone]
+   The IANA zone gives the real offset on the birth date (daylight saving,
+   India's 1942–45 war time) through cityUtcOffset().
    ============================================================ */
 const CITIES = [
   // ---- INDIA (Karnataka + others, comprehensive) ----
-  ["Bengaluru","Karnataka, India",12.9716,77.5946,5.5],
-  ["Bangalore","Karnataka, India",12.9716,77.5946,5.5],
-  ["Mysuru","Karnataka, India",12.2958,76.6394,5.5],
-  ["Mysore","Karnataka, India",12.2958,76.6394,5.5],
-  ["Mangaluru","Karnataka, India",12.9141,74.856,5.5],
-  ["Mangalore","Karnataka, India",12.9141,74.856,5.5],
-  ["Hubballi","Karnataka, India",15.3647,75.124,5.5],
-  ["Belagavi","Karnataka, India",15.8497,74.4977,5.5],
-  ["Davangere","Karnataka, India",14.4644,75.9218,5.5],
-  ["Shivamogga","Karnataka, India",13.9299,75.5681,5.5],
-  ["Shimoga","Karnataka, India",13.9299,75.5681,5.5],
-  ["Sagara","Karnataka, India",14.1667,75.0333,5.5],
-  ["Sagar","Karnataka, India",14.1667,75.0333,5.5],
-  ["Sirsi","Karnataka, India",14.6195,74.8354,5.5],
-  ["Tumakuru","Karnataka, India",13.3409,77.101,5.5],
-  ["Kadur","Karnataka, India",13.55,76.02,5.5],
-  ["Chikkamagaluru","Karnataka, India",13.3161,75.772,5.5],
-  ["Udupi","Karnataka, India",13.3409,74.7421,5.5],
-  ["Hassan","Karnataka, India",13.0033,76.0961,5.5],
-  ["Raichur","Karnataka, India",16.2076,77.3463,5.5],
-  ["Bellary","Karnataka, India",15.1394,76.9214,5.5],
-  ["Kalaburagi","Karnataka, India",17.3297,76.8343,5.5],
-  ["Vijayapura","Karnataka, India",16.8302,75.71,5.5],
+  ["Bengaluru","Karnataka, India",12.9716,77.5946,5.5,"Asia/Kolkata"],
+  ["Bangalore","Karnataka, India",12.9716,77.5946,5.5,"Asia/Kolkata"],
+  ["Mysuru","Karnataka, India",12.2958,76.6394,5.5,"Asia/Kolkata"],
+  ["Mysore","Karnataka, India",12.2958,76.6394,5.5,"Asia/Kolkata"],
+  ["Mangaluru","Karnataka, India",12.9141,74.856,5.5,"Asia/Kolkata"],
+  ["Mangalore","Karnataka, India",12.9141,74.856,5.5,"Asia/Kolkata"],
+  ["Hubballi","Karnataka, India",15.3647,75.124,5.5,"Asia/Kolkata"],
+  ["Belagavi","Karnataka, India",15.8497,74.4977,5.5,"Asia/Kolkata"],
+  ["Davangere","Karnataka, India",14.4644,75.9218,5.5,"Asia/Kolkata"],
+  ["Shivamogga","Karnataka, India",13.9299,75.5681,5.5,"Asia/Kolkata"],
+  ["Shimoga","Karnataka, India",13.9299,75.5681,5.5,"Asia/Kolkata"],
+  ["Sagara","Karnataka, India",14.1667,75.0333,5.5,"Asia/Kolkata"],
+  ["Sagar","Karnataka, India",14.1667,75.0333,5.5,"Asia/Kolkata"],
+  ["Sirsi","Karnataka, India",14.6195,74.8354,5.5,"Asia/Kolkata"],
+  ["Tumakuru","Karnataka, India",13.3409,77.101,5.5,"Asia/Kolkata"],
+  ["Kadur","Karnataka, India",13.55,76.02,5.5,"Asia/Kolkata"],
+  ["Chikkamagaluru","Karnataka, India",13.3161,75.772,5.5,"Asia/Kolkata"],
+  ["Udupi","Karnataka, India",13.3409,74.7421,5.5,"Asia/Kolkata"],
+  ["Hassan","Karnataka, India",13.0033,76.0961,5.5,"Asia/Kolkata"],
+  ["Raichur","Karnataka, India",16.2076,77.3463,5.5,"Asia/Kolkata"],
+  ["Bellary","Karnataka, India",15.1394,76.9214,5.5,"Asia/Kolkata"],
+  ["Kalaburagi","Karnataka, India",17.3297,76.8343,5.5,"Asia/Kolkata"],
+  ["Vijayapura","Karnataka, India",16.8302,75.71,5.5,"Asia/Kolkata"],
   // ---- more Karnataka: district HQs, Malnad & coastal towns ----
-  ["Bidar","Karnataka, India",17.9133,77.5301,5.5],
-  ["Bagalkot","Karnataka, India",16.1691,75.6615,5.5],
-  ["Gadag","Karnataka, India",15.4230,75.6280,5.5],
-  ["Haveri","Karnataka, India",14.7951,75.4040,5.5],
-  ["Karwar","Karnataka, India",14.8137,74.1290,5.5],
-  ["Chitradurga","Karnataka, India",14.2251,76.3980,5.5],
-  ["Kolar","Karnataka, India",13.1367,78.1292,5.5],
-  ["Chikkaballapura","Karnataka, India",13.4353,77.7315,5.5],
-  ["Ramanagara","Karnataka, India",12.7217,77.2807,5.5],
-  ["Mandya","Karnataka, India",12.5223,76.8954,5.5],
-  ["Chamarajanagar","Karnataka, India",11.9236,76.9456,5.5],
-  ["Koppal","Karnataka, India",15.3500,76.1540,5.5],
-  ["Yadgir","Karnataka, India",16.7700,77.1370,5.5],
-  ["Madikeri","Karnataka, India",12.4208,75.7397,5.5],
-  ["Hosapete","Karnataka, India",15.2690,76.3870,5.5],
-  ["Hospet","Karnataka, India",15.2690,76.3870,5.5],
-  ["Gangavathi","Karnataka, India",15.4310,76.5310,5.5],
-  ["Ranebennur","Karnataka, India",14.6199,75.6294,5.5],
-  ["Gokak","Karnataka, India",16.1670,74.8230,5.5],
-  ["Tirthahalli","Karnataka, India",13.6880,75.2440,5.5],
-  ["Hosanagara","Karnataka, India",13.9130,75.0630,5.5],
-  ["Sringeri","Karnataka, India",13.4167,75.2530,5.5],
-  ["Koppa","Karnataka, India",13.5320,75.3620,5.5],
-  ["Mudigere","Karnataka, India",13.1350,75.6400,5.5],
-  ["Tarikere","Karnataka, India",13.7100,75.8140,5.5],
-  ["Kumta","Karnataka, India",14.4260,74.4188,5.5],
-  ["Honnavar","Karnataka, India",14.2800,74.4450,5.5],
-  ["Bhatkal","Karnataka, India",13.9855,74.5551,5.5],
-  ["Kundapura","Karnataka, India",13.6266,74.6910,5.5],
-  ["Karkala","Karnataka, India",13.2166,74.9946,5.5],
-  ["Puttur","Karnataka, India",12.7591,75.2010,5.5],
-  ["Bantwal","Karnataka, India",12.8905,75.0350,5.5],
-  ["Dandeli","Karnataka, India",15.2667,74.6167,5.5],
-  ["Yellapur","Karnataka, India",14.9640,74.7090,5.5],
-  ["Chintamani","Karnataka, India",13.4000,78.0530,5.5],
-  ["Robertsonpet (KGF)","Karnataka, India",12.9560,78.2740,5.5],
-  ["Doddaballapura","Karnataka, India",13.2920,77.5370,5.5],
-  ["Nelamangala","Karnataka, India",13.0990,77.3940,5.5],
-  ["Channapatna","Karnataka, India",12.6510,77.2070,5.5],
-  ["Nanjangud","Karnataka, India",12.1180,76.6830,5.5],
-  ["Arsikere","Karnataka, India",13.3140,76.2570,5.5],
-  ["Tiptur","Karnataka, India",13.2560,76.4770,5.5],
-  ["Mumbai","Maharashtra, India",19.076,72.8777,5.5],
-  ["Pune","Maharashtra, India",18.5204,73.8567,5.5],
-  ["Nagpur","Maharashtra, India",21.1458,79.0882,5.5],
-  ["Nashik","Maharashtra, India",19.9975,73.7898,5.5],
-  ["Aurangabad","Maharashtra, India",19.8762,75.3433,5.5],
-  ["Thane","Maharashtra, India",19.2183,72.9781,5.5],
-  ["Chennai","Tamil Nadu, India",13.0827,80.2707,5.5],
-  ["Coimbatore","Tamil Nadu, India",11.0168,76.9558,5.5],
-  ["Madurai","Tamil Nadu, India",9.9252,78.1198,5.5],
-  ["Tiruchirappalli","Tamil Nadu, India",10.7905,78.7047,5.5],
-  ["Salem","Tamil Nadu, India",11.6643,78.146,5.5],
-  ["Tirunelveli","Tamil Nadu, India",8.7139,77.7567,5.5],
-  ["Hyderabad","Telangana, India",17.385,78.4867,5.5],
-  ["Warangal","Telangana, India",17.9784,79.5941,5.5],
-  ["Visakhapatnam","Andhra Pradesh, India",17.6868,83.2185,5.5],
-  ["Vijayawada","Andhra Pradesh, India",16.5062,80.648,5.5],
-  ["Tirupati","Andhra Pradesh, India",13.6288,79.4192,5.5],
-  ["Guntur","Andhra Pradesh, India",16.3067,80.4365,5.5],
-  ["Kochi","Kerala, India",9.9312,76.2673,5.5],
-  ["Cochin","Kerala, India",9.9312,76.2673,5.5],
-  ["Thiruvananthapuram","Kerala, India",8.5241,76.9366,5.5],
-  ["Trivandrum","Kerala, India",8.5241,76.9366,5.5],
-  ["Kozhikode","Kerala, India",11.2588,75.7804,5.5],
-  ["Thrissur","Kerala, India",10.5276,76.2144,5.5],
-  ["Delhi","Delhi, India",28.6139,77.209,5.5],
-  ["New Delhi","Delhi, India",28.6139,77.209,5.5],
-  ["Gurugram","Haryana, India",28.4595,77.0266,5.5],
-  ["Gurgaon","Haryana, India",28.4595,77.0266,5.5],
-  ["Faridabad","Haryana, India",28.4089,77.3178,5.5],
-  ["Noida","Uttar Pradesh, India",28.5355,77.391,5.5],
-  ["Ghaziabad","Uttar Pradesh, India",28.6692,77.4538,5.5],
-  ["Kolkata","West Bengal, India",22.5726,88.3639,5.5],
-  ["Howrah","West Bengal, India",22.5958,88.2636,5.5],
-  ["Siliguri","West Bengal, India",26.7271,88.3953,5.5],
-  ["Durgapur","West Bengal, India",23.5204,87.3119,5.5],
-  ["Ahmedabad","Gujarat, India",23.0225,72.5714,5.5],
-  ["Surat","Gujarat, India",21.1702,72.8311,5.5],
-  ["Vadodara","Gujarat, India",22.3072,73.1812,5.5],
-  ["Rajkot","Gujarat, India",22.3039,70.8022,5.5],
-  ["Jaipur","Rajasthan, India",26.9124,75.7873,5.5],
-  ["Jodhpur","Rajasthan, India",26.2389,73.0243,5.5],
-  ["Udaipur","Rajasthan, India",24.5854,73.7125,5.5],
-  ["Kota","Rajasthan, India",25.2138,75.8648,5.5],
-  ["Ajmer","Rajasthan, India",26.4499,74.6399,5.5],
-  ["Lucknow","Uttar Pradesh, India",26.8467,80.9462,5.5],
-  ["Kanpur","Uttar Pradesh, India",26.4499,80.3319,5.5],
-  ["Agra","Uttar Pradesh, India",27.1767,78.0081,5.5],
-  ["Varanasi","Uttar Pradesh, India",25.3176,82.9739,5.5],
-  ["Prayagraj","Uttar Pradesh, India",25.4358,81.8463,5.5],
-  ["Allahabad","Uttar Pradesh, India",25.4358,81.8463,5.5],
-  ["Meerut","Uttar Pradesh, India",28.9845,77.7064,5.5],
-  ["Bhopal","Madhya Pradesh, India",23.2599,77.4126,5.5],
-  ["Indore","Madhya Pradesh, India",22.7196,75.8577,5.5],
-  ["Gwalior","Madhya Pradesh, India",26.2183,78.1828,5.5],
-  ["Jabalpur","Madhya Pradesh, India",23.1815,79.9864,5.5],
-  ["Ujjain","Madhya Pradesh, India",23.1793,75.7849,5.5],
-  ["Patna","Bihar, India",25.5941,85.1376,5.5],
-  ["Gaya","Bihar, India",24.7969,85.0078,5.5],
-  ["Bhubaneswar","Odisha, India",20.2961,85.8245,5.5],
-  ["Cuttack","Odisha, India",20.4625,85.883,5.5],
-  ["Puri","Odisha, India",19.8135,85.8312,5.5],
-  ["Chandigarh","Chandigarh, India",30.7333,76.7794,5.5],
-  ["Amritsar","Punjab, India",31.634,74.8723,5.5],
-  ["Ludhiana","Punjab, India",30.9009,75.8573,5.5],
-  ["Dehradun","Uttarakhand, India",30.3165,78.0322,5.5],
-  ["Haridwar","Uttarakhand, India",29.9457,78.1642,5.5],
-  ["Rishikesh","Uttarakhand, India",30.0869,78.2676,5.5],
-  ["Srinagar","Jammu & Kashmir, India",34.0837,74.7973,5.5],
-  ["Jammu","Jammu & Kashmir, India",32.7266,74.857,5.5],
-  ["Guwahati","Assam, India",26.1445,91.7362,5.5],
-  ["Imphal","Manipur, India",24.817,93.9368,5.5],
-  ["Shillong","Meghalaya, India",25.5788,91.8933,5.5],
-  ["Panaji","Goa, India",15.4909,73.8278,5.5],
-  ["Margao","Goa, India",15.2832,73.9862,5.5],
-  ["Ranchi","Jharkhand, India",23.3441,85.3096,5.5],
-  ["Jamshedpur","Jharkhand, India",22.8046,86.2029,5.5],
-  ["Raipur","Chhattisgarh, India",21.2514,81.6296,5.5],
-  ["Bilaspur","Chhattisgarh, India",22.0797,82.1409,5.5],
+  ["Bidar","Karnataka, India",17.9133,77.5301,5.5,"Asia/Kolkata"],
+  ["Bagalkot","Karnataka, India",16.1691,75.6615,5.5,"Asia/Kolkata"],
+  ["Gadag","Karnataka, India",15.4230,75.6280,5.5,"Asia/Kolkata"],
+  ["Haveri","Karnataka, India",14.7951,75.4040,5.5,"Asia/Kolkata"],
+  ["Karwar","Karnataka, India",14.8137,74.1290,5.5,"Asia/Kolkata"],
+  ["Chitradurga","Karnataka, India",14.2251,76.3980,5.5,"Asia/Kolkata"],
+  ["Kolar","Karnataka, India",13.1367,78.1292,5.5,"Asia/Kolkata"],
+  ["Chikkaballapura","Karnataka, India",13.4353,77.7315,5.5,"Asia/Kolkata"],
+  ["Ramanagara","Karnataka, India",12.7217,77.2807,5.5,"Asia/Kolkata"],
+  ["Mandya","Karnataka, India",12.5223,76.8954,5.5,"Asia/Kolkata"],
+  ["Chamarajanagar","Karnataka, India",11.9236,76.9456,5.5,"Asia/Kolkata"],
+  ["Koppal","Karnataka, India",15.3500,76.1540,5.5,"Asia/Kolkata"],
+  ["Yadgir","Karnataka, India",16.7700,77.1370,5.5,"Asia/Kolkata"],
+  ["Madikeri","Karnataka, India",12.4208,75.7397,5.5,"Asia/Kolkata"],
+  ["Hosapete","Karnataka, India",15.2690,76.3870,5.5,"Asia/Kolkata"],
+  ["Hospet","Karnataka, India",15.2690,76.3870,5.5,"Asia/Kolkata"],
+  ["Gangavathi","Karnataka, India",15.4310,76.5310,5.5,"Asia/Kolkata"],
+  ["Ranebennur","Karnataka, India",14.6199,75.6294,5.5,"Asia/Kolkata"],
+  ["Gokak","Karnataka, India",16.1670,74.8230,5.5,"Asia/Kolkata"],
+  ["Tirthahalli","Karnataka, India",13.6880,75.2440,5.5,"Asia/Kolkata"],
+  ["Hosanagara","Karnataka, India",13.9130,75.0630,5.5,"Asia/Kolkata"],
+  ["Sringeri","Karnataka, India",13.4167,75.2530,5.5,"Asia/Kolkata"],
+  ["Koppa","Karnataka, India",13.5320,75.3620,5.5,"Asia/Kolkata"],
+  ["Mudigere","Karnataka, India",13.1350,75.6400,5.5,"Asia/Kolkata"],
+  ["Tarikere","Karnataka, India",13.7100,75.8140,5.5,"Asia/Kolkata"],
+  ["Kumta","Karnataka, India",14.4260,74.4188,5.5,"Asia/Kolkata"],
+  ["Honnavar","Karnataka, India",14.2800,74.4450,5.5,"Asia/Kolkata"],
+  ["Bhatkal","Karnataka, India",13.9855,74.5551,5.5,"Asia/Kolkata"],
+  ["Kundapura","Karnataka, India",13.6266,74.6910,5.5,"Asia/Kolkata"],
+  ["Karkala","Karnataka, India",13.2166,74.9946,5.5,"Asia/Kolkata"],
+  ["Puttur","Karnataka, India",12.7591,75.2010,5.5,"Asia/Kolkata"],
+  ["Bantwal","Karnataka, India",12.8905,75.0350,5.5,"Asia/Kolkata"],
+  ["Dandeli","Karnataka, India",15.2667,74.6167,5.5,"Asia/Kolkata"],
+  ["Yellapur","Karnataka, India",14.9640,74.7090,5.5,"Asia/Kolkata"],
+  ["Chintamani","Karnataka, India",13.4000,78.0530,5.5,"Asia/Kolkata"],
+  ["Robertsonpet (KGF)","Karnataka, India",12.9560,78.2740,5.5,"Asia/Kolkata"],
+  ["Doddaballapura","Karnataka, India",13.2920,77.5370,5.5,"Asia/Kolkata"],
+  ["Nelamangala","Karnataka, India",13.0990,77.3940,5.5,"Asia/Kolkata"],
+  ["Channapatna","Karnataka, India",12.6510,77.2070,5.5,"Asia/Kolkata"],
+  ["Nanjangud","Karnataka, India",12.1180,76.6830,5.5,"Asia/Kolkata"],
+  ["Arsikere","Karnataka, India",13.3140,76.2570,5.5,"Asia/Kolkata"],
+  ["Tiptur","Karnataka, India",13.2560,76.4770,5.5,"Asia/Kolkata"],
+  ["Mumbai","Maharashtra, India",19.076,72.8777,5.5,"Asia/Kolkata"],
+  ["Pune","Maharashtra, India",18.5204,73.8567,5.5,"Asia/Kolkata"],
+  ["Nagpur","Maharashtra, India",21.1458,79.0882,5.5,"Asia/Kolkata"],
+  ["Nashik","Maharashtra, India",19.9975,73.7898,5.5,"Asia/Kolkata"],
+  ["Aurangabad","Maharashtra, India",19.8762,75.3433,5.5,"Asia/Kolkata"],
+  ["Thane","Maharashtra, India",19.2183,72.9781,5.5,"Asia/Kolkata"],
+  ["Chennai","Tamil Nadu, India",13.0827,80.2707,5.5,"Asia/Kolkata"],
+  ["Coimbatore","Tamil Nadu, India",11.0168,76.9558,5.5,"Asia/Kolkata"],
+  ["Madurai","Tamil Nadu, India",9.9252,78.1198,5.5,"Asia/Kolkata"],
+  ["Tiruchirappalli","Tamil Nadu, India",10.7905,78.7047,5.5,"Asia/Kolkata"],
+  ["Salem","Tamil Nadu, India",11.6643,78.146,5.5,"Asia/Kolkata"],
+  ["Tirunelveli","Tamil Nadu, India",8.7139,77.7567,5.5,"Asia/Kolkata"],
+  ["Hyderabad","Telangana, India",17.385,78.4867,5.5,"Asia/Kolkata"],
+  ["Warangal","Telangana, India",17.9784,79.5941,5.5,"Asia/Kolkata"],
+  ["Visakhapatnam","Andhra Pradesh, India",17.6868,83.2185,5.5,"Asia/Kolkata"],
+  ["Vijayawada","Andhra Pradesh, India",16.5062,80.648,5.5,"Asia/Kolkata"],
+  ["Tirupati","Andhra Pradesh, India",13.6288,79.4192,5.5,"Asia/Kolkata"],
+  ["Guntur","Andhra Pradesh, India",16.3067,80.4365,5.5,"Asia/Kolkata"],
+  ["Kochi","Kerala, India",9.9312,76.2673,5.5,"Asia/Kolkata"],
+  ["Cochin","Kerala, India",9.9312,76.2673,5.5,"Asia/Kolkata"],
+  ["Thiruvananthapuram","Kerala, India",8.5241,76.9366,5.5,"Asia/Kolkata"],
+  ["Trivandrum","Kerala, India",8.5241,76.9366,5.5,"Asia/Kolkata"],
+  ["Kozhikode","Kerala, India",11.2588,75.7804,5.5,"Asia/Kolkata"],
+  ["Thrissur","Kerala, India",10.5276,76.2144,5.5,"Asia/Kolkata"],
+  ["Delhi","Delhi, India",28.6139,77.209,5.5,"Asia/Kolkata"],
+  ["New Delhi","Delhi, India",28.6139,77.209,5.5,"Asia/Kolkata"],
+  ["Gurugram","Haryana, India",28.4595,77.0266,5.5,"Asia/Kolkata"],
+  ["Gurgaon","Haryana, India",28.4595,77.0266,5.5,"Asia/Kolkata"],
+  ["Faridabad","Haryana, India",28.4089,77.3178,5.5,"Asia/Kolkata"],
+  ["Noida","Uttar Pradesh, India",28.5355,77.391,5.5,"Asia/Kolkata"],
+  ["Ghaziabad","Uttar Pradesh, India",28.6692,77.4538,5.5,"Asia/Kolkata"],
+  ["Kolkata","West Bengal, India",22.5726,88.3639,5.5,"Asia/Kolkata"],
+  ["Howrah","West Bengal, India",22.5958,88.2636,5.5,"Asia/Kolkata"],
+  ["Siliguri","West Bengal, India",26.7271,88.3953,5.5,"Asia/Kolkata"],
+  ["Durgapur","West Bengal, India",23.5204,87.3119,5.5,"Asia/Kolkata"],
+  ["Ahmedabad","Gujarat, India",23.0225,72.5714,5.5,"Asia/Kolkata"],
+  ["Surat","Gujarat, India",21.1702,72.8311,5.5,"Asia/Kolkata"],
+  ["Vadodara","Gujarat, India",22.3072,73.1812,5.5,"Asia/Kolkata"],
+  ["Rajkot","Gujarat, India",22.3039,70.8022,5.5,"Asia/Kolkata"],
+  ["Jaipur","Rajasthan, India",26.9124,75.7873,5.5,"Asia/Kolkata"],
+  ["Jodhpur","Rajasthan, India",26.2389,73.0243,5.5,"Asia/Kolkata"],
+  ["Udaipur","Rajasthan, India",24.5854,73.7125,5.5,"Asia/Kolkata"],
+  ["Kota","Rajasthan, India",25.2138,75.8648,5.5,"Asia/Kolkata"],
+  ["Ajmer","Rajasthan, India",26.4499,74.6399,5.5,"Asia/Kolkata"],
+  ["Lucknow","Uttar Pradesh, India",26.8467,80.9462,5.5,"Asia/Kolkata"],
+  ["Kanpur","Uttar Pradesh, India",26.4499,80.3319,5.5,"Asia/Kolkata"],
+  ["Agra","Uttar Pradesh, India",27.1767,78.0081,5.5,"Asia/Kolkata"],
+  ["Varanasi","Uttar Pradesh, India",25.3176,82.9739,5.5,"Asia/Kolkata"],
+  ["Prayagraj","Uttar Pradesh, India",25.4358,81.8463,5.5,"Asia/Kolkata"],
+  ["Allahabad","Uttar Pradesh, India",25.4358,81.8463,5.5,"Asia/Kolkata"],
+  ["Meerut","Uttar Pradesh, India",28.9845,77.7064,5.5,"Asia/Kolkata"],
+  ["Bhopal","Madhya Pradesh, India",23.2599,77.4126,5.5,"Asia/Kolkata"],
+  ["Indore","Madhya Pradesh, India",22.7196,75.8577,5.5,"Asia/Kolkata"],
+  ["Gwalior","Madhya Pradesh, India",26.2183,78.1828,5.5,"Asia/Kolkata"],
+  ["Jabalpur","Madhya Pradesh, India",23.1815,79.9864,5.5,"Asia/Kolkata"],
+  ["Ujjain","Madhya Pradesh, India",23.1793,75.7849,5.5,"Asia/Kolkata"],
+  ["Patna","Bihar, India",25.5941,85.1376,5.5,"Asia/Kolkata"],
+  ["Gaya","Bihar, India",24.7969,85.0078,5.5,"Asia/Kolkata"],
+  ["Bhubaneswar","Odisha, India",20.2961,85.8245,5.5,"Asia/Kolkata"],
+  ["Cuttack","Odisha, India",20.4625,85.883,5.5,"Asia/Kolkata"],
+  ["Puri","Odisha, India",19.8135,85.8312,5.5,"Asia/Kolkata"],
+  ["Chandigarh","Chandigarh, India",30.7333,76.7794,5.5,"Asia/Kolkata"],
+  ["Amritsar","Punjab, India",31.634,74.8723,5.5,"Asia/Kolkata"],
+  ["Ludhiana","Punjab, India",30.9009,75.8573,5.5,"Asia/Kolkata"],
+  ["Dehradun","Uttarakhand, India",30.3165,78.0322,5.5,"Asia/Kolkata"],
+  ["Haridwar","Uttarakhand, India",29.9457,78.1642,5.5,"Asia/Kolkata"],
+  ["Rishikesh","Uttarakhand, India",30.0869,78.2676,5.5,"Asia/Kolkata"],
+  ["Srinagar","Jammu & Kashmir, India",34.0837,74.7973,5.5,"Asia/Kolkata"],
+  ["Jammu","Jammu & Kashmir, India",32.7266,74.857,5.5,"Asia/Kolkata"],
+  ["Guwahati","Assam, India",26.1445,91.7362,5.5,"Asia/Kolkata"],
+  ["Imphal","Manipur, India",24.817,93.9368,5.5,"Asia/Kolkata"],
+  ["Shillong","Meghalaya, India",25.5788,91.8933,5.5,"Asia/Kolkata"],
+  ["Panaji","Goa, India",15.4909,73.8278,5.5,"Asia/Kolkata"],
+  ["Margao","Goa, India",15.2832,73.9862,5.5,"Asia/Kolkata"],
+  ["Ranchi","Jharkhand, India",23.3441,85.3096,5.5,"Asia/Kolkata"],
+  ["Jamshedpur","Jharkhand, India",22.8046,86.2029,5.5,"Asia/Kolkata"],
+  ["Raipur","Chhattisgarh, India",21.2514,81.6296,5.5,"Asia/Kolkata"],
+  ["Bilaspur","Chhattisgarh, India",22.0797,82.1409,5.5,"Asia/Kolkata"],
   // ---- South Asia ----
-  ["Kathmandu","Nepal",27.7172,85.324,5.75],
-  ["Pokhara","Nepal",28.2096,83.9856,5.75],
-  ["Dhaka","Bangladesh",23.8103,90.4125,6],
-  ["Colombo","Sri Lanka",6.9271,79.8612,5.5],
-  ["Karachi","Pakistan",24.8607,67.0011,5],
-  ["Lahore","Pakistan",31.5497,74.3436,5],
-  ["Islamabad","Pakistan",33.6844,73.0479,5],
-  ["Kabul","Afghanistan",34.5553,69.2075,4.5],
+  ["Kathmandu","Nepal",27.7172,85.324,5.75,"Asia/Kathmandu"],
+  ["Pokhara","Nepal",28.2096,83.9856,5.75,"Asia/Kathmandu"],
+  ["Dhaka","Bangladesh",23.8103,90.4125,6,"Asia/Dhaka"],
+  ["Colombo","Sri Lanka",6.9271,79.8612,5.5,"Asia/Colombo"],
+  ["Karachi","Pakistan",24.8607,67.0011,5,"Asia/Karachi"],
+  ["Lahore","Pakistan",31.5497,74.3436,5,"Asia/Karachi"],
+  ["Islamabad","Pakistan",33.6844,73.0479,5,"Asia/Karachi"],
+  ["Kabul","Afghanistan",34.5553,69.2075,4.5,"Asia/Kabul"],
   // ---- USA ----
-  ["New York","NY, USA",40.7128,-74.006,-5],
-  ["Los Angeles","CA, USA",34.0522,-118.2437,-8],
-  ["Chicago","IL, USA",41.8781,-87.6298,-6],
-  ["Houston","TX, USA",29.7604,-95.3698,-6],
-  ["San Francisco","CA, USA",37.7749,-122.4194,-8],
-  ["Seattle","WA, USA",47.6062,-122.3321,-8],
-  ["Boston","MA, USA",42.3601,-71.0589,-5],
-  ["Washington","DC, USA",38.9072,-77.0369,-5],
-  ["Atlanta","GA, USA",33.749,-84.388,-5],
-  ["Dallas","TX, USA",32.7767,-96.797,-6],
-  ["Denver","CO, USA",39.7392,-104.9903,-7],
-  ["Phoenix","AZ, USA",33.4484,-112.074,-7],
-  ["Miami","FL, USA",25.7617,-80.1918,-5],
+  ["New York","NY, USA",40.7128,-74.006,-5,"America/New_York"],
+  ["Los Angeles","CA, USA",34.0522,-118.2437,-8,"America/Los_Angeles"],
+  ["Chicago","IL, USA",41.8781,-87.6298,-6,"America/Chicago"],
+  ["Houston","TX, USA",29.7604,-95.3698,-6,"America/Chicago"],
+  ["San Francisco","CA, USA",37.7749,-122.4194,-8,"America/Los_Angeles"],
+  ["Seattle","WA, USA",47.6062,-122.3321,-8,"America/Los_Angeles"],
+  ["Boston","MA, USA",42.3601,-71.0589,-5,"America/New_York"],
+  ["Washington","DC, USA",38.9072,-77.0369,-5,"America/New_York"],
+  ["Atlanta","GA, USA",33.749,-84.388,-5,"America/New_York"],
+  ["Dallas","TX, USA",32.7767,-96.797,-6,"America/Chicago"],
+  ["Denver","CO, USA",39.7392,-104.9903,-7,"America/Denver"],
+  ["Phoenix","AZ, USA",33.4484,-112.074,-7,"America/Phoenix"],
+  ["Miami","FL, USA",25.7617,-80.1918,-5,"America/New_York"],
   // ---- Canada ----
-  ["Toronto","ON, Canada",43.6532,-79.3832,-5],
-  ["Vancouver","BC, Canada",49.2827,-123.1207,-8],
-  ["Montreal","QC, Canada",45.5017,-73.5673,-5],
+  ["Toronto","ON, Canada",43.6532,-79.3832,-5,"America/Toronto"],
+  ["Vancouver","BC, Canada",49.2827,-123.1207,-8,"America/Vancouver"],
+  ["Montreal","QC, Canada",45.5017,-73.5673,-5,"America/Toronto"],
   // ---- Europe ----
-  ["London","UK",51.5074,-0.1278,0],
-  ["Manchester","UK",53.4808,-2.2426,0],
-  ["Edinburgh","UK",55.9533,-3.1883,0],
-  ["Birmingham","UK",52.4862,-1.8904,0],
-  ["Sunbury-on-Thames","Surrey, UK",51.4076,-0.4166,0],
-  ["Sunbury on Thames","Surrey, UK",51.4076,-0.4166,0],
-  ["Staines-upon-Thames","Surrey, UK",51.4340,-0.5110,0],
-  ["Walton-on-Thames","Surrey, UK",51.3870,-0.4160,0],
-  ["Weybridge","Surrey, UK",51.3740,-0.4580,0],
-  ["Woking","Surrey, UK",51.3168,-0.5600,0],
-  ["Guildford","Surrey, UK",51.2362,-0.5704,0],
-  ["Kingston upon Thames","London, UK",51.4123,-0.3007,0],
-  ["Twickenham","London, UK",51.4463,-0.3312,0],
-  ["Richmond","London, UK",51.4613,-0.3037,0],
-  ["Hounslow","London, UK",51.4670,-0.3750,0],
-  ["Croydon","London, UK",51.3762,-0.0982,0],
-  ["Slough","Berkshire, UK",51.5105,-0.5954,0],
-  ["Reading","Berkshire, UK",51.4543,-0.9781,0],
-  ["Watford","Hertfordshire, UK",51.6565,-0.3903,0],
-  ["Leeds","UK",53.8008,-1.5491,0],
-  ["Liverpool","UK",53.4084,-2.9916,0],
-  ["Sheffield","UK",53.3811,-1.4701,0],
-  ["Nottingham","UK",52.9548,-1.1581,0],
-  ["Leicester","UK",52.6369,-1.1398,0],
-  ["Bristol","UK",51.4545,-2.5879,0],
-  ["Cardiff","Wales, UK",51.4816,-3.1791,0],
-  ["Glasgow","Scotland, UK",55.8642,-4.2518,0],
-  ["Newcastle","UK",54.9783,-1.6178,0],
-  ["Paris","France",48.8566,2.3522,1],
-  ["Berlin","Germany",52.52,13.405,1],
-  ["Munich","Germany",48.1351,11.582,1],
-  ["Madrid","Spain",40.4168,-3.7038,1],
-  ["Barcelona","Spain",41.3851,2.1734,1],
-  ["Rome","Italy",41.9028,12.4964,1],
-  ["Milan","Italy",45.4642,9.19,1],
-  ["Amsterdam","Netherlands",52.3676,4.9041,1],
-  ["Brussels","Belgium",50.8503,4.3517,1],
-  ["Zurich","Switzerland",47.3769,8.5417,1],
-  ["Geneva","Switzerland",46.2044,6.1432,1],
-  ["Vienna","Austria",48.2082,16.3738,1],
-  ["Stockholm","Sweden",59.3293,18.0686,1],
-  ["Oslo","Norway",59.9139,10.7522,1],
-  ["Copenhagen","Denmark",55.6761,12.5683,1],
-  ["Helsinki","Finland",60.1699,24.9384,2],
-  ["Moscow","Russia",55.7558,37.6173,3],
-  ["Athens","Greece",37.9838,23.7275,2],
-  ["Istanbul","Turkey",41.0082,28.9784,3],
-  ["Lisbon","Portugal",38.7223,-9.1393,0],
-  ["Dublin","Ireland",53.3498,-6.2603,0],
+  ["London","UK",51.5074,-0.1278,0,"Europe/London"],
+  ["Manchester","UK",53.4808,-2.2426,0,"Europe/London"],
+  ["Edinburgh","UK",55.9533,-3.1883,0,"Europe/London"],
+  ["Birmingham","UK",52.4862,-1.8904,0,"Europe/London"],
+  ["Sunbury-on-Thames","Surrey, UK",51.4076,-0.4166,0,"Europe/London"],
+  ["Sunbury on Thames","Surrey, UK",51.4076,-0.4166,0,"Europe/London"],
+  ["Staines-upon-Thames","Surrey, UK",51.4340,-0.5110,0,"Europe/London"],
+  ["Walton-on-Thames","Surrey, UK",51.3870,-0.4160,0,"Europe/London"],
+  ["Weybridge","Surrey, UK",51.3740,-0.4580,0,"Europe/London"],
+  ["Woking","Surrey, UK",51.3168,-0.5600,0,"Europe/London"],
+  ["Guildford","Surrey, UK",51.2362,-0.5704,0,"Europe/London"],
+  ["Kingston upon Thames","London, UK",51.4123,-0.3007,0,"Europe/London"],
+  ["Twickenham","London, UK",51.4463,-0.3312,0,"Europe/London"],
+  ["Richmond","London, UK",51.4613,-0.3037,0,"Europe/London"],
+  ["Hounslow","London, UK",51.4670,-0.3750,0,"Europe/London"],
+  ["Croydon","London, UK",51.3762,-0.0982,0,"Europe/London"],
+  ["Slough","Berkshire, UK",51.5105,-0.5954,0,"Europe/London"],
+  ["Reading","Berkshire, UK",51.4543,-0.9781,0,"Europe/London"],
+  ["Watford","Hertfordshire, UK",51.6565,-0.3903,0,"Europe/London"],
+  ["Leeds","UK",53.8008,-1.5491,0,"Europe/London"],
+  ["Liverpool","UK",53.4084,-2.9916,0,"Europe/London"],
+  ["Sheffield","UK",53.3811,-1.4701,0,"Europe/London"],
+  ["Nottingham","UK",52.9548,-1.1581,0,"Europe/London"],
+  ["Leicester","UK",52.6369,-1.1398,0,"Europe/London"],
+  ["Bristol","UK",51.4545,-2.5879,0,"Europe/London"],
+  ["Cardiff","Wales, UK",51.4816,-3.1791,0,"Europe/London"],
+  ["Glasgow","Scotland, UK",55.8642,-4.2518,0,"Europe/London"],
+  ["Newcastle","UK",54.9783,-1.6178,0,"Europe/London"],
+  ["Paris","France",48.8566,2.3522,1,"Europe/Paris"],
+  ["Berlin","Germany",52.52,13.405,1,"Europe/Berlin"],
+  ["Munich","Germany",48.1351,11.582,1,"Europe/Berlin"],
+  ["Madrid","Spain",40.4168,-3.7038,1,"Europe/Madrid"],
+  ["Barcelona","Spain",41.3851,2.1734,1,"Europe/Madrid"],
+  ["Rome","Italy",41.9028,12.4964,1,"Europe/Rome"],
+  ["Milan","Italy",45.4642,9.19,1,"Europe/Rome"],
+  ["Amsterdam","Netherlands",52.3676,4.9041,1,"Europe/Amsterdam"],
+  ["Brussels","Belgium",50.8503,4.3517,1,"Europe/Brussels"],
+  ["Zurich","Switzerland",47.3769,8.5417,1,"Europe/Zurich"],
+  ["Geneva","Switzerland",46.2044,6.1432,1,"Europe/Zurich"],
+  ["Vienna","Austria",48.2082,16.3738,1,"Europe/Vienna"],
+  ["Stockholm","Sweden",59.3293,18.0686,1,"Europe/Stockholm"],
+  ["Oslo","Norway",59.9139,10.7522,1,"Europe/Oslo"],
+  ["Copenhagen","Denmark",55.6761,12.5683,1,"Europe/Copenhagen"],
+  ["Helsinki","Finland",60.1699,24.9384,2,"Europe/Helsinki"],
+  ["Moscow","Russia",55.7558,37.6173,3,"Europe/Moscow"],
+  ["Athens","Greece",37.9838,23.7275,2,"Europe/Athens"],
+  ["Istanbul","Turkey",41.0082,28.9784,3,"Europe/Istanbul"],
+  ["Lisbon","Portugal",38.7223,-9.1393,0,"Europe/Lisbon"],
+  ["Dublin","Ireland",53.3498,-6.2603,0,"Europe/Dublin"],
   // ---- Middle East ----
-  ["Dubai","UAE",25.2048,55.2708,4],
-  ["Abu Dhabi","UAE",24.4539,54.3773,4],
-  ["Doha","Qatar",25.2854,51.531,3],
-  ["Riyadh","Saudi Arabia",24.7136,46.6753,3],
-  ["Jeddah","Saudi Arabia",21.4858,39.1925,3],
-  ["Tehran","Iran",35.6892,51.389,3.5],
-  ["Tel Aviv","Israel",32.0853,34.7818,2],
-  ["Jerusalem","Israel",31.7683,35.2137,2],
-  ["Muscat","Oman",23.5859,58.4059,4],
-  ["Kuwait City","Kuwait",29.3759,47.9774,3],
+  ["Dubai","UAE",25.2048,55.2708,4,"Asia/Dubai"],
+  ["Abu Dhabi","UAE",24.4539,54.3773,4,"Asia/Dubai"],
+  ["Doha","Qatar",25.2854,51.531,3,"Asia/Qatar"],
+  ["Riyadh","Saudi Arabia",24.7136,46.6753,3,"Asia/Riyadh"],
+  ["Jeddah","Saudi Arabia",21.4858,39.1925,3,"Asia/Riyadh"],
+  ["Tehran","Iran",35.6892,51.389,3.5,"Asia/Tehran"],
+  ["Tel Aviv","Israel",32.0853,34.7818,2,"Asia/Jerusalem"],
+  ["Jerusalem","Israel",31.7683,35.2137,2,"Asia/Jerusalem"],
+  ["Muscat","Oman",23.5859,58.4059,4,"Asia/Muscat"],
+  ["Kuwait City","Kuwait",29.3759,47.9774,3,"Asia/Kuwait"],
   // ---- Asia-Pacific ----
-  ["Tokyo","Japan",35.6762,139.6503,9],
-  ["Osaka","Japan",34.6937,135.5023,9],
-  ["Seoul","South Korea",37.5665,126.978,9],
-  ["Beijing","China",39.9042,116.4074,8],
-  ["Shanghai","China",31.2304,121.4737,8],
-  ["Hong Kong","Hong Kong",22.3193,114.1694,8],
-  ["Taipei","Taiwan",25.033,121.5654,8],
-  ["Singapore","Singapore",1.3521,103.8198,8],
-  ["Kuala Lumpur","Malaysia",3.139,101.6869,8],
-  ["Bangkok","Thailand",13.7563,100.5018,7],
-  ["Jakarta","Indonesia",-6.2088,106.8456,7],
-  ["Manila","Philippines",14.5995,120.9842,8],
-  ["Hanoi","Vietnam",21.0285,105.8542,7],
-  ["Ho Chi Minh City","Vietnam",10.8231,106.6297,7],
-  ["Yangon","Myanmar",16.8409,96.1735,6.5],
+  ["Tokyo","Japan",35.6762,139.6503,9,"Asia/Tokyo"],
+  ["Osaka","Japan",34.6937,135.5023,9,"Asia/Tokyo"],
+  ["Seoul","South Korea",37.5665,126.978,9,"Asia/Seoul"],
+  ["Beijing","China",39.9042,116.4074,8,"Asia/Shanghai"],
+  ["Shanghai","China",31.2304,121.4737,8,"Asia/Shanghai"],
+  ["Hong Kong","Hong Kong",22.3193,114.1694,8,"Asia/Hong_Kong"],
+  ["Taipei","Taiwan",25.033,121.5654,8,"Asia/Taipei"],
+  ["Singapore","Singapore",1.3521,103.8198,8,"Asia/Singapore"],
+  ["Kuala Lumpur","Malaysia",3.139,101.6869,8,"Asia/Kuala_Lumpur"],
+  ["Bangkok","Thailand",13.7563,100.5018,7,"Asia/Bangkok"],
+  ["Jakarta","Indonesia",-6.2088,106.8456,7,"Asia/Jakarta"],
+  ["Manila","Philippines",14.5995,120.9842,8,"Asia/Manila"],
+  ["Hanoi","Vietnam",21.0285,105.8542,7,"Asia/Bangkok"],
+  ["Ho Chi Minh City","Vietnam",10.8231,106.6297,7,"Asia/Ho_Chi_Minh"],
+  ["Yangon","Myanmar",16.8409,96.1735,6.5,"Asia/Yangon"],
   // ---- Australia / NZ ----
-  ["Sydney","Australia",-33.8688,151.2093,10],
-  ["Melbourne","Australia",-37.8136,144.9631,10],
-  ["Brisbane","Australia",-27.4698,153.0251,10],
-  ["Perth","Australia",-31.9505,115.8605,8],
-  ["Auckland","New Zealand",-36.8485,174.7633,12],
-  ["Wellington","New Zealand",-41.2865,174.7762,12],
+  ["Sydney","Australia",-33.8688,151.2093,10,"Australia/Sydney"],
+  ["Melbourne","Australia",-37.8136,144.9631,10,"Australia/Melbourne"],
+  ["Brisbane","Australia",-27.4698,153.0251,10,"Australia/Brisbane"],
+  ["Perth","Australia",-31.9505,115.8605,8,"Australia/Perth"],
+  ["Auckland","New Zealand",-36.8485,174.7633,12,"Pacific/Auckland"],
+  ["Wellington","New Zealand",-41.2865,174.7762,12,"Pacific/Auckland"],
   // ---- Africa ----
-  ["Cairo","Egypt",30.0444,31.2357,2],
-  ["Nairobi","Kenya",-1.2921,36.8219,3],
-  ["Johannesburg","South Africa",-26.2041,28.0473,2],
-  ["Cape Town","South Africa",-33.9249,18.4241,2],
-  ["Lagos","Nigeria",6.5244,3.3792,1],
-  ["Accra","Ghana",5.6037,-0.187,0],
-  ["Addis Ababa","Ethiopia",9.032,38.7469,3],
-  ["Casablanca","Morocco",33.5731,-7.5898,1],
+  ["Cairo","Egypt",30.0444,31.2357,2,"Africa/Cairo"],
+  ["Nairobi","Kenya",-1.2921,36.8219,3,"Africa/Nairobi"],
+  ["Johannesburg","South Africa",-26.2041,28.0473,2,"Africa/Johannesburg"],
+  ["Cape Town","South Africa",-33.9249,18.4241,2,"Africa/Johannesburg"],
+  ["Lagos","Nigeria",6.5244,3.3792,1,"Africa/Lagos"],
+  ["Accra","Ghana",5.6037,-0.187,0,"Africa/Accra"],
+  ["Addis Ababa","Ethiopia",9.032,38.7469,3,"Africa/Addis_Ababa"],
+  ["Casablanca","Morocco",33.5731,-7.5898,1,"Africa/Casablanca"],
   // ---- South America / Mexico ----
-  ["São Paulo","Brazil",-23.5505,-46.6333,-3],
-  ["Rio de Janeiro","Brazil",-22.9068,-43.1729,-3],
-  ["Buenos Aires","Argentina",-34.6037,-58.3816,-3],
-  ["Santiago","Chile",-33.4489,-70.6693,-4],
-  ["Lima","Peru",-12.0464,-77.0428,-5],
-  ["Bogotá","Colombia",4.711,-74.0721,-5],
-  ["Caracas","Venezuela",10.4806,-66.9036,-4],
-  ["Mexico City","Mexico",19.4326,-99.1332,-6]
+  ["São Paulo","Brazil",-23.5505,-46.6333,-3,"America/Sao_Paulo"],
+  ["Rio de Janeiro","Brazil",-22.9068,-43.1729,-3,"America/Sao_Paulo"],
+  ["Buenos Aires","Argentina",-34.6037,-58.3816,-3,"America/Argentina/Buenos_Aires"],
+  ["Santiago","Chile",-33.4489,-70.6693,-4,"America/Santiago"],
+  ["Lima","Peru",-12.0464,-77.0428,-5,"America/Lima"],
+  ["Bogotá","Colombia",4.711,-74.0721,-5,"America/Bogota"],
+  ["Caracas","Venezuela",10.4806,-66.9036,-4,"America/Caracas"],
+  ["Mexico City","Mexico",19.4326,-99.1332,-6,"America/Mexico_City"]
 ];
+
+/* UTC offset of a city at a local wall-clock time, from its IANA zone.
+   The browser's time-zone database supplies daylight saving and historical
+   changes (e.g. India's +6:30 war time, Sep 1942 – Oct 1945). A clock time
+   skipped by a spring-forward change is read with the offset in force just
+   before it; a time repeated by a fall-back change is read as the first
+   (daylight-saving) one. Without Intl support the stored standard offset is used. */
+const _TZ_FMT = {};
+function _zoneOffsetAtUtc(zone, utcMs){
+  const f = _TZ_FMT[zone] || (_TZ_FMT[zone] = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric" }));
+  const p = {}; for (const x of f.formatToParts(new Date(utcMs))) p[x.type] = x.value;
+  const wall = Date.UTC(+p.year, +p.month - 1, +p.day, (+p.hour) % 24, +p.minute, +p.second);
+  return Math.round((wall - Math.floor(utcMs / 1000) * 1000) / 1000) / 3600;
+}
+function cityUtcInfo(city, y, m, d, hh, mi, ss){
+  const std = city ? city[4] : NaN, zone = city && city[5];
+  if (!zone || typeof Intl === "undefined") return { offset: std, std, zone: zone || "", kind: "standard" };
+  try {
+    const wall = Date.UTC(y, m - 1, d, hh || 0, mi || 0, ss || 0), H = 3600000;
+    const before = _zoneOffsetAtUtc(zone, wall - std * H - 12 * H);
+    const after  = _zoneOffsetAtUtc(zone, wall - std * H + 12 * H);
+    const fits = o => _zoneOffsetAtUtc(zone, wall - o * H) === o;
+    const okB = fits(before), okA = before !== after && fits(after);
+    if (okB && okA) return { offset: before, std, zone, kind: "repeated" };
+    if (okB) return { offset: before, std, zone, kind: "ok" };
+    if (okA) return { offset: after, std, zone, kind: "ok" };
+    return { offset: before, std, zone, kind: "skipped" };
+  } catch (e) { return { offset: std, std, zone, kind: "standard" }; }
+}
+function cityUtcOffset(city, y, m, d, hh, mi, ss){ return cityUtcInfo(city, y, m, d, hh, mi, ss).offset; }
+/* "UTC+5:30", "UTC−8", "UTC+5:53:20" */
+function fmtUtcOffset(h){
+  if (h == null || isNaN(h)) return "UTC";
+  const s = Math.round(Math.abs(h) * 3600), hh = Math.floor(s / 3600), mm = Math.floor(s % 3600 / 60), ss = s % 60;
+  return "UTC" + (h < 0 ? "−" : "+") + hh + (mm || ss ? ":" + String(mm).padStart(2, "0") : "") + (ss ? ":" + String(ss).padStart(2, "0") : "");
+}
+/* The city's own date and clock (minutes after midnight) right now. */
+function cityNow(city){
+  const now = Date.now(), off = (city && city[5]) ? (()=>{ try { return _zoneOffsetAtUtc(city[5], now); } catch (e) { return city[4]; } })() : (city ? city[4] : 0);
+  const t = new Date(now + off * 3600000);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), min: t.getUTCHours() * 60 + t.getUTCMinutes() };
+}
 
 /* ============================================================
    3. ASTRONOMICAL ENGINE
@@ -4957,6 +5003,41 @@ function renderFaceMappingSection() {
 
 let currentChart = null;
 let selectedCity = null;
+let tzTouched = false;   // true once the user types a UTC offset for the chosen city
+
+/* The city the place box names: the picked suggestion, else an exact name match. */
+function currentBirthCity(){
+  if (selectedCity) return selectedCity;
+  const place = (document.getElementById("f-place").value || "").trim().toLowerCase();
+  return place ? (CITIES.find(c => c[0].toLowerCase() === place) || null) : null;
+}
+/* Birth date/time from the form as numbers (time defaults to noon while blank). */
+function birthWallTime(){
+  const dob = (document.getElementById("f-dob").value || "").split("-").map(Number);
+  const tob = (document.getElementById("f-tob").value || "12:00").split(":").map(Number);
+  if (dob.length !== 3 || dob.some(isNaN)) return null;
+  return [dob[0], dob[1], dob[2], tob[0] || 0, tob[1] || 0, tob[2] || 0];
+}
+/* Fill the UTC-offset box from the city's zone for the birth date, unless the
+   user has typed their own value; describe the result under the place box. */
+const PLACE_HINT_DEFAULT = "Type 2+ letters — auto-suggestions from built-in city database.";
+function refreshCityTz(keepBox){
+  if (document.getElementById("latLonRow").classList.contains("show")) return;
+  const c = currentBirthCity(), hint = document.getElementById("place-hint"), tzf = document.getElementById("f-tz");
+  if (!c) { if (hint) hint.textContent = PLACE_HINT_DEFAULT; return; }
+  const wt = birthWallTime();
+  const info = wt ? cityUtcInfo(c, ...wt) : { offset: c[4], std: c[4], zone: c[5] || "", kind: "standard" };
+  if (!tzTouched && tzf && !keepBox) tzf.value = String(Math.round(info.offset * 1e6) / 1e6);
+  let note = "";
+  if (tzTouched) note = ` · your typed offset ${fmtUtcOffset(parseFloat(tzf.value))} is used`;
+  else if (!wt) note = " · standard time (enter the birth date for daylight saving)";
+  else if (info.kind === "skipped") note = " · ⚠ this clock time was skipped by a daylight-saving change — check the birth time";
+  else if (info.kind === "repeated") note = " · ⚠ this clock time occurred twice (clocks went back) — the first, daylight-saving one is used";
+  else if (info.offset > info.std) note = " · daylight saving / war time on this date";
+  else if (info.offset !== info.std) note = " · historical local time on this date";
+  if (hint) hint.innerHTML = `<em>${_escTz(c[0])}, ${_escTz(c[1])} — lat ${c[2]}°, lon ${c[3]}° · ${_escTz(info.zone)} ${fmtUtcOffset(info.offset)}${note}</em>`;
+}
+function _escTz(s){ return String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch])); }
 
 function showMsg(text, isError) {
   const el = document.getElementById("msg");
@@ -5033,21 +5114,19 @@ function generate() {
       return;
     }
     placeName = place || `${fmtCoord(lat, "lat")}, ${fmtCoord(lon, "lon")}`;
-  } else if (selectedCity) {
-    lat = selectedCity[2]; lon = selectedCity[3];
-    { const _t = parseFloat(document.getElementById("f-tz").value); tz = isNaN(_t) ? selectedCity[4] : _t; }
-    placeName = `${selectedCity[0]}, ${selectedCity[1]}`;
   } else {
-    // Try to find in city DB by name
-    const match = CITIES.find(c => c[0].toLowerCase() === place.toLowerCase());
-    if (match) {
-      lat = match[2]; lon = match[3];
-      { const _t = parseFloat(document.getElementById("f-tz").value); tz = isNaN(_t) ? match[4] : _t; }
-      placeName = `${match[0]}, ${match[1]}`;
-    } else {
+    // Picked suggestion, else an exact name match in the city DB. The offset comes
+    // from the city's zone on the birth date unless the user typed one for it.
+    const city = currentBirthCity();
+    if (!city) {
       showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
       return;
     }
+    lat = city[2]; lon = city[3];
+    const typed = parseFloat(document.getElementById("f-tz").value);
+    tz = (tzTouched && !isNaN(typed)) ? typed : cityUtcOffset(city, ...birthWallTime());
+    placeName = `${city[0]}, ${city[1]}`;
+    refreshCityTz();
   }
 
   showLoader(true);
@@ -5088,7 +5167,7 @@ function generate() {
   const sunRashi = getRashi(sunRashiInfo.n);
 
   // Render everything
-  renderSummaryStrip(name, dob, tob, placeName, lagnaRashi, moonRashi, sunRashi);
+  renderSummaryStrip(name, dob, tob, `${placeName} (${fmtUtcOffset(tz)})`, lagnaRashi, moonRashi, sunRashi);
   // Ayanamsa name + value — shown in the on-screen tag AND the printed meta line
   const ayanName = ayanType === "lahiri" ? "Lahiri (Chitrapaksha)"
                  : ayanType === "raman"  ? "B.V. Raman"
@@ -5187,6 +5266,8 @@ function setupPlaceAutocomplete() {
 
   input.addEventListener("input", () => {
     selectedCity = null;
+    tzTouched = false;
+    refreshCityTz();
     currentList = filter(input.value);
     activeIdx = -1;
     render();
@@ -5218,10 +5299,10 @@ function setupPlaceAutocomplete() {
   function pick(i) {
     const c = currentList[i];
     selectedCity = c;
+    tzTouched = false;
     input.value = c[0];
-    const _tzf = document.getElementById("f-tz"); if(_tzf) _tzf.value = c[4];
-    document.getElementById("place-hint").innerHTML =
-      `<em>${c[0]}, ${c[1]} — lat ${c[2]}°, lon ${c[3]}°, UTC ${c[4] >= 0 ? "+" : ""}${c[4]}</em>`;
+    refreshCityTz();
+    if (typeof saveForm === "function") saveForm();
     sug.classList.remove("show");
   }
 
@@ -5229,9 +5310,7 @@ function setupPlaceAutocomplete() {
   const init = filter(input.value);
   if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
     selectedCity = init[0];
-    const _tzf = document.getElementById("f-tz"); if(_tzf && !_tzf.value) _tzf.value = init[0][4];
-    document.getElementById("place-hint").innerHTML =
-      `<em>${init[0][0]}, ${init[0][1]} — lat ${init[0][2]}°, lon ${init[0][3]}°, UTC ${init[0][4] >= 0 ? "+" : ""}${init[0][4]}</em>`;
+    refreshCityTz();
   }
 }
 
@@ -5268,7 +5347,7 @@ function saveForm(){
       name:g("f-name"), dob:g("f-dob"), tob:g("f-tob"), place:g("f-place"),
       gender:g("f-gender"), ayanamsa:g("f-ayanamsa"),
       manual: document.getElementById("latLonRow").classList.contains("show"),
-      lat:g("f-lat"), lon:g("f-lon"), tz:g("f-tz"), selectedCity: selectedCity
+      lat:g("f-lat"), lon:g("f-lon"), tz:g("f-tz"), tzTouched: tzTouched, selectedCity: selectedCity
     }));
   } catch(e){ /* storage may be disabled — fail silently */ }
 }
@@ -5280,7 +5359,11 @@ function restoreForm(){
     set("f-name",d.name); set("f-dob",d.dob); set("f-tob",d.tob); set("f-place",d.place);
     set("f-gender",d.gender); set("f-ayanamsa",d.ayanamsa);
     set("f-lat",d.lat); set("f-lon",d.lon); set("f-tz",d.tz);
-    if(Array.isArray(d.selectedCity)) selectedCity = d.selectedCity;
+    if(Array.isArray(d.selectedCity)){
+      // Re-resolve from the current table so older saves pick up the city's time zone.
+      selectedCity = CITIES.find(c => c[0]===d.selectedCity[0] && c[1]===d.selectedCity[1]) || d.selectedCity;
+    }
+    tzTouched = d.tzTouched === true;
     if(d.manual){
       document.getElementById("latLonRow").classList.add("show");
       const b=document.getElementById("btn-manual"); if(b) b.textContent="Use city lookup";
@@ -5291,7 +5374,15 @@ function restoreForm(){
   const el=document.getElementById(id);
   if(el){ el.addEventListener("change", saveForm); el.addEventListener("input", saveForm); }
 });
+{ const tzf=document.getElementById("f-tz");
+  // Emptying the box hands the offset back to the city's zone; it refills on leaving the box.
+  if(tzf){ tzf.addEventListener("input", ()=>{ tzTouched = tzf.value.trim()!==""; refreshCityTz(true); saveForm(); });
+           tzf.addEventListener("blur", ()=>{ if(!tzf.value.trim()){ refreshCityTz(); saveForm(); } }); } }
+["f-dob","f-tob"].forEach(id=>{ const el=document.getElementById(id);
+  if(el){ el.addEventListener("change", ()=>{ refreshCityTz(); saveForm(); }); el.addEventListener("input", ()=>{ refreshCityTz(); saveForm(); }); } });
+{ const bm=document.getElementById("btn-manual"); if(bm) bm.addEventListener("click", refreshCityTz); }
 restoreForm();
+refreshCityTz();
 normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previous save
 normalizeCoordField("f-lon","lon");
 
@@ -5309,6 +5400,7 @@ function clearSaved(){
   ["f-name","f-dob","f-tob","f-place","f-lat","f-lon","f-tz"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
   const gsel=document.getElementById("f-gender"); if(gsel) gsel.selectedIndex=0;
   selectedCity = null;
+  tzTouched = false;
   const row=document.getElementById("latLonRow"); if(row) row.classList.remove("show");
   const bm=document.getElementById("btn-manual"); if(bm) bm.textContent="Use manual lat/lon";
   if (typeof showMsg==="function") showMsg("Saved birth details cleared from this device.");
@@ -5595,17 +5687,34 @@ function renderRemediesPane(sid){
   el.innerHTML=h;
 }
 
-/* Rahu Kaalam — 8-part division of the daytime, by weekday (approx. sunrise 06:00). */
+/* Rāhu Kāla — the weekday's eighth of the daytime, from the current-location city's
+   sunrise and sunset (RAHU_PART below). RAHU_KAALAM is the classical sunrise-06:00 table,
+   kept only as the fallback where the Sun does not rise or set. */
 const RAHU_KAALAM = { 0:["16:30","18:00"],1:["07:30","09:00"],2:["15:00","16:30"],3:["12:00","13:30"],4:["13:30","15:00"],5:["10:30","12:00"],6:["09:00","10:30"] };
+function rahuKaalFor(c, y, mo, d){
+  const st = sunTimes(c[2], c[3], cityUtcOffset(c, y, mo, d, 12, 0, 0), y, mo, d);
+  const w = new Date(Date.UTC(y, mo - 1, d)).getUTCDay();
+  if (!st) return { w, range: RAHU_KAALAM[w], exact: false };
+  const part = (st.set - st.rise) / 8, k = RAHU_PART[w];
+  return { w, range: [_hm(st.rise + (k - 1) * part), _hm(st.rise + k * part)], exact: true };
+}
 function renderRahukaalPane(){
   const el=document.getElementById("pane-rahukaal"); if(!el) return;
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const now=new Date(), w=now.getDay(), rk=RAHU_KAALAM[w];
-  let h=`<h4 class="pane-h">Rāhu Kaalam — today (${days[w]})</h4>`;
-  h+=`<p>Avoid starting anything auspicious between <strong>${rk[0]}</strong> and <strong>${rk[1]}</strong>.</p>`;
-  h+=`<table class="rtable"><thead><tr><th>Weekday</th><th>Rāhu Kaalam</th></tr></thead><tbody>`;
-  for(let d=0;d<7;d++) h+=`<tr class="${d===w?'now':''}"><td>${days[d]}</td><td>${RAHU_KAALAM[d][0]} – ${RAHU_KAALAM[d][1]}</td></tr>`;
-  h+=`</tbody></table><p class="rnote">Standard table assuming sunrise ≈ 06:00 and a 12-hour day. For exact timing, shift by your local sunrise.</p>`;
+  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
+  const c=CITIES[parseInt(sel && sel.value)] || CITIES[0];
+  let p=((di && di.value)||"").split("-").map(Number);
+  if(p.length!==3 || p.some(isNaN)){ const n=cityNow(c); p=[n.y,n.m,n.d]; }
+  const today=rahuKaalFor(c,p[0],p[1],p[2]);
+  let h=`<h4 class="pane-h">Rāhu Kaalam — ${_esc(c[0])}, ${_dmy(p[0],p[1],p[2])} (${days[today.w]})</h4>`;
+  h+=`<p>Avoid starting anything auspicious between <strong>${today.range[0]}</strong> and <strong>${today.range[1]}</strong>.</p>`;
+  h+=`<table class="rtable"><thead><tr><th>Date</th><th>Weekday</th><th>Rāhu Kaalam</th></tr></thead><tbody>`;
+  for(let i=0;i<7;i++){
+    const t=new Date(Date.UTC(p[0],p[1]-1,p[2]+i)), y=t.getUTCFullYear(), mo=t.getUTCMonth()+1, d=t.getUTCDate();
+    const r=rahuKaalFor(c,y,mo,d);
+    h+=`<tr class="${i===0?'now':''}"><td>${_dmy(y,mo,d)}</td><td>${days[r.w]}</td><td>${r.range[0]} – ${r.range[1]}${r.exact?'':' (standard table)'}</td></tr>`;
+  }
+  h+=`</tbody></table><p class="rnote">Worked out from ${_esc(c[0])}'s sunrise and sunset in its own clock time: the daytime is cut into eight equal parts and Rāhu rules one of them by weekday (Sun 8th, Mon 2nd, Tue 7th, Wed 5th, Thu 6th, Fri 4th, Sat 3rd). The familiar fixed table (e.g. Monday 07:30–09:00) is the same rule with sunrise at 06:00. Change the city or date under <em>Current location</em> in the form to recalculate.</p>`;
   el.innerHTML=h;
 }
 
@@ -5719,7 +5828,7 @@ function computeMhPanchanga(){
   const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-");
   if(!c || p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0], mo=+p[1], d=+p[2];
-  const tz=-new Date(y,mo-1,d).getTimezoneOffset()/60;   // device's actual offset for that date (DST-aware)
+  const tz=cityUtcOffset(c,y,mo,d,12,0,0);   // the city's own offset that day (DST-aware, read at noon)
   const st=sunTimes(c[2],c[3],tz,y,mo,d);
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const w=new Date(y,mo-1,d).getDay();
@@ -5732,12 +5841,12 @@ function computeMhPanchanga(){
   h+=`<tr><th>Solar noon</th><td>${_hm(st.noon)}</td><th>Day length</th><td>${Math.floor(dayLen/60)}h ${Math.round(dayLen%60)}m</td></tr>`;
   h+=`</tbody></table>`;
   h+=`<table class="rtable"><thead><tr><th>Window</th><th>Time</th><th>Note</th></tr></thead><tbody>`;
-  h+=`<tr class="now"><td><strong>Abhijit Muhūrta</strong></td><td>${_hm(st.noon-24)} – ${_hm(st.noon+24)}</td><td>${w===3?'⚠ Wednesday — held weak, usually avoided':'Auspicious for most new starts'}</td></tr>`;
+  h+=`<tr class="now"><td><strong>Abhijit Muhūrta</strong></td><td>${_hm(st.noon-dayLen/30)} – ${_hm(st.noon+dayLen/30)}</td><td>${w===3?'⚠ Wednesday — held weak, usually avoided':'Auspicious for most new starts'}</td></tr>`;
   h+=`<tr><td>Rāhu Kāla</td><td>${seg(RAHU_PART[w])}</td><td>Avoid auspicious starts</td></tr>`;
   h+=`<tr><td>Yamaganda</td><td>${seg(YAMA_PART[w])}</td><td>Avoid</td></tr>`;
   h+=`<tr><td>Gulika Kāla</td><td>${seg(GULIKA_PART[w])}</td><td>Neutral to inauspicious</td></tr>`;
   h+=`</tbody></table>`;
-  h+=`<p class="rnote">Sunrise/sunset by the NOAA algorithm for the selected city, shown in your device's local time (adjusts for daylight saving). The daytime is split into eight equal parts for Rāhu Kāla, Yamaganda and Gulika; Abhijit = solar noon ± 24 min. Accurate to within a few minutes — for a precise muhūrta confirm against a local pañcāṅga. If your device clock is in a different country from the city you pick, the times will use your device's zone.</p>`;
+  h+=`<p class="rnote">Sunrise/sunset by the NOAA algorithm for the selected city, shown in that city's local clock time (${_esc(fmtUtcOffset(tz))}, daylight saving included). The daytime is split into eight equal parts for Rāhu Kāla, Yamaganda and Gulika; Abhijit is the 8th of the 15 day-muhūrtas — solar noon ± one-thirtieth of the day length. Accurate to within a few minutes — for a precise muhūrta confirm against a local pañcāṅga.</p>`;
   box.innerHTML=h;
 }
 
@@ -5745,7 +5854,7 @@ function computeMhPanchanga(){
 const CHOG_CYCLE=["Udveg","Char","Labh","Amrit","Kaal","Shubh","Rog"];
 const CHOG_META={
   Udveg:{en:"Anxiety", planet:"Sun",     cls:"bad"},
-  Char: {en:"Movable", planet:"Venus",   cls:"neutral"},
+  Char: {en:"Movable — good for travel", planet:"Venus", cls:"neutral"},
   Labh: {en:"Gain",    planet:"Mercury", cls:"good"},
   Amrit:{en:"Nectar",  planet:"Moon",    cls:"good"},
   Kaal: {en:"Loss",    planet:"Saturn",  cls:"bad"},
@@ -5760,30 +5869,33 @@ function computeChoghadiya(){
   const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate"); if(!sel||!di) return;
   const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-"); if(!c||p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0],mo=+p[1],d=+p[2];
-  const tz=-new Date(y,mo-1,d).getTimezoneOffset()/60;
+  const tz=cityUtcOffset(c,y,mo,d,12,0,0);   // the city's own clock that day
   const st=sunTimes(c[2],c[3],tz,y,mo,d);
   if(!st){ box.innerHTML=`<p class="rnote">The Sun does not rise or set normally here on this date.</p>`; return; }
-  const nd=new Date(y,mo-1,d); nd.setDate(nd.getDate()+1);
-  const tz2=-nd.getTimezoneOffset()/60;
-  const st2=sunTimes(c[2],c[3],tz2,nd.getFullYear(),nd.getMonth()+1,nd.getDate());
+  const nd=new Date(Date.UTC(y,mo-1,d+1));
+  const ny=nd.getUTCFullYear(), nm_=nd.getUTCMonth()+1, ndd=nd.getUTCDate();
+  const st2=sunTimes(c[2],c[3],cityUtcOffset(c,ny,nm_,ndd,12,0,0),ny,nm_,ndd);
   const riseNext=(st2?st2.rise:st.rise)+1440;
-  const w=new Date(y,mo-1,d).getDay();
+  const w=new Date(Date.UTC(y,mo-1,d)).getUTCDay();
   const dseg=(st.set-st.rise)/8, nseg=(riseNext-st.set)/8;
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const nowD=new Date(), isToday=(nowD.getFullYear()===y&&nowD.getMonth()+1===mo&&nowD.getDate()===d);
-  const nowMin=isToday?(nowD.getHours()*60+nowD.getMinutes()):-1;
+  // "Now" in the city's clock, counted in minutes from the selected date's midnight, so a
+  // time before today's sunrise falls in the previous date's night (not tonight's).
+  const cn=cityNow(c);
+  const nowRel=Math.round((Date.UTC(cn.y,cn.m-1,cn.d)-Date.UTC(y,mo-1,d))/60000)+cn.min;
   const rows=(startIdx,step,seg,base)=>{ let h=''; for(let i=0;i<8;i++){ const nm=CHOG_CYCLE[((startIdx+step*i)%7+7)%7], m=CHOG_META[nm], v=_chogVerdict(m.cls);
-    const s0=base+i*seg, s1=base+(i+1)*seg; const now=nowMin>=0 && ((nowMin>=s0&&nowMin<s1)||(nowMin+1440>=s0&&nowMin+1440<s1));
+    const s0=base+i*seg, s1=base+(i+1)*seg; const now=nowRel>=s0&&nowRel<s1;
     h+=`<tr class="${now?'now':''}"><td>${_hm(s0)} – ${_hm(s1)}</td><td><strong>${nm}</strong> — ${m.en}</td><td>${m.planet}</td><td><span style="color:${v[0]};font-weight:600">${v[1]}</span></td></tr>`; } return h; };
   let h=`<h4 class="pane-h">Choughadiya — ${_esc(c[0])}, ${_dmy(y,mo,d)} (${days[w]})</h4>`;
-  h+=`<p class="rnote">Sunrise ${_hm(st.rise)} · Sunset ${_hm(st.set)}. Day and night are each split into 8 parts (~4 ghaṭis). <span style="color:#1a7f37;font-weight:600">Good:</span> Amrit, Shubh, Labh, Char · <span style="color:#9a3b1b;font-weight:600">Avoid:</span> Udveg, Rog, Kaal.</p>`;
+  h+=`<p class="rnote">Sunrise ${_hm(st.rise)} · Sunset ${_hm(st.set)} (${_esc(c[0])} clock, ${_esc(fmtUtcOffset(tz))}). Day and night are each split into 8 parts (~4 ghaṭis). <span style="color:#1a7f37;font-weight:600">Good:</span> Amrit, Shubh, Labh · <span style="color:#9a6b00;font-weight:600">Neutral:</span> Char (good for travel) · <span style="color:#9a3b1b;font-weight:600">Avoid:</span> Udveg, Rog, Kaal.</p>`;
+  if(nowRel>=0 && nowRel<st.rise) h+=`<p class="rnote">It is before sunrise in ${_esc(c[0])} — the window running now belongs to the previous date's night. Choose yesterday's date to see it highlighted.</p>`;
   h+=`<h5 class="pane-h" style="margin-top:6px">Day (sunrise → sunset)</h5><div class="table-scroll"><table class="rtable"><thead><tr><th>Time</th><th>Choughadiya</th><th>Lord</th><th>Verdict</th></tr></thead><tbody>`;
   h+=rows(CHOG_DAY_START[w],1,dseg,st.rise);
   h+=`</tbody></table></div>`;
   h+=`<h5 class="pane-h" style="margin-top:10px">Night (sunset → next sunrise)</h5><div class="table-scroll"><table class="rtable"><thead><tr><th>Time</th><th>Choughadiya</th><th>Lord</th><th>Verdict</th></tr></thead><tbody>`;
   h+=rows(CHOG_NIGHT_START[w],-2,nseg,st.set);
   h+=`</tbody></table></div>`;
-  h+=`<p class="rnote">Computed from your current-city sunrise/sunset in device-local time (DST-aware); day steps +1 and night steps −2 through the seven-window cycle, validated against DrikPanchang. The highlighted row is the window running now.</p>`;
+  h+=`<p class="rnote">Computed from the selected city's sunrise/sunset in that city's clock time (daylight saving included); day steps +1 and night steps −2 through the seven-window cycle, validated against DrikPanchang. The highlighted row is the window running now.</p>`;
   box.innerHTML=h;
 }
 
@@ -6473,11 +6585,11 @@ function setupCurrentLocation(){
     let def=0;
     CITIES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${c[0]} — ${c[1]}`; sel.appendChild(o); if(birth && c[0]===birth) def=i; });
     sel.value=def;
-    sel.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} });
+    sel.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
   }
   if(di){
     if(!di.value){ const t=new Date(); di.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
-    di.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} });
+    di.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
   }
 }
 setupCurrentLocation();
