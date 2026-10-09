@@ -2855,18 +2855,28 @@ function gmst(JD) {
 
 /* Lahiri (and variants) ayanamsa */
 function ayanamsa(JD, type) {
-  // Lahiri at J2000.0 = 23.853067°; rate ≈ 0.013957°/yr (with small quadratic)
+  // Mean ayanamsa as a quadratic in Julian centuries from J2000, fitted to the
+  // Swiss Ephemeris (agrees to well under 1" for 1850–2150):
+  //   Lahiri (Chitrapaksha)  SE_SIDM_LAHIRI            23.8570924°
+  //   B.V. Raman             SE_SIDM_RAMAN             22.4107910°
+  //   KP-New (Krishnamurti)  SE_SIDM_KRISHNAMURTI_VP291 23.7803650°
   const T = (JD - 2451545.0) / 36525;
-  const years = T * 100;
-  const lahiri = 23.85277 + 0.013957 * years - 6.7e-8 * years * years;
-  if (type === "raman") return lahiri - 0.4;
-  if (type === "kp") {
-    // KP-New (Krishnamurti): tropical & sidereal zodiacs coincide at 291 AD
-    // (KP zero-ayanamsa year); Newcomb precession rate 50.2388475"/yr.
-    const fracYear = 2000.0 + (JD - 2451545.0) / 365.25;
-    return (fracYear - 291.0) * 50.2388475 / 3600.0;
+  if (type === "raman") return 22.4107910 + 1.3968881 * T + 0.000307056 * T * T;
+  if (type === "kp")    return 23.7803650 + 1.3968816 * T + 0.000306071 * T * T;
+  return 23.8570924 + 1.3968880 * T + 0.000307090 * T * T;
+}
+
+/* ΔT = TT − UT in seconds: Swiss Ephemeris values every 5 years from 1800 to 2150,
+   linearly interpolated (within ~1 s); Morrison–Stephenson parabola outside. */
+const DELTA_T_1800 = [18.6,16.3,15.2,16.1,16.6,14.2,10.7,8.4,7.6,8.0,9.3,10.3,9.0,8.2,2.3,-1.2,-3.2,-4.4,-3.9,-5.0,-2.0,4.9,11.1,17.5,21.6,23.8,24.4,24.2,24.4,27.0,28.9,31.1,33.1,35.7,40.2,45.5,50.5,54.3,56.9,60.8,63.8,64.7,66.1,67.6,69.4,69.0,69.3,70.5,71.8,73.2,74.6,76.1,77.6,79.3,81.0,82.8,84.7,86.7,88.8,90.9,93.2,95.5,98.0,100.6,103.3,106.1,109.0,111.9,115.1,118.3,121.7];
+function deltaTSeconds(JD) {
+  const y = 2000 + (JD - 2451544.5) / 365.2425, k = (y - 1800) / 5;
+  if (k >= 0 && k < DELTA_T_1800.length - 1) {
+    const i = Math.floor(k);
+    return DELTA_T_1800[i] + (DELTA_T_1800[i + 1] - DELTA_T_1800[i]) * (k - i);
   }
-  return lahiri;
+  const u = (y - 1820) / 100;
+  return -20 + 32 * u * u;
 }
 
 /* ----- Sun (Meeus simplified) ----- */
@@ -2877,7 +2887,7 @@ function sunTropical(JD) {
   const C  = (1.914602 - 0.004817*T - 0.000014*T*T) * sinD(M)
            + (0.019993 - 0.000101*T) * sinD(2*M)
            + 0.000289 * sinD(3*M);
-  return norm360(L0 + C);
+  return norm360(L0 + C - 0.00569);   // − annual aberration (20.5"), as the Swiss Ephemeris applies
 }
 
 /* ----- Moon (Meeus, top ~30 periodic terms) ----- */
@@ -2991,16 +3001,17 @@ function planetGeocentric(name, JD) {
 /* Compute all sidereal positions */
 function computeChart(JD, ayanType) {
   const ayan = ayanamsa(JD, ayanType);
+  const JDE = JD + deltaTSeconds(JD) / 86400;   // the theories below run on Terrestrial Time
   const trop = {
-    Sun:     sunTropical(JD),
-    Moon:    moonTropical(JD),
-    Mars:    planetGeocentric("Mars", JD),
-    Mercury: planetGeocentric("Mercury", JD),
-    Jupiter: planetGeocentric("Jupiter", JD),
-    Venus:   planetGeocentric("Venus", JD),
-    Saturn:  planetGeocentric("Saturn", JD),
-    Rahu:    rahuTropical(JD),
-    Ketu:    ketuTropical(JD)
+    Sun:     sunTropical(JDE),
+    Moon:    moonTropical(JDE),
+    Mars:    planetGeocentric("Mars", JDE),
+    Mercury: planetGeocentric("Mercury", JDE),
+    Jupiter: planetGeocentric("Jupiter", JDE),
+    Venus:   planetGeocentric("Venus", JDE),
+    Saturn:  planetGeocentric("Saturn", JDE),
+    Rahu:    rahuTropical(JDE),
+    Ketu:    ketuTropical(JDE)
   };
   const sid = {};
   for (const k in trop) sid[k] = norm360(trop[k] - ayan);
@@ -3342,8 +3353,10 @@ function planetDignity(planet, rashiNum, deg) {
 /* Retrograde (Vakra): compare sidereal longitude across ~1 day.
    Sun & Moon never retrograde; Rahu/Ketu (mean nodes) always retrograde. */
 function retrogradeSet(JD, ayanType){
-  const a = computeChart(JD, ayanType).sidereal;
-  const b = computeChart(JD + 1, ayanType).sidereal;
+  // Motion across the birth moment itself (half a day either side), so a
+  // station in the following day does not flip the reading.
+  const a = computeChart(JD - 0.5, ayanType).sidereal;
+  const b = computeChart(JD + 0.5, ayanType).sidereal;
   const set = new Set();
   for (const p of ["Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
     let delta = b[p] - a[p];

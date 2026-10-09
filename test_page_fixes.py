@@ -256,5 +256,46 @@ class MuhurtaUsesCityClock(unittest.TestCase):
         self.assertNotIn("Labh, Char", r)
 
 
+# Reference values from the Swiss Ephemeris 2.10 (pyswisseph, Moshier ephemeris):
+# get_ayanamsa_ut for SIDM_LAHIRI / SIDM_RAMAN / SIDM_KRISHNAMURTI_VP291, deltat, and
+# sidereal (Lahiri) Sun and Moon from calc_ut. STATIONS: Mercury, Venus and Mars 0.35
+# day either side of each station from 2000 on, with the sign of the true speed.
+SWE = json.loads('{"ayan_jd": [2415020.5, 2433282.5, 2444239.5, 2451545.0, 2460676.5, 2469807.5], "ayan_lahiri": [22.4605306, 23.1587251, 23.5777079, 23.8570924, 24.2063431, 24.5556131], "ayan_raman": [21.0142291, 21.7124238, 22.1314066, 22.410791, 22.7600418, 23.1093118], "ayan_kp": [22.3838085, 23.0820007, 23.5009818, 23.780365, 24.1296141, 24.4788823], "dt": [[2415020.5, -1.99], [2433282.5, 28.93], [2444239.5, 50.54], [2451545.0, 63.83], [2460676.5, 69.0], [2469807.5, 74.58]], "pos": [[2441974.158, 181.62544, 87.94615], [2453160.4725, 49.77283, 241.09253], [2446795.1125, 254.93125, 247.47757], [2455340.6794, 38.90751, 170.92122], [2456136.9341, 101.71102, 219.01324], [2435675.9416, 95.36377, 259.54222], [2433763.4609, 12.71796, 262.36153], [2463871.0582, 163.37517, 240.1017], [2442755.4054, 232.65889, 303.87252], [2441841.4384, 53.51902, 144.20173], [2469648.4276, 98.85495, 56.23725], [2450458.8746, 266.34928, 283.11322]], "stations": [["Mercury", 2451595.68227, false], ["Mercury", 2451596.38227, true], ["Mercury", 2451618.01069, true], ["Mercury", 2451618.71069, false], ["Mercury", 2451718.50555, false], ["Mercury", 2451719.20555, true], ["Mercury", 2451742.70583, true], ["Mercury", 2451743.40583, false], ["Mercury", 2451835.7202, false], ["Mercury", 2451836.4202, true], ["Mercury", 2451856.25286, true], ["Mercury", 2451856.95286, false], ["Venus", 2451977.19623, false], ["Venus", 2451977.89623, true], ["Venus", 2452019.34037, true], ["Venus", 2452020.04037, false], ["Venus", 2452557.92443, false], ["Venus", 2452558.62443, true], ["Venus", 2452599.45046, true], ["Venus", 2452600.15046, false], ["Venus", 2453143.08633, false], ["Venus", 2453143.78633, true], ["Venus", 2453186.11892, true], ["Venus", 2453186.81892, false], ["Mars", 2452040.82241, false], ["Mars", 2452041.52241, true], ["Mars", 2452110.09822, true], ["Mars", 2452110.79822, false], ["Mars", 2452849.46732, false], ["Mars", 2452850.16732, true], ["Mars", 2452909.47796, true], ["Mars", 2452910.17796, false], ["Mars", 2453645.06906, false], ["Mars", 2453645.76906, true], ["Mars", 2453714.31895, true], ["Mars", 2453715.01895, false]]}')
+
+
+@needs_browser
+class Astronomy(unittest.TestCase):
+    """Ayanamsa, ΔT, Sun/Moon and retrograde flags against the Swiss Ephemeris."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            return await page.evaluate((g) => ({
+              ayan: Object.fromEntries(['lahiri','raman','kp'].map(a => [a, g.ayan_jd.map(j => ayanamsa(j, a))])),
+              dt: g.dt.map(([j]) => deltaTSeconds(j)),
+              pos: g.pos.map(([j]) => { const c = computeChart(j, 'lahiri').sidereal; return [c.Sun, c.Moon]; }),
+              retro: g.stations.map(([p, j]) => retrogradeSet(j, 'lahiri').has(p)),
+            }), opts.g);
+        """, g=SWE)
+
+    def test_ayanamsa_matches_swiss_ephemeris(self):
+        for mode in ("lahiri", "raman", "kp"):
+            for got, want in zip(self.r["ayan"][mode], SWE["ayan_" + mode]):
+                self.assertAlmostEqual(got, want, delta=1 / 3600, msg=mode)   # within 1"
+
+    def test_delta_t(self):
+        for got, (_, want) in zip(self.r["dt"], SWE["dt"]):
+            self.assertAlmostEqual(got, want, delta=1.0)
+
+    def test_sun_and_moon_positions(self):
+        for (sun, moon), (_, want_sun, want_moon) in zip(self.r["pos"], SWE["pos"]):
+            self.assertAlmostEqual(((sun - want_sun + 180) % 360) - 180, 0, delta=0.01)
+            self.assertAlmostEqual(((moon - want_moon + 180) % 360) - 180, 0, delta=0.015)
+
+    def test_retrograde_flag_near_stations(self):
+        wrong = [(p, j, want) for (p, j, want), got in zip(SWE["stations"], self.r["retro"]) if got != want]
+        self.assertEqual(wrong, [])
+
+
 if __name__ == "__main__":
     unittest.main()
