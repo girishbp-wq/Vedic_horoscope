@@ -1618,7 +1618,7 @@ const RASHI = [
     colour: "Pink",
     place: "River",
     jyothirlinga: "Omkareshwara",
-    bodyPart: "Chest, Lungs, Breasts, Ribcage, Stomach (upper)",
+    bodyPart: "Heart, Lungs, Chest, Breasts",
     traits: ["Emotional", "Sensitive", "Honest", "Mood swings", "Motherly nature", "Peace loving", "Nurturing", "Psychic"],
     lord: "Moon"
   },
@@ -1643,7 +1643,7 @@ const RASHI = [
     colour: "Off white",
     place: "Mountain",
     jyothirlinga: "Vaidyanath",
-    bodyPart: "Heart, Spine, Upper back, Bones, Eyes (Sun's karaka)",
+    bodyPart: "Stomach, Womb, Upper abdomen",
     traits: ["Energetic", "Aggressive", "Egoistic", "Good in administration", "Generous", "Dominating", "Leaders", "Self respect"],
     lord: "Sun"
   },
@@ -1668,7 +1668,7 @@ const RASHI = [
     colour: "Variegated",
     place: "Gardens",
     jyothirlinga: "Mallikarjuna",
-    bodyPart: "Stomach (lower), Intestines, Digestive system, Abdomen, Navel",
+    bodyPart: "Hip, Waist, Intestines",
     traits: ["Practical", "Critical", "Perfectionist", "Cleanliness", "Observant", "Intelligent", "Reserved", "Organised", "Analytical"],
     lord: "Mercury"
   },
@@ -1693,7 +1693,7 @@ const RASHI = [
     colour: "Black",
     place: "Business Place",
     jyothirlinga: "Mahakaleshwar",
-    bodyPart: "Lower abdomen, Kidneys, Lumbar region, Lower back, Skin",
+    bodyPart: "Kidneys, Lower abdomen, Lumbar region",
     traits: ["Attractive", "Extroverts", "Well Mannered", "Peace makers", "Diplomatic", "Good negotiators", "Business minded"],
     lord: "Venus"
   },
@@ -2075,7 +2075,7 @@ const PLANET_PROFILE = {
     "English Name": "Mercury",
     "Inner / Outer": "Inner",
     "Days per Rashi": "~24 days",
-    "Time for Full Zodiac": "~288 days",
+    "Time for Full Zodiac": "~1 year (moves with the Sun)",
     "Direction of Motion": "Direct (occ. retrograde)",
     "Aspects (Drishti)": "7th only (Saptama Drishti / Opposition, 180°)",
     "Exaltation Rashi": "Kanya",
@@ -2113,7 +2113,7 @@ const PLANET_PROFILE = {
     "Drishti / Aspect": "7th house",
     Flower: "Yellow Flowers",
     Direction: "North",
-    Letters: "त थ द ध न (Ta, Tha, Da, Dha, Na)",
+    Letters: "ट ठ ड ढ ण (Ṭa, Ṭha, Ḍa, Ḍha, Ṇa)",
     Education: "Mathematics, Statistics",
     "Season (Ritu)": "Sharad Ritu (Autumn)",
     Gender: "Eunuch (Napumsaka)",
@@ -2190,7 +2190,7 @@ const PLANET_PROFILE = {
     "English Name": "Venus",
     "Inner / Outer": "Inner",
     "Days per Rashi": "~25–27 days",
-    "Time for Full Zodiac": "~324 days",
+    "Time for Full Zodiac": "~1 year (moves with the Sun)",
     "Direction of Motion": "Direct (occ. retrograde)",
     "Aspects (Drishti)": "7th only (Inner)",
     "Exaltation Rashi": "Meena",
@@ -3211,9 +3211,9 @@ const NAKSHATRA_TRAITS = {
 
 const NAKSHATRA_DETAIL = {
   "Ashwini": { "Meaning": "Star of transport", "Purushartha": "Dharma", "Varna": "Vaishya (merchant)", "Element": "Prithvi (Earth)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Male horse", "Bird": "Hamsa (swan)", "Guna": "Tamas", "Tridosha": "Vata", "Direction": "South", "Gotra": "Marichi", "Body part": "Knees & upper feet", "Nature": "Kshipra (swift)", "Lucky colour": "Blood red" },
-  "Bharani": { "Purushartha": "Artha", "Varna": "Vaishya", "Element": "Prithvi (Earth)", "Animal (yoni)": "Elephant", "Yoni gender": "Female", "Bird": "Crow", "Guna": "Rajas", "Tridosha": "Pitta", "Body part": "Head / forehead", "Nature": "Ugra (fierce)", "Lucky colour": "Blood red", "Lucky stone": "Diamond", "Tree": "Amla (Amalaka)" },
+  "Bharani": { "Purushartha": "Artha", "Varna": "Mleccha", "Element": "Prithvi (Earth)", "Animal (yoni)": "Elephant", "Yoni gender": "Male", "Bird": "Crow", "Guna": "Rajas", "Tridosha": "Pitta", "Body part": "Head / forehead", "Nature": "Ugra (fierce)", "Lucky colour": "Blood red", "Lucky stone": "Diamond", "Tree": "Amla (Amalaka)" },
   "Krittika": { "Purushartha": "Kama", "Varna": "Brahmin (priest)", "Element": "Prithvi (Earth)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female sheep/goat", "Bird": "Peacock", "Tree": "Fig tree" },
-  "Rohini": { "Meaning": "The red one", "Element": "Prithvi (Earth)", "Animal (yoni)": "Male serpent (Sarpa)", "Bird": "Owl", "Tridosha": "Kapha", "Body part": "Legs / shanks (eyes)", "Nature": "Dhruva (fixed)", "Lucky colour": "White", "Lucky stone": "Pearl", "Tree": "Jamun" },
+  "Rohini": { "Meaning": "The red one", "Purushartha": "Moksha", "Element": "Prithvi (Earth)", "Animal (yoni)": "Male serpent (Sarpa)", "Bird": "Owl", "Tridosha": "Kapha", "Body part": "Legs / shanks (eyes)", "Nature": "Dhruva (fixed)", "Lucky colour": "White", "Lucky stone": "Pearl", "Tree": "Jamun" },
   "Mrigashira": { "Meaning": "Deer's head / the searching star", "Purushartha": "Moksha", "Varna": "Farmer / servant", "Element": "Prithvi (Earth)", "Guna": "Tamas", "Tridosha": "Pitta", "Direction": "South", "Gotra": "Pulastya", "Body part": "Eyes & eyebrows", "Nature": "Mridu (soft)" },
   "Ardra": { "Meaning": "Star of Sorrow", "Purushartha": "Kama", "Varna": "Butcher", "Element": "Jala (Water)", "Trimurti": "Shiva (dissolution)", "Animal (yoni)": "Female dog", "Lucky colour": "Black", "Tree": "Agar wood (Krishnaguru)" },
   "Punarvasu": { "Meaning": "Star of Renewal", "Purushartha": "Artha", "Varna": "Vaishya (merchant)", "Element": "Jala (Water)", "Trimurti": "Brahma (creation)", "Animal (yoni)": "Female cat", "Bird": "Swan", "Tree": "Bamboo" },
@@ -4037,7 +4037,7 @@ function renderRemedies(lagnaTatwa, moonTatwa) {
    ============================================================ */
 /* TITHI-START — auto-generated from the Classification workbook by scripts/build_data.py */
 /* First 15 tithi names (Shukla Paksha); the engine wraps for Krishna Paksha. */
-const TITHI_NAMES = ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi","Purnima / Amavasya"];
+const TITHI_NAMES = ["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami","Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi","Purnima"];
 /* TITHI-END */
 
 function computeTithi(sunLon, moonLon) {

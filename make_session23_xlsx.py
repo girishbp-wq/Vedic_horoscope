@@ -164,7 +164,9 @@ def _chart_sheet(ws, rules):
                  "Houses count from the Lagna sign. Enter each degree as the degree within its sign (0 to under 30), "
                  "not the absolute longitude; degrees decide Deep Exalted / Deep Debilitated and Moolatrikona.")
     ws["A21"].alignment = WRAP
-    dv = DataValidation(type="list", formula1="=S23_Ref_Calc!$B$3:$B$14", allow_blank=False)
+    dv = DataValidation(type="list", formula1="=S23_Ref_Calc!$B$3:$B$14", allow_blank=False,
+                        showErrorMessage=True, errorTitle="Pick a rashi from the list",
+                        error="Choose the sign from the drop-down — the list's spelling is the one the formulas look up.")
     ws.add_data_validation(dv)
     dv.add("B3")
     dv.add(f"B{PLANET_ROW0}:B{PLANET_ROW0 + 8}")

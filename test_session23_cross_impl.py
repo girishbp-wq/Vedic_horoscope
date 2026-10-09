@@ -1039,6 +1039,13 @@ class MasterWorkbookInstall(unittest.TestCase):
         import build_session23 as b23
         self.assertEqual(b23.find_master(self.master.parent), self.master)         # backups never look like the master
 
+    def test_sign_inputs_only_accept_a_sign_from_the_list(self):
+        self.mx.install_in_master(self.master)
+        lists = [d for d in openpyxl.load_workbook(self.master)["S23_Chart"].data_validations.dataValidation if d.type == "list"]
+        self.assertEqual(len(lists), 1)
+        self.assertTrue(lists[0].showErrorMessage)          # a typed 'Vrishabha' is refused, not silently accepted
+        self.assertIn("B3", str(lists[0].sqref))
+
     def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
         self.mx.install_in_master(self.master)
         dvs = [d for d in openpyxl.load_workbook(self.master)["S23_Chart"].data_validations.dataValidation if d.type == "decimal"]
