@@ -297,5 +297,127 @@ class Astronomy(unittest.TestCase):
         self.assertEqual(wrong, [])
 
 
+# A sidereal chart for renderKujaSection: whole-sign positions at mid-sign unless given.
+def _sid(**signs_deg):
+    base = {"Sun": 15, "Moon": 45, "Mars": 75, "Mercury": 105, "Jupiter": 135, "Venus": 165,
+            "Saturn": 195, "Rahu": 225, "Ketu": 45}
+    base.update(signs_deg)
+    return base
+
+
+KUJA = r"""
+  return await page.evaluate((cases) => cases.map(c => {
+    const pbr = {}; for (const p in c.sid) pbr[p] = rashiOf(c.sid[p]).n;
+    renderKujaSection(pbr, c.lagna, c.dob || '2010-01-01', c.sid);
+    const rows = [...document.querySelectorAll('#kuja-cancel tbody tr')].map(tr => [...tr.children].map(td => td.textContent));
+    return {rows, verdict: document.getElementById('kuja-verdict').textContent};
+  }), opts.cases);
+"""
+
+
+@needs_browser
+class KujaDosha(unittest.TestCase):
+    """Rules 1-4 of the teacher's list are read from the chart; 5 is for matching; 6 reduces."""
+
+    def kuja(self, *cases):
+        return run_page(KUJA, cases=list(cases))
+
+    def status(self, r, n):
+        return r["rows"][n - 1][1]
+
+    def test_friends_house_cancels(self):
+        # Lagna Mesha, Mars in Meena (Jupiter's, a friend) = 12th from Lagna: doṣa, cancelled by rule 1
+        r, = self.kuja({"lagna": 1, "sid": _sid(Mars=345, Saturn=15, Moon=125)})
+        self.assertEqual(self.status(r, 1), "✅ Cancelled")
+        self.assertIn("Friend's House", r["rows"][0][2])
+        self.assertIn("CANCELLED by rule 1", r["verdict"])
+
+    def test_saturn_conjunction_and_aspects_cancel(self):
+        # Lagna Vrishabha, Mars in Mithuna (Mercury's, an enemy) = 2nd: doṣa; Saturn decides
+        got = {}
+        for sat_sign, label in ((3, "conj"), (1, "3rd"), (9, "7th"), (6, "10th"), (2, "none")):
+            r, = self.kuja({"lagna": 2, "sid": _sid(Mars=75, Saturn=(sat_sign - 1) * 30 + 10, Moon=125)})
+            got[label] = (self.status(r, 2), r["verdict"])
+        for label in ("conj", "3rd", "7th", "10th"):
+            self.assertEqual(got[label][0], "✅ Cancelled", label)
+            self.assertIn("CANCELLED by rule 2", got[label][1])
+        self.assertEqual(got["none"][0], "❌ Not met")
+        self.assertIn("not cancelled", got["none"][1])
+
+    def test_exempt_birth_nakshatra_cancels(self):
+        cases = [{"lagna": 2, "sid": _sid(Mars=75, Saturn=40, Moon=moon)} for moon in (3.0, 150.0, 140.0)]
+        ashwini, uttara_phalguni, purva_phalguni = self.kuja(*cases)
+        self.assertEqual(self.status(ashwini, 4), "✅ Cancelled")
+        self.assertEqual(self.status(uttara_phalguni, 4), "✅ Cancelled")
+        self.assertEqual(self.status(purva_phalguni, 4), "❌ Not met")
+        self.assertIn("CANCELLED by rule 4", ashwini["verdict"])
+
+    def test_no_dosha_is_reported_before_cancellations(self):
+        # Mars in the 5th from Lagna, Venus and Moon: no doṣa, even though rule 3 (Simha Lagna) holds
+        r, = self.kuja({"lagna": 5, "sid": _sid(Mars=255, Venus=255, Moon=255)})
+        self.assertEqual(self.status(r, 3), "✅ Cancelled")
+        self.assertIn("No Kuja Dosha detected", r["verdict"])
+
+    def test_deep_exalted_mars_and_age(self):
+        r, = self.kuja({"lagna": 4 + 0, "sid": _sid(Mars=270 + 28.2, Saturn=40, Moon=125), "dob": "1960-01-01"})
+        self.assertIn("Deep Exalted", r["rows"][0][2])
+        self.assertEqual(self.status(r, 6), "✅ Reduced")
+        self.assertEqual(self.status(r, 5), "ℹ Check at matching")
+        self.assertEqual(len(r["rows"]), 6)
+
+
+@needs_browser
+class DignityOnThePage(unittest.TestCase):
+    """Dignity uses the degree everywhere; nodes have no rulership; Section II·b is filled."""
+
+    @classmethod
+    def setUpClass(cls):
+        # A birth (UT) with the Moon at Vrishabha 4°-20°: exaltation sign but Moolatrikona by degree.
+        cls.r = run_page("""
+            const jd = await page.evaluate(() => {
+              for (let j = 2451545.0; ; j += 0.25) { const m = computeChart(j, 'lahiri').sidereal.Moon; if (m > 40 && m < 48) return j; }
+            });
+            const d = new Date((jd - 2440587.5) * 86400000);
+            const pad = n => String(n).padStart(2, '0');
+            await page.click('#btn-manual');
+            await page.fill('#f-lat', '51.5'); await page.press('#f-lat', 'Tab');
+            await page.fill('#f-lon', '0'); await page.press('#f-lon', 'Tab');
+            await page.fill('#f-tz', '0');
+            await setBirth(`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`, `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`);
+            await generate();
+            return await page.evaluate(() => {
+              const moon = currentChart.chart.sidereal.Moon;
+              return {
+                moon,
+                moonSection: document.getElementById('moon-kv').textContent + ' ' + document.getElementById('moon-narrative').textContent,
+                southExaltedText: [...document.querySelectorAll('.south-chart .exalted')].map(e => e.textContent),
+                classBody: document.getElementById('classification-body').textContent,
+                rahu: planetDignity('Rahu', 7, 12), ketu: planetDignity('Ketu', 1, 12),
+                rahuTaurus: planetDignity('Rahu', 2, 12).label,
+                dignityBody: document.getElementById('dignity-body') ? document.getElementById('dignity-body').textContent : '',
+              };
+            });
+        """)
+
+    def test_moon_in_vrishabha_past_3_degrees_is_moolatrikona(self):
+        self.assertTrue(40 < self.r["moon"] < 48)
+        self.assertIn("Own (Moolatrikona)", self.r["moonSection"])
+        self.assertNotIn("An exalted Moon gives", self.r["moonSection"])
+        self.assertFalse(any(t.strip().startswith("Mo") for t in self.r["southExaltedText"]), self.r["southExaltedText"])
+
+    def test_nodes_have_no_rulership(self):
+        self.assertEqual(self.r["rahu"]["label"], "Node (no rulership)")
+        self.assertEqual((self.r["rahu"]["flag"], self.r["rahu"]["bala"]), ("node", None))
+        self.assertEqual(self.r["ketu"]["label"], "Node (no rulership)")
+        self.assertEqual(self.r["rahuTaurus"], "Exalted")          # the teacher's exaltation sign still applies
+
+    def test_section_two_b_is_rendered(self):
+        body = self.r["classBody"]
+        self.assertIn("Mukkoota", body)
+        self.assertIn("Retrograde (Vakri) Grahas", body)
+        self.assertIn("they and the Moon become combust within 5°", body)
+        self.assertIn("Every ~13 months", body)
+
+
 if __name__ == "__main__":
     unittest.main()

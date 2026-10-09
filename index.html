@@ -403,6 +403,7 @@ details.section[open] > summary::after { content: "−"; }
 .flag-own         { background: #e5e8ff; color: #3a3f8b; border: 1px solid #b3b9e0; }
 .flag-mtr         { background: #fff3d6; color: #8a6a1e; border: 1px solid #e6c878; }
 .flag-neutral     { background: #f3ecd8; color: var(--muted); border: 1px solid var(--line); }
+.flag-node        { background: #eef0f2; color: #4a5560; border: 1px dashed #9aa5b1; }
 .flag-friend      { background: #dff2ec; color: #1f6e5e; border: 1px solid #a5d8c9; }
 .flag-enemy       { background: #f6e3d4; color: #8a4a1e; border: 1px solid #e0b48f; }
 .flag-retro       { background: #efe4f5; color: #6a2f8a; border: 1px solid #cbaede; }
@@ -3333,9 +3334,9 @@ function planetDignity(planet, rashiNum, deg) {
     return { label:"Debilitated", flag:"debilitated", bala:0, note: dd?`debilitation sign · deep ${dd.deD}°`:"" };
   }
   if (planet === "Rahu" || planet === "Ketu") {
-    // Nodes own no rashi; they treat whichever rashi they occupy as their own
-    // (their exaltation/debilitation, handled above, still take precedence).
-    return { label:"Own House", flag:"own", bala:50, note:"node treats its occupied rashi as own" };
+    // Nodes own no rāśi, so outside their exaltation/debilitation (handled above)
+    // they get no sthāna-bala tier; they give the results of the sign's lord.
+    return { label:"Node (no rulership)", flag:"node", bala:null, note:"a node owns no rāśi — it gives the results of the sign's lord" };
   }
   if (inMTrange) return { label:"Own (Moolatrikona)", flag:"mtr", bala:75, note: dd?`MT ${dd.mt[0]}–${dd.mt[1]}°`:"" };
   if (own.includes(rashiNum)) {
@@ -3480,9 +3481,9 @@ function interpretMoon(moonRashi, moonHouse, moonDignity) {
         "This is a Dusthana (challenging) house — the mind may face periods of stress, hidden fears or emotional upheaval, and remedies are recommended." :
         "This is a favourable placement; the mind finds a natural seat of expression here."}
       The Moon's own dignity is <em>${moonDignity.label}</em>.
-      ${moonDignity.label === "Exalted" ?
+      ${moonDignity.flag === "exalted" ?
         "An exalted Moon gives a strong, stable, luminous mind." :
-        moonDignity.label === "Debilitated" ?
+        moonDignity.flag === "debilitated" ?
           "A debilitated Moon can produce a turbulent or anxious mind — remedies advised." :
           ""}</p>
 
@@ -3735,10 +3736,10 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
   };
   for (const [planet, rashiNum] of Object.entries(planetsByRashi)) {
     if (planet === "_Lagna") continue;
-    const dignity = (planetsWithDignity && planetsWithDignity[planet]) || "";
+    const dignity = (planetsWithDignity && planetsWithDignity[planet]) || {};
     let cls = "";
-    if (dignity === "Exalted") cls = "exalted";
-    else if (dignity === "Debilitated") cls = "debilitated";
+    if (dignity.flag === "exalted") cls = "exalted";
+    else if (dignity.flag === "debilitated") cls = "debilitated";
     planetsByRashiList[rashiNum].push({ abbr: PLANET_ABBR[planet] || planet, cls,
       deg: (planetsDeg && planetsDeg[planet] != null) ? planetsDeg[planet] : null });
   }
@@ -3943,7 +3944,7 @@ function renderDistributions(sidereal) {
 /* Render dignity summary + Sthana Bala tiers + Neecha Bhanga */
 function renderDignity(sidereal, lagnaRashiNum, moonRashiNum) {
   const order = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
-  const buckets = { exalted:[], debilitated:[], mtr:[], own:[], friend:[], neutral:[], enemy:[] };
+  const buckets = { exalted:[], debilitated:[], mtr:[], own:[], friend:[], neutral:[], enemy:[], node:[] };
   const byRashi = {};
   for (const p of order) {
     const ri = rashiOf(sidereal[p]); byRashi[p] = ri.n;
@@ -3960,6 +3961,7 @@ function renderDignity(sidereal, lagnaRashiNum, moonRashiNum) {
     <div class="kv"><span class="k">Neutral · 12.5%</span><span class="v">${buckets.neutral.length}</span></div>
     <div class="kv"><span class="k">Enemy's House · 0%</span><span class="v">${buckets.enemy.length}</span></div>
     <div class="kv"><span class="k">Debilitated · 0%</span><span class="v">${buckets.debilitated.length}</span></div>
+    <div class="kv"><span class="k">Node · no rulership</span><span class="v">${buckets.node.length}</span></div>
   </div><div class="narrative">`;
   const line = (flag, cls, name, tail) => buckets[flag].length
     ? `<p><span class="section-flag flag-${cls}">${name}</span> ${buckets[flag].join(" · ")} — ${tail}</p>` : "";
@@ -3970,6 +3972,7 @@ function renderDignity(sidereal, lagnaRashiNum, moonRashiNum) {
   html += line("neutral","neutral","Neutral House","middling results, lord is neutral (12.5%).");
   html += line("enemy","enemy","Enemy's House","strained; lord is an enemy (0%).");
   html += line("debilitated","debilitated","Debilitated","weak; challenges likely unless cancelled — see Neecha Bhanga below (0%).");
+  html += line("node","node","Node (no rulership)","Rāhu and Ketu own no rāśi; outside their exaltation and debilitation they give the results of the sign's lord, so no sthāna-bala tier applies.");
   html += `</div>`;
 
   // ---- Neecha Bhanga (debilitation cancellation) ----
@@ -4115,45 +4118,55 @@ function ageYears(dobISO) {
   return (now - dob) / (1000 * 60 * 60 * 24 * 365.2425);
 }
 
-function kujaCancellation(lagnaRashi, marsRashi, marsDignity, age) {
-  const out = [];
-  const cancelled1 = ["Own House","Own (Moolatrikona)","Exalted"].includes(marsDignity.label);
-  out.push({
-    rule: "1. Mars in own house, exaltation, or friend's house",
-    status: cancelled1 ? "✅ Cancelled" : "ℹ Check manually",
-    note: `Mars Dignity: ${marsDignity.label}`
-  });
-  const cancelled2 = (lagnaRashi === 4 || lagnaRashi === 5);
-  const lagnaName = getRashi(lagnaRashi).sanskrit;
-  out.push({
-    rule: "2. Karkataka or Simha Lagna (no Kuja Dosha)",
-    status: cancelled2 ? "✅ Cancelled" : "— Not applicable",
-    note: `Lagna: ${lagnaName} — ${cancelled2 ? "Karkataka/Simha natives have no Kuja Dosha." : "Lagna is not Karkataka/Simha."}`
-  });
-  out.push({
-    rule: "3. Other cancellation factors (manual check)",
-    status: "ℹ Check manually",
-    note: "Also cancelled if: (a) Mars conjoined/aspected by Saturn; (b) Born in Ashwini, Mrigashira, Punarvasu, Pushya, Ashlesha, Uttara, Swati, Anuradha, Shravana, Uttara Bhadra, Revathi nakshatras; (c) Marriage between two Mangalik individuals."
-  });
-  const cancelled4 = age !== null && age >= 28;
-  out.push({
-    rule: "4. Native is older than 28 years",
-    status: age === null ? "— Age unknown" : (cancelled4 ? "✅ Reduced" : "— Not yet"),
-    note: age === null ? "Age cannot be calculated." : `Current age: ${age.toFixed(1)} years. Kuja Dosha reduces in intensity after 28 years of age.`
-  });
-  return { rules: out, anyCancelled: (cancelled1 || cancelled2) };
+/* Kuja Doṣa cancellation — the teacher's six rules (workbook 'Planet Characteristics',
+   Kuja Dosha block). 1–4 are read from the chart; 5 needs the partner's chart; 6 only
+   reduces the doṣa. "Uttara" in the teacher's list is Uttara Phalguni (Uttara Bhadra is
+   listed separately). */
+const KUJA_EXEMPT_NAKSHATRAS = ["Ashwini","Mrigashira","Punarvasu","Pushya","Ashlesha","Uttara Phalguni",
+                                "Swati","Anuradha","Shravana","Uttara Bhadrapada","Revati"];
+function kujaCancellation(k) {
+  // k = {lagnaRashi, marsRashi, marsDignity, saturnRashi, moonNakshatra, age}
+  const out = [], yes = "✅ Cancelled", no = "❌ Not met";
+  const c1 = ["exalted","mtr","own","friend"].includes(k.marsDignity.flag);
+  out.push({ n:1, rule: "1. Mars in its own house, exaltation or a friend's house",
+    status: c1 ? yes : no,
+    note: `Mars in ${getRashi(k.marsRashi).sanskrit}: ${k.marsDignity.label}` });
+  const fromSat = ((k.marsRashi - k.saturnRashi + 12) % 12) + 1;   // Mars counted from Saturn
+  const c2 = [1,3,7,10].includes(fromSat);
+  out.push({ n:2, rule: "2. Mars conjoined or aspected by Saturn",
+    status: c2 ? yes : no,
+    note: `Saturn in ${getRashi(k.saturnRashi).sanskrit} — ` + (fromSat === 1 ? "conjoins Mars."
+          : c2 ? `casts its ${ord(fromSat)} aspect on Mars.` : "neither conjoins nor aspects Mars (Saturn aspects the 3rd, 7th and 10th).") });
+  const c3 = (k.lagnaRashi === 4 || k.lagnaRashi === 5);
+  out.push({ n:3, rule: "3. Karkataka or Simha Lagna (no Kuja Doṣa)",
+    status: c3 ? yes : no,
+    note: `Lagna: ${getRashi(k.lagnaRashi).sanskrit} — ${c3 ? "Karkataka/Simha natives have no Kuja Doṣa." : "not Karkataka or Simha."}` });
+  const c4 = KUJA_EXEMPT_NAKSHATRAS.includes(k.moonNakshatra);
+  out.push({ n:4, rule: "4. Born in an exempt nakṣatra",
+    status: c4 ? yes : no,
+    note: `Janma nakṣatra: ${k.moonNakshatra}. Exempt: ${KUJA_EXEMPT_NAKSHATRAS.join(", ")}.` });
+  out.push({ n:5, rule: "5. Marriage between two Mangaliks",
+    status: "ℹ Check at matching",
+    note: "If the partner is also Mangalik the doṣa cancels — compare with the partner's chart." });
+  const c6 = k.age !== null && k.age >= 28;
+  out.push({ n:6, rule: "6. Native aged 28 or more",
+    status: k.age === null ? "— Age unknown" : (c6 ? "✅ Reduced" : "— Not yet"),
+    note: k.age === null ? "Age cannot be calculated." : `Current age: ${k.age.toFixed(1)} years. Kuja Doṣa reduces in intensity after 28 years of age.` });
+  const by = [c1,c2,c3,c4].map((c,i)=>c?i+1:0).filter(Boolean);
+  return { rules: out, anyCancelled: by.length > 0, cancelledBy: by, reduced: c6 };
 }
 
-function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
+function renderKujaSection(planetsByRashi, lagnaRashiNum, dob, sidereal) {
   const marsRashi  = planetsByRashi.Mars;
   const venusRashi = planetsByRashi.Venus;
   const moonRashi  = planetsByRashi.Moon;
   const fromLagna = kujaFromReference("Lagna", lagnaRashiNum, marsRashi);
   const fromVenus = kujaFromReference("Venus", venusRashi,    marsRashi);
   const fromMoon  = kujaFromReference("Moon",  moonRashi,     marsRashi);
-  const marsDignity = planetDignity("Mars", marsRashi);
+  const marsDignity = planetDignity("Mars", marsRashi, rashiOf(sidereal.Mars).deg);
   const age = ageYears(dob);
-  const cancel = kujaCancellation(lagnaRashiNum, marsRashi, marsDignity, age);
+  const cancel = kujaCancellation({ lagnaRashi: lagnaRashiNum, marsRashi, marsDignity,
+    saturnRashi: planetsByRashi.Saturn, moonNakshatra: nakshatraOf(sidereal.Moon).name, age });
 
   let kjt = `<thead><tr>
     <th>Reference Point</th><th>Mars House (from Reference)</th><th>Dosha Present?</th><th>Severity</th>
@@ -4182,12 +4195,15 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob) {
 
   const anyPresent = fromLagna.present || fromVenus.present || fromMoon.present;
   let verdict;
+  const reducedTail = cancel.reduced ? " Being 28 or older, its intensity is also reduced (rule 6)." : "";
   if (!anyPresent) {
     verdict = "✅ No Kuja Dosha detected from any of the three reference points.";
   } else if (cancel.anyCancelled) {
-    verdict = "✅ Kuja Dosha present but CANCELLED (auto-detected). Verify manual cancellation factors as well.";
+    const rs = cancel.cancelledBy;
+    verdict = `✅ Kuja Dosha present but CANCELLED by rule${rs.length > 1 ? "s" : ""} ${rs.join(", ")}.`;
   } else {
-    verdict = "⚠ Kuja Dosha present and not auto-cancelled. Check the manual factors (Saturn aspect, nakshatra, Mangalik partner) before drawing conclusions.";
+    verdict = "⚠ Kuja Dosha present and not cancelled by rules 1–4." + reducedTail
+            + " At marriage matching, check rule 5 (a Mangalik partner cancels it).";
   }
   document.getElementById("kuja-verdict").innerHTML = `<p><strong>Final Verdict:</strong> ${verdict}</p>
     <p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
@@ -4651,7 +4667,7 @@ function beneficMalefic(p, moonWaxing){
 }
 const RETRO_FREQUENCY = {
   Mercury:"Every ~4 months (3–4×/yr), ~3 weeks", Venus:"Every ~18 months, ~6 weeks",
-  Mars:"Every ~26 months, 2–2.5 months", Jupiter:"Every ~9 months, ~4 months",
+  Mars:"Every ~26 months, 2–2.5 months", Jupiter:"Every ~13 months, ~4 months",
   Saturn:"Every ~12 months, ~4.5 months", Sun:"Never retrograde", Moon:"Never retrograde",
   Rahu:"Always retrograde", Ketu:"Always retrograde"
 };
@@ -4678,7 +4694,7 @@ const BIRTHDAY_TIPS = ["Celebrate according to your Janma Nakshatra (not the Eng
   "Never cut a cake at midnight.","Never blow out candles on a cake — light a lamp instead."];
 const SAPTA_CHIRANJEEVI = ["Ashwathama","Bali","Vyasa","Hanuman","Vibhishana","Kripacharya","Parashurama"];
 
-function renderClassificationSection(sidereal, retroSet){
+function renderGrahaClassSection(sidereal, retroSet){
   const order=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"];
   const G={Sun:"☉",Moon:"☾",Mars:"♂",Mercury:"☿",Jupiter:"♃",Venus:"♀",Saturn:"♄",Rahu:"☊",Ketu:"☋"};
   let h=`<table class="planet-table"><thead><tr><th>Graha</th><th>Class</th><th>Nature</th><th>Retrogression cycle</th></tr></thead><tbody>`;
@@ -4687,7 +4703,7 @@ function renderClassificationSection(sidereal, retroSet){
       <td>${grahaClass(p)}</td><td>${beneficMalefic(p)}</td><td>${RETRO_FREQUENCY[p]||"—"}</td></tr>`;
   }
   h+=`</tbody></table>
-   <p class="dig-note">Only the five Tara Grahas (Mercury, Venus, Mars, Jupiter, Saturn) get combust and go retrograde. The luminaries never retrograde; Rahu and Ketu are always retrograde and never combust.</p>`;
+   <p class="dig-note">Only the five Tārā grahas (Mercury, Venus, Mars, Jupiter, Saturn) go retrograde; they and the Moon become combust within ${COMBUST_ORB}° of the Sun. The Sun and Moon never retrograde; Rāhu and Ketu are always retrograde and never combust.</p>`;
   // Mukkoota check
   const sunR=rashiOf(sidereal.Sun).n, merR=rashiOf(sidereal.Mercury).n, venR=rashiOf(sidereal.Venus).n;
   const mk=checkMukkoota(sunR,merR,venR);
@@ -5174,7 +5190,7 @@ function generate() {
   const moonRashiInfo = rashiOf(chart.sidereal.Moon);
   const moonRashi     = getRashi(moonRashiInfo.n);
   const moonHouse     = houseFromLagna(lagnaRashiInfo.n, moonRashiInfo.n);
-  const moonDignity   = planetDignity("Moon", moonRashiInfo.n);
+  const moonDignity   = planetDignity("Moon", moonRashiInfo.n, moonRashiInfo.deg);
 
   const sunRashiInfo = rashiOf(chart.sidereal.Sun);
   const sunRashi = getRashi(sunRashiInfo.n);
@@ -5197,7 +5213,7 @@ function generate() {
   for (const p of ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
     const ro = rashiOf(chart.sidereal[p]);
     planetsByRashi[p] = ro.n;
-    planetsWithDignity[p] = planetDignity(p, ro.n).label;
+    planetsWithDignity[p] = planetDignity(p, ro.n, ro.deg);
     planetsDeg[p] = Math.floor(ro.deg);   // whole-degree, matches printed kundali convention
   }
   renderNorthIndianChart(lagnaRashiInfo.n, planetsByRashi, planetsDeg);
@@ -5214,8 +5230,8 @@ function generate() {
   renderS23Sections(chart.sidereal, lagnaRashiInfo.n);
   renderDistributions(chart.sidereal);
   renderDignity(chart.sidereal, lagnaRashiInfo.n, moonRashiInfo.n);
-  renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob);
-  renderClassificationSection(chart.sidereal, retroSet);
+  renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob, chart.sidereal);
+  renderGrahaClassSection(chart.sidereal, retroSet);
   renderJyothirlingaSection(chart.sidereal, lagnaRashiInfo.n);
   renderGurubalaSection(moonRashiInfo.n, ayanType);
   renderSadeSatiSection(moonRashiInfo.n, ayanType);
@@ -6172,10 +6188,9 @@ function s23RolesAt(lg, sg){
   }
   return roles;
 }
-const S23_NODE_OWN_NOTE="node treats its occupied rashi as own";   // the page's convention, not something the teacher taught
 function s23DignityTexts(d){
   const eff=S23.dignity_effect[d.label];
-  return eff ? [d.label+": "+eff.text, d.note===S23_NODE_OWN_NOTE ? "standard" : eff.status] : ["", null];
+  return eff ? [d.label+": "+eff.text, eff.status] : ["", null];
 }
 function s23Clean(t){ return t.trim().replace(/\.+$/,""); }
 function s23PairRow(a, b){

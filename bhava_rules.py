@@ -161,6 +161,11 @@ def _relation(ref, planet, lord):
     return "neutral"
 
 
+# Rāhu and Ketu own no rāśi; outside their exaltation/debilitation they carry no sthāna-bala tier.
+NODE_LABEL = "Node (no rulership)"
+NODE_NOTE = "a node owns no rāśi — it gives the results of the sign's lord"
+
+
 def dignity(rules, planet, sign, deg=None):
     """{label, flag, bala, note} — identical to planetDignity(planet, sign + 1, deg) in index.html."""
     ref = rules["reference"]
@@ -187,7 +192,7 @@ def dignity(rules, planet, sign, deg=None):
             return out("Deep Debilitated", "debilitated", 0, f"deep debilitation {dd['deD']}°")
         return out("Debilitated", "debilitated", 0, f"debilitation sign · deep {dd['deD']}°" if dd else "")
     if planet in ("Rahu", "Ketu"):
-        return out("Own House", "own", 50, "node treats its occupied rashi as own")
+        return out(NODE_LABEL, "node", None, NODE_NOTE)
     if in_mt_range:
         return out("Own (Moolatrikona)", "mtr", 75, f"MT {dd['mt'][0]}–{dd['mt'][1]}°" if dd else "")
     if n in own:
@@ -303,14 +308,11 @@ def _pair_row(rules, a, b):
     return next(x for x in rules["graha_pair"] if (x["a"], x["b"]) == (a, b))
 
 
-NODE_OWN_NOTE = "node treats its occupied rashi as own"      # the page's convention, not something the teacher taught
-
-
 def _dignity_texts(rules, d):
     eff = rules["dignity_effect"].get(d["label"])
     if not eff:
         return "", None
-    return f"{d['label']}: {eff['text']}", "standard" if d["note"] == NODE_OWN_NOTE else eff["status"]
+    return f"{d['label']}: {eff['text']}", eff["status"]
 
 
 def graha_bhava(rules, lagna, signs, planet, deg, waxing):
