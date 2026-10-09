@@ -389,7 +389,7 @@ BAV_ROW0, SAV_ROW, INPUT_ROW0 = 16, 27, 5  # layout contract of the sheet "Ashta
 def recalc_with_libreoffice(paths, outdir):
     profile = tempfile.mkdtemp(prefix="lo_profile_")
     try:
-        subprocess.run([SOFFICE, f"-env:UserInstallation=file://{profile}", "--headless",
+        subprocess.run([SOFFICE, f"-env:UserInstallation={pathlib.Path(profile).resolve().as_uri()}", "--headless",
                         "--convert-to", "xlsx", "--outdir", str(outdir), *map(str, paths)],
                        check=True, capture_output=True, timeout=300)
     finally:
@@ -506,6 +506,27 @@ class ExcelMatchesPython(unittest.TestCase):
 
 
 @unittest.skipUnless(openpyxl, "openpyxl is needed")
+class WorkbookBuilderCli(unittest.TestCase):
+    def test_help_prints_usage_and_writes_nothing(self):
+        import contextlib
+        import io
+        import os
+        import tempfile
+        import make_ashtakavarga_xlsx as mx
+        with tempfile.TemporaryDirectory() as d:
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    rc = mx.main(["--help"])
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(rc, 0)
+            self.assertIn("make_ashtakavarga_xlsx.py [output.xlsx]", out.getvalue())
+            self.assertEqual(os.listdir(d), [])
+
+
 class ShippedWorkbook(unittest.TestCase):
     def test_committed_xlsx_exists_with_formulas_and_cached_values(self):
         self.assertTrue(SHIPPED_XLSX.exists(), "run: python3 make_ashtakavarga_xlsx.py")

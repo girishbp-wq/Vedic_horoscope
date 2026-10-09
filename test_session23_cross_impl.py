@@ -763,7 +763,7 @@ def _lo_recalc(paths, outdir):
     import tempfile
     profile = tempfile.mkdtemp(prefix="lo_profile_")
     try:
-        subprocess.run([SOFFICE, f"-env:UserInstallation=file://{profile}", "--headless",
+        subprocess.run([SOFFICE, f"-env:UserInstallation={pathlib.Path(profile).resolve().as_uri()}", "--headless",
                         "--convert-to", "xlsx", "--outdir", str(outdir), *map(str, paths)],
                        check=True, capture_output=True, timeout=900)
     finally:
@@ -1022,6 +1022,22 @@ class MasterWorkbookInstall(unittest.TestCase):
         self.assertEqual(b23_read(self.master)["graha_in_bhava"][row - 2]["points"], ["My own reading of the Moon in the 1st."])
         self.mx.install_in_master(self.master, reset_data=True)
         self.assertNotEqual(openpyxl.load_workbook(self.master)["S23_GrahaInBhava"].cell(row=row, column=3).value, "My own reading of the Moon in the 1st.")
+
+    def test_every_install_keeps_its_own_backup_in_the_backups_folder(self):
+        first = self.mx.install_in_master(self.master)
+        wb = openpyxl.load_workbook(self.master)
+        wb["S23_GrahaInBhava"].cell(row=3, column=3).value = "An edit made before --reset-data."
+        wb.save(self.master)
+        edited = self.master.read_bytes()
+        second = self.mx.install_in_master(self.master, reset_data=True)          # same day, seconds later
+        self.assertNotEqual(first["backup"], second["backup"])
+        for done in (first, second):
+            self.assertEqual(done["backup"].parent, self.master.parent / "backups")
+            self.assertRegex(done["backup"].name, r"^Classification_for_Horoscope_Analysis_v7_1\.before-session23-\d{4}-\d{2}-\d{2}_\d{6}(-\d+)?\.xlsx$")
+        self.assertEqual(first["backup"].read_bytes(), self.original)
+        self.assertEqual(second["backup"].read_bytes(), edited)                    # the edit survives in its backup
+        import build_session23 as b23
+        self.assertEqual(b23.find_master(self.master.parent), self.master)         # backups never look like the master
 
     def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
         self.mx.install_in_master(self.master)

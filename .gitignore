@@ -2,6 +2,7 @@
 Classification_for_Horoscope_Analysis_*.xlsx
 scripts/
 data.json
+backups/
 
 # Common ephemera
 __pycache__/

@@ -10,6 +10,7 @@ calculator; test_session23_cross_impl.py keeps all three identical.
 """
 import datetime
 import json
+import math
 import pathlib
 
 PLANET_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -95,7 +96,7 @@ _MERCURY_SPOILERS = ("Mars", "Saturn", "Rahu", "Ketu")
 def moon_waxing(sun_lon, moon_lon):
     """True in Shukla paksha: tithi 1-15 (the page's computeTithi)."""
     sep = (moon_lon - sun_lon) % 360
-    return int(sep // 12) + 1 <= 15
+    return math.floor(sep / 12) + 1 <= 15            # Math.floor(sep / 12), as the page
 
 
 def nature(planet, signs, waxing):
@@ -228,7 +229,7 @@ def vimshottari(rules, moon_lon, birth, now):
     ref = rules["reference"]
     order, years = ref["VORDER"], ref["VYEARS"]
     lon = moon_lon % 360
-    idx = int(lon // _NAK_SIZE)
+    idx = math.floor(lon / _NAK_SIZE)        # as the page: 40° // (40/3) would floor to 2, not 3
     nak_lord = ref["NAKSHATRAS"][idx][1]
     frac = (lon - idx * _NAK_SIZE) / _NAK_SIZE
     add = lambda dt, y: dt + datetime.timedelta(days=y * _YEAR_DAYS)

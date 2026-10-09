@@ -133,9 +133,65 @@ def write_readme_sheet(wb):
     ws.sheet_properties.tabColor = "6B1D2B"
 
 
-def _sheet_rows(wb, name):
-    it = wb[name].iter_rows(min_row=2, values_only=True)
-    return [list(r) for r in it if any(v not in (None, "") for v in r)]
+# What the page's engine looks rows up by — a value outside these lists would break the live page.
+PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+CLASS_NAMES = ["Kendra", "Trikona", "Panapara", "Apoklima", "Upachaya", "Apachaya", "Maraka", "Dusthana",
+               "Badhaka", "Trishadaya"]
+STATUSES = ["taught", "curated", "blend", "standard"]
+DIGNITY_LABELS = ["Deep Exalted", "Exalted", "Own (Moolatrikona)", "Own House", "Friend's House",
+                  "Neutral House", "Enemy's House", "Debilitated", "Deep Debilitated"]
+DASHA_ROLES = ["Maraka lord", "Maraka occupant", "Badhakadhipati", "Badhaka occupant", "Dusthana lord",
+               "Trishadaya lord"]
+BADHAKA_MODES = ["Chara", "Sthira", "Dwisabhava"]
+
+
+class _Sheets:
+    """Reads the S23_ data sheets row by row, collecting every problem with its sheet and row number."""
+
+    def __init__(self, wb):
+        self.wb, self.problems = wb, []
+
+    def rows(self, short):
+        name = PREFIX + short
+        width = len(SHEETS[name])
+        for i, r in enumerate(self.wb[name].iter_rows(min_row=2, values_only=True), 2):
+            r = list(r)[:width] + [None] * max(0, width - len(r))
+            if any(v not in (None, "") for v in r):
+                yield name, i, [v.strip() if isinstance(v, str) else v for v in r]
+
+    def bad(self, sheet, row, msg):
+        self.problems.append(f"{sheet} row {row}: {msg}" if row else f"{sheet}: {msg}")
+
+    def num(self, sheet, row, col, v, lo=1, hi=12):
+        try:
+            n = float(v)
+            if n != int(n):
+                raise ValueError
+            n = int(n)
+        except (TypeError, ValueError):
+            self.bad(sheet, row, f"{col} {v!r} is not a whole number")
+            return None
+        if not lo <= n <= hi:
+            self.bad(sheet, row, f"{col} {n} is outside {lo}–{hi}")
+            return None
+        return n
+
+    def nums(self, sheet, row, col, v):
+        out = []
+        for part in _s(v).replace(";", ",").split(","):
+            if part.strip():
+                out.append(self.num(sheet, row, col, part.strip()))
+        return out
+
+    def pick(self, sheet, row, col, v, allowed):
+        if v not in allowed:
+            self.bad(sheet, row, f"{col} {v!r} is not one of {', '.join(allowed)}")
+        return v
+
+    def text(self, sheet, row, col, v):
+        if not _s(v).strip():
+            self.bad(sheet, row, f"{col} is empty")
+        return _s(v)
 
 
 def _s(v):
@@ -146,34 +202,114 @@ def has_session23_sheets(wb):
     return all(name in wb.sheetnames for name in SHEETS)
 
 
+def _expect(rd, sheet, have, want, what):
+    """Each of `want` exactly once in `have` (a list of keys)."""
+    for k in want:
+        if have.count(k) == 0:
+            rd.bad(sheet, None, f"no row for {what(k)}")
+        elif have.count(k) > 1:
+            rd.bad(sheet, None, f"{have.count(k)} rows for {what(k)} (keep one)")
+
+
 def read_workbook(path_or_wb):
-    """S23_ data sheets -> the rules dict (everything in the JSON except `reference` and `meta`)."""
+    """S23_ data sheets -> the rules dict (everything in the JSON except `reference` and `meta`).
+
+    Every cell the page's engine relies on is checked; if anything is wrong, SystemExit lists each
+    problem with its sheet and row, and the caller publishes nothing."""
     wb = path_or_wb if hasattr(path_or_wb, "sheetnames") else load_workbook(path_or_wb, data_only=True)
     missing = [n for n in SHEETS if n not in wb.sheetnames]
     if missing:
         raise SystemExit(f"Workbook has no Session 23 sheets {missing}. Run: python make_session23_xlsx.py --install")
-    rows = lambda short: _sheet_rows(wb, PREFIX + short)
+    rd = _Sheets(wb)
     out = {}
-    out["classes"] = [dict(no=int(r[0]), name=r[1], slide_name=r[2],
-                           houses=None if _s(r[3]).strip() in ("", "by Lagna") else _ints(r[3]),
-                           other_names=_s(r[4]), nature=_s(r[5]), rule=_s(r[6]), slides=_s(r[7]))
-                      for r in rows("Classes")]
-    out["class_rules"] = [{"class": r[0], "applies": r[1], "exclude_houses": _ints(r[2]) if _s(r[2]).strip() else [],
-                           "text": _s(r[3]), "slide": _s(r[4])} for r in rows("ClassRules")]
-    out["badhaka"] = {r[0]: int(r[1]) for r in rows("Badhaka")}
-    out["dignity_effect"] = {r[0]: dict(band=r[1], text=_s(r[2]), status=r[3], slide=_s(r[4])) for r in rows("DignityEffect")}
-    out["digbala"] = {r[0]: dict(strong=int(r[1]), lost=int(r[2]), status=r[3], source=_s(r[4])) for r in rows("Digbala")}
-    out["dasha_role_text"] = {r[0]: dict(kind=r[1], text=_s(r[2]), slide=_s(r[3])) for r in rows("DashaRoleText")}
-    out["graha_in_bhava"] = [dict(planet=r[0], house=int(r[1]),
-                                  points=[p for p in _s(r[2]).split("\n\n") if p.strip()],
-                                  extra=[p for p in _s(r[3]).split("\n") if p.strip()],
-                                  status=r[4], source=_s(r[5])) for r in rows("GrahaInBhava")]
-    out["graha_pair"] = [dict(a=r[0], b=r[1], conjunction=_s(r[2]), aspect=_s(r[3]), status=r[4], source=_s(r[5]))
-                         for r in rows("GrahaPair")]
-    out["bhava_lord_in"] = [dict(lord_of=int(r[0]), sits_in=int(r[1]), text=_s(r[2]), status=r[3], source=_s(r[4]))
-                            for r in rows("BhavaLordIn")]
-    out["graha_rashi"] = [dict(planet=r[0], rashi=int(r[1]), text=_s(r[2]), status=r[3], source=_s(r[4]))
-                          for r in rows("GrahaRashi")]
+
+    out["classes"] = []
+    for sh, i, r in rd.rows("Classes"):
+        name = rd.pick(sh, i, "Class", r[1], CLASS_NAMES)
+        by_lagna = _s(r[3]) in ("", "by Lagna")
+        if by_lagna and name != "Badhaka":
+            rd.bad(sh, i, f"Houses is empty — only Badhaka is 'by Lagna'")
+        out["classes"].append(dict(no=rd.num(sh, i, "No", r[0], 1, len(CLASS_NAMES)), name=name, slide_name=r[2],
+                                   houses=None if by_lagna else rd.nums(sh, i, "Houses", r[3]),
+                                   other_names=_s(r[4]), nature=_s(r[5]), rule=_s(r[6]), slides=_s(r[7])))
+    _expect(rd, PREFIX + "Classes", [c["name"] for c in out["classes"]], CLASS_NAMES, lambda k: f"the class {k}")
+
+    out["class_rules"] = []
+    for sh, i, r in rd.rows("ClassRules"):
+        out["class_rules"].append({"class": rd.pick(sh, i, "Class", r[0], CLASS_NAMES),
+                                   "applies": rd.pick(sh, i, "AppliesTo", r[1], ["any", "benefic", "malefic"]),
+                                   "exclude_houses": rd.nums(sh, i, "ExcludeHouses", r[2]),
+                                   "text": rd.text(sh, i, "Text", r[3]), "slide": _s(r[4])})
+    order = [CLASS_NAMES.index(x["class"]) for x in out["class_rules"] if x["class"] in CLASS_NAMES]
+    if order != sorted(order):
+        rd.bad(PREFIX + "ClassRules", None, "rows must stay grouped in the order of the ten classes (Kendra … Trishadaya)")
+
+    out["badhaka"] = {}
+    for sh, i, r in rd.rows("Badhaka"):
+        out["badhaka"][rd.pick(sh, i, "Mode", r[0], BADHAKA_MODES)] = rd.num(sh, i, "House", r[1])
+    _expect(rd, PREFIX + "Badhaka", [r[0] for _, _, r in rd.rows("Badhaka")], BADHAKA_MODES, lambda k: f"the {k} mode")
+
+    out["dignity_effect"] = {}
+    for sh, i, r in rd.rows("DignityEffect"):
+        out["dignity_effect"][rd.pick(sh, i, "Label", r[0], DIGNITY_LABELS)] = dict(
+            band=rd.pick(sh, i, "Band", r[1], ["strong", "medium", "weak"]), text=rd.text(sh, i, "Text", r[2]),
+            status=rd.pick(sh, i, "Status", r[3], STATUSES), slide=_s(r[4]))
+    _expect(rd, PREFIX + "DignityEffect", [r[0] for _, _, r in rd.rows("DignityEffect")], DIGNITY_LABELS,
+            lambda k: f"the dignity {k!r}")
+
+    out["digbala"] = {}
+    for sh, i, r in rd.rows("Digbala"):
+        out["digbala"][rd.pick(sh, i, "Planet", r[0], PLANETS[:7])] = dict(
+            strong=rd.num(sh, i, "StrongHouse", r[1]), lost=rd.num(sh, i, "LostHouse", r[2]),
+            status=rd.pick(sh, i, "Status", r[3], STATUSES), source=_s(r[4]))
+    _expect(rd, PREFIX + "Digbala", [r[0] for _, _, r in rd.rows("Digbala")], PLANETS[:7], lambda k: k)
+
+    out["dasha_role_text"] = {}
+    for sh, i, r in rd.rows("DashaRoleText"):
+        out["dasha_role_text"][rd.pick(sh, i, "Role", r[0], DASHA_ROLES)] = dict(
+            kind=rd.pick(sh, i, "Kind", r[1], ["caution", "favourable"]), text=rd.text(sh, i, "Text", r[2]), slide=_s(r[3]))
+    _expect(rd, PREFIX + "DashaRoleText", [r[0] for _, _, r in rd.rows("DashaRoleText")], DASHA_ROLES, lambda k: f"the role {k!r}")
+
+    out["graha_in_bhava"] = []
+    for sh, i, r in rd.rows("GrahaInBhava"):
+        points = [p for p in _s(r[2]).split("\n\n") if p.strip()]
+        if not points:
+            rd.bad(sh, i, "Points is empty")
+        out["graha_in_bhava"].append(dict(planet=rd.pick(sh, i, "Planet", r[0], PLANETS), house=rd.num(sh, i, "House", r[1]),
+                                          points=points, extra=[p for p in _s(r[3]).split("\n") if p.strip()],
+                                          status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
+    _expect(rd, PREFIX + "GrahaInBhava", [(x["planet"], x["house"]) for x in out["graha_in_bhava"]],
+            [(p, h) for p in PLANETS for h in range(1, 13)], lambda k: f"{k[0]} in house {k[1]}")
+
+    out["graha_pair"] = []
+    for sh, i, r in rd.rows("GrahaPair"):
+        a, b = rd.pick(sh, i, "A", r[0], PLANETS), rd.pick(sh, i, "B", r[1], PLANETS)
+        if a == b:
+            rd.bad(sh, i, f"A and B are both {a}")
+        out["graha_pair"].append(dict(a=a, b=b, conjunction=_s(r[2]), aspect=_s(r[3]),
+                                      status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
+    _expect(rd, PREFIX + "GrahaPair", [frozenset((x["a"], x["b"])) for x in out["graha_pair"]],
+            [frozenset((a, b)) for k, a in enumerate(PLANETS) for b in PLANETS[k + 1:]],
+            lambda k: " and ".join(sorted(k, key=PLANETS.index)))
+
+    out["bhava_lord_in"] = []
+    for sh, i, r in rd.rows("BhavaLordIn"):
+        out["bhava_lord_in"].append(dict(lord_of=rd.num(sh, i, "LordOf", r[0]), sits_in=rd.num(sh, i, "SitsIn", r[1]),
+                                         text=rd.text(sh, i, "Text", r[2]), status=rd.pick(sh, i, "Status", r[3], STATUSES),
+                                         source=_s(r[4])))
+    out["graha_rashi"] = []
+    for sh, i, r in rd.rows("GrahaRashi"):
+        out["graha_rashi"].append(dict(planet=rd.pick(sh, i, "Planet", r[0], PLANETS), rashi=rd.num(sh, i, "Rashi", r[1]),
+                                       text=rd.text(sh, i, "Text", r[2]), status=rd.pick(sh, i, "Status", r[3], STATUSES),
+                                       source=_s(r[4])))
+    for key, sheet, fields in (("bhava_lord_in", "BhavaLordIn", ("lord_of", "sits_in")), ("graha_rashi", "GrahaRashi", ("planet", "rashi"))):
+        seen = [tuple(x[f] for f in fields) for x in out[key]]
+        for k in sorted({k for k in seen if seen.count(k) > 1}, key=str):
+            rd.bad(PREFIX + sheet, None, f"{seen.count(k)} rows for {' / '.join(map(str, k))} (keep one)")
+
+    if rd.problems:
+        raise SystemExit("The Session 23 sheets have {} problem{} — nothing was published:\n  - {}".format(
+            len(rd.problems), "" if len(rd.problems) == 1 else "s", "\n  - ".join(rd.problems)))
     return out
 
 
@@ -256,6 +392,17 @@ def reference_from_workbook(wb, bd):
     return {name: ref[name] for name in REFERENCE_NAMES}
 
 
+def reference_for(wb, bd, index_path=INDEX, page_reference=None):
+    """The reference tables from the master workbook's sheets when build_data.py can read them there;
+    for a workbook without those sheets (or without build_data.py), the tables the page holds."""
+    if bd is not None:
+        try:
+            return reference_from_workbook(wb, bd)
+        except KeyError:              # openpyxl: "Worksheet ... does not exist" — not the master workbook
+            pass
+    return (page_reference or extract_reference)(index_path)
+
+
 # ---------------------------------------------------------------- build
 DATA_START = "/* SESSION23-DATA-START — generated from the S23_ sheets of the master workbook by build_session23.py; do not edit by hand */"
 DATA_END = "/* SESSION23-DATA-END */"
@@ -315,8 +462,11 @@ def build(xlsx_path=None, json_path=JSON_PATH, index_path=INDEX, write_page=Fals
     wb = load_workbook(xlsx_path, data_only=True)
     rules = read_workbook(wb)
     if reference is None:
-        bd = load_build_data(root)
-        reference = reference_from_workbook(wb, bd) if bd else extract_reference(index_path)
+        reference = reference_for(wb, load_build_data(root), index_path)
+    empty = [k for k in REFERENCE_NAMES if reference.get(k) in (None, "", [], {})]
+    if empty:
+        raise SystemExit(f"Reference tables came out empty ({', '.join(empty)}) — nothing was published. "
+                         "Check the master workbook's sheets and scripts/build_data.py.")
     rules["reference"] = reference
     rules["meta"] = {"source": "Session 23 slides + recording (8 Oct 2026)", "version": 1,
                      "statuses": ["taught", "curated", "blend", "standard"]}
@@ -328,6 +478,14 @@ def build(xlsx_path=None, json_path=JSON_PATH, index_path=INDEX, write_page=Fals
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    for stream in (sys.stdout, sys.stderr):      # never crash on a character the console's code page lacks
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+    if "-h" in argv or "--help" in argv:
+        print(__doc__)
+        return 0
     wb = None
     if "--workbook" in argv:
         wb = argv[argv.index("--workbook") + 1]

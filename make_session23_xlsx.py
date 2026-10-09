@@ -414,6 +414,21 @@ def build_workbook(path, rules=None):
     wb.save(path)
 
 
+def backup_master(master, tag):
+    """Copy the workbook to backups/<name>.<tag>-YYYY-MM-DD_HHMMSS.xlsx next to it — a new file every run,
+    so a second run on the same day (e.g. with --reset-data) never overwrites the earlier backup."""
+    master = pathlib.Path(master)
+    folder = master.parent / "backups"
+    folder.mkdir(exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    backup, n = folder / f"{master.stem}.{tag}-{stamp}{master.suffix}", 1
+    while backup.exists():
+        n += 1
+        backup = folder / f"{master.stem}.{tag}-{stamp}-{n}{master.suffix}"
+    shutil.copy2(master, backup)
+    return backup
+
+
 def install_in_master(master, rules=None, reset_data=False):
     """Add the S23_ sheets to the master workbook; returns a dict describing what was done.
 
@@ -421,9 +436,7 @@ def install_in_master(master, rules=None, reset_data=False):
     calculator sheets are always rebuilt.  Other sheets, merged cells, validations and formats are untouched."""
     master = pathlib.Path(master)
     rules = rules or _rules()
-    backup = master.with_name(f"{master.stem}.before-session23-{datetime.date.today().isoformat()}{master.suffix}")
-    if not backup.exists():
-        shutil.copy2(master, backup)
+    backup = backup_master(master, "before-session23")
     wb = load_workbook(master)
     had_data = b23.has_session23_sheets(wb)
     wrote_data = reset_data or not had_data
@@ -459,7 +472,7 @@ def store_cached_values(path):
         profile = pathlib.Path(tmp) / "profile"
         out = pathlib.Path(tmp) / "out"
         out.mkdir()
-        subprocess.run([soffice, f"-env:UserInstallation=file://{profile}", "--headless", "--convert-to", "xlsx",
+        subprocess.run([soffice, f"-env:UserInstallation={profile.as_uri()}", "--headless", "--convert-to", "xlsx",
                         "--outdir", str(out), str(path)], check=True, capture_output=True, timeout=300)
         shutil.copyfile(out / path.name, path)
     return True
@@ -467,6 +480,14 @@ def store_cached_values(path):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    for stream in (sys.stdout, sys.stderr):      # never crash on a character the console's code page lacks
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+    if "-h" in argv or "--help" in argv:
+        print(__doc__)
+        return 0
     arg = lambda flag: argv[argv.index(flag) + 1] if flag in argv and argv.index(flag) + 1 < len(argv) and not argv[argv.index(flag) + 1].startswith("--") else None
     if "--install" in argv:
         master = arg("--workbook") or b23.find_master()

@@ -267,6 +267,128 @@ class WorkbookRoundTrip(unittest.TestCase):
         self.assertIn("git add index.html session23_rules.json", bat)
 
 
+class PublishScript(unittest.TestCase):
+    """publish.bat runs on Windows cmd; these pin the behaviour the audit asked for."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bat = (ROOT / "publish.bat").read_text(encoding="utf-8")
+
+    def test_only_publishes_from_main_after_pulling_it(self):
+        self.assertIn("git rev-parse --abbrev-ref HEAD", self.bat)
+        self.assertIn('if /i not "%BRANCH%"=="main"', self.bat)
+        self.assertLess(self.bat.index("git pull --ff-only"), self.bat.index("python scripts\\build_data.py"))
+
+    def test_commits_only_its_two_files(self):
+        self.assertIn("git diff --cached --quiet -- index.html session23_rules.json", self.bat)
+        commit = next(l for l in self.bat.splitlines() if l.strip().startswith("git commit"))
+        self.assertTrue(commit.rstrip().endswith("-- index.html session23_rules.json"), commit)
+
+    def test_pushes_an_earlier_commit_whose_push_failed(self):
+        self.assertIn("git rev-list --count @{u}..HEAD", self.bat)
+        nochange = self.bat.index(":nochange")
+        self.assertLess(nochange, self.bat.index(":push"))
+
+    def test_no_wmic_and_plain_ascii(self):
+        self.assertNotIn("wmic", self.bat.lower())
+        self.assertTrue(self.bat.isascii())
+        self.assertNotIn("pause\nexit /b 1\n)", self.bat)       # every failure goes through :fail
+
+    def test_checked_out_with_windows_line_endings(self):
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("*.bat   text eol=crlf", attrs)
+
+
+class SheetValidation(unittest.TestCase):
+    """A typo in an S23_ sheet stops the build with a message naming the sheet and row, and nothing is written."""
+
+    def build_after(self, edit):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            edit(wb)
+            x, j, page = pathlib.Path(d, "w.xlsx"), pathlib.Path(d, "r.json"), pathlib.Path(d, "index.html")
+            wb.save(x)
+            page.write_text(INDEX.read_text(encoding="utf-8"), encoding="utf-8")
+            with self.assertRaises(SystemExit) as cm:
+                b23.build(x, j, page, write_page=True, reference=rules()["reference"])
+            self.assertFalse(j.exists())
+            self.assertEqual(page.read_text(encoding="utf-8"), INDEX.read_text(encoding="utf-8"))
+            return str(cm.exception.code)
+
+    @staticmethod
+    def find(wb, sheet, col, value):
+        ws = wb["S23_" + sheet]
+        return next(r for r in range(2, ws.max_row + 1) if ws.cell(row=r, column=col).value == value)
+
+    def test_misspelt_planet_names_sheet_and_row(self):
+        def edit(wb):
+            r = self.find(wb, "GrahaInBhava", 1, "Saturn")
+            wb["S23_GrahaInBhava"].cell(row=r, column=1, value="Saturnn")
+            self.row = r
+        msg = self.build_after(edit)
+        self.assertIn(f"S23_GrahaInBhava row {self.row}: Planet 'Saturnn'", msg)
+        self.assertIn("nothing was published", msg)
+        self.assertIn("S23_GrahaInBhava: no row for Saturn in house 1", msg)
+
+    def test_house_that_is_not_a_number(self):
+        msg = self.build_after(lambda wb: wb["S23_GrahaInBhava"].cell(row=5, column=2, value="x"))
+        self.assertIn("S23_GrahaInBhava row 5: House 'x' is not a whole number", msg)
+
+    def test_house_out_of_range_and_bad_status(self):
+        def edit(wb):
+            wb["S23_Digbala"].cell(row=2, column=2, value=13)
+            wb["S23_GrahaPair"].cell(row=3, column=5, value="taugth")
+        msg = self.build_after(edit)
+        self.assertIn("S23_Digbala row 2: StrongHouse 13 is outside 1–12", msg)
+        self.assertIn("S23_GrahaPair row 3: Status 'taugth' is not one of taught, curated, blend, standard", msg)
+
+    def test_missing_pair_and_renamed_class(self):
+        def edit(wb):
+            wb["S23_GrahaPair"].delete_rows(2)
+            wb["S23_Classes"].cell(row=2, column=2, value="Kendraa")
+        msg = self.build_after(edit)
+        self.assertRegex(msg, r"S23_GrahaPair: no row for \w+ and \w+")
+        self.assertIn("S23_Classes row 2: Class 'Kendraa'", msg)
+
+    def test_stray_spaces_are_tolerated(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            wb["S23_GrahaInBhava"].cell(row=2, column=1, value=wb["S23_GrahaInBhava"].cell(row=2, column=1).value + " ")
+            x = pathlib.Path(d, "w.xlsx")
+            wb.save(x)
+            self.assertEqual(b23.read_workbook(x), {k: v for k, v in rules().items() if k not in ("reference", "meta")})
+
+    def test_empty_reference_is_refused(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            x, j = pathlib.Path(d, "w.xlsx"), pathlib.Path(d, "r.json")
+            wb.save(x)
+            ref = dict(rules()["reference"], NAKSHATRAS=[])
+            with self.assertRaises(SystemExit) as cm:
+                b23.build(x, j, INDEX, reference=ref)
+            self.assertIn("NAKSHATRAS", str(cm.exception.code))
+            self.assertFalse(j.exists())
+
+    def test_workbook_without_master_sheets_takes_the_reference_from_the_page(self):
+        class BuildData:           # a build_data.py whose loaders find no master sheets in this workbook
+            def __getattr__(self, name):
+                def loader(wb, *a):
+                    raise KeyError("Worksheet Reference Data does not exist.")
+                return loader
+        page_ref = rules()["reference"]
+        got = b23.reference_for(object(), BuildData(), INDEX, page_reference=lambda path: page_ref)
+        self.assertEqual(got, page_ref)
+
+
 NODE = shutil.which("node")
 NPM = shutil.which("npm")
 

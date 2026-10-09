@@ -338,6 +338,17 @@ class Vimshottari(unittest.TestCase):
                     self.assertAlmostEqual(_ms(x["start"]), bs, delta=1000)
                     self.assertAlmostEqual(_ms(x["end"]), be, delta=1000)
 
+    def test_moon_exactly_on_a_nakshatra_boundary(self):
+        # 40° is the first point of Rohini (Moon's star); float floor-division put it in Krittika
+        names = [n for n, _ in RULES["reference"]["NAKSHATRAS"]]
+        for k in range(0, 27, 3):
+            lon = k * 40 / 3
+            d = br.vimshottari(RULES, lon, BIRTH, NOW)
+            self.assertEqual(d["nak_index"], k + 1, (lon, names[k]))
+            self.assertEqual(d["nak_lord"], RULES["reference"]["NAKSHATRAS"][k][1])
+        self.assertTrue(br.moon_waxing(0.0, 168.0))           # tithi 15 (Purnima) is Shukla
+        self.assertFalse(br.moon_waxing(0.0, 180.0))          # tithi 16 starts Krishna
+
     def test_running_pair_at_boundaries(self):
         base = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)["timeline"]
         edge = base[2]["start"]                                          # exactly on a Mahādaśā start

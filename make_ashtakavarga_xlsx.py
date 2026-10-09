@@ -276,16 +276,29 @@ def _store_cached_values(path):
               "(Excel recalculates it on open).", file=sys.stderr)
         return
     with tempfile.TemporaryDirectory() as tmp:
-        out, profile = pathlib.Path(tmp, "out"), pathlib.Path(tmp, "profile")
+        out, profile = pathlib.Path(tmp, "out"), pathlib.Path(tmp, "profile").resolve()
         out.mkdir()
-        subprocess.run([soffice, f"-env:UserInstallation=file://{profile}", "--headless",
+        subprocess.run([soffice, f"-env:UserInstallation={profile.as_uri()}", "--headless",
                         "--convert-to", "xlsx", "--outdir", str(out), str(path)],
                        check=True, capture_output=True, timeout=300)
         shutil.copyfile(out / pathlib.Path(path).name, path)
 
 
+def _console_safe():
+    """Never crash on a character the console's code page lacks (Windows cp1252 and the like)."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    _console_safe()
+    if argv and argv[0] in ("-h", "--help"):
+        print(__doc__)
+        return 0
     path = pathlib.Path(argv[0] if argv else pathlib.Path(__file__).with_name("Ashtakavarga.xlsx"))
     av.validate_rules()
     build(path)

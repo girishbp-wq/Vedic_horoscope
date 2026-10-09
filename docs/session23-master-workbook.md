@@ -8,7 +8,8 @@ The Session 23 rules (the ten bhāva classes, the prediction layers, the daśā 
 1. Pull the latest `main` in GitHub Desktop.
 2. Close the workbook in Excel.
 3. In the repo folder run `python make_session23_xlsx.py --install`.
-   It makes a backup (`…v7_1.before-session23-DATE.xlsx`), adds the `S23_` sheets, and leaves every other sheet as it was.
+   It makes a backup in the `backups` folder (`…v7_1.before-session23-DATE_TIME.xlsx`, a new one every run),
+   adds the `S23_` sheets, and leaves every other sheet as it was.
 4. Open the workbook in Excel and save once (this stores the calculator's results).
 
 Running `--install` again only rebuilds the calculator sheets; your edits in the `S23_` data sheets are kept
@@ -16,8 +17,14 @@ Running `--install` again only rebuilds the calculator sheets; your edits in the
 
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
-It runs `scripts\build_data.py`, then `build_session23.py` (which rewrites `session23_rules.json` and the
-`SESSION23-DATA` block of `index.html`), commits both files and pushes.
+It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`
+(which rewrites `session23_rules.json` and the `SESSION23-DATA` block of `index.html`), commits only those two
+files and pushes. If a push failed earlier, running it again pushes the waiting commit.
+
+`build_session23.py` checks every `S23_` cell the page relies on (planet and class names, house numbers 1–12,
+statuses, one row per graha × house and per graha pair). If something is wrong it lists each problem with its
+sheet and row, for example `S23_GrahaInBhava row 50: Planet 'Saturnn' is not one of Sun, Moon, …`, and
+publishes nothing — fix those cells, save, and run `publish.bat` again.
 
 ## The sheets
 | Sheet | What it is |
