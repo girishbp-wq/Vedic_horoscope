@@ -5433,7 +5433,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-10-02 · Bhāvas 7–12 + kāraka fixes (Session 22)";
+const TOOL_VERSION = "2026-10-09 · audit fixes: city time zones & DST, ayanāṁśa, Kuja rules";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -5607,7 +5607,8 @@ function buildDasha(moonLon, dobISO, tobStr, birthJD){
   }
   const curMaha  = timeline.find(x=>x.cur) || timeline[0];
   const curBhukti= curMaha.bhuktis.find(b=>b.cur) || curMaha.bhuktis[0];
-  return {nak:nk, birth, timeline, curMaha, curBhukti, balance:{lord, years:(1-frac)*VYEARS[lord]},
+  // running=false: today is outside the 120-year span (curMaha/curBhukti then fall back to the first)
+  return {nak:nk, birth, timeline, curMaha, curBhukti, running:timeline.some(x=>x.cur), balance:{lord, years:(1-frac)*VYEARS[lord]},
           spanStart:timeline[0].start, spanEnd:timeline[8].end};
 }
 
@@ -5619,8 +5620,12 @@ function renderDashaPane(D, roles){
   let h=`<h4 class="pane-h">Vimśottarī Daśā</h4>`;
   h+=`<p>Birth-star <strong>${D.nak.name}</strong> (lord <strong>${D.nak.lord}</strong>, pada ${D.nak.pada}). `;
   if(D.balance) h+=`Balance at birth: <strong>${fmtYMD(D.balance.years)}</strong> of ${D.balance.lord} mahādaśā. `;
-  h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
-  h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
+  if(D.running){
+    h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
+    h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
+  } else {
+    h+=`No daśā is running today: today is outside this chart's 120-year span (${_fdate(D.spanStart)} – ${_fdate(D.spanEnd)}).</p>`;
+  }
 
   /* visual 120-year timeline bar, segments proportional to each mahādaśā */
   const span=D.spanEnd-D.spanStart;
@@ -6559,7 +6564,8 @@ function renderS23Dasha(D, roles, now){
     h+=`<p class="rnote">The role links need the Lagna, which needs the birth time and place; the daśā below is shown without them.</p>`;
   } else {
     const run=s23RunningRoles(D, roles);
-    h+=`<h4 class="pane-h">Running now</h4><div class="s23-running" data-maha="${run.maha.lord}" data-bhukti="${run.bhukti.lord}">`
+    if(!D.running) h+=`<h4 class="pane-h">Running now</h4><p class="rnote">No daśā is running today — today is outside the 120-year span from birth, so no period's roles apply now.</p>`;
+    else h+=`<h4 class="pane-h">Running now</h4><div class="s23-running" data-maha="${run.maha.lord}" data-bhukti="${run.bhukti.lord}">`
       +s23RunPart("maha","Mahādaśā",run.maha,roles[run.maha.lord])+s23RunPart("bhukti","Bhukti",run.bhukti,roles[run.bhukti.lord])+`</div>`;
     h+=`<h4 class="pane-h">Roles of the nine grahas in this chart</h4><div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-roles"><thead><tr><th class="w16">Graha</th><th class="w16">Owns (houses)</th><th class="w14">Sits in</th><th class="w54">Roles</th></tr></thead><tbody>`;
     const lg=currentChart.lagnaRashi.n, pbr=s23Inputs(currentChart.chart.sidereal).pbr;

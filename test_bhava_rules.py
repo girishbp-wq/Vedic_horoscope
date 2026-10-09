@@ -361,11 +361,20 @@ class Vimshottari(unittest.TestCase):
             d = br.vimshottari(RULES, MOON_LON, BIRTH, now)              # outside the 120-year span
             self.assertIn(d["cur_maha"]["lord"], br.PLANET_ORDER)
             self.assertIn(d["cur_bhukti"], d["cur_maha"]["bhuktis"])
+            self.assertFalse(d["running"])                               # ... and says no period is running
+        self.assertTrue(br.vimshottari(RULES, MOON_LON, BIRTH, NOW)["running"])
 
     def test_current_pair_is_the_period_containing_now(self):
         d = br.vimshottari(RULES, MOON_LON, BIRTH, NOW)
         self.assertTrue(d["cur_maha"]["start"] <= NOW < d["cur_maha"]["end"])
         self.assertTrue(d["cur_bhukti"]["start"] <= NOW < d["cur_bhukti"]["end"])
+
+
+class PartialCharts(unittest.TestCase):
+    def test_bhava_bhava_skips_lords_whose_sign_is_not_given(self):
+        rows = br.bhava_bhava(RULES, LAGNA, {"Sun": 4})                   # only the Sun is known
+        self.assertEqual({r["lord"] for r in rows}, {"Sun"})
+        self.assertEqual(len(rows), 1)
 
 
 class DashaLinking(unittest.TestCase):

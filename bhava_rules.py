@@ -225,7 +225,8 @@ _NAK_SIZE = 360 / 27
 def vimshottari(rules, moon_lon, birth, now):
     """Port of buildDasha(): nine Mahādaśās with nine Bhuktis each, from the Moon's nakṣatra at birth.
 
-    Like the page, a `now` outside the 120-year span falls back to the first Mahādaśā / Bhukti."""
+    Like the page, a `now` outside the 120-year span falls back to the first Mahādaśā / Bhukti, with
+    running = False so callers can say that no period is running."""
     ref = rules["reference"]
     order, years = ref["VORDER"], ref["VYEARS"]
     lon = moon_lon % 360
@@ -251,7 +252,7 @@ def vimshottari(rules, moon_lon, birth, now):
     cur_maha = next((t for t in timeline if t["cur"]), timeline[0])
     cur_bhukti = next((b for b in cur_maha["bhuktis"] if b["cur"]), cur_maha["bhuktis"][0])
     return {"nak_index": idx + 1, "nak_lord": nak_lord, "birth": birth, "timeline": timeline,
-            "cur_maha": cur_maha, "cur_bhukti": cur_bhukti,
+            "cur_maha": cur_maha, "cur_bhukti": cur_bhukti, "running": any(t["cur"] for t in timeline),
             "span_start": timeline[0]["start"], "span_end": timeline[8]["end"]}
 
 
@@ -359,6 +360,8 @@ def bhava_bhava(rules, lagna, signs):
     out = []
     for h in range(1, 13):
         lord = house_lord(rules, lagna, h)
+        if lord not in signs:                                 # a partial chart: this lord's sign is not known
+            continue
         sits = house_of(lagna, signs[lord])
         taught = next((x for x in rules["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (h, sits)), None)
         if taught:

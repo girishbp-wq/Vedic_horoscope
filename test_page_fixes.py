@@ -499,5 +499,30 @@ class LabelsAndText(unittest.TestCase):
         self.assertTrue(self.r["meanNode"])
 
 
+@needs_browser
+class DashaOutsideItsSpan(unittest.TestCase):
+    def test_no_running_period_is_claimed_outside_the_120_years(self):
+        r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate(() => {
+              const sid = currentChart.chart.sidereal;
+              const roles = s23Roles(currentChart.lagnaRashi.n, s23Inputs(sid).pbr);
+              const old = buildDasha(sid.Moon, '1850-01-01', '10:00');          // span ends in 1970
+              renderS23Dasha(old, roles, new Date());
+              const before = {running: old.running, body: document.getElementById('s23-dasha-body').textContent,
+                              tables: document.getElementById('s23-dasha-tables').textContent};
+              const now = buildDasha(sid.Moon, currentChart.dob, currentChart.tob, currentChart.JD);
+              return {before, nowRunning: now.running};
+            });
+        """)
+        self.assertFalse(r["before"]["running"])
+        self.assertIn("No daśā is running today", r["before"]["body"])
+        self.assertIn("No daśā is running today", r["before"]["tables"])
+        self.assertNotIn("Running now:", r["before"]["tables"])
+        self.assertTrue(r["nowRunning"])
+
+
 if __name__ == "__main__":
     unittest.main()

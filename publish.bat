@@ -103,7 +103,7 @@ if not errorlevel 1 goto :nochange
 echo.
 echo [4/5] Committing...
 set "STAMP="
-for /f "delims=" %%a in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd HH:mm'"') do set "STAMP=%%a"
+for /f "delims=" %%a in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-ddTHH:mm"') do set "STAMP=%%a"
 git commit -m "Rebuild index.html from workbook (%STAMP%)" -- index.html session23_rules.json
 if errorlevel 1 (
     echo [ERROR] Commit failed. See message above.

@@ -599,6 +599,7 @@ const EXTRACT = () => {
     await page.waitForSelector('#report.show');
     await page.click('#reportNav button:has-text("Daśā")');
     const d = await page.evaluate(EXTRACT);
+    d.tz = parseFloat(b.tz);
     out.charts.push(d);
     if (i === 0) {
       if (shots) await page.locator('#s23-dasha-body').screenshot({path: shots + '/s23_dasha_desktop.png'});
@@ -661,7 +662,8 @@ class BrowserDasha(unittest.TestCase):
         lg, signs, degs, w = page_chart(d)
         y, m, dd = map(int, d["dob"].split("-"))
         hh, mm, ss = (list(map(int, d["tob"].split(":"))) + [0, 0, 0])[:3]
-        birth = datetime.datetime(y, m, dd, hh, mm, ss)
+        # the page dates the daśā from the birth instant in UT (local clock time minus the UTC offset)
+        birth = datetime.datetime(y, m, dd, hh, mm, ss) - datetime.timedelta(hours=d["tz"])
         dasha = br.vimshottari(RULES, d["sid"]["Moon"], birth, self.now)
         return lg, signs, dasha, br.planet_roles(RULES, lg, signs)
 

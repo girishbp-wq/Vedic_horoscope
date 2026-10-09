@@ -15,6 +15,16 @@ The Session 23 rules (the ten bhāva classes, the prediction layers, the daśā 
 Running `--install` again only rebuilds the calculator sheets; your edits in the `S23_` data sheets are kept
 (add `--reset-data` to overwrite them from `session23_rules.json`).
 
+## One-time fixes from the October 2026 audit
+1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
+2. Run `python patch_master_workbook.py` (add `--dry-run` first to see the list without saving).
+   It backs the workbook up to `backups\`, then fixes the Analysis, Input and Tithi formulas and the data cells
+   the audit found. A cell you changed since is **skipped** and listed — nothing of yours is overwritten.
+3. Run `python make_session23_xlsx.py --install` again, so the `S23_` calculator sheets pick up the new
+   "Node (no rulership)" label and the stricter sign drop-down (your `S23_` data sheets are kept).
+4. Open the workbook in Excel, save once, close it, and run `publish.bat`. The page already carries the
+   regenerated data, so this publish should report no changes (or only your own edits).
+
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`
