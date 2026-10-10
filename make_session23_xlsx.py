@@ -919,23 +919,132 @@ def backup_master(master, tag):
     return backup
 
 
-def install_in_master(master, rules=None, reset_data=False):
-    """Add the S23_ sheets to the master workbook; returns a dict describing what was done.
+PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 
-    A backup copy is made first.  The data sheets are written only when missing (or with reset_data); the
-    calculator sheets are always rebuilt.  Other sheets, merged cells, validations and formats are untouched."""
+
+def _norm_cell(v):
+    if isinstance(v, str):
+        v = v.strip()
+        return int(v) if v.isdigit() else v
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    return "" if v is None else v
+
+
+def _keyed(sheet, rows):
+    """[(key, row)] — the key identifies a row across releases (n-th occurrence for sheets without a natural key)."""
+    seen, out = {}, []
+    pl = b23.PLANETS
+    for row in rows:
+        r = [_norm_cell(v) for v in row]
+        short = sheet[len(PREFIX):]
+        if short == "Classes":
+            k = r[1]
+        elif short in ("Badhaka", "DignityEffect", "Digbala", "DashaRoleText"):
+            k = r[0]
+        elif short in ("GrahaInBhava", "GrahaRashi"):
+            k = (r[0], r[1])
+        elif short == "GrahaPair":
+            k = tuple(sorted((r[0], r[1]), key=lambda x: pl.index(x) if x in pl else 99))
+        elif short == "BhavaLordIn":
+            k = (r[0], r[1], r[5], str(r[6]).lower())
+        elif short == "AspectMeaning":
+            k = (r[0], r[1], r[2])
+        elif short == "LifeAreas":
+            k = r[0]
+        elif short == "Conditions":
+            k = (r[0], r[1], r[2])
+        else:                                                    # ClassRules, BhavaNature, Remedies
+            base = {"ClassRules": (r[0], r[1]), "BhavaNature": (r[0], r[1], r[2]), "Remedies": (r[0],)}[short]
+            n = seen.get(base, 0)
+            seen[base] = n + 1
+            k = base + (n,)
+        out.append((k, r))
+    return out
+
+
+def _sheet_rows(ws, width):
+    return [list(r)[:width] + [None] * max(0, width - len(r)) for r in ws.iter_rows(min_row=2, values_only=True)
+            if any(v not in (None, "") for v in r)]
+
+
+def upgrade_data_sheets(wb, rules, previous):
+    """Bring the S23_ data sheets of `wb` up to `rules`, keeping what the user changed.
+
+    A row still equal to the version shipped before (`previous`) is replaced; a row the user edited is kept and
+    listed; a shipped row the user deleted stays deleted; a row new in this release is added; a row the user added
+    stays, after the row it followed. Missing sheets are written whole."""
+    prev = dict(previous)
+    for k in ("bhava_nature", "aspect_meaning", "life_areas", "conditions", "remedies"):
+        prev.setdefault(k, [])
+    prev["bhava_lord_in"] = [dict({"condition": "", "exchange": False}, **r) for r in prev["bhava_lord_in"]]
+    new_rows, prev_rows = b23.rules_to_rows(rules), b23.rules_to_rows(prev)
+    report = {"updated": 0, "added": 0, "kept": [], "deleted": [], "new_sheets": []}
+    for name, header in b23.SHEETS.items():
+        if name not in wb.sheetnames:
+            report["new_sheets"].append(name)
+            continue
+        user = _keyed(name, _sheet_rows(wb[name], len(header)))
+        raw = {k: row for (k, _), row in zip(user, _sheet_rows(wb[name], len(header)))}
+        user_norm = dict((k, r) for k, r in reversed(user))
+        shipped = dict(_keyed(name, prev_rows[name]))
+        fresh = _keyed(name, new_rows[name])
+        fresh_keys = {k for k, _ in fresh}
+        out = []                                                   # [(key, values)]
+        for (k, new), values in zip(fresh, new_rows[name]):
+            if k in user_norm:
+                u = user_norm[k]
+                if u == new:
+                    out.append((k, values))
+                elif shipped.get(k) == u:
+                    out.append((k, values))
+                    report["updated"] += 1
+                else:
+                    out.append((k, raw[k]))
+                    report["kept"].append((name, k))
+            elif k in shipped:
+                report["deleted"].append((name, k))
+            else:
+                out.append((k, values))
+                report["added"] += 1
+        before = None
+        for k, u in user:
+            if k not in fresh_keys and shipped.get(k) != u:       # added (or edited and since dropped) by the user
+                at = next((i + 1 for i, (kk, _) in enumerate(out) if kk == before), len(out) if before else 0)
+                out.insert(at, (k, raw[k]))
+                if (name, k) not in report["kept"]:
+                    report["kept"].append((name, k))
+            before = k
+        index = wb.sheetnames.index(name)
+        del wb[name]
+        b23.write_data_sheets(wb, {}, only={name: [v for _, v in out]}, index=index)
+    if report["new_sheets"]:
+        b23.write_data_sheets(wb, rules, only={n: new_rows[n] for n in report["new_sheets"]})
+    return report
+
+
+def install_in_master(master, rules=None, reset_data=False, previous=None):
+    """Add or upgrade the S23_ sheets in the master workbook; returns a dict describing what was done.
+
+    A backup copy is made first. A workbook without S23_ data sheets (or with reset_data) gets them written from the
+    rules; one that has them is upgraded row by row (upgrade_data_sheets), so the user's edits stay. The calculator
+    sheets are always rebuilt. Other sheets, merged cells, validations and formats are untouched."""
     master = pathlib.Path(master)
     rules = rules or _rules()
     backup = backup_master(master, "before-session23")
     wb = load_workbook(master)
-    had_data = b23.has_session23_sheets(wb)
+    had_data = any(n in wb.sheetnames for n in b23.SHEETS)
     wrote_data = reset_data or not had_data
+    upgrade = None
     b23.write_readme_sheet(wb)
-    build_calc_sheets(wb, rules)
     if wrote_data:
         b23.write_data_sheets(wb, rules)
+    else:
+        upgrade = upgrade_data_sheets(wb, rules, previous or json.loads(PREVIOUS_JSON.read_text(encoding="utf-8")))
+    build_calc_sheets(wb, rules)
     wb.save(master)
-    return {"backup": backup, "wrote_data": wrote_data, "sheets": [n for n in wb.sheetnames if n.startswith(PREFIX)]}
+    return {"backup": backup, "wrote_data": wrote_data, "upgrade": upgrade,
+            "sheets": [n for n in wb.sheetnames if n.startswith(PREFIX)]}
 
 
 def set_inputs(wb, chart, now):
@@ -989,7 +1098,17 @@ def main(argv=None):
         done = install_in_master(master, reset_data="--reset-data" in argv)
         print(f"Backup:  {done['backup']}")
         print(f"Sheets:  {', '.join(done['sheets'])}")
-        print("Data sheets " + ("written from session23_rules.json." if done["wrote_data"] else "already present — left as you edited them."))
+        up = done["upgrade"]
+        if done["wrote_data"]:
+            print("Data sheets written from session23_rules.json.")
+        else:
+            print(f"Data sheets upgraded: {up['updated']} rows updated, {up['added']} added"
+                  + (f", new sheets {', '.join(up['new_sheets'])}" if up["new_sheets"] else "") + ".")
+            for label, items in (("Kept your edits", up["kept"]), ("Rows you deleted stay deleted", up["deleted"])):
+                if items:
+                    print(f"{label}:")
+                    for sheet, key in items:
+                        print(f"  {sheet}: {key}")
         print("Open the workbook in Excel and save once, so the calculator results are stored with it.")
         return 0
     if "--export" in argv:

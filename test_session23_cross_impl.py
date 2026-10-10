@@ -756,7 +756,9 @@ class BrowserDasha(unittest.TestCase):
     def test_top_level_nav_has_dasha_button(self):
         for d in self.out["charts"]:
             self.assertIn("Daśā–Bhukti", d["nav"])
-            self.assertEqual(d["nav"].index("Daśā–Bhukti") + 1, d["nav"].index("Predictive & Remedies"))
+            # Daśā–Bhukti, then Life areas (Session 27), then Predictive & Remedies
+            self.assertEqual(d["nav"].index("Daśā–Bhukti") + 2, d["nav"].index("Predictive & Remedies"))
+            self.assertEqual(d["nav"][d["nav"].index("Daśā–Bhukti") + 1], "Life areas")
             self.assertEqual(d["dashaSection"]["title"], "Daśā–Bhukti — Vimśottarī")
             self.assertTrue(d["dashaSection"]["shown"])
         self.assertEqual(self.out["predictiveHiddenOnDasha"], ["none"])
@@ -1213,6 +1215,97 @@ class MasterWorkbookInstall(unittest.TestCase):
         self.assertEqual(second["backup"].read_bytes(), edited)                    # the edit survives in its backup
         import build_session23 as b23
         self.assertEqual(b23.find_master(self.master.parent), self.master)         # backups never look like the master
+
+    # ---- upgrading a workbook that has the previous release's S23_ sheets
+    def install_previous_release(self):
+        """The master as the previous release left it: its ten data sheets, the old 5-column BhavaLordIn."""
+        import build_session23 as b23
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        fake = dict(prev, bhava_nature=[], aspect_meaning=[], life_areas=[], conditions=[], remedies=[],
+                    bhava_lord_in=[dict(r, condition="", exchange=False) for r in prev["bhava_lord_in"]])
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, fake)
+        for n in ("BhavaNature", "AspectMeaning", "LifeAreas", "Conditions", "Remedies"):
+            del wb["S23_" + n]
+        wb["S23_BhavaLordIn"].delete_cols(6, 2)
+        wb.save(self.master)
+        return prev
+
+    def rows_of(self, ws):
+        return [[c.value for c in r] for r in ws.iter_rows(min_row=2) if any(c.value not in (None, "") for c in r)]
+
+    def test_upgrade_replaces_untouched_rows(self):
+        import build_session23 as b23
+        self.install_previous_release()
+        done = self.mx.install_in_master(self.master)
+        self.assertFalse(done["wrote_data"])
+        up = done["upgrade"]
+        self.assertEqual((up["kept"], up["deleted"]), ([], []))
+        self.assertEqual(sorted(up["new_sheets"]), sorted("S23_" + n for n in ("BhavaNature", "AspectMeaning", "LifeAreas", "Conditions", "Remedies")))
+        self.assertGreater(up["updated"], 90)
+        want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
+        self.assertEqual(b23.read_workbook(self.master), want)
+        again = self.mx.install_in_master(self.master)["upgrade"]                  # a second run changes nothing
+        self.assertEqual((again["updated"], again["added"], again["kept"], again["new_sheets"]), (0, 0, [], []))
+        self.assertEqual(b23.read_workbook(self.master), want)
+
+    def test_edited_row_is_kept_and_listed(self):
+        import build_session23 as b23
+        self.install_previous_release()
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_GrahaInBhava"]
+        r = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value) == ("Moon", 1))
+        ws.cell(row=r, column=3, value="My own note on the Moon in the 1st.")
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["kept"], [("S23_GrahaInBhava", ("Moon", 1))])
+        got = b23.read_workbook(self.master)
+        moon1 = next(x for x in got["graha_in_bhava"] if (x["planet"], x["house"]) == ("Moon", 1))
+        self.assertEqual(moon1["points"], ["My own note on the Moon in the 1st."])
+        moon2 = next(x for x in got["graha_in_bhava"] if (x["planet"], x["house"]) == ("Moon", 2))
+        self.assertEqual(moon2["status"], "taught")                               # the untouched rows did change
+
+    def test_deleted_row_stays_deleted(self):
+        import build_session23 as b23
+        self.install_previous_release()
+        wb = openpyxl.load_workbook(self.master)
+        wb["S23_GrahaRashi"].delete_rows(2)                                       # the Sun in Mesha (Session 23)
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["deleted"], [("S23_GrahaRashi", ("Sun", 1))])
+        rows = b23.read_workbook(self.master)["graha_rashi"]
+        self.assertNotIn(("Sun", 1), [(x["planet"], x["rashi"]) for x in rows])
+        self.assertIn(("Moon", 7), [(x["planet"], x["rashi"]) for x in rows])     # this release's rows still arrive
+
+    def test_user_added_class_rule_keeps_its_group(self):
+        import build_session23 as b23
+        self.install_previous_release()
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_ClassRules"]
+        last_kendra = max(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=1).value == "Kendra")
+        ws.insert_rows(last_kendra + 1)
+        for j, v in enumerate(["Kendra", "any", "", "My extra Kendra note.", "class notes"], 1):
+            ws.cell(row=last_kendra + 1, column=j, value=v)
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertIn(("S23_ClassRules", ("Kendra", "any", 1)), up["kept"])
+        rules = b23.read_workbook(self.master)["class_rules"]                      # grouping still validates
+        texts = [r["text"] for r in rules]
+        i = texts.index("My extra Kendra note.")
+        self.assertEqual((rules[i - 1]["class"], rules[i + 1]["class"]), ("Kendra", "Trikona"))
+
+    def test_old_bhava_lord_in_header_upgraded(self):
+        import build_session23 as b23
+        self.install_previous_release()
+        self.mx.install_in_master(self.master)
+        ws = openpyxl.load_workbook(self.master)["S23_BhavaLordIn"]
+        self.assertEqual([c.value for c in ws[1]], b23.SHEETS["S23_BhavaLordIn"])
+
+    def test_backup_made_before_upgrade(self):
+        self.install_previous_release()
+        before = self.master.read_bytes()
+        done = self.mx.install_in_master(self.master)
+        self.assertEqual(done["backup"].read_bytes(), before)
 
     def test_sign_inputs_only_accept_a_sign_from_the_list(self):
         self.mx.install_in_master(self.master)

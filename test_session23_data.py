@@ -199,6 +199,15 @@ class CuratedContent(unittest.TestCase):
 class TeacherRows(unittest.TestCase):
     """Sessions 23 (2024 deck) to 27: the rows come from session23_teacher_slides.py."""
 
+    @classmethod
+    def _exported(cls):
+        import tempfile
+        import make_session23_xlsx as mx
+        cls._tmp = tempfile.TemporaryDirectory()
+        path = pathlib.Path(cls._tmp.name, "export.xlsx")
+        mx.build_workbook(path)
+        return path
+
     def test_new_keys_equal_the_teacher_module(self):
         import session23_teacher_slides as ts
         r = rules()
@@ -225,7 +234,14 @@ class TeacherRows(unittest.TestCase):
     def test_json_is_previous_plus_teacher_slides(self):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
-        self.assertEqual(apply_teacher_slides.apply(prev), rules())
+        # the reference tables come from the master workbook's own sheets, not from the slides
+        drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
+        self.assertEqual(drop(apply_teacher_slides.apply(prev)), drop(rules()))
+        # key order too: the workbook build and this script must write the same file, so publish sees no change
+        built = b23.read_workbook(self.__class__._exported())
+        for k, rows in built.items():
+            if isinstance(rows, list):
+                self.assertEqual([list(r) for r in rows], [list(r) for r in apply_teacher_slides.apply(prev)[k]], k)
         self.assertEqual(prev["meta"]["version"], 1)
         self.assertEqual(rules()["meta"], b23.META)
 

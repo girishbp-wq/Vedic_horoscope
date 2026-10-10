@@ -61,6 +61,25 @@ class GuardedPatching(unittest.TestCase):
         self.assertEqual(wb["Reference Data"]["T6"].value, "My own wording for Simha")
         self.assertEqual(res[("Reference Data", "T5")], "fixed")
 
+    def test_sessions_24_to_27_patches(self):
+        wb = audit_state_workbook()
+        pm.apply_patches(wb)
+        bi, pp, pc, pl = wb["Bhava Info"], wb["Planet Profile"], wb["Planet Characteristics"], wb["Planets"]
+        self.assertEqual(bi["D16"].value, "Ketu, Saturn")                                # S25: Saturn, karaka of the 12th
+        self.assertTrue(bi["C7"].value.endswith(", hands"))
+        self.assertEqual(bi["C13"].value, "Thighs, buttocks")
+        self.assertEqual(bi["C15"].value, "Legs, calves, shins; left ear")
+        self.assertTrue(bi["E11"].value.endswith(", maternal grandmother"))
+        for ws, sun, moon, merc in ((pp, "X5", "X6", "X8"), (pc, "B35", "C35", "E35")):
+            self.assertTrue(ws[sun].value.startswith("Mild malefic (S26)"))
+            self.assertTrue(ws[moon].value.startswith("Natural benefic (S26); waxing = stronger"))
+            self.assertTrue(ws[merc].value.startswith("Natural benefic (S26)"))
+        self.assertIn("brothers and male friends", pp["Q7"].value)
+        self.assertIn("Athlete", pc["D29"].value)
+        self.assertIn("Astrologer", pp["R8"].value)
+        self.assertIn("food, travel and change of place", pl["D6"].value)
+        self.assertIn("astrology", pl["D8"].value)
+
     def test_missing_sheet_is_reported(self):
         wb = audit_state_workbook()
         del wb["Guide & Explanations"]

@@ -76,7 +76,7 @@ README_LINES = [
     "Status column: taught = the teacher's own content (slides / recording);  curated = drafted by blending her karakatwas, not yet taught;  blend = generated from templates;  standard = a standard rule the teacher has not stated yet.",
     "Houses are comma lists (1, 4, 7, 10). Points: one paragraph per blank-line-separated block; Extra: one line each.",
     "Keep the S23_ClassRules rows grouped in the order of the ten classes (Kendra … Trishadaya): the Excel calculator joins their texts in sheet order.",
-    "S23_Chart, S23_Classes_Calc, S23_Roles_Calc, S23_Dasha_Calc, S23_Predict_Calc and S23_Ref_Calc are the live calculator (formulas) — set the signs on S23_Chart.",
+    "S23_Chart, S23_Classes_Calc, S23_Roles_Calc, S23_Dasha_Calc, S23_Predict_Calc, S23_LifeArea_Calc and S23_Ref_Calc are the live calculator (formulas) — set the signs on S23_Chart; pick an area of life in B2 of S23_LifeArea_Calc.",
     "When a later session teaches a graha, replace its 'curated' rows and set Status to taught.",
     "Sessions 23 (2024 deck) to 27: S23_BhavaNature (benefic/malefic in each house), S23_AspectMeaning, S23_LifeAreas "
     "(Ready Reckoner), S23_Conditions (sentences that hold only for some charts; Key is one of a fixed list) and S23_Remedies. "
@@ -121,13 +121,16 @@ def rules_to_rows(rules):
     }
 
 
-def write_data_sheets(wb, rules):
-    """Create (replacing any existing) the S23_ data sheets in `wb` from the rules dict."""
-    rows = rules_to_rows(rules)
+def write_data_sheets(wb, rules, only=None, index=None):
+    """Create (replacing any existing) the S23_ data sheets in `wb` from the rules dict — or, with `only`
+    ({sheet: rows}), just those sheets with those rows (at position `index` when given)."""
+    rows = only if only is not None else rules_to_rows(rules)
     for name, header in SHEETS.items():
+        if name not in rows:
+            continue
         if name in wb.sheetnames:
             del wb[name]
-        sh = wb.create_sheet(name)
+        sh = wb.create_sheet(name, index)
         for j, h in enumerate(header, 1):
             c = sh.cell(row=1, column=j, value=h)
             c.fill, c.font = HEAD_FILL, HEAD_FONT

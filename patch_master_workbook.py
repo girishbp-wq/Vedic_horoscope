@@ -23,6 +23,12 @@ What it fixes:
              Mleccha (Revati is the female elephant); Rohini's purushartha is Moksha; Mercury's
              Moolatrikona starts at 15 deg; Makara (not Vrischika) is Chara; "0-20" Moolatrikona;
              the Shukla/Krishna rule in Planet Characteristics; the Nakshatras lord header.
+  Sessions 23 (2024 deck) - 27
+             Bhava Info: the 3rd rules the hands, the 9th the buttocks, the 11th the calves and shins, the 7th is also the
+             maternal grandmother, Saturn is a karaka of the 12th; Planet Profile / Planet Characteristics: the Sun a
+             mild malefic, the Moon and Mercury natural benefics (Session 26); Mars brothers and male friends, athlete;
+             Mercury astrology and marketing; Planets: the Moon's food, travel and change of place, Mercury's astrology,
+             marketing and hobbies.
 """
 import pathlib
 import sys
@@ -187,6 +193,45 @@ P.append(Patch("Explanations", "B15", "Tula , Vrischika )", "Tula , Makara )", "
 P.append(Patch("Guide & Explanations", "B208", "(since 0–0 is Moola Trikona)", "(since 0–20 is Moola Trikona)",
                "Simha's Moolatrikona is 0–20 degrees", part=True))
 P.append(Patch("Nakshatras", "C4", "Pada lord", "Nakshatra lord", "the column holds the nakshatra's lord"))
+
+
+# ---- Sessions 23 (2024 deck) to 27: house tables and planet natures (whole-cell edits, so a re-run never doubles them)
+_S24_27 = [
+    ("Bhava Info", "C7", "Neck, shoulders, throat, ears, arms, oesophagus", "Neck, shoulders, throat, ears, arms, oesophagus, hands",
+     "S24 p.18: the 3rd house rules the hands"),
+    ("Bhava Info", "C13", "Thighs", "Thighs, buttocks", "S24 p.31: the 9th house rules the buttocks and thighs"),
+    ("Bhava Info", "C15", "Legs; left ear", "Legs, calves, shins; left ear", "S24: the 11th house rules the calves and shins"),
+    ("Bhava Info", "E11", "Spouse, 2nd child, business partner, clients, the public",
+     "Spouse, 2nd child, business partner, clients, the public, maternal grandmother", "S24/S25: the 7th is also the maternal grandmother"),
+    ("Bhava Info", "D16", "Ketu", "Ketu, Saturn", "S25: Saturn is also a karaka of the 12th"),
+]
+for sheet, sun, moon, merc in (("Planet Profile", "X5", "X6", "X8"), ("Planet Characteristics", "B35", "C35", "E35")):
+    _S24_27 += [
+        (sheet, sun, "Separative planet; causes combustion to nearby planets",
+         "Mild malefic (S26); separative planet; causes combustion to nearby planets", "S26 p.2: the Sun is a mild malefic"),
+        (sheet, moon, "Benefic (when waxing/strong); feminine; water element; rules Karkataka",
+         "Natural benefic (S26); waxing = stronger; feminine; water element; rules Karkataka", "S26 p.2: the Moon is a natural benefic"),
+        (sheet, merc, "Neutral planet — takes the nature of the planet it associates with; Rajasic; karaka of communication and intellect",
+         "Natural benefic (S26); Rajasic; karaka of communication and intellect", "S26 p.2: Mercury is a natural benefic"),
+    ]
+for sheet, rel, mars_job, merc_job in (("Planet Profile", "Q7", "R7", "R8"), ("Planet Characteristics", "D28", "D29", "E29")):
+    _S24_27 += [
+        (sheet, rel, "Younger Brother", "Younger Brother; brothers and male friends", "S23-2024 p.22: Mars, brothers and male friends"),
+        (sheet, mars_job, "Commander in Chief; Dentist, Surgeon, Mechanic, Army, Security, Police, Fire engine dept, Supervisor, Engineer",
+         "Commander in Chief; Dentist, Surgeon, Mechanic, Army, Security, Police, Fire engine dept, Supervisor, Engineer, Athlete",
+         "S23-2024 p.20: Mars, the athlete"),
+        (sheet, merc_job, "Prince (Portfolio); Teacher, Writer, Author, Broker, Publisher, Public speaker, Journalist, Trader, Ambassador, Accountant, Book seller",
+         "Prince (Portfolio); Teacher, Writer, Author, Broker, Publisher, Public speaker, Journalist, Trader, Ambassador, Accountant, Book seller, Astrologer, Marketing",
+         "S23-2024 pp.40, 44: Mercury, karaka of astrology; marketing"),
+    ]
+_S24_27 += [
+    ("Planets", "D6", "the mother, the mind and emotions", "the mother, the mind and emotions, food, travel and change of place",
+     "S23-2024 p.2: the Moon's karakatwas"),
+    ("Planets", "D8", "speech, intellect, education and business", "speech, intellect, education and business; astrology, marketing and hobbies",
+     "S23-2024 pp.40, 44: Mercury's karakatwas"),
+]
+for sheet, cell, old, new, why in _S24_27:
+    P.append(Patch(sheet, cell, old, new, why))
 
 PATCHES = P
 

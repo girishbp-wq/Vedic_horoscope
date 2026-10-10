@@ -20,7 +20,9 @@ PREVIOUS = ROOT / "session23_rules.previous.json"
 
 
 def _taught(**row):
-    return dict(row, status="taught")
+    """The row as the workbook build writes it: status just before source (so both paths give the same file)."""
+    source = row.pop("source")
+    return dict(row, status="taught", source=source)
 
 
 def apply(previous):
@@ -64,6 +66,8 @@ def apply(previous):
 
 def main():
     rules = apply(json.loads(PREVIOUS.read_text(encoding="utf-8")))
+    if b23.JSON_PATH.exists():                 # the reference tables come from the master workbook: keep the current ones
+        rules["reference"] = json.loads(b23.JSON_PATH.read_text(encoding="utf-8"))["reference"]
     b23.JSON_PATH.write_text(json.dumps(rules, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     b23.write_page_block(b23.INDEX, rules)
     print(f"wrote {b23.JSON_PATH.name} and the SESSION23-DATA block of {b23.INDEX.name}")
