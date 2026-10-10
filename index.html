@@ -577,6 +577,8 @@ details.section[open] > summary::after { content: "−"; }
 .s23-chip { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--parchment); color: var(--muted); margin-right: 5px; }
 .s23-chip.strong { background: #e9f5d6; color: #466e1f; border-color: #b9d489; }
 .s23-chip.lost { background: #fde0e0; color: #8a1e22; border-color: #e3a2a4; }
+.s23-chip.s23-nature.benefic { background: #e8f3ea; color: #2d6a3a; border-color: #a9d1b2; }
+.s23-chip.s23-nature.malefic, .s23-chip.s23-nature.mild-malefic { background: #f7ece4; color: #7a3b16; border-color: #dcb79c; }
 .s23-points, .s23-extra, .s23-class-texts { margin: 2px 0 6px; padding-left: 18px; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
@@ -4673,13 +4675,13 @@ function grahaClass(p){
   if(OUTER_PLANETS.includes(p))  return "Tara Graha (outer planet)";
   return "—";
 }
-function beneficMalefic(p, moonWaxing){
-  if(["Jupiter","Venus"].includes(p)) return "Benefic (Shubha)";
+function beneficMalefic(p, moonWaxing){            // Session 26 classification
+  if(["Jupiter","Venus","Mercury"].includes(p)) return "Benefic (Shubha)";
   if(p==="Moon") return (moonWaxing===undefined)
-      ? "Benefic if waxing (Shukla Paksha), malefic if waning (Krishna Paksha)"
-      : (moonWaxing ? "Benefic (waxing / Shukla Paksha)" : "Malefic (waning / Krishna Paksha)");
-  if(p==="Mercury") return "Benefic when well associated";
-  if(["Mars","Saturn","Sun","Rahu","Ketu"].includes(p)) return "Malefic (Papa)";
+      ? "Benefic (Shubha) — Shukla (waxing) = stronger, Krishna (waning) = weaker"
+      : (moonWaxing ? "Benefic (Shubha) — Shukla (waxing), stronger" : "Benefic (Shubha) — Krishna (waning), weaker");
+  if(p==="Sun") return "Mild malefic";
+  if(["Mars","Saturn","Rahu","Ketu"].includes(p)) return "Malefic (Papa)";
   return "—";
 }
 const RETRO_FREQUENCY = {
@@ -6185,21 +6187,21 @@ function s23MoonWaxing(sunLon, moonLon){
   const sep=((moonLon-sunLon)%360+360)%360;
   return Math.floor(sep/12)+1 <= 15;
 }
-function s23NatureAt(p, sg, waxing){
-  if(p==="Jupiter"||p==="Venus") return "benefic";
-  if(p==="Moon") return waxing ? "benefic" : "malefic";
-  if(p==="Mercury") return ["Mars","Saturn","Rahu","Ketu"].some(o=>sg[o]===sg.Mercury) ? "malefic" : "benefic";
-  return "malefic";
-}
-function s23ClassReadingsAt(lg, sg, waxing){
+/* Session 26: Jupiter, Venus, Mercury, Moon benefic; Saturn, Mars, Rahu, Ketu malefic; the Sun a mild malefic. */
+const S23_BENEFICS = ["Jupiter","Venus","Mercury","Moon"];
+function s23NatureAt(p){ return S23_BENEFICS.includes(p) ? "benefic" : (p==="Sun" ? "mild malefic" : "malefic"); }
+function s23NatureClass(p){ return S23_BENEFICS.includes(p) ? "benefic" : "malefic"; }
+function s23MoonStrength(waxing){ return waxing==null ? "" : (waxing ? "Shukla (waxing) — stronger" : "Krishna (waning) — weaker"); }
+function s23Mild(p, applies, text){ return p==="Sun" && applies==="malefic" ? "(mild) "+text : text; }
+function s23ClassReadingsAt(lg, sg){
   const out=[];
   for(const p of S23_PLANETS){
     if(sg[p]===undefined) continue;
-    const house=s23HouseOf(lg,sg[p]), kind=s23NatureAt(p,sg,waxing);
+    const house=s23HouseOf(lg,sg[p]), kind=s23NatureClass(p);
     const classes=S23_CLASS_ORDER.filter(c=>s23ClassHousesAt(c,lg).includes(house));
     const texts=[];
     for(const c of classes) for(const r of S23.class_rules)
-      if(r.class===c && (r.applies==="any"||r.applies===kind) && !r.exclude_houses.includes(house)) texts.push(r.text);
+      if(r.class===c && (r.applies==="any"||r.applies===kind) && !r.exclude_houses.includes(house)) texts.push(s23Mild(p, r.applies, r.text));
     out.push({planet:p, house, classes, texts});
   }
   return out;
@@ -6250,8 +6252,8 @@ function s23Badhaka(lagnaN, pbr){
 }
 
 /* ---- nature, readings, roles ---- */
-function s23Nature(p, pbr, moonWaxing){ return s23NatureAt(p, s23Signs(pbr), moonWaxing); }
-function s23ClassReadings(lagnaN, pbr, moonWaxing){ return s23ClassReadingsAt(lagnaN-1, s23Signs(pbr), moonWaxing); }
+function s23Nature(p){ return s23NatureAt(p); }
+function s23ClassReadings(lagnaN, pbr){ return s23ClassReadingsAt(lagnaN-1, s23Signs(pbr)); }
 function s23Roles(lagnaN, pbr){ return s23RolesAt(lagnaN-1, s23Signs(pbr)); }
 function s23Digbala(planet, house){
   const row=S23.digbala[planet]; if(!row) return null;
@@ -6287,12 +6289,13 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
   const cell=S23.graha_in_bhava.find(x=>x.planet===planet && x.house===house);
   const dig=planetDignity(planet, sg[planet]+1, deg);
   const [dignityLine, dignityStatus]=s23DignityTexts(dig);
-  const reading=s23ClassReadingsAt(lg,sg,moonWaxing).find(r=>r.planet===planet);
+  const reading=s23ClassReadingsAt(lg,sg).find(r=>r.planet===planet);
   const dg=s23Digbala(planet, house), row=S23.digbala[planet];
   let digbalaLine="";
   if(dg==="strong") digbalaLine=`${planet} gains directional strength (digbala) in the ${ord(house)} house.`;
   else if(dg==="lost") digbalaLine=`${planet} loses directional strength (digbala) in the ${ord(house)} house, opposite its strongest house, the ${ord(row.strong)}.`;
-  return {planet, house, status:cell.status, points:cell.points, extra:cell.extra,
+  return {planet, house, nature:s23NatureAt(planet), moon_strength: planet==="Moon" ? s23MoonStrength(moonWaxing) : "",
+    status:cell.status, points:cell.points, extra:cell.extra,
     dignity:{label:dig.label, flag:dig.flag, bala:dig.bala, note:dig.note}, dignity_line:dignityLine, dignity_status:dignityStatus,
     digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts};
 }
@@ -6424,9 +6427,9 @@ function s23ClassBlock(c, rows, lagnaN){
 }
 
 function s23BuildClasses(sid, lagnaN){
-  const {pbr, waxing}=s23Inputs(sid), lg=lagnaN-1;
+  const {pbr}=s23Inputs(sid), lg=lagnaN-1;
   const tables=s23ClassificationTables(lagnaN, pbr), matrix=s23HouseClassMatrix(lagnaN);
-  const readings=s23ClassReadings(lagnaN, pbr, waxing), bad=s23Badhaka(lagnaN, pbr), sg=s23Signs(pbr);
+  const readings=s23ClassReadings(lagnaN, pbr), bad=s23Badhaka(lagnaN, pbr);
   let h=`<p>Śānti Madam's Session 23 groups the twelve bhāvas into <strong>ten classes</strong>. A house can belong to several (the 1st is Kendra, Trikona and Apachaya). `
     +`The tables below show, for <em>your</em> chart, each class's houses with the rāśi on that house, the planets seated in it, and its lord — with the house the lord sits in, the extra column she asks students to add. Houses are counted from your Lagna.</p>`;
   h+=s23TagLegend();
@@ -6448,10 +6451,10 @@ function s23BuildClasses(sid, lagnaN){
     +`Planets in it: ${s23Planets(bad.occupants)}. Remember: the Badhaka obstructs a sign, not the horoscope.</p></div>`;
   // readings from the class rules
   h+=`<h4 class="pane-h">What the class rules say about your planets</h4>`
-    +`<p class="rnote">Benefic: Jupiter, Venus, a waxing Moon and Mercury unless it sits with Mars, Saturn, Rāhu or Ketu. Malefic: Sun, Mars, Saturn, Rāhu, Ketu and a waning Moon. The nature used for each planet is shown.</p>`
+    +`<p class="rnote">Session 26: natural benefics are Jupiter, Venus, Mercury and the Moon; natural malefics are Saturn, Mars, Rāhu and Ketu; the Sun is a mild malefic and takes the malefic rules, marked “(mild)”. A waxing Moon is stronger, a waning Moon weaker — still a benefic. The nature used for each planet is shown.</p>`
     +`<div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-readings"><thead><tr><th class="w14">Planet</th><th class="w8">House</th><th class="w12">Nature</th><th class="w20">Classes</th><th class="w46">Readings</th></tr></thead><tbody>`;
   for(const r of readings){
-    const nature=s23NatureAt(r.planet, sg, waxing);
+    const nature=s23NatureAt(r.planet);
     h+=`<tr data-planet="${r.planet}" data-house="${r.house}" data-nature="${nature}" data-classes="${r.classes.join(",")}">`
       +`<td>${GLYPH9[r.planet]} <strong>${r.planet}</strong></td><td>${ord(r.house)}</td><td>${nature}</td><td>${r.classes.join(", ")}</td>`
       +`<td><ul class="s23-ul">${r.texts.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul></td></tr>`;
@@ -6485,7 +6488,9 @@ function s23BuildPredictions(sid, lagnaN){
     const deep = g.dignity.label.startsWith("Deep") ? " flag-deep" : "";
     h+=`<div class="s23-card s23-gb" data-planet="${p}" data-house="${g.house}" data-status="${g.status}">`
       +`<h5>${GLYPH9[p]} ${p} in the ${ord(g.house)} house <small>${rashi.sanskrit} · ${_esc(s23ShortName(BHAVA_INFO[g.house].nm))}</small> ${s23Tag(g.status)}</h5>`
-      +`<p class="s23-chips"><span class="section-flag flag-${g.dignity.flag}${deep} s23-dig">${g.dignity.label}</span>`
+      +`<p class="s23-chips"><span class="s23-chip s23-nature ${g.nature.replace(" ","-")}">${g.nature}</span>`
+      +(g.moon_strength?`<span class="s23-chip s23-paksha">${g.moon_strength}</span>`:"")
+      +`<span class="section-flag flag-${g.dignity.flag}${deep} s23-dig">${g.dignity.label}</span>`
       +(g.digbala_line?`<span class="s23-chip ${s23Digbala(p,g.house)}">Digbala ${s23Digbala(p,g.house)==="strong"?"✓":"✗"}</span>`:"")
       +`<span class="s23-chip">${g.classes.join(" · ")||"—"}</span></p>`
       +`<ul class="s23-points">${g.points.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`

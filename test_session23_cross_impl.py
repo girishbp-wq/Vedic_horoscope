@@ -93,7 +93,7 @@ function layers(c){
   const lg = c.lagna + 1, pbr = {}; for (const p of PL) pbr[p] = c.signs[p] + 1;
   return {
     tables: s23ClassificationTables(lg, pbr), matrix: s23HouseClassMatrix(lg), badhaka: s23Badhaka(lg, pbr),
-    roles: s23Roles(lg, pbr), readings: s23ClassReadings(lg, pbr, c.waxing),
+    roles: s23Roles(lg, pbr), readings: s23ClassReadings(lg, pbr),
     graha_bhava: PL.map(p => s23GrahaBhava(lg, pbr, p, c.degs[p], c.waxing)),
     bhava_bhava: s23BhavaBhava(lg, pbr), graha_rashi: s23GrahaRashi(lg, pbr, c.degs),
     graha_graha: s23GrahaGraha(lg, pbr, c.degs),
@@ -108,7 +108,7 @@ def python_layers(c):
     return {
         "tables": br.classification_tables(RULES, lg, sg), "matrix": br.house_class_matrix(RULES, lg),
         "badhaka": br.badhaka(RULES, lg, sg), "roles": br.planet_roles(RULES, lg, sg),
-        "readings": br.class_readings(RULES, lg, sg, w),
+        "readings": br.class_readings(RULES, lg, sg),
         "graha_bhava": [br.graha_bhava(RULES, lg, sg, p, degs[p], w) for p in br.PLANET_ORDER],
         "bhava_bhava": br.bhava_bhava(RULES, lg, sg), "graha_rashi": br.graha_rashi(RULES, lg, sg, degs),
         "graha_graha": br.graha_graha(RULES, lg, sg, degs),
@@ -462,11 +462,11 @@ class BrowserSession23(unittest.TestCase):
     def test_readings_and_five_step_equal_python(self):
         for d in self.out["charts"]:
             lg, signs, degs, w = page_chart(d)
-            want = br.class_readings(RULES, lg, signs, w)
+            want = br.class_readings(RULES, lg, signs)
             self.assertEqual([(r["planet"], r["house"], r["classes"], [_norm(x) for x in r["texts"]]) for r in want],
                              [(r["planet"], r["house"], r["classes"], r["texts"]) for r in d["readings"]])
             for r in d["readings"]:
-                self.assertEqual(r["nature"], br.nature(r["planet"], signs, w))
+                self.assertEqual(r["nature"], br.nature(r["planet"]))
             for h, got in zip(range(1, 13), d["fivestep"]):
                 f = br.five_step(RULES, lg, signs, h)
                 self.assertEqual((got["house"], got["lord"], got["lord_house"], got["occupants"]),
@@ -899,7 +899,7 @@ class ExcelSession23(unittest.TestCase):
                 got = {name: ws.cell(row=r, column=col).value for name, col in mx.PREDICT_COLS.items()}
                 self.assertEqual(got["planet"], p)
                 self.assertEqual(got["house"], want["house"], (i, p))
-                self.assertEqual(got["nature"], br.nature(p, c["signs"], c["waxing"]), (i, p))
+                self.assertEqual(got["nature"], br.nature(p), (i, p))
                 self.assertEqual(got["status"], want["status"], (i, p))
                 self.assertEqual(got["points"], "\n\n".join(want["points"]), (i, p))
                 self.assertEqual(got["extra"] or "", "\n".join(want["extra"]), (i, p))

@@ -342,10 +342,9 @@ def _predict_sheet(ws, rules):
                    f'IF(AND({n}={exR},ABS({d}-{exD})<=1),"Deep Exalted","Exalted")),'
                    f'IF({base}="Debilitated",IF(AND({n}={deR},ABS({d}-{deD})<=1),"Deep Debilitated","Debilitated"),'
                    f'IF({base}="Own (Moolatrikona)",IF(AND({d}>={mt0},{d}<={mt1}),"Own (Moolatrikona)","Own House"),{base})))')
-        mercury = PLANET_ROW0 + 3
-        spoil = ",".join(f"S23_Chart!$D${PLANET_ROW0 + br.PLANET_ORDER.index(o)}=S23_Chart!$D${mercury}" for o in ("Mars", "Saturn", "Rahu", "Ketu"))
-        nature = (f'=IF(OR($A{r}="Jupiter",$A{r}="Venus"),"benefic",IF($A{r}="Moon",IF(S23_Chart!{WAXING_CELL},"benefic","malefic"),'
-                  f'IF($A{r}="Mercury",IF(OR({spoil}),"malefic","benefic"),"malefic")))')
+        # Session 26: Jupiter, Venus, Mercury, Moon benefic; the Sun a mild malefic; the rest malefic
+        benefic = ",".join(f'$A{r}="{b}"' for b in br.BENEFICS)
+        nature = f'=IF(OR({benefic}),"benefic",IF($A{r}="{br.MILD_MALEFIC}","mild malefic","malefic"))'
         ws.cell(row=r, column=1, value=p)
         ws.cell(row=r, column=2, value=f"={pc['house']}")
         ws.cell(row=r, column=3, value=nature)
@@ -359,7 +358,8 @@ def _predict_sheet(ws, rules):
             f'opposite its strongest house, the "&{_ord(f"$M{r}")}&".",""))'))
         ws.cell(row=r, column=9, value=f"=INDEX(S23_Classes_Calc!$M${MATRIX_ROW0 + 1}:$M${MATRIX_ROW0 + 12},$B{r})")
         fr = FLAG_ROW0 + k
-        joined = "&".join(f'IF({L(2 + m)}{fr}=1,CHAR(10)&S23_ClassRules!$D${2 + m},"")' for m in range(n_rules))
+        joined = "&".join(f'IF({L(2 + m)}{fr}=1,CHAR(10)&IF(AND($C{r}="mild malefic",S23_ClassRules!$B${2 + m}="malefic"),"(mild) ","")'
+                          f'&S23_ClassRules!$D${2 + m},"")' for m in range(n_rules))
         ws.cell(row=r, column=10, value=f"=MID({joined},2,32000)")
         ws.cell(row=r, column=11, value=f"=INDEX(S23_GrahaInBhava!$D$1:$D$300,$L{r})")
         ws.cell(row=r, column=12, value=(f"=SUMPRODUCT((S23_GrahaInBhava!$A$2:$A$300=$A{r})*(S23_GrahaInBhava!$B$2:$B$300=$B{r})"
@@ -376,7 +376,7 @@ def _predict_sheet(ws, rules):
         for m in range(n_rules):
             cr = 2 + m
             f = (f'=IF(AND(INDEX({matrix},$B{pr},MATCH(S23_ClassRules!$A${cr},S23_Ref_Calc!$AE$3:$AE$12,0))=1,'
-                 f'OR(S23_ClassRules!$B${cr}="any",S23_ClassRules!$B${cr}=$C{pr}),'
+                 f'OR(S23_ClassRules!$B${cr}="any",S23_ClassRules!$B${cr}=IF($C{pr}="mild malefic","malefic",$C{pr})),'
                  f'NOT(ISNUMBER(SEARCH(", "&$B{pr}&",",", "&S23_ClassRules!$C${cr}&",")))),1,0)')
             ws.cell(row=fr, column=2 + m, value=f)
     for c, w in zip("ABCDEFGHIJK", (12, 7, 9, 10, 60, 20, 50, 50, 28, 60, 60)):

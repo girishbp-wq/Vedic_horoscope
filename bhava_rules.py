@@ -90,7 +90,8 @@ def badhaka(rules, lagna, signs):
 # ---------------------------------------------------------------- nature, class readings, roles
 ROLE_ORDER = ["Maraka lord", "Maraka occupant", "Badhakadhipati", "Badhaka occupant",
               "Dusthana lord", "Trishadaya lord"]
-_MERCURY_SPOILERS = ("Mars", "Saturn", "Rahu", "Ketu")
+BENEFICS = ("Jupiter", "Venus", "Mercury", "Moon")     # Session 26: natural benefics
+MILD_MALEFIC = "Sun"                                   # Session 26: a mild malefic
 
 
 def moon_waxing(sun_lon, moon_lon):
@@ -99,28 +100,40 @@ def moon_waxing(sun_lon, moon_lon):
     return math.floor(sep / 12) + 1 <= 15            # Math.floor(sep / 12), as the page
 
 
-def nature(planet, signs, waxing):
-    """'benefic' or 'malefic' — Mercury is benefic unless it shares a sign with Mars, Saturn, Rahu or Ketu."""
-    if planet in ("Jupiter", "Venus"):
+def nature(planet):
+    """Session 26: Jupiter, Venus, Mercury and the Moon are natural benefics; Saturn, Mars, Rahu and Ketu natural
+    malefics; the Sun a mild malefic. The Moon's paksha changes its strength (moon_strength), not its nature."""
+    if planet in BENEFICS:
         return "benefic"
-    if planet == "Moon":
-        return "benefic" if waxing else "malefic"
-    if planet == "Mercury":
-        spoiled = any(signs.get(o) == signs.get("Mercury") for o in _MERCURY_SPOILERS)
-        return "malefic" if spoiled else "benefic"
-    return "malefic"
+    return "mild malefic" if planet == MILD_MALEFIC else "malefic"
 
 
-def class_readings(rules, lagna, signs, waxing):
-    """One entry per placed planet: {planet, house, classes, texts} from the ClassRules sheet."""
+def nature_class(planet):
+    """The rule class a planet's nature selects: a mild malefic takes the malefic rules."""
+    return "benefic" if planet in BENEFICS else "malefic"
+
+
+def moon_strength(waxing):
+    if waxing is None:
+        return ""
+    return "Shukla (waxing) — stronger" if waxing else "Krishna (waning) — weaker"
+
+
+def _mild(planet, applies, text):
+    return "(mild) " + text if planet == MILD_MALEFIC and applies == "malefic" else text
+
+
+def class_readings(rules, lagna, signs):
+    """One entry per placed planet: {planet, house, classes, texts} from the ClassRules sheet.
+    The Sun takes the malefic rules, each marked "(mild) "."""
     out = []
     for p in PLANET_ORDER:
         if p not in signs:
             continue
         house = house_of(lagna, signs[p])
-        kind = nature(p, signs, waxing)
+        kind = nature_class(p)
         classes = [c for c in CLASS_ORDER if house in class_houses(rules, c, lagna)]
-        texts = [r["text"] for c in classes for r in rules["class_rules"]
+        texts = [_mild(p, r["applies"], r["text"]) for c in classes for r in rules["class_rules"]
                  if r["class"] == c and r["applies"] in ("any", kind) and house not in r["exclude_houses"]]
         out.append({"planet": p, "house": house, "classes": classes, "texts": texts})
     return out
@@ -331,7 +344,7 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing):
     cell = next(x for x in rules["graha_in_bhava"] if x["planet"] == planet and x["house"] == house)
     dig = dignity(rules, planet, signs[planet], deg)
     dignity_line, dignity_status = _dignity_texts(rules, dig)
-    reading = next(r for r in class_readings(rules, lagna, signs, waxing) if r["planet"] == planet)
+    reading = next(r for r in class_readings(rules, lagna, signs) if r["planet"] == planet)
     dg = digbala(rules, planet, house)
     row = rules["digbala"].get(planet)
     if dg == "strong":
@@ -341,7 +354,9 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing):
                         f"opposite its strongest house, the {ordinal(row['strong'])}.")
     else:
         digbala_line = ""
-    return {"planet": planet, "house": house, "status": cell["status"], "points": cell["points"],
+    return {"planet": planet, "house": house, "nature": nature(planet),
+            "moon_strength": moon_strength(waxing) if planet == "Moon" else "",
+            "status": cell["status"], "points": cell["points"],
             "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
             "classes": reading["classes"], "class_texts": reading["texts"]}

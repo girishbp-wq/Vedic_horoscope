@@ -455,9 +455,19 @@ class LabelsAndText(unittest.TestCase):
                 merc: GRAHA_ATTRS.Mercury, marsTransit: GRAHA_ATTRS.Mars.transit,
                 aksharaNote: document.body.textContent.includes('beejakshari mantras are listed'),
                 meanNode: txt('planet-narrative').includes('mean lunar nodes'),
+                bm: Object.fromEntries(['Sun', 'Moon', 'Mercury', 'Mars', 'Jupiter'].map(p => [p, beneficMalefic(p)])),
               };
             });
         """)
+
+    def test_session12_table_follows_s26(self):
+        bm = self.r["bm"]
+        self.assertEqual(bm["Sun"], "Mild malefic")
+        self.assertEqual(bm["Mercury"], "Benefic (Shubha)")
+        self.assertEqual(bm["Jupiter"], "Benefic (Shubha)")
+        self.assertEqual(bm["Mars"], "Malefic (Papa)")
+        self.assertTrue(bm["Moon"].startswith("Benefic (Shubha)"), bm["Moon"])
+        self.assertIn("waxing", bm["Moon"])
 
     def test_node_aspects_are_named_anti_clockwise(self):
         self.assertEqual(self.r["nodeOrd"], ["9th (anti-clockwise)", "5th (anti-clockwise)", "2nd (anti-clockwise)"])

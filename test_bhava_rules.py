@@ -126,20 +126,44 @@ class Matrix(unittest.TestCase):
 
 
 class NatureAndReadings(unittest.TestCase):
-    def test_nature_edge_cases(self):
-        base = {p: 0 for p in br.PLANET_ORDER}
-        with_saturn = dict(base, Saturn=0, Mercury=0)
-        self.assertEqual(br.nature("Mercury", with_saturn, True), "malefic")            # beside Saturn
-        apart = dict(base, Mars=5, Saturn=6, Rahu=7, Ketu=8, Mercury=0)
-        self.assertEqual(br.nature("Mercury", apart, True), "benefic")
-        sun_only = dict(apart, Sun=0)
-        self.assertEqual(br.nature("Mercury", sun_only, True), "benefic")              # Sun does not spoil Mercury
-        for node in ("Rahu", "Ketu"):
-            self.assertEqual(br.nature("Mercury", dict(apart, **{node: 0}), True), "malefic")
-        self.assertEqual(br.nature("Moon", apart, True), "benefic")
-        self.assertEqual(br.nature("Moon", apart, False), "malefic")
-        self.assertEqual([br.nature(p, apart, True) for p in ("Sun", "Mars", "Saturn", "Rahu", "Ketu")], ["malefic"] * 5)
-        self.assertEqual([br.nature(p, apart, True) for p in ("Jupiter", "Venus")], ["benefic"] * 2)
+    def test_natures_follow_session_26(self):
+        self.assertEqual({p: br.nature(p) for p in br.PLANET_ORDER},
+                         {"Sun": "mild malefic", "Moon": "benefic", "Mars": "malefic", "Mercury": "benefic",
+                          "Jupiter": "benefic", "Venus": "benefic", "Saturn": "malefic", "Rahu": "malefic", "Ketu": "malefic"})
+        self.assertEqual(br.nature_class("Sun"), "malefic")
+        self.assertEqual(br.nature_class("Moon"), "benefic")
+
+    def test_mercury_with_saturn_stays_benefic(self):
+        with_saturn = dict(SIGNS, Mercury=10, Saturn=10)              # both in the 7th (Kumbha) for Simha Lagna
+        merc = next(r for r in br.class_readings(RULES, LAGNA, with_saturn) if r["planet"] == "Mercury")
+        self.assertIn("smaller efforts", " | ".join(merc["texts"]))      # the benefic Kendra rule
+        self.assertNotIn("do not do well", " | ".join(merc["texts"]))
+
+    def test_waning_moon_stays_benefic(self):
+        in_kendra = dict(SIGNS, Moon=1)                               # Moon in the 10th (Vrishabha)
+        moon = next(r for r in br.class_readings(RULES, LAGNA, in_kendra) if r["planet"] == "Moon")
+        self.assertIn("smaller efforts", " | ".join(moon["texts"]))
+        g = br.graha_bhava(RULES, LAGNA, in_kendra, "Moon", 10.0, False)
+        self.assertEqual(g["nature"], "benefic")
+        self.assertNotIn("struggle", " | ".join(g["class_texts"]))
+
+    def test_sun_takes_malefic_rules_marked_mild(self):
+        sixth = dict(SIGNS, Sun=9)                                    # Sun in the 6th (Makara)
+        sun = next(r for r in br.class_readings(RULES, LAGNA, sixth) if r["planet"] == "Sun")
+        malefic = [r["text"] for c in sun["classes"] for r in RULES["class_rules"]
+                   if r["class"] == c and r["applies"] == "malefic" and 6 not in r["exclude_houses"]]
+        self.assertTrue(malefic)
+        for t in malefic:
+            self.assertIn("(mild) " + t, sun["texts"])
+        anys = [t for t in sun["texts"] if not t.startswith("(mild) ")]
+        self.assertTrue(anys)                                         # rules for any planet are not marked
+
+    def test_moon_strength_line(self):
+        self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Moon", 10.0, False)["moon_strength"], "Krishna (waning) — weaker")
+        self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Moon", 10.0, True)["moon_strength"], "Shukla (waxing) — stronger")
+        self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)["moon_strength"], "")
+        self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)["nature"], "benefic")
+        self.assertEqual(br.moon_strength(None), "")
 
     def test_moon_waxing_at_the_purnima_boundary(self):
         self.assertTrue(br.moon_waxing(10.0, 10.0))          # separation 0 -> tithi 1
@@ -148,7 +172,7 @@ class NatureAndReadings(unittest.TestCase):
         self.assertFalse(br.moon_waxing(100.0, 99.0))        # separation 359 -> tithi 30
 
     def test_class_readings_rules(self):
-        reads = {r["planet"]: r for r in br.class_readings(RULES, LAGNA, SIGNS, True)}
+        reads = {r["planet"]: r for r in br.class_readings(RULES, LAGNA, SIGNS)}
         jup = " | ".join(reads["Jupiter"]["texts"])               # Jupiter in the 7th: Kendra + Apachaya + Maraka
         self.assertIn("smaller efforts", jup)
         self.assertIn("highly active", jup)
@@ -160,14 +184,14 @@ class NatureAndReadings(unittest.TestCase):
         self.assertEqual(reads["Saturn"]["classes"], ["Apoklima", "Upachaya", "Dusthana", "Trishadaya"])
         in7 = dict(SIGNS, Saturn=10)                                 # Saturn in the 7th: Apachaya malefic
         self.assertIn("do not do well", " | ".join(
-            next(r for r in br.class_readings(RULES, LAGNA, in7, True) if r["planet"] == "Saturn")["texts"]))
+            next(r for r in br.class_readings(RULES, LAGNA, in7) if r["planet"] == "Saturn")["texts"]))
 
     def test_ninth_house_is_the_apoklima_exception(self):
         nine = dict(SIGNS, Venus=0)                                  # Venus in the 9th (Mesha for Simha Lagna)
-        txt = " | ".join(next(r for r in br.class_readings(RULES, LAGNA, nine, True) if r["planet"] == "Venus")["texts"])
+        txt = " | ".join(next(r for r in br.class_readings(RULES, LAGNA, nine) if r["planet"] == "Venus")["texts"])
         self.assertIn("exception", txt)
         self.assertNotIn("considered weak", txt)
-        weak = " | ".join(next(r for r in br.class_readings(RULES, LAGNA, SIGNS, True) if r["planet"] == "Moon")["texts"])
+        weak = " | ".join(next(r for r in br.class_readings(RULES, LAGNA, SIGNS) if r["planet"] == "Moon")["texts"])
         self.assertIn("considered weak", weak)                       # Moon in the 3rd
 
 
@@ -462,7 +486,7 @@ class PredictionLayers(unittest.TestCase):
         jup = br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)                    # curated, 7th, Kendra
         self.assertEqual((jup["house"], jup["status"]), (7, "curated"))
         self.assertEqual(jup["classes"], ["Kendra", "Apachaya", "Maraka"])
-        self.assertEqual(jup["class_texts"], next(r for r in br.class_readings(RULES, LAGNA, SIGNS, True)
+        self.assertEqual(jup["class_texts"], next(r for r in br.class_readings(RULES, LAGNA, SIGNS)
                                                     if r["planet"] == "Jupiter")["texts"])
         self.assertEqual(br.graha_bhava(RULES, LAGNA, SIGNS, "Venus", None, True)["digbala_line"], "")
 
