@@ -601,7 +601,7 @@ details.section[open] > summary::after { content: "−"; }
 @media (max-width: 680px) { .s23-sumgrid { grid-template-columns: 1fr; } }
 @media print { .s23-more { display: none; } }
 .s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
-.s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
+.s23-points li, .s23-extra li, .s23-class-texts li, .s23-nature-lines li, .s23-conds li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
 .s23-pairs { padding-left: 18px; margin: 4px 0 12px; }
 .s23-pairs li { margin: 8px 0; font-size: 13.5px; }
@@ -6438,7 +6438,7 @@ function s23BhavaNatureLines(p, house){
   const rows=S23.bhava_nature.filter(r=>(r.nature===kind||r.nature==="any") && (r.house===null||r.house===house) && (r.planet===null||r.planet===p));
   const group=r=>r.house===null ? 0 : (r.planet===null ? 1 : 2);
   return rows.map((r,i)=>[group(r),i,r]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])
-    .map(([,,r])=>({text:(p==="Sun"?"(mild) ":"")+r.text, status:r.status, source:r.source}));
+    .map(([,,r])=>({text:s23Mild(p, r.nature, r.text), status:r.status, source:r.source}));
 }
 function s23TwelfthLine(house){
   if(house!==12) return "";
@@ -6695,6 +6695,7 @@ const S23_TAG_TITLES = {
   blend:    "Generated from her tables by a template",
   standard: "A standard rule she has not stated yet"
 };
+function s23Attr(t){ return _esc(t).replace(/"/g,"&quot;"); }      // text inside an HTML attribute
 function s23MeaningList(ms){ return ms && ms.length ? `<ul class="s23-meanings">${ms.map(m=>`<li>${_esc(m)}</li>`).join("")}</ul>` : ""; }
 function s23Src(source){ return source ? ` <span class="s23-src" title="Where the teacher says this">${_esc(source)}</span>` : ""; }
 function s23Tag(status){ return status ? `<span class="s23-tag ${status}" title="${S23_TAG_TITLES[status]}">${status}</span>` : ""; }
@@ -6774,7 +6775,7 @@ function s23BuildClasses(sid, lagnaN){
       +`data-aspecting="${f.aspecting.map(a=>a.by+":"+a.house_aspect).join(",")}" data-karakas="${f.karakas.map(k=>k.planet+":"+k.house).join(",")}">`
       +`<td><strong>${hh}</strong> · ${_esc(s23ShortName(f.name))} ${s23RashiCell(f.sign)}</td>`
       +`<td>${GLYPH9[f.lord]} ${f.lord} → ${ord(f.lord_house)}${f.lord_house===hh?" (own bhāva)":""}</td><td>${s23Planets(f.occupants)}</td>`
-      +`<td>${f.aspecting.length?f.aspecting.map(a=>`<span title="${_esc(a.meanings.join(" "))}">${a.by} (${aspectOrd(a.by, a.house_aspect)})</span>`).join(", "):"—"}</td>`
+      +`<td>${f.aspecting.length?f.aspecting.map(a=>`${a.by} (${aspectOrd(a.by, a.house_aspect)})${s23MeaningList(a.meanings)}`).join(""):"—"}</td>`
       +`<td>${f.karakas.length?f.karakas.map(k=>`${GLYPH9[k.planet]} ${k.planet} in ${ord(k.house)}`).join(", "):"—"}</td></tr>`;
   }
   return h+`</tbody></table></div>`;
@@ -6830,7 +6831,7 @@ function s23BuildPredictions(sid, lagnaN, extra){
     +`<p class="rnote">Session 27: blend the karakatwas of the lord's own bhāva, the bhāva it sits in and the rāśi it sits in; then see where it is placed, whether it aspects its own house (that house becomes strong), and which planets are with it or aspect it. The teacher's own readings are tagged <em>taught</em> (Sessions 23, 26, 27); a Lagna lord in the 6th or 8th shows her line for a strong or weak lord.</p>`
     +`<div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-bb"><thead><tr><th class="w18">Lord of → sits in</th><th class="w52">Reading</th><th class="w30">Sign · placement · company</th></tr></thead><tbody>`;
   for(const r of s23BhavaBhava(ctx)){
-    const chips=(r.dictum?`<span class="s23-chip strong" title="${_esc(r.dictum)}">dictum: ${ord(r.lord_of)} strong</span>`:"")
+    const chips=(r.dictum?`<span class="s23-chip strong" title="${s23Attr(r.dictum)}">dictum: ${ord(r.lord_of)} strong</span>`:"")
       +(r.exchange?`<span class="s23-chip s23-exchange">Parivartana ${r.lord_of} ↔ ${r.exchange}</span>`:"")
       +(r.status==="taught" && S23.bhava_lord_in.some(x=>x.lord_of===r.lord_of && x.sits_in===r.sits_in && x.condition)?`<span class="s23-chip">lord: ${r.strength==="depends"?"depends on strength":r.strength}</span>`:"");
     const company=r.with_lord.length ? r.with_lord.map(w=>`${GLYPH9[w.planet]} ${w.planet} ${w.how==="with"?"with the lord":`aspects it (${w.aspect})`}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}`).join("; ") : "—";
@@ -6921,7 +6922,7 @@ function renderS23LifeAreas(el, ctx){
   let h=`<p>Session 27: to answer a question about one area of life, read its bhāva from the <strong>Ready Reckoner</strong> in seven steps — the bhāva and its sign, the planets in it, the planets aspecting it, where its lord sits, the planets with or aspecting the lord, and the bhāva kāraka — then weigh what supports it against what presses on it. There is no score; the two lists are for you to weigh.</p>`;
   h+=s23TagLegend();
   h+=`<div class="s23-area-btns">${areas.map(a=>`<button type="button" class="s23-area-btn${a.no===s23AreaShown?" active":""}" data-area="${a.no}">${_esc(a.area)}</button>`).join("")}</div>`;
-  h+=areas.map(a=>`<div class="s23-area-pane" id="s23-area-${a.no}" data-print-title="Life area ${a.no} · ${_esc(a.area)}"${a.no===s23AreaShown?"":` style="display:none"`}>${s23AreaPane(a)}</div>`).join("");
+  h+=areas.map(a=>`<div class="s23-area-pane" id="s23-area-${a.no}" data-print-title="Life area ${a.no} · ${s23Attr(a.area)}"${a.no===s23AreaShown?"":` style="display:none"`}>${s23AreaPane(a)}</div>`).join("");
   el.innerHTML=h;
   el.onclick=e=>{
     const b=e.target.closest(".s23-area-btn"); if(!b) return;
@@ -6934,7 +6935,7 @@ function renderS23LifeAreas(el, ctx){
 /* ---- Daśā–Bhukti section: roles linked to the running Mahādaśā / Bhukti ---- */
 function s23RoleChip(role){
   const r=S23.dasha_role_text[role];
-  return `<span class="s23-role ${r.kind}" data-role="${role}" title="${_esc(r.text)}">${role}</span>`;
+  return `<span class="s23-role ${r.kind}" data-role="${role}" title="${s23Attr(r.text)}">${role}</span>`;
 }
 function s23RoleChips(list){ return list.map(s23RoleChip).join(" "); }
 function s23RunPart(key, label, part, allRoles){

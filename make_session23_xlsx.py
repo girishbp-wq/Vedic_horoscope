@@ -456,6 +456,8 @@ def _predict_s24_27(ws, rules):
     n_bn = len(rules["bhava_nature"])
     ws.cell(row=NATURE_FLAG_ROW0 - 2, column=1, value="Which S23_BhavaNature rows apply (0 general, 1 this house, 2 this planet, -1 no)").font = Font(bold=True, color="6B1D2B")
     _head(ws, NATURE_FLAG_ROW0 - 1, ["Graha"] + [f"row {m + 2}" for m in range(n_bn)])
+    line0 = 3 + n_bn                                   # then, to the right, each row's line as this planet shows it
+    _head(ws, NATURE_FLAG_ROW0 - 1, [f"line {m + 2}" for m in range(n_bn)], col0=line0)
     for k, p in enumerate(br.PLANET_ORDER):
         fr, r = NATURE_FLAG_ROW0 + k, PREDICT_ROW0 + k
         ws.cell(row=fr, column=1, value=p)
@@ -465,11 +467,11 @@ def _predict_s24_27(ws, rules):
             h, nat, pl = f"S23_BhavaNature!$A${b}", f"S23_BhavaNature!$B${b}", f"S23_BhavaNature!$C${b}"
             ws.cell(row=fr, column=2 + m, value=(f'=IF(AND(OR({nat}={kind},{nat}="any"),OR({h}="",{h}=$B{r}),OR({pl}="",{pl}=$A{r})),'
                                                  f'IF({h}="",0,IF({pl}="",1,2)),-1)'))
+            ws.cell(row=fr, column=line0 + m, value=f'=IF({nat}="malefic",${L(MILD_COL)}${r},"")&S23_BhavaNature!$D${b}')
     for k, p in enumerate(br.PLANET_ORDER):
         r, fr = PREDICT_ROW0 + k, NATURE_FLAG_ROW0 + k
         ws.cell(row=r, column=15, value=f'=IF($A{r}="Moon",IF(S23_Chart!{WAXING_CELL},"Shukla (waxing) — stronger","Krishna (waning) — weaker"),"")')
-        passes = "&".join(f'IF({L(2 + m)}{fr}={g},CHAR(10)&${L(MILD_COL)}{r}&S23_BhavaNature!$D${2 + m},"")'
-                          for g in range(3) for m in range(n_bn))
+        passes = "&".join(f'IF({L(2 + m)}{fr}={g},CHAR(10)&{L(3 + n_bn + m)}{fr},"")' for g in range(3) for m in range(n_bn))
         ws.cell(row=r, column=16, value=f"=MID({passes},2,32000)")
         ws.cell(row=r, column=17, value=(f'=IF($B{r}=12,IFERROR(INDEX(S23_Conditions!$D$1:$D$300,MATCH("twelfth_house",'
                                          f'S23_Conditions!$A$1:$A$300,0)),""),"")'))
@@ -699,9 +701,11 @@ def _life_area_sheet(ws, rules):
         cell(lr, 5, f'=IF({B}="","",INDEX({names},$D${lr}+1))')
         cls = "&".join(f'IF(INDEX({matrix},{C},{ci[c]})=1," and {c}","")' for c in ("Kendra", "Trikona", "Dusthana", "Badhaka"))
         cell(lr, 23, f'=IF({B}="","",MID({cls},6,99))')
-        kt = "&".join(f'IF(AND(OR(AND(S23_ClassRules!$A${2 + m}="Kendra",INDEX({matrix},{C},{ci["Kendra"]})=1),'
-                      f'AND(S23_ClassRules!$A${2 + m}="Trikona",INDEX({matrix},{C},{ci["Trikona"]})=1)),S23_ClassRules!$B${2 + m}="any",'
-                      f'NOT(ISNUMBER(SEARCH(", "&{C}&",",", "&S23_ClassRules!$C${2 + m}&","))))," "&S23_ClassRules!$D${2 + m},"")'
+        cell(lr, 32, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Kendra"]})=1)')        # the sits-in house is a Kendra?
+        cell(lr, 33, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Trikona"]})=1)')       # … a Trikona?
+        kt = "&".join(f'IF(AND(OR(AND(S23_ClassRules!$A${2 + m}="Kendra",$AF${lr}),AND(S23_ClassRules!$A${2 + m}="Trikona",$AG${lr})),'
+                      f'S23_ClassRules!$B${2 + m}="any",NOT(ISNUMBER(SEARCH(", "&{C}&",",", "&S23_ClassRules!$C${2 + m}&",")))),'
+                      f'" "&S23_ClassRules!$D${2 + m},"")'
                       for m in range(n_rules))
         cell(lr, 24, f'=IF({B}="","",{kt})')
         cell(lr, 6, (f'=IF({B}="","",IF({C}={hb},"The lord sits in its own bhava, so the matters of this house are protected and strengthened.",'

@@ -542,12 +542,13 @@ def _dignity_texts(rules, d):
 
 def bhava_nature_lines(rules, planet, house):
     """Session 26 lines for a planet of this nature in this house: the general line, the house's lines, then lines
-    for this planet itself (R11). The Sun, a mild malefic, takes the malefic lines marked "(mild) " (R10)."""
+    for this planet itself (R11). The Sun, a mild malefic, takes the malefic lines marked "(mild) " (R10); lines for any
+    planet stay as written."""
     kind = nature_class(planet)
     rows = [r for r in rules["bhava_nature"] if r["nature"] in (kind, "any") and r["house"] in (None, house)
             and r["planet"] in (None, planet)]
     group = lambda r: 0 if r["house"] is None else 1 if r["planet"] is None else 2
-    return [{"text": ("(mild) " if planet == MILD_MALEFIC else "") + r["text"], "status": r["status"], "source": r["source"]}
+    return [{"text": _mild(planet, r["nature"], r["text"]), "status": r["status"], "source": r["source"]}
             for r in sorted(rows, key=group)]
 
 

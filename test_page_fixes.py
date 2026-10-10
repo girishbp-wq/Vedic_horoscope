@@ -1339,6 +1339,41 @@ class LifeAreasTab(unittest.TestCase):
 
 
 @needs_browser
+class ReviewFixesOnThePage(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate((sid) => {
+              S23.life_areas[7].area = 'Mother "Amma"';                     // a user-edited cell with quotes
+              renderS23Sections(sid, 1);
+              const pane = document.getElementById('s23-area-8');
+              const four = document.querySelector('#s23-fivestep tr[data-house="4"]');
+              const want = S23.aspect_meaning.find(r => r.planet === 'Jupiter' && r.aspect === 7 && r.from_house === 10).text;
+              const card = document.querySelector('#s23-predict-body .s23-gb[data-planet="Saturn"]');
+              const size = sel => { const e = card.querySelector(sel); return e ? getComputedStyle(e).fontSize : null; };
+              return {printTitle: pane ? pane.dataset.printTitle : null, panes: document.querySelectorAll('.s23-area-pane').length,
+                      button: document.querySelector('.s23-area-btn[data-area="8"]').textContent,
+                      fourText: four.textContent, want,
+                      pointSize: size('.s23-points li'), natureSize: size('.s23-nature-lines li')};
+            }, SID);
+        """.replace("SID", json.dumps(S27_CHART_1_SID)))
+
+    def test_quotes_in_a_cell_do_not_break_the_markup(self):
+        self.assertEqual(self.r["printTitle"], 'Life area 8 · Mother "Amma"')
+        self.assertEqual(self.r["panes"], 16)
+        self.assertEqual(self.r["button"], 'Mother "Amma"')
+
+    def test_five_step_shows_aspect_meanings(self):
+        self.assertIn(self.r["want"], self.r["fourText"])          # Jupiter's 7th from the 10th onto the 4th (S24)
+
+    def test_session26_lines_match_the_other_lists(self):
+        self.assertEqual(self.r["natureSize"], self.r["pointSize"])
+
+
+@needs_browser
 class DashaOutsideItsSpan(unittest.TestCase):
     def test_no_running_period_is_claimed_outside_the_120_years(self):
         r = run_page("""

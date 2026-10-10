@@ -1036,3 +1036,17 @@ class ParivartanaKeepsHerText(unittest.TestCase):
         two = next(r for r in rows if r["lord_of"] == 2)
         self.assertEqual((two["exchange"], two["status"]), (5, "blend"))
         self.assertTrue(two["text"].startswith("Parivartana: the lords of the 2nd and 5th houses"))
+
+
+class MildOnlyOnMaleficLines(unittest.TestCase):
+    def test_sun_any_rows_are_not_marked_mild(self):
+        g = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Sun=9), "Sun", None, True)          # Makara = 6th for Simha
+        rows = {r["text"]: r["nature"] for r in RULES["bhava_nature"] if r["house"] in (None, 6)}
+        any_lines = [t for t, n in rows.items() if n == "any"]
+        self.assertTrue(any_lines)
+        texts = [x["text"] for x in g["nature_lines"]]
+        for t in any_lines:
+            self.assertIn(t, texts)                                   # shown as written
+        for t in texts:
+            if t.startswith("(mild) "):
+                self.assertEqual(rows[t[len("(mild) "):]], "malefic")
