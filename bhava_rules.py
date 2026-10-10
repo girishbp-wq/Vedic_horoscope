@@ -230,6 +230,92 @@ def digbala(rules, planet, house):
     return "strong" if house == row["strong"] else "lost" if house == row["lost"] else None
 
 
+# ---------------------------------------------------------------- chart context and strength (Sessions 24-27)
+GENDERS = ("Male", "Female")
+MALE_PLANETS = ("Sun", "Mars", "Jupiter")
+STRONG_LABELS = ("Deep Exalted", "Exalted", "Own (Moolatrikona)", "Own House", "Friend's House")
+WEAK_LABELS = ("Deep Debilitated", "Debilitated", "Enemy's House")
+MODE_WORD = {"Chara": "movable", "Sthira": "fixed", "Dwisabhava": "dual"}
+
+
+def context(lagna, signs, degs=None, waxing=None, retro=None, gender=None, age=None, maha=None, bhukti=None):
+    """Everything the Sessions 24-27 rules read from a chart. `gender` other than Male/Female counts as not given;
+    `age` (years), `maha` and `bhukti` (running daśā lords) may be None when the birth time is not known."""
+    return {"lagna": lagna, "signs": dict(signs), "degs": dict(degs or {}), "waxing": waxing, "retro": dict(retro or {}),
+            "gender": gender if gender in GENDERS else None, "age": age, "maha": maha, "bhukti": bhukti}
+
+
+def dasha_now(rules, moon_lon, birth, now):
+    """Age in years and the running Mahādaśā and Bhukti lords (None outside the 120-year span)."""
+    d = vimshottari(rules, moon_lon, birth, now)
+    run = d["running"]
+    return {"age": (now - birth).total_seconds() / (_YEAR_DAYS * 86400),
+            "maha": d["cur_maha"]["lord"] if run else None, "bhukti": d["cur_bhukti"]["lord"] if run else None}
+
+
+def combust(rules, ctx, planet):
+    """Within COMBUST_ORB degrees of the Sun in the same sign (the rule graha_graha uses); False without degrees."""
+    ref, sg, dg = rules["reference"], ctx["signs"], ctx["degs"]
+    if planet not in ref["COMBUST_PLANETS"] or planet not in sg or "Sun" not in sg or sg[planet] != sg["Sun"]:
+        return False
+    if dg.get(planet) is None or dg.get("Sun") is None:
+        return False
+    return abs(dg[planet] - dg["Sun"]) <= ref["COMBUST_ORB"]
+
+
+def afflicted(rules, ctx, planet):
+    """R5: debilitated, in an enemy's sign, or combust."""
+    d = dignity(rules, planet, ctx["signs"][planet], ctx["degs"].get(planet))
+    return d["flag"] in ("debilitated", "enemy") or combust(rules, ctx, planet)
+
+
+def aspect_signs(rules, planet, sign):
+    """[(aspect counted forward, sign it falls on)] for a planet in `sign`."""
+    return [(h, (sign + h - 1) % 12) for h in rules["reference"]["SPECIAL_ASPECTS"][planet]]
+
+
+def aspects_on(rules, ctx, sign):
+    """Placed planets whose aspect falls on `sign`: [{by, house_aspect}] in planet order."""
+    sg = ctx["signs"]
+    return [{"by": p, "house_aspect": h} for p in PLANET_ORDER if p in sg
+            for h, t in aspect_signs(rules, p, sg[p]) if t == sign]
+
+
+def teacher_count(planet, h):
+    """The teacher's count of an aspect: Rahu and Ketu count anti-clockwise (forward 12, 9, 5 = her 2nd, 5th, 9th)."""
+    return (13 - h) % 12 + 1 if planet in ("Rahu", "Ketu") else h
+
+
+def strength(rules, ctx, planet):
+    """R3: 'strong' (exalted, Moolatrikona, own or friend's sign, or aspecting its own sign), 'weak' (debilitated,
+    enemy's sign or combust), 'depends' when neither — or both — hold."""
+    sign = ctx["signs"][planet]
+    label = dignity(rules, planet, sign, ctx["degs"].get(planet))["label"]
+    own = rules["reference"]["PLANET_OWN_HOUSES"].get(planet, [])
+    strong = label in STRONG_LABELS or any(t + 1 in own for _, t in aspect_signs(rules, planet, sign))
+    weak = label in WEAK_LABELS or combust(rules, ctx, planet)
+    return "strong" if strong and not weak else "weak" if weak and not strong else "depends"
+
+
+def lords_houses(rules, lagna, planet):
+    return [h for h in range(1, 13) if house_lord(rules, lagna, h) == planet]
+
+
+def sign_line(rules, sign):
+    """S27 pp.9-10: the sign's mode, element and direction; a dual sign repeats the matter, an earth sign means property."""
+    r = rules["reference"]["RASHI"][sign]
+    text = f"{r['sanskrit']} is a {MODE_WORD[r['mode']]} ({r['mode']}) sign, {r['tatwa']} tatwa, {r['direction']}."
+    if r["mode"] == "Dwisabhava":
+        text += " A dual sign: the matter is continuous or repeated."
+    if r["tatwa"] == "Prithvi":
+        text += " An earth (Prithvi) sign: it concerns property."
+    return text
+
+
+def is_male_sign(rules, sign):
+    return rules["reference"]["RASHI"][sign]["oddEven"].startswith("Odd")
+
+
 # ---------------------------------------------------------------- Vimshottari daśā and role linking
 _YEAR_DAYS = 365.25            # same civil-year length as buildDasha() in index.html
 _NAK_SIZE = 360 / 27

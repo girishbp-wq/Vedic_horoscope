@@ -6266,6 +6266,53 @@ function s23Digbala(planet, house){
 }
 
 /* ---- daśā linking (D is the object buildDasha() returns) ---- */
+/* ---- chart context and strength (Sessions 24-27) — mirrors context(), combust() … sign_line() ---- */
+const S23_MALE_PLANETS = ["Sun","Mars","Jupiter"];
+const S23_STRONG_LABELS = ["Deep Exalted","Exalted","Own (Moolatrikona)","Own House","Friend's House"];
+const S23_WEAK_LABELS = ["Deep Debilitated","Debilitated","Enemy's House"];
+const S23_MODE_WORD = {Chara:"movable", Sthira:"fixed", Dwisabhava:"dual"};
+function s23Ctx(lagnaN, pbr, degs, waxing, o){
+  o=o||{};
+  return {lagna:lagnaN-1, signs:s23Signs(pbr), degs:Object.assign({}, degs||{}), waxing:waxing==null?null:waxing,
+    retro:Object.assign({}, o.retro||{}), gender:(o.gender==="Male"||o.gender==="Female")?o.gender:null,
+    age:o.age==null?null:o.age, maha:o.maha||null, bhukti:o.bhukti||null};
+}
+function s23Combust(ctx, p){
+  const sg=ctx.signs, dg=ctx.degs;
+  if(!COMBUST_PLANETS.has(p) || sg[p]===undefined || sg.Sun===undefined || sg[p]!==sg.Sun) return false;
+  if(dg[p]==null || dg.Sun==null) return false;
+  return Math.abs(dg[p]-dg.Sun) <= COMBUST_ORB;
+}
+function s23Afflicted(ctx, p){
+  const d=planetDignity(p, ctx.signs[p]+1, ctx.degs[p]);
+  return d.flag==="debilitated" || d.flag==="enemy" || s23Combust(ctx, p);
+}
+function s23AspectSigns(p, sign){ return SPECIAL_ASPECTS[p].map(h=>[h, (sign+h-1)%12]); }
+function s23AspectsOn(ctx, sign){
+  const out=[];
+  for(const p of S23_PLANETS){
+    if(ctx.signs[p]===undefined) continue;
+    for(const [h,t] of s23AspectSigns(p, ctx.signs[p])) if(t===sign) out.push({by:p, house_aspect:h});
+  }
+  return out;
+}
+function s23TeacherCount(p, h){ return (p==="Rahu"||p==="Ketu") ? (13-h)%12+1 : h; }
+function s23Strength(ctx, p){
+  const sign=ctx.signs[p], label=planetDignity(p, sign+1, ctx.degs[p]).label, own=PLANET_OWN_HOUSES[p]||[];
+  const strong=S23_STRONG_LABELS.includes(label) || s23AspectSigns(p, sign).some(([,t])=>own.includes(t+1));
+  const weak=S23_WEAK_LABELS.includes(label) || s23Combust(ctx, p);
+  return strong&&!weak ? "strong" : (weak&&!strong ? "weak" : "depends");
+}
+function s23LordsHouses(lg, p){ const out=[]; for(let h=1;h<=12;h++) if(s23HouseLord(lg,h)===p) out.push(h); return out; }
+function s23SignLine(sign){
+  const r=RASHI[sign];
+  let t=`${r.sanskrit} is a ${S23_MODE_WORD[r.mode]} (${r.mode}) sign, ${r.tatwa} tatwa, ${r.direction}.`;
+  if(r.mode==="Dwisabhava") t+=" A dual sign: the matter is continuous or repeated.";
+  if(r.tatwa==="Prithvi") t+=" An earth (Prithvi) sign: it concerns property.";
+  return t;
+}
+function s23IsMaleSign(sign){ return RASHI[sign].oddEven.startsWith("Odd"); }
+
 function s23ApplicableRoles(roles, asMaha){ return roles.filter(r=>asMaha || r!=="Trishadaya lord"); }
 function s23RunningRoles(D, roles){
   const out={};

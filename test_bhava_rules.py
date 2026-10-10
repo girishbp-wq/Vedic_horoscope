@@ -588,3 +588,88 @@ class PredictionLayers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Helpers(unittest.TestCase):
+    """Sessions 24-27 helpers: chart context, combustion, affliction (R5), strength (R3), aspects, sign lines."""
+
+    def ctx(self, signs, degs=None, **kw):
+        return br.context(LAGNA, signs, degs or {}, **kw)
+
+    def test_context_keys_and_defaults(self):
+        c = self.ctx(SIGNS)
+        self.assertEqual(sorted(c), sorted(["lagna", "signs", "degs", "waxing", "retro", "gender", "age", "maha", "bhukti"]))
+        self.assertEqual((c["degs"], c["retro"], c["gender"], c["age"], c["maha"]), ({}, {}, None, None, None))
+
+    def test_gender_other_counts_as_not_filled(self):
+        self.assertIsNone(self.ctx(SIGNS, gender="Other")["gender"])
+        self.assertIsNone(self.ctx(SIGNS, gender="")["gender"])
+        self.assertEqual(self.ctx(SIGNS, gender="Female")["gender"], "Female")
+
+    def test_dasha_now(self):
+        birth, now = _dt.datetime(1990, 5, 15, 1, 0), _dt.datetime(2026, 10, 8, 12, 0)
+        d = br.dasha_now(RULES, 123.4, birth, now)
+        v = br.vimshottari(RULES, 123.4, birth, now)
+        self.assertEqual((d["maha"], d["bhukti"]), (v["cur_maha"]["lord"], v["cur_bhukti"]["lord"]))
+        self.assertAlmostEqual(d["age"], (now - birth).total_seconds() / (365.25 * 86400), places=6)
+        late = br.dasha_now(RULES, 123.4, birth, _dt.datetime(2200, 1, 1))
+        self.assertEqual((late["maha"], late["bhukti"]), (None, None))       # outside the 120-year span
+
+    def test_combust_needs_the_same_sign_and_degrees(self):
+        c = self.ctx(dict(SIGNS, Mercury=5, Sun=5), {"Mercury": 10, "Sun": 12})
+        self.assertTrue(br.combust(RULES, c, "Mercury"))
+        self.assertFalse(br.combust(RULES, c, "Sun"))
+        self.assertFalse(br.combust(RULES, self.ctx(dict(SIGNS, Mercury=5, Sun=5), {"Mercury": 10, "Sun": 16}), "Mercury"))
+        self.assertFalse(br.combust(RULES, self.ctx(dict(SIGNS, Mercury=5, Sun=5)), "Mercury"))   # no degrees
+        self.assertFalse(br.combust(RULES, self.ctx(dict(SIGNS, Rahu=5, Sun=5), {"Rahu": 10, "Sun": 10}), "Rahu"))
+
+    def test_afflicted_r5(self):
+        self.assertTrue(br.afflicted(RULES, self.ctx(dict(SIGNS, Venus=5)), "Venus"))          # debilitated in Kanya
+        self.assertFalse(br.afflicted(RULES, self.ctx(dict(SIGNS, Venus=6)), "Venus"))         # own sign Tula
+        self.assertTrue(br.afflicted(RULES, self.ctx(dict(SIGNS, Venus=4)), "Venus"))          # Simha: the Sun is Venus's enemy
+        c = self.ctx(dict(SIGNS, Venus=6, Sun=6), {"Venus": 3, "Sun": 6})
+        self.assertTrue(br.afflicted(RULES, c, "Venus"))                                       # combust
+
+    def test_exalted_and_combust_is_depends(self):
+        c = self.ctx(dict(SIGNS, Mercury=5, Sun=5), {"Mercury": 10, "Sun": 12})
+        self.assertEqual(br.dignity(RULES, "Mercury", 5, 10)["label"], "Exalted")
+        self.assertEqual(br.strength(RULES, c, "Mercury"), "depends")
+
+    def test_own_sign_is_strong_and_debilitated_is_weak(self):
+        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Mars=0), {"Mars": 25}), "Mars"), "strong")
+        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Jupiter=9)), "Jupiter"), "weak")
+
+    def test_aspecting_own_house_is_strong(self):
+        # Saturn in Dhanu (Jupiter's sign, neutral) aspects Kumbha, its own sign, by its 3rd aspect
+        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Saturn=8)), "Saturn"), "strong")
+        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Saturn=11)), "Saturn"), "depends")   # Meena: no own sign hit
+
+    def test_lords_houses(self):
+        self.assertEqual(br.lords_houses(RULES, LAGNA, "Mars"), [4, 9])          # Simha Lagna: Vrischika, Mesha
+        self.assertEqual(br.lords_houses(RULES, LAGNA, "Sun"), [1])
+        self.assertEqual(br.lords_houses(RULES, LAGNA, "Rahu"), [])
+
+    def test_aspects_on_a_sign(self):
+        got = br.aspects_on(RULES, self.ctx(SIGNS), 6)                        # Tula for the oracle chart
+        want = [{"by": p, "house_aspect": h} for p in br.PLANET_ORDER if p in SIGNS
+                for h in RULES["reference"]["SPECIAL_ASPECTS"][p] if (SIGNS[p] + h - 1) % 12 == 6]
+        self.assertEqual(got, want)
+
+    def test_teacher_count_nodes(self):
+        self.assertEqual([br.teacher_count("Rahu", h) for h in (12, 9, 5)], [2, 5, 9])
+        self.assertEqual(br.teacher_count("Jupiter", 9), 9)
+
+    def test_sign_line_kanya(self):
+        t = br.sign_line(RULES, 5)
+        for frag in ("Kanya", "dual (Dwisabhava)", "Prithvi tatwa", "continuous or repeated", "it concerns property"):
+            self.assertIn(frag, t)
+
+    def test_sign_line_tula(self):
+        t = br.sign_line(RULES, 6)
+        for frag in ("Tula", "movable (Chara)", "Vayu tatwa", "West"):
+            self.assertIn(frag, t)
+        self.assertNotIn("property", t)
+        self.assertNotIn("repeated", t)
+
+    def test_male_signs(self):
+        self.assertEqual([s for s in range(12) if br.is_male_sign(RULES, s)], [0, 2, 4, 6, 8, 10])

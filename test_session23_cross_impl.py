@@ -33,8 +33,19 @@ def _pw():
 PW = _pw()
 
 # --------------------------------------------------------------------------------------- canonical form
+def _js_numbers(o):
+    """JSON.stringify writes 15.0 as 15: integral floats become ints so both sides serialise alike."""
+    if isinstance(o, float) and o.is_integer():
+        return int(o)
+    if isinstance(o, dict):
+        return {k: _js_numbers(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_js_numbers(v) for v in o]
+    return o
+
+
 def canon(o):
-    return json.dumps(o, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(_js_numbers(o), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
 
 def fingerprint(o):
@@ -98,6 +109,21 @@ function layers(c){
     bhava_bhava: s23BhavaBhava(lg, pbr), graha_rashi: s23GrahaRashi(lg, pbr, c.degs),
     graha_graha: s23GrahaGraha(lg, pbr, c.degs),
     five_step: [1,2,3,4,5,6,7,8,9,10,11,12].map(h => s23FiveStep(lg, pbr, h)),
+    ...extra(c, lg, pbr),
+  };
+}
+function ctxOf(c, lg, pbr){
+  return s23Ctx(lg, pbr, c.degs, c.waxing, {retro: c.retro, gender: c.gender, age: c.age, maha: c.maha, bhukti: c.bhukti});
+}
+function extra(c, lg, pbr){
+  const ctx = ctxOf(c, lg, pbr), placed = PL.filter(p => ctx.signs[p] !== undefined);
+  return {
+    context: ctx,
+    helpers: Object.fromEntries(placed.map(p => [p, {combust: s23Combust(ctx, p), afflicted: s23Afflicted(ctx, p),
+      strength: s23Strength(ctx, p), lords_houses: s23LordsHouses(ctx.lagna, p),
+      aspects_on: s23AspectsOn(ctx, ctx.signs[p])}])),
+    sign_lines: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23SignLine),
+    male_signs: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23IsMaleSign),
   };
 }
 """
@@ -113,6 +139,25 @@ def python_layers(c):
         "bhava_bhava": br.bhava_bhava(RULES, lg, sg), "graha_rashi": br.graha_rashi(RULES, lg, sg, degs),
         "graha_graha": br.graha_graha(RULES, lg, sg, degs),
         "five_step": [br.five_step(RULES, lg, sg, h) for h in range(1, 13)],
+        **python_extra(c),
+    }
+
+
+def ctx_of(c):
+    return br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"), c.get("age"),
+                      c.get("maha"), c.get("bhukti"))
+
+
+def python_extra(c):
+    ctx = ctx_of(c)
+    placed = [p for p in br.PLANET_ORDER if p in ctx["signs"]]
+    return {
+        "context": ctx,
+        "helpers": {p: {"combust": br.combust(RULES, ctx, p), "afflicted": br.afflicted(RULES, ctx, p),
+                        "strength": br.strength(RULES, ctx, p), "lords_houses": br.lords_houses(RULES, ctx["lagna"], p),
+                        "aspects_on": br.aspects_on(RULES, ctx, ctx["signs"][p])} for p in placed},
+        "sign_lines": [br.sign_line(RULES, s) for s in range(12)],
+        "male_signs": [br.is_male_sign(RULES, s) for s in range(12)],
     }
 
 
@@ -123,7 +168,11 @@ def random_charts(n, seed):
         pool = rnd.sample(range(12), rnd.choice([3, 5, 12]))
         signs = {p: rnd.choice(pool) for p in br.PLANET_ORDER}
         charts.append({"lagna": rnd.randrange(12), "signs": signs, "waxing": rnd.random() < 0.5,
-                       "degs": {p: round(rnd.uniform(0, 29.99), 2) for p in br.PLANET_ORDER}})
+                       "degs": {p: round(rnd.uniform(0, 29.99), 2) for p in br.PLANET_ORDER},
+                       "retro": {p: rnd.random() < 0.3 for p in br.PLANET_ORDER},
+                       "gender": rnd.choice([None, "Male", "Female", "Other"]),
+                       "age": rnd.choice([None, round(rnd.uniform(5, 80), 2)]),
+                       "maha": rnd.choice([None] + br.PLANET_ORDER), "bhukti": rnd.choice([None] + br.PLANET_ORDER)})
     return charts
 
 
