@@ -1092,6 +1092,14 @@ class ExcelLifeAreas(unittest.TestCase):
                   dict(tc.CHARTS["S27_CHART_2"], birth=datetime.datetime(1972, 5, 9, 14, 0), gender="Male")]
         for c, g in zip(calc_charts(3, 515), ("Female", "Male", None)):
             charts.append(dict(c, gender=g))
+        # lords exchanging signs where the teacher has a reading for one direction (Mesha Lagna):
+        # 1st<->6th (Mars in Kanya, Mercury in Mesha; her strong and weak lines) and 1st<->4th (Mars in Karkataka, Moon in Mesha)
+        degs = {p: 12.0 for p in br.PLANET_ORDER}
+        swap16 = {"Sun": 10, "Moon": 7, "Mars": 5, "Mercury": 0, "Jupiter": 8, "Venus": 11, "Saturn": 2, "Rahu": 1, "Ketu": 7}
+        swap14 = {"Sun": 10, "Moon": 0, "Mars": 3, "Mercury": 11, "Jupiter": 8, "Venus": 9, "Saturn": 2, "Rahu": 4, "Ketu": 10}
+        probes = [dict(lagna=0, signs=sg, degs=degs, retro={}, birth=datetime.datetime(1985, 7, 7, 7, 0), gender=None,
+                       areas=(1, 5, 8, 10)) for sg in (swap16, swap14)]
+        charts += probes
         for c in charts:
             c["waxing"] = _waxing_of(c)
         base = tmp / "base.xlsx"
@@ -1103,6 +1111,8 @@ class ExcelLifeAreas(unittest.TestCase):
         paths, cls.cases = [], []
         for i, c in enumerate(charts):
             for no, area in enumerate(areas, 1):
+                if no not in c.get("areas", range(1, 17)):
+                    continue
                 wb = openpyxl.load_workbook(base)
                 mx.set_inputs(wb, c, cls.now)
                 wb[mx.PREFIX + "LifeArea_Calc"][mx.AREA_CELL] = area

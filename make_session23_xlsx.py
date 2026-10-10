@@ -725,10 +725,24 @@ def _life_area_sheet(ws, rules):
                       f'&". People: "&{bh(3, hb)}&" with "&{bh(3, C)}&". Body: "&{bh(4, hb)}&" with "&{bh(4, C)}&".")'))
         cell(lr, 18, (f'=IF({B}="","","Parivartana: the lords of the "&{_ord(lo_)}&" and "&{_ord(hi_)}&" houses have exchanged signs. '
                       f'Blend the two houses — "&{_ord(lo_)}&" house: "&{bh(2, lo_)}&". "&{_ord(hi_)}&" house: "&{bh(2, hi_)}&".")'))
-        cell(lr, 9, f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_TEXT},$M${lr}),$R${lr}),IF($V${lr}<>"",$V${lr},$Q${lr})))')
-        cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),"blend"),'
-                      f'IF($N${lr}>0,INDEX({L_STATUS},$N${lr}),IF(AND($O${lr}>0,{use_s}),INDEX({L_STATUS},$O${lr}),'
-                      f'IF(AND($P${lr}>0,{use_w}),INDEX({L_STATUS},$P${lr}),"blend")))))'))
+        # the other direction of a Parivartana (lord of the sits-in house back in this house), its lord judged by R3
+        for col, cond in ((25, '""'), (26, '"strong"'), (27, '"weak"')):
+            cell(lr, col, f'=IF({B}="",0,SUMPRODUCT(({LO}={C})*({SI}={hb})*({LC}={cond})*({LX}<>"yes")*ROW({LO})))')
+        cell(lr, 28, f'=IF({B}="","",{hf(H_STRENGTH, lord_y)})')
+        st2 = f"$AB${lr}"
+        use_s2, use_w2 = f'OR({st2}="strong",{st2}="depends")', f'OR({st2}="weak",{st2}="depends")'
+        cell(lr, 29, (f'=MID(IF($Y${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Y${lr}),"")'
+                      f'&IF(AND($Z${lr}>0,{use_s2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Z${lr}),"")'
+                      f'&IF(AND($AA${lr}>0,{use_w2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$AA${lr}),""),3,32000)'))
+        for col, (rc, rs, rw, us, uw) in ((30, ("$N", "$O", "$P", use_s, use_w)), (31, ("$Y", "$Z", "$AA", use_s2, use_w2))):
+            cell(lr, col, (f'=IF({rc}${lr}>0,INDEX({L_STATUS},{rc}${lr}),IF(AND({rs}${lr}>0,{us}),INDEX({L_STATUS},{rs}${lr}),'
+                           f'IF(AND({rw}${lr}>0,{uw}),INDEX({L_STATUS},{rw}${lr}),"")))'))
+        both = lambda a_, b_: f'MID(IF({a_}<>"",CHAR(10)&CHAR(10)&{a_},"")&IF({b_}<>"",CHAR(10)&CHAR(10)&{b_},""),3,32000)'
+        V, AC = f"$V${lr}", f"$AC${lr}"
+        cell(lr, 9, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_TEXT},$M${lr}),IF({V}&{AC}="",$R${lr},'
+                     f'IF({hb}<{C},{both(V, AC)},{both(AC, V)}))),IF({V}<>"",{V},$Q${lr})))'))
+        cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),IF({V}&{AC}="","blend",'
+                      f'IF({hb}<{C},IF({V}<>"",$AD${lr},$AE${lr}),IF({AC}<>"",$AE${lr},$AD${lr})))),IF($AD${lr}<>"",$AD${lr},"blend")))'))
         hits = ",".join(f'{hf(H_TARGET + sl, B)}={sb}' for sl in range(3))
         cell(lr, 11, f'=IF({B}="","",IF(OR({hits}),"The lord aspects its own house, so the "&{H}&" house is strong.",""))')
         summary(lr, f'$H${lr}="strong"', f'$H${lr}="weak"', f'"The "&{H}&" lord "&{B}&" is "&$H${lr}')

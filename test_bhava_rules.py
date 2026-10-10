@@ -901,12 +901,12 @@ class LayerTwo(unittest.TestCase):
         self.assertIsNone(next(r for r in rows if r["lord_of"] == 5)["exchange"])   # 5L Saturn in the 11th: no exchange
 
     def test_parivartana_without_her_text_is_a_blend_of_both_houses(self):
-        rows = br.bhava_bhava(RULES, br.context(0, {"Mars": 9, "Saturn": 0}))     # Mesha: 1L Mars in Makara, 10L/11L Saturn in Mesha
-        one = next(r for r in rows if r["lord_of"] == 1)
-        self.assertEqual((one["exchange"], one["status"]), (10, "blend"))
-        self.assertTrue(one["text"].startswith("Parivartana: the lords of the 1st and 10th houses have exchanged signs."))
-        self.assertNotIn(10, [r["lord_of"] for r in rows])
-        self.assertIn(11, [r["lord_of"] for r in rows])
+        rows = br.bhava_bhava(RULES, br.context(0, {"Venus": 4, "Sun": 1}))       # Mesha: 2L Venus in Simha, 5L Sun in Vrishabha
+        two = next(r for r in rows if r["lord_of"] == 2)
+        self.assertEqual((two["exchange"], two["status"]), (5, "blend"))
+        self.assertTrue(two["text"].startswith("Parivartana: the lords of the 2nd and 5th houses have exchanged signs."))
+        self.assertNotIn(5, [r["lord_of"] for r in rows])
+        self.assertIn(7, [r["lord_of"] for r in rows])                       # Venus also rules the 7th: no exchange there
 
 
 class Aspects(unittest.TestCase):
@@ -1009,3 +1009,30 @@ class LifeAreas(unittest.TestCase):
         a = br.life_area(RULES, br.context(LAGNA, {"Sun": 4}), 8)          # only the Sun is known
         self.assertIsNone(a["bhavas"][0]["lord"])
         self.assertEqual(a["karakas"], [])
+
+
+class ParivartanaKeepsHerText(unittest.TestCase):
+    """Review fix: an exchange of signs must not hide the teacher's reading for either direction."""
+
+    def row(self, x, y, cond=""):
+        return next(r for r in RULES["bhava_lord_in"] if (r["lord_of"], r["sits_in"], r["condition"], r["exchange"]) == (x, y, cond, False))
+
+    def test_exchange_shows_the_taught_row(self):
+        # Mesha Lagna: 1st lord Mars in Karkataka (4th), 4th lord Moon in Mesha (1st)
+        rows = br.bhava_bhava(RULES, br.context(0, {"Mars": 3, "Moon": 0}))
+        one = next(r for r in rows if r["lord_of"] == 1)
+        self.assertEqual((one["exchange"], one["status"], one["source"]), (4, "taught", self.row(1, 4)["source"]))
+        self.assertEqual(one["text"], self.row(1, 4)["text"])
+        self.assertNotIn(4, [r["lord_of"] for r in rows])
+
+    def test_exchange_keeps_the_strong_and_weak_lines(self):
+        # Mesha Lagna: Mars in Kanya (6th), Mercury (6th lord) in Mesha. Mars: enemy's sign but aspects Mesha -> depends
+        one = next(r for r in br.bhava_bhava(RULES, br.context(0, {"Mars": 5, "Mercury": 0})) if r["lord_of"] == 1)
+        self.assertEqual((one["exchange"], one["strength"], one["status"]), (6, "depends", "taught"))
+        self.assertEqual(one["text"], "\n\n".join([self.row(1, 6)["text"], self.row(1, 6, "strong")["text"], self.row(1, 6, "weak")["text"]]))
+
+    def test_exchange_without_any_taught_row_is_still_a_blend(self):
+        rows = br.bhava_bhava(RULES, br.context(0, {"Venus": 4, "Sun": 1}))        # 2nd <-> 5th: no taught row either way
+        two = next(r for r in rows if r["lord_of"] == 2)
+        self.assertEqual((two["exchange"], two["status"]), (5, "blend"))
+        self.assertTrue(two["text"].startswith("Parivartana: the lords of the 2nd and 5th houses"))

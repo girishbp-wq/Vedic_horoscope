@@ -6499,6 +6499,11 @@ function s23ExchangeBlend(x, y){
   return `Parivartana: the lords of the ${ord(x)} and ${ord(y)} houses have exchanged signs. Blend the two houses — `
     +`${ord(x)} house: ${s23Clean(BHAVA_INFO[x].sig)}. ${ord(y)} house: ${s23Clean(BHAVA_INFO[y].sig)}.`;
 }
+function s23TaughtRows(x, y, strength){
+  const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange);
+  const pick={strong:["strong"], weak:["weak"], depends:["strong","weak"]}[strength];
+  return rows.filter(r=>r.condition==="").concat(...pick.map(c=>rows.filter(r=>r.condition===c)));
+}
 function s23BhavaBhava(ctx){
   const lg=ctx.lagna, sg=ctx.signs, out=[], lordOf={}, sits={};
   for(let h=1;h<=12;h++){ lordOf[h]=s23HouseLord(lg,h); if(sg[lordOf[h]]!==undefined) sits[h]=s23HouseOf(lg, sg[lordOf[h]]); }
@@ -6511,12 +6516,13 @@ function s23BhavaBhava(ctx){
     let text, status, source, dictum;
     if(swap!==null){
       const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x)));
-      [text, status, source] = row ? [row.text, row.status, row.source] : [s23ExchangeBlend(x,y), "blend", ""];
+      // no Parivartana text of hers: her readings for either direction still apply (each lord judged by R3)
+      const chosen=row ? [row] : s23TaughtRows(x, y, strength).concat(s23TaughtRows(y, x, s23Strength(ctx, lordOf[y])));
+      if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
+      else [text, status, source] = [s23ExchangeBlend(x,y), "blend", ""];
       dictum=[s23Dictum(ctx,x), s23Dictum(ctx,y)].filter(Boolean).join(" ");
     } else {
-      const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange);
-      const pick={strong:["strong"], weak:["weak"], depends:["strong","weak"]}[strength];
-      const chosen=rows.filter(r=>r.condition==="").concat(...pick.map(c=>rows.filter(r=>r.condition===c)));
+      const chosen=s23TaughtRows(x, y, strength);
       if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
       else [text, status, source] = [s23Blend(x, y, sg[lord]), "blend", ""];
       dictum=s23Dictum(ctx, x);

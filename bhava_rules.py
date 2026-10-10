@@ -642,6 +642,13 @@ def _exchange_blend(rules, x, y):
             f"houses — {ordinal(x)} house: {_clean(info[str(x)]['sig'])}. {ordinal(y)} house: {_clean(info[str(y)]['sig'])}.")
 
 
+def _taught_rows(rules, x, y, strength_word):
+    """Her rows for the lord of x in y: the general row, then the strong and/or weak row chosen by R3."""
+    rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]]
+    pick = {"strong": ("strong",), "weak": ("weak",), "depends": ("strong", "weak")}[strength_word]
+    return [r for r in rows if r["condition"] == ""] + [r for c in pick for r in rows if r["condition"] == c]
+
+
 def bhava_bhava(rules, ctx):
     """Layer 2 (Sessions 23, 26, 27): for each house X, its lord in house Y and sign S — the teacher's text (with her
     strong/weak lines chosen by R3) or a blend of both houses, the sign line, the placement, the dictum and the planets
@@ -660,12 +667,15 @@ def bhava_bhava(rules, ctx):
         strength_word = strength(rules, ctx, lord)
         if swap is not None:
             row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}), None)
-            text, status, source = (row["text"], row["status"], row["source"]) if row else (_exchange_blend(rules, x, y), "blend", "")
+            # no Parivartana text of hers: her readings for either direction still apply (each lord judged by R3)
+            chosen = [row] if row else _taught_rows(rules, x, y, strength_word) + _taught_rows(rules, y, x, strength(rules, ctx, lord_of[y]))
+            if chosen:
+                text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
+            else:
+                text, status, source = _exchange_blend(rules, x, y), "blend", ""
             dictum = " ".join(d for d in (_dictum(rules, ctx, x), _dictum(rules, ctx, y)) if d)
         else:
-            rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]]
-            pick = {"strong": ("strong",), "weak": ("weak",), "depends": ("strong", "weak")}[strength_word]
-            chosen = [r for r in rows if r["condition"] == ""] + [r for c in pick for r in rows if r["condition"] == c]
+            chosen = _taught_rows(rules, x, y, strength_word)
             if chosen:
                 text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
             else:
