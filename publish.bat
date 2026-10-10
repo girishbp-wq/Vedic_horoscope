@@ -21,8 +21,8 @@ REM   opened in Desktop Excel, not Excel Online. Running this .bat
 REM   directly from File Explorer always works.)
 REM
 REM  Requirements on this machine:
-REM    - Python 3 on PATH         (python --version)
-REM    - openpyxl                 (pip install openpyxl)
+REM    - Python 3                 (python --version, or py --version)
+REM    - openpyxl                 (installed by this script if missing)
 REM    - git configured to push   (git push works from this folder)
 REM =====================================================================
 
@@ -40,22 +40,30 @@ echo.
 echo === Jyotisha publish ===
 echo.
 
-REM Check Python
-where python >nul 2>nul
-if errorlevel 1 (
-    echo [ERROR] Python not found on PATH. Install Python 3 from python.org
-    echo         and re-run.
+REM Find a Python that actually runs: Windows has a "python" shortcut to the Microsoft Store even
+REM when no Python is installed, so finding the command proves nothing. python.org also installs "py".
+set "PY="
+python -c "import sys" >nul 2>nul
+if not errorlevel 1 set "PY=python"
+if not defined PY (
+    py -3 -c "import sys" >nul 2>nul
+    if not errorlevel 1 set "PY=py -3"
+)
+if not defined PY (
+    echo [ERROR] Python 3 was not found on this PC.
+    echo         Install it from https://www.python.org/downloads/ and on the first screen
+    echo         tick "Add python.exe to PATH". Then close this window and run publish.bat again.
     goto :fail
 )
 
 REM Ensure openpyxl is available (cheap check; install if missing)
-python -c "import openpyxl" 2>nul
+%PY% -c "import openpyxl" 2>nul
 if errorlevel 1 (
     echo openpyxl not installed. Installing...
-    python -m pip install --user --quiet openpyxl
+    %PY% -m pip install --user --quiet openpyxl
     if errorlevel 1 (
         echo [ERROR] Could not install openpyxl. Run manually:
-        echo         pip install openpyxl
+        echo         %PY% -m pip install openpyxl
         goto :fail
     )
 )
@@ -83,14 +91,14 @@ if errorlevel 1 (
 REM Check the Session 23 sheets before anything is rebuilt, so a typo there leaves index.html untouched
 echo.
 echo [1/5] Checking the Session 23 sheets, then rebuilding index.html from the workbook...
-python build_session23.py --check
+%PY% build_session23.py --check
 if errorlevel 1 (
     echo.
     echo [ERROR] The Session 23 sheets need fixing - nothing was rebuilt or published.
     echo         Fix the cells listed above in the workbook, save, and run publish.bat again.
     goto :fail
 )
-python scripts\build_data.py
+%PY% scripts\build_data.py
 if errorlevel 1 (
     echo.
     echo [ERROR] Build failed. See message above.
@@ -100,7 +108,7 @@ if errorlevel 1 (
 REM Session 23 (bhava classes, prediction layers, dasha roles): the S23_ sheets of the same workbook
 echo.
 echo [2/5] Rebuilding the Session 23 data from the S23_ sheets...
-python build_session23.py
+%PY% build_session23.py
 if errorlevel 1 (
     echo.
     echo [ERROR] Session 23 build failed - nothing was published. Fix the cells

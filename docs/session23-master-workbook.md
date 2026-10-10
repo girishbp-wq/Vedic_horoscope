@@ -4,6 +4,16 @@ The Session 23 rules (the ten bhāva classes, the prediction layers, the daśā 
 `Classification_for_Horoscope_Analysis_v7_1.xlsx`, on sheets whose names start with **`S23_`**.
 `publish.bat` rebuilds the page from them exactly as it does for the rest of the workbook.
 
+## Python on the PC
+The scripts need Python 3. In a Command Prompt, `python --version` should print `Python 3.…`.
+If it prints "Python was not found; run without arguments to install from the Microsoft Store", that is only
+a Windows shortcut, not Python:
+- if `py --version` prints `Python 3.…`, Python is installed but not on PATH. Type `py` instead of `python`
+  in the commands below (`publish.bat` finds `py` by itself);
+- otherwise install Python 3 from <https://www.python.org/downloads/>, tick **Add python.exe to PATH** on the
+  installer's first screen, then open a new Command Prompt. `publish.bat` installs `openpyxl` the first time;
+  to do it by hand run `python -m pip install openpyxl`.
+
 ## One-time set-up (on the PC that has the workbook)
 1. Pull the latest `main` in GitHub Desktop.
 2. Close the workbook in Excel.

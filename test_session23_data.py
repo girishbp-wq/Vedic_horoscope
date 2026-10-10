@@ -340,7 +340,7 @@ class PublishScript(unittest.TestCase):
     def test_only_publishes_from_main_after_pulling_it(self):
         self.assertIn("git rev-parse --abbrev-ref HEAD", self.bat)
         self.assertIn('if /i not "%BRANCH%"=="main"', self.bat)
-        self.assertLess(self.bat.index("git pull --ff-only"), self.bat.index("python scripts\\build_data.py"))
+        self.assertLess(self.bat.index("git pull --ff-only"), self.bat.index("%PY% scripts\\build_data.py"))
 
     def test_commits_only_its_two_files(self):
         self.assertIn("git diff --cached --quiet -- index.html session23_rules.json", self.bat)
@@ -366,7 +366,20 @@ class PublishScript(unittest.TestCase):
         self.assertLess(self.bat.index('cd /d "%~2"'), self.bat.index("git pull --ff-only"))
 
     def test_checks_the_session23_sheets_before_rebuilding_the_page(self):
-        self.assertLess(self.bat.index("python build_session23.py --check"), self.bat.index("python scripts\\build_data.py"))
+        self.assertLess(self.bat.index("%PY% build_session23.py --check"), self.bat.index("%PY% scripts\\build_data.py"))
+
+    def test_finds_a_python_that_runs_not_the_store_shortcut(self):
+        # Windows has a "python" Store shortcut even with no Python installed: `where python` finds it
+        self.assertNotIn("where python", self.bat)
+        self.assertIn('python -c "import sys" >nul 2>nul', self.bat)
+        self.assertIn('py -3 -c "import sys" >nul 2>nul', self.bat)
+        self.assertIn("Add python.exe to PATH", self.bat)
+        runs = [l.strip() for l in self.bat.splitlines() if ".py" in l or "-m pip" in l or "import openpyxl" in l]
+        runs = [l for l in runs if not l.upper().startswith(("REM", "ECHO"))]
+        self.assertTrue(runs)
+        for line in runs:
+            self.assertTrue(line.startswith("%PY% "), line)
+        self.assertLess(self.bat.index('set "PY=py -3"'), self.bat.index("%PY% "))
 
     def test_checked_out_with_windows_line_endings(self):
         attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
