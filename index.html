@@ -582,6 +582,8 @@ details.section[open] > summary::after { content: "−"; }
 .s23-points, .s23-extra, .s23-class-texts, .s23-nature-lines { margin: 2px 0 6px; padding-left: 18px; }
 .s23-src { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 8px; background: #efe9f7; color: #5a3d7a; border: 1px solid #d6c8ea; white-space: nowrap; }
 .s23-twelfth-line { font-style: italic; }
+.s23-conds { margin: 2px 0 6px; padding-left: 18px; }
+.s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
 .s23-pairs { padding-left: 18px; margin: 4px 0 12px; }
@@ -5248,7 +5250,7 @@ function generate() {
   renderPlanetTable(chart.sidereal, lagnaRashiInfo.n, retroSet, lagnaLon);
   renderAspectsSection(planetsByRashi);
   renderBhavaAnalysis(chart.sidereal, lagnaRashiInfo.n);
-  renderS23Sections(chart.sidereal, lagnaRashiInfo.n);
+  renderS23Sections(chart.sidereal, lagnaRashiInfo.n, {retro: retroSet, dasha: buildDasha(chart.sidereal.Moon, dob, tob, JD)});
   renderDistributions(chart.sidereal);
   renderDignity(chart.sidereal, lagnaRashiInfo.n, moonRashiInfo.n);
   renderKujaSection(planetsByRashi, lagnaRashiInfo.n, dob, chart.sidereal);
@@ -6315,6 +6317,58 @@ function s23SignLine(sign){
 }
 function s23IsMaleSign(sign){ return RASHI[sign].oddEven.startsWith("Odd"); }
 
+/* ---- conditional readings (spec §6.6) — mirrors chart_conditions() ---- */
+const S23_CONDITION_KEYS = ["saturn_matures","saturn_retro_1","saturn_afflicted_10_young","saturn_mars_12","saturn_afflicted_6",
+  "saturn_afflicted_12","jupiter_md_8","jupiter_md_11","venus_dasha_9","rahu_md_9","twelfth_hidden_talent","upachaya_30s",
+  "ketu_12_purpose","venus_afflicted","venus_good","venus_mercury_5","seventh_lord_12","mercury_foreign_language","moon_dual_10",
+  "venus_meets_wife","jupiter_husband","first_child_male"];
+function s23ConditionRow(key, planet, house){
+  let best=null, score=-1;
+  for(const r of S23.conditions){
+    if(r.key!==key || (r.planet!==null && r.planet!==planet) || (r.house!==null && r.house!==house)) continue;
+    const s=(r.house!==null?2:0)+(r.planet!==null?1:0);
+    if(s>score){ best=r; score=s; }
+  }
+  return best;
+}
+function s23ChartConditions(ctx){
+  const sg=ctx.signs, lg=ctx.lagna, maha=ctx.maha, bhukti=ctx.bhukti, found=[];
+  const house=p=>sg[p]===undefined ? null : s23HouseOf(lg, sg[p]);
+  const placed=S23_PLANETS.filter(p=>sg[p]!==undefined), young=lim=>ctx.age==null || ctx.age<lim;
+  const add=(key, planet, h, active)=>found.push([key, planet, h, active===undefined?null:active]);
+  const dasha=t=>maha==null ? null : !!t;
+  const sat=house("Saturn");
+  if([1,2,3,5,7,10].includes(sat) && young(36)) add("saturn_matures","Saturn",sat);
+  if(sat===1 && ctx.retro.Saturn) add("saturn_retro_1","Saturn",1);
+  if(sat===10 && s23Afflicted(ctx,"Saturn") && young(36)) add("saturn_afflicted_10_young","Saturn",10);
+  if(sat===12 && house("Mars")===12) add("saturn_mars_12","Saturn",12);
+  for(const [h,key] of [[6,"saturn_afflicted_6"],[12,"saturn_afflicted_12"]]) if(sat===h && s23Afflicted(ctx,"Saturn")) add(key,"Saturn",h);
+  for(const [h,key] of [[8,"jupiter_md_8"],[11,"jupiter_md_11"]]) if(house("Jupiter")===h) add(key,"Jupiter",h,dasha(maha==="Jupiter"));
+  if(house("Venus")===9) add("venus_dasha_9","Venus",9,dasha(maha==="Venus"||bhukti==="Venus"));
+  if(house("Rahu")===9) add("rahu_md_9","Rahu",9,dasha(maha==="Rahu"));
+  for(const p of placed) if(house(p)===12) add("twelfth_hidden_talent",p,12,dasha(p===maha||p===bhukti));
+  for(const p of placed) if([3,6,10,11].includes(house(p))) add("upachaya_30s",p,house(p));
+  if(house("Ketu")===12 && young(35)) add("ketu_12_purpose","Ketu",12);
+  const ven=house("Venus");
+  if([2,8,11].includes(ven)) add(s23Afflicted(ctx,"Venus") ? "venus_afflicted" : "venus_good","Venus",ven);
+  if(ven===5 && house("Mercury")===5) add("venus_mercury_5","Venus",5);
+  const l7=s23HouseLord(lg,7);
+  if(house(l7)===12) add("seventh_lord_12",l7,12);
+  const l12=s23HouseLord(lg,12);
+  if(house("Mercury")===2 && (sg.Rahu===sg.Mercury || (l12!=="Mercury" && sg[l12]!==undefined && sg[l12]===sg.Mercury))) add("mercury_foreign_language","Mercury",2);
+  if(house("Moon")===10 && RASHI[sg.Moon].mode==="Dwisabhava") add("moon_dual_10","Moon",10);
+  if(ctx.gender==="Male" && ven!==null) add("venus_meets_wife","Venus",ven);
+  if(ctx.gender==="Female" && house("Jupiter")!==null) add("jupiter_husband","Jupiter",house("Jupiter"));
+  const l5=s23HouseLord(lg,5), fifth=s23HouseSign(lg,5);
+  if(s23IsMaleSign(fifth) && S23_MALE_PLANETS.some(p=>house(p)===5) && sg[l5]!==undefined && s23IsMaleSign(sg[l5])) add("first_child_male",l5,5);
+  const out=[];
+  found.map((f,i)=>[S23_CONDITION_KEYS.indexOf(f[0]),i,f]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).forEach(([,,[key,planet,h,active]])=>{
+    const r=s23ConditionRow(key,planet,h);
+    if(r) out.push({key, planet, house:h, text:r.text, status:r.status, source:r.source, active});
+  });
+  return out;
+}
+
 function s23ApplicableRoles(roles, asMaha){ return roles.filter(r=>asMaha || r!=="Trishadaya lord"); }
 function s23RunningRoles(D, roles){
   const out={};
@@ -6544,8 +6598,24 @@ function s23BuildClasses(sid, lagnaN){
   return h+`</tbody></table></div>`;
 }
 
-function s23BuildPredictions(sid, lagnaN){
+/* The chart facts the Sessions 24-27 rules read: retrograde flags, the form's gender, age and running daśā. */
+function s23Opts(extra){
+  extra=extra||{};
+  const retro={}, D=extra.dasha, g=document.getElementById("f-gender");
+  if(extra.retro) for(const p of S23_PLANETS) retro[p]=extra.retro.has ? extra.retro.has(p) : !!extra.retro[p];
+  const now=new Date(), YR=365.25*86400000;
+  return {retro, gender:g ? g.value : null,
+    age: D && D.birth ? (now-D.birth)/YR : null,
+    maha: D && D.running ? D.curMaha.lord : null, bhukti: D && D.running ? D.curBhukti.lord : null};
+}
+function s23Conditions(cs){
+  if(!cs.length) return "";
+  return `<p class="s23-sub">When it applies (Sessions 23–27)</p><ul class="s23-conds">`
+    +cs.map(c=>`<li data-key="${c.key}">${s23Para(c.text)} ${s23Tag(c.status)}${s23Src(c.source)}${c.active===true?` <span class="s23-chip active">active now</span>`:""}</li>`).join("")+`</ul>`;
+}
+function s23BuildPredictions(sid, lagnaN, extra){
   const {pbr, degs, waxing}=s23Inputs(sid), lg=lagnaN-1;
+  const ctx=s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra)), conds=s23ChartConditions(ctx);
   let h=`<p>Session 23 shows that a prediction is built in <strong>layers</strong>, each one a blend of karakatwas — <em>"there is no magic in this; it is the knowledge of the karakatwas and logically blending them."</em> `
     +`Below, the four layers are worked for your chart: graha + bhāva, bhāva + bhāva, graha + rāśi and graha + graha (conjunctions and aspects). Aspects link to the <em>Graha Drishti</em> section.</p>`;
   h+=s23TagLegend();
@@ -6569,6 +6639,7 @@ function s23BuildPredictions(sid, lagnaN){
       +(g.digbala_line?`<p><span class="s23-digbala-line">${_esc(g.digbala_line)}</span> ${s23Tag(g.digbala_status)}</p>`:"")
       +(g.nature_lines.length?`<p class="s23-sub">A ${g.nature} in this house (Session 26)</p><ul class="s23-nature-lines">${g.nature_lines.map(x=>`<li>${_esc(x.text)} ${s23Tag(x.status)}${s23Src(x.source)}</li>`).join("")}</ul>`:"")
       +(g.class_texts.length?`<p class="s23-sub">From the bhāva classes</p><ul class="s23-class-texts">${g.class_texts.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
+      +s23Conditions(conds.filter(c=>c.planet===p))
       +`</div>`;
   }
   h+=`</div>`;
@@ -6609,12 +6680,12 @@ function s23BuildPredictions(sid, lagnaN){
   return h;
 }
 
-function renderS23Sections(sid, lagnaN){
+function renderS23Sections(sid, lagnaN, extra){
   const c=document.getElementById("s23-classes-body"), p=document.getElementById("s23-predict-body");
   if(!c || !p) return;
   if(!lagnaN || !sid){ c.innerHTML=s23NoLagna(); p.innerHTML=s23NoLagna(); return; }
   c.innerHTML=s23BuildClasses(sid, lagnaN);
-  p.innerHTML=s23BuildPredictions(sid, lagnaN);
+  p.innerHTML=s23BuildPredictions(sid, lagnaN, extra);
 }
 
 /* ---- Daśā–Bhukti section: roles linked to the running Mahādaśā / Bhukti ---- */

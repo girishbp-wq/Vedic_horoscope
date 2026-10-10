@@ -84,3 +84,15 @@ class S23_2024(unittest.TestCase):
             self.assertEqual(g["nature"], "benefic", name)
             self.assertFalse({x["text"] for x in g["nature_lines"]} & malefic, name)
             self.assertFalse(set(g["class_texts"]) & malefic, name)
+
+
+class Conditions(unittest.TestCase):
+    def test_chart_d_has_moon_dual_10(self):
+        got = br.chart_conditions(RULES, ctx("S23_2024_D"))
+        self.assertIn(("moon_dual_10", "Moon", 10), [(c["key"], c["planet"], c["house"]) for c in got])
+
+    def test_chart_2_first_child_male(self):
+        got = br.chart_conditions(RULES, ctx("S27_CHART_2"))
+        c = next(c for c in got if c["key"] == "first_child_male")
+        self.assertEqual((c["planet"], c["house"], c["source"]), ("Saturn", 5, "S27 p.24"))
+        self.assertIn("first child is Male", c["text"])

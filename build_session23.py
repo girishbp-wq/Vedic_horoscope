@@ -24,6 +24,8 @@ import sys
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
+import bhava_rules as br
+
 ROOT = pathlib.Path(__file__).resolve().parent
 JSON_PATH = ROOT / "session23_rules.json"
 INDEX = ROOT / "index.html"
@@ -167,11 +169,7 @@ NATURES = ["benefic", "malefic", "any"]
 ASPECT_COUNTS = {"Sun": [7], "Moon": [7], "Mars": [4, 7, 8], "Mercury": [7], "Jupiter": [5, 7, 9], "Venus": [7],
                  "Saturn": [3, 7, 10], "Rahu": [2, 5, 9], "Ketu": [2, 5, 9]}
 # Conditional sentences (S23_Conditions): the engines evaluate exactly these keys (spec §6.6).
-CONDITION_KEYS = ("saturn_matures", "saturn_retro_1", "saturn_afflicted_10_young", "saturn_mars_12", "saturn_afflicted_6",
-                  "saturn_afflicted_12", "jupiter_md_8", "jupiter_md_11", "venus_dasha_9", "rahu_md_9",
-                  "twelfth_hidden_talent", "upachaya_30s", "ketu_12_purpose", "venus_afflicted", "venus_good",
-                  "venus_mercury_5", "seventh_lord_12", "mercury_foreign_language", "moon_dual_10", "venus_meets_wife",
-                  "jupiter_husband", "first_child_male")
+CONDITION_KEYS = br.CONDITION_KEYS
 SHEET_ONLY_CONDITION_KEYS = ("twelfth_house",)      # shown by Layer 1 itself (the 12th-house line)
 LIFE_AREA_COUNT = 16
 LINKS = ["", "PAC"]

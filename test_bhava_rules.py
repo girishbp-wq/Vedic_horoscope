@@ -713,3 +713,122 @@ class LayerOne(unittest.TestCase):
 
     def test_card_carries_its_source(self):
         self.assertTrue(self.gb("Jupiter", 10)["source"].startswith("S24 p."))
+
+
+class Conditions(unittest.TestCase):
+    """Conditional sentences (spec §6.6): which hold for a chart, with the right row and the 'active now' flag."""
+
+    def conds(self, signs, degs=None, **kw):
+        return br.chart_conditions(RULES, br.context(LAGNA, signs, degs or {}, **kw))
+
+    def keys(self, signs, **kw):
+        return [(c["key"], c["planet"], c["house"]) for c in self.conds(signs, **kw)]
+
+    # Simha Lagna (4): house h is sign (3 + h) % 12
+    @staticmethod
+    def at(h):
+        return (LAGNA + h - 1) % 12
+
+    def base(self, **placed):
+        far = {p: self.at(4) for p in br.PLANET_ORDER}                 # everyone in the 4th unless placed
+        far.update({p: self.at(h) for p, h in placed.items()})
+        return far
+
+    def test_saturn_matures_until_36(self):
+        signs = self.base(Saturn=7)
+        self.assertIn(("saturn_matures", "Saturn", 7), self.keys(signs, age=30))
+        self.assertNotIn(("saturn_matures", "Saturn", 7), self.keys(signs, age=40))
+        row = next(c for c in self.conds(signs, age=30) if c["key"] == "saturn_matures")
+        self.assertEqual(row["source"], "S25 p.11")
+
+    def test_saturn_retro_1(self):
+        self.assertIn(("saturn_retro_1", "Saturn", 1), self.keys(self.base(Saturn=1), retro={"Saturn": True}))
+        self.assertNotIn(("saturn_retro_1", "Saturn", 1), self.keys(self.base(Saturn=1)))
+
+    def test_saturn_afflicted_10_young(self):
+        signs = dict(self.base(), Saturn=1)                              # Vrishabha is the 10th: Venus's, Saturn's friend
+        self.assertNotIn("saturn_afflicted_10_young", [k for k, *_ in self.keys(signs, age=25)])
+        signs = dict(self.base(Sun=10), Saturn=1)                         # combust with the Sun
+        got = self.keys(signs, degs={"Saturn": 10, "Sun": 12}, age=25)
+        self.assertIn(("saturn_afflicted_10_young", "Saturn", 10), got)
+        self.assertNotIn(("saturn_afflicted_10_young", "Saturn", 10), self.keys(signs, degs={"Saturn": 10, "Sun": 12}, age=40))
+
+    def test_saturn_mars_12_and_afflicted_12(self):
+        got = self.keys(self.base(Saturn=12, Mars=12))                   # Karkataka: the Moon's sign, Saturn's enemy
+        self.assertIn(("saturn_mars_12", "Saturn", 12), got)
+        self.assertIn(("saturn_afflicted_12", "Saturn", 12), got)
+
+    def test_jupiter_md_8_active_only_in_jupiter_md(self):
+        c = next(x for x in self.conds(self.base(Jupiter=8), maha="Jupiter") if x["key"] == "jupiter_md_8")
+        self.assertIs(c["active"], True)
+        c = next(x for x in self.conds(self.base(Jupiter=8), maha="Venus", bhukti="Jupiter") if x["key"] == "jupiter_md_8")
+        self.assertIs(c["active"], False)
+
+    def test_venus_dasha_9_active_in_bhukti(self):
+        c = next(x for x in self.conds(self.base(Venus=9), maha="Sun", bhukti="Venus") if x["key"] == "venus_dasha_9")
+        self.assertIs(c["active"], True)
+
+    def test_rahu_md_9(self):
+        c = next(x for x in self.conds(self.base(Rahu=9), maha="Rahu") if x["key"] == "rahu_md_9")
+        self.assertIs(c["active"], True)
+
+    def test_twelfth_hidden_talent_active_for_its_planet(self):
+        got = [c for c in self.conds(self.base(Mercury=12, Venus=12), maha="Mercury") if c["key"] == "twelfth_hidden_talent"]
+        self.assertEqual([(c["planet"], c["active"]) for c in got], [("Mercury", True), ("Venus", False)])
+
+    def test_upachaya_30s_each_planet(self):
+        got = [(p, h) for k, p, h in self.keys(self.base(Sun=3, Moon=6, Mars=11, Jupiter=10)) if k == "upachaya_30s"]
+        self.assertEqual(got, [("Sun", 3), ("Moon", 6), ("Mars", 11)])     # no 10th-house sentence in the slides
+
+    def test_ketu_12_purpose_age_gate(self):
+        self.assertIn(("ketu_12_purpose", "Ketu", 12), self.keys(self.base(Ketu=12), age=30))
+        self.assertNotIn(("ketu_12_purpose", "Ketu", 12), self.keys(self.base(Ketu=12), age=50))
+
+    def test_venus_good_when_not_afflicted(self):
+        # Simha Lagna: the 2nd is Kanya, where Venus is debilitated; the 11th is Mithuna (Mercury, Venus's friend)
+        self.assertNotIn(("venus_good", "Venus", 2), self.keys(dict(self.base(), Venus=self.at(2))))
+        self.assertIn(("venus_good", "Venus", 11), self.keys(dict(self.base(), Venus=self.at(11))))
+
+    def test_venus_mercury_5(self):
+        self.assertIn(("venus_mercury_5", "Venus", 5), self.keys(self.base(Venus=5, Mercury=5)))
+        self.assertNotIn(("venus_mercury_5", "Venus", 5), self.keys(self.base(Venus=5)))
+
+    def test_seventh_lord_12(self):
+        # Simha Lagna: the 7th is Kumbha, lord Saturn
+        self.assertIn(("seventh_lord_12", "Saturn", 12), self.keys(self.base(Saturn=12)))
+
+    def test_mercury_foreign_language_with_rahu_or_12th_lord(self):
+        self.assertIn(("mercury_foreign_language", "Mercury", 2), self.keys(self.base(Mercury=2, Rahu=2)))
+        self.assertIn(("mercury_foreign_language", "Mercury", 2), self.keys(self.base(Mercury=2, Moon=2)))   # Moon owns the 12th
+        self.assertNotIn(("mercury_foreign_language", "Mercury", 2), self.keys(self.base(Mercury=2)))
+
+    def test_moon_dual_10(self):
+        dhanu = br.context(8, {"Moon": 5}, {})                           # Dhanu Lagna, Moon in Kanya (10th, dual)
+        self.assertIn("moon_dual_10", [c["key"] for c in br.chart_conditions(RULES, dhanu)])
+        simha = br.context(LAGNA, {"Moon": 1}, {})                       # Vrishabha 10th: fixed
+        self.assertNotIn("moon_dual_10", [c["key"] for c in br.chart_conditions(RULES, simha)])
+
+    def test_gender_rules_only_when_filled(self):
+        signs = self.base(Venus=5, Jupiter=1)
+        male = self.conds(signs, gender="Male")
+        wife = [c for c in male if c["key"] == "venus_meets_wife"]
+        self.assertEqual(len(wife), 1)
+        self.assertEqual((wife[0]["house"], wife[0]["source"]), (5, "S24 p.22"))
+        self.assertNotIn("jupiter_husband", [c["key"] for c in male])
+        female = [c["key"] for c in self.conds(signs, gender="Female")]
+        self.assertIn("jupiter_husband", female)
+        self.assertNotIn("venus_meets_wife", female)
+        none = [c["key"] for c in self.conds(signs, gender="Other")]
+        self.assertFalse({"jupiter_husband", "venus_meets_wife"} & set(none))
+
+    def test_venus_meets_wife_needs_a_row_for_its_house(self):
+        self.assertNotIn("venus_meets_wife", [c["key"] for c in self.conds(self.base(Venus=7), gender="Male")])
+
+    def test_unknown_age_and_dasha(self):
+        got = self.conds(self.base(Saturn=7, Jupiter=8))
+        self.assertIn("saturn_matures", [c["key"] for c in got])
+        self.assertTrue(all(c["active"] is None for c in got))
+
+    def test_order_follows_the_key_list(self):
+        got = [c["key"] for c in self.conds(self.base(Saturn=7, Jupiter=8, Mercury=12), age=20, maha="Jupiter")]
+        self.assertEqual(got, sorted(got, key=br.CONDITION_KEYS.index))

@@ -548,6 +548,48 @@ class LayerOneCards(unittest.TestCase):
 
 
 @needs_browser
+class ConditionLines(unittest.TestCase):
+    """Sentences that hold only for some charts appear on the planet's card; the form's gender switches them."""
+
+    def test_gender_from_the_form(self):
+        r = run_page("""
+            const out = {};
+            for (const g of ['', 'Female']) {
+              await setBirth('1990-05-15', '06:30');
+              await pickCity('Bengaluru');
+              await page.selectOption('#f-gender', g);
+              await generate();
+              out[g || 'none'] = await page.evaluate(() =>
+                document.querySelector('#s23-predict-body .s23-gb[data-planet="Jupiter"]').textContent);
+            }
+            return out;
+        """)
+        self.assertIn("Jupiter also represents Husband", r["Female"])
+        self.assertNotIn("Jupiter also represents Husband", r["none"])
+
+    def test_active_now_chip(self):
+        r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate(() => {
+              // Simha Lagna, Jupiter in Meena (the 8th); a running Jupiter Mahadasha
+              const sid = {Sun: 20, Moon: 200, Mars: 300, Mercury: 40, Jupiter: 335, Venus: 160, Saturn: 250, Rahu: 10, Ketu: 190};
+              const card = () => document.querySelector('#s23-predict-body .s23-gb[data-planet="Jupiter"]');
+              const D = (maha) => ({running: true, birth: new Date('1990-01-01T00:00:00Z'), curMaha: {lord: maha}, curBhukti: {lord: 'Sun'}});
+              renderS23Sections(sid, 5, {dasha: D('Jupiter')});
+              const on = card().innerHTML;
+              renderS23Sections(sid, 5, {dasha: D('Venus')});
+              const off = card().innerHTML;
+              return {on, off};
+            });
+        """)
+        self.assertIn("active now", r["on"])
+        self.assertIn("S24 p.9", r["on"])
+        self.assertNotIn("active now", r["off"])
+
+
+@needs_browser
 class DashaOutsideItsSpan(unittest.TestCase):
     def test_no_running_period_is_claimed_outside_the_120_years(self):
         r = run_page("""

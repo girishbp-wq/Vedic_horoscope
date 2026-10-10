@@ -124,6 +124,7 @@ function extra(c, lg, pbr){
       aspects_on: s23AspectsOn(ctx, ctx.signs[p])}])),
     sign_lines: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23SignLine),
     male_signs: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23IsMaleSign),
+    conditions: s23ChartConditions(ctx), condition_keys: S23_CONDITION_KEYS,
   };
 }
 """
@@ -158,6 +159,7 @@ def python_extra(c):
                         "aspects_on": br.aspects_on(RULES, ctx, ctx["signs"][p])} for p in placed},
         "sign_lines": [br.sign_line(RULES, s) for s in range(12)],
         "male_signs": [br.is_male_sign(RULES, s) for s in range(12)],
+        "conditions": br.chart_conditions(RULES, ctx), "condition_keys": list(br.CONDITION_KEYS),
     }
 
 

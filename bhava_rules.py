@@ -316,6 +316,105 @@ def is_male_sign(rules, sign):
     return rules["reference"]["RASHI"][sign]["oddEven"].startswith("Odd")
 
 
+# ---------------------------------------------------------------- conditional readings (spec §6.6)
+# The fixed keys of the S23_Conditions sheet, in the order the readings are listed.
+CONDITION_KEYS = ("saturn_matures", "saturn_retro_1", "saturn_afflicted_10_young", "saturn_mars_12", "saturn_afflicted_6",
+                  "saturn_afflicted_12", "jupiter_md_8", "jupiter_md_11", "venus_dasha_9", "rahu_md_9",
+                  "twelfth_hidden_talent", "upachaya_30s", "ketu_12_purpose", "venus_afflicted", "venus_good",
+                  "venus_mercury_5", "seventh_lord_12", "mercury_foreign_language", "moon_dual_10", "venus_meets_wife",
+                  "jupiter_husband", "first_child_male")
+SATURN_MATURES_AGE, KETU_PURPOSE_AGE = 36, 35          # R6; S25 p.41
+
+
+def _condition_row(rules, key, planet, house):
+    """The S23_Conditions row for this key: planet and house both matching first, then house, then planet, then any."""
+    best, score = None, -1
+    for r in rules["conditions"]:
+        if r["key"] != key or r["planet"] not in (None, planet) or r["house"] not in (None, house):
+            continue
+        s = (r["house"] is not None) * 2 + (r["planet"] is not None)
+        if s > score:
+            best, score = r, s
+    return best
+
+
+def _young(age, limit):
+    return age is None or age < limit
+
+
+def chart_conditions(rules, ctx):
+    """The conditional sentences that hold for this chart: [{key, planet, house, text, status, source, active}].
+
+    `active` is True/False for a daśā-linked sentence when the running daśā is known, else None."""
+    sg, lagna, maha, bhukti = ctx["signs"], ctx["lagna"], ctx["maha"], ctx["bhukti"]
+    house = lambda p: house_of(lagna, sg[p]) if p in sg else None
+    placed = [p for p in PLANET_ORDER if p in sg]
+    lord = lambda h: house_lord(rules, lagna, h)
+    found = []                                                   # (key, planet, house, active)
+
+    def add(key, planet, h, active=None):
+        found.append((key, planet, h, active))
+
+    def dasha(test):
+        return None if maha is None else bool(test)
+
+    sat = house("Saturn")
+    if sat in (1, 2, 3, 5, 7, 10) and _young(ctx["age"], SATURN_MATURES_AGE):
+        add("saturn_matures", "Saturn", sat)
+    if sat == 1 and ctx["retro"].get("Saturn"):
+        add("saturn_retro_1", "Saturn", 1)
+    if sat == 10 and afflicted(rules, ctx, "Saturn") and _young(ctx["age"], SATURN_MATURES_AGE):
+        add("saturn_afflicted_10_young", "Saturn", 10)
+    if sat == 12 and house("Mars") == 12:
+        add("saturn_mars_12", "Saturn", 12)
+    for h, key in ((6, "saturn_afflicted_6"), (12, "saturn_afflicted_12")):
+        if sat == h and afflicted(rules, ctx, "Saturn"):
+            add(key, "Saturn", h)
+    for h, key in ((8, "jupiter_md_8"), (11, "jupiter_md_11")):
+        if house("Jupiter") == h:
+            add(key, "Jupiter", h, dasha(maha == "Jupiter"))
+    if house("Venus") == 9:
+        add("venus_dasha_9", "Venus", 9, dasha("Venus" in (maha, bhukti)))
+    if house("Rahu") == 9:
+        add("rahu_md_9", "Rahu", 9, dasha(maha == "Rahu"))
+    for p in placed:
+        if house(p) == 12:
+            add("twelfth_hidden_talent", p, 12, dasha(p in (maha, bhukti)))
+    for p in placed:
+        if house(p) in (3, 6, 10, 11):
+            add("upachaya_30s", p, house(p))
+    if house("Ketu") == 12 and _young(ctx["age"], KETU_PURPOSE_AGE):
+        add("ketu_12_purpose", "Ketu", 12)
+    ven = house("Venus")
+    if ven in (2, 8, 11):
+        add("venus_afflicted" if afflicted(rules, ctx, "Venus") else "venus_good", "Venus", ven)
+    if ven == 5 and house("Mercury") == 5:
+        add("venus_mercury_5", "Venus", 5)
+    l7 = lord(7)
+    if house(l7) == 12:
+        add("seventh_lord_12", l7, 12)
+    l12 = lord(12)
+    if house("Mercury") == 2 and (sg.get("Rahu") == sg["Mercury"] or (l12 != "Mercury" and sg.get(l12) == sg["Mercury"])):
+        add("mercury_foreign_language", "Mercury", 2)
+    if house("Moon") == 10 and rules["reference"]["RASHI"][sg["Moon"]]["mode"] == "Dwisabhava":
+        add("moon_dual_10", "Moon", 10)
+    if ctx["gender"] == "Male" and ven is not None:
+        add("venus_meets_wife", "Venus", ven)
+    if ctx["gender"] == "Female" and house("Jupiter") is not None:
+        add("jupiter_husband", "Jupiter", house("Jupiter"))
+    l5, fifth = lord(5), house_sign(lagna, 5)
+    if (is_male_sign(rules, fifth) and any(house(p) == 5 for p in MALE_PLANETS) and l5 in sg
+            and is_male_sign(rules, sg[l5])):
+        add("first_child_male", l5, 5)
+    out = []
+    for key, planet, h, active in sorted(found, key=lambda f: CONDITION_KEYS.index(f[0])):
+        row = _condition_row(rules, key, planet, h)
+        if row:
+            out.append({"key": key, "planet": planet, "house": h, "text": row["text"], "status": row["status"],
+                        "source": row["source"], "active": active})
+    return out
+
+
 # ---------------------------------------------------------------- Vimshottari daśā and role linking
 _YEAR_DAYS = 365.25            # same civil-year length as buildDasha() in index.html
 _NAK_SIZE = 360 / 27
