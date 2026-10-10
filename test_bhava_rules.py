@@ -896,7 +896,7 @@ class LayerTwo(unittest.TestCase):
         rows = br.bhava_bhava(RULES, br.context(6, {"Saturn": 4, "Sun": 9}))     # Tula: 4L Saturn in Simha, 11L Sun in Makara
         four = next(r for r in rows if r["lord_of"] == 4)
         self.assertEqual((four["exchange"], four["status"]), (11, "taught"))
-        self.assertTrue(four["text"].startswith("There is a Parivartana between 4 th Lord Saturn and 11 th lord Sun"))
+        self.assertTrue(four["text"].startswith("In her example chart (S27): There is a Parivartana between 4 th Lord Saturn and 11 th lord Sun"))
         self.assertNotIn(11, [r["lord_of"] for r in rows])
         self.assertIsNone(next(r for r in rows if r["lord_of"] == 5)["exchange"])   # 5L Saturn in the 11th: no exchange
 

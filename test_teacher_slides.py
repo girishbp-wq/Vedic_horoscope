@@ -91,3 +91,21 @@ class TeacherSlides(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExampleAndConditionText(unittest.TestCase):
+    """Review fixes: worked-example sentences are labelled; a conditional sentence is not also in its own card's text."""
+
+    def test_s27_example_rows_are_labelled(self):
+        for a, b, c, x, text, src in ts.LORD_IN:
+            if src.startswith("S27") or "; S27" in src:
+                self.assertIn("In her example chart (S27)", text, (a, b, c, x))
+        for key, p, h, text, src in ts.CONDITIONS:
+            if src.startswith("S27"):
+                self.assertIn("In her example chart (S27)", text, key)
+
+    def test_condition_sentence_not_repeated_in_the_same_card(self):
+        for key, p, h, text, src in ts.CONDITIONS:
+            for (planet, house), (_, cell) in ts.GRAHA_IN_BHAVA.items():
+                if (p is None or p == planet) and (h is None or h == house):
+                    self.assertNotIn(text, cell, (key, planet, house))

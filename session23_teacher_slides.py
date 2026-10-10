@@ -54,7 +54,8 @@ and page. Edits made to the printed text, and nothing else:
     S27 p.24: ( partnership business ) → Partnership business.
 - Session 26 rule (R11): a house rule told through an example planet starts as a general rule
   (see the S26 lines above);
-- conditional sentences (they hold only for some charts) moved from the planet-in-house text to CONDITIONS.
+- conditional sentences (they hold only for some charts) moved from the planet-in-house text to CONDITIONS;
+- sentences about one worked example chart (Session 27) start 'In her example chart (S27):'.
 
 apply_teacher_slides.py turns these into the S23_ rows of session23_rules.json.
 """
@@ -169,8 +170,6 @@ GRAHA_IN_BHAVA = {
     ('Moon', 12): ('S23-2024 p.19',
         ('12th house is house of Losses. Expenses, Isolated Places, Foreign Lands Asylums, Jails, Hospitals, Imagination etc\n'
          '\n'
-         'One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet.\n'
-         '\n'
          'Now the Moon has reached the final destination, i. e. 12th house. Moon is mind and 12th house is house of Foreign Lands and Isolated Places, so mind of these people find balance when they reach foreign lands or places far away from where they were born\n'
          '\n'
          'As 12th house is also a house of imagination and Moon represents mind, they are highly imaginative people and become good Authors. They always have great imaginative ideas which they can use in their writing. They like to live a very private life and at secluded places\n'
@@ -203,7 +202,7 @@ GRAHA_IN_BHAVA = {
     ('Mars', 3): ('S23-2024 p.22',
         ('3rd house is house of your communication skills, neighbours, short distance travels, younger siblings, marketing, announcements, collecting information, hobbies and skills, self-efforts, business, courage etc.\n'
          '\n'
-         "So Mars, the planet of courage is now coming into the house of courage. What will it make? Obviously, a very courageous person. These are highly courageous people who can take any risk in given situation. They can be very dominating with their communication. Even their writing may be thought provoking. As 3rd house also represents communications and Mars represents hands, they are very good with their written communications. They can be very aggressive in their writing. They can motivate people with their blogs or articles. They write very aggressively, that's why they can become very good lawyers too. As 3rd house is Upachaya House, most of these results can be seen in 30s.\n"
+         "So Mars, the planet of courage is now coming into the house of courage. What will it make? Obviously, a very courageous person. These are highly courageous people who can take any risk in given situation. They can be very dominating with their communication. Even their writing may be thought provoking. As 3rd house also represents communications and Mars represents hands, they are very good with their written communications. They can be very aggressive in their writing. They can motivate people with their blogs or articles. They write very aggressively, that's why they can become very good lawyers too.\n"
          '\n'
          'From 3rd house, Mars aspects the 6th house of disputes and litigation, another reason for them to become a lawyer, communications are important in disputes and litigation. This is also a great position for having a peaceful married life because this person will take pro-active measures to prevent conflicts.\n'
          '\n'
@@ -233,7 +232,7 @@ GRAHA_IN_BHAVA = {
     ('Mars', 6): ('S23-2024 p.25',
         ('6th house is 1st of Dushthana Houses (houses #6.8 and 12) and 2nd of Upachaya Houses (houses #3, 6, 10 & 11),6th house represents things like diseases, debts obstacles, enemies, disputes, competitions, litigations, under privileged people, pets, daily routine life, colleagues at work place etc.\n'
          '\n'
-         'Mars is fighter & aggressive nature and 6th house in house of obstacles and conflicts. This is where Mars gets a best environment. Mars finds best environment to deal with obstacles, conflicts and competitors and defeat them. But as 6th houses Upachaya House by nature, these results will be seen in 30s. in early life, person will have lots of issues and obstacles in life. They can be great Lawyer, Fighter, Sports Person or Doctors. They become pro-active in defeating their enemies Aspect wise, Mars 4th aspect goes to 9th house and the person becomes fundamentalist in his religious views. He can have struggle with his Gurus and try to over-power them\n'
+         'Mars is fighter & aggressive nature and 6th house in house of obstacles and conflicts. This is where Mars gets a best environment. Mars finds best environment to deal with obstacles, conflicts and competitors and defeat them. in early life, person will have lots of issues and obstacles in life. They can be great Lawyer, Fighter, Sports Person or Doctors. They become pro-active in defeating their enemies Aspect wise, Mars 4th aspect goes to 9th house and the person becomes fundamentalist in his religious views. He can have struggle with his Gurus and try to over-power them\n'
          '\n'
          'Mars next aspect good to 12th house and they can be spendthrift by nature. Mars next aspect goes to 1st house/Ascendant and they can find it difficult to find their right life path in early life.')),
     ('Mars', 7): ('S23-2024 p.26',
@@ -276,8 +275,6 @@ GRAHA_IN_BHAVA = {
          'From here, Mars aspects the 2nd house of family wealth and speech. It makes the person dominating towards his family and accumulated wealth but gives a harsh speech. Mars next aspect goes to 5th house of sports, education and children. This makes the person very active about sports and education. They can become good sports-persons but they can be dominating towards their children and love interests. Finally, Mars 8th aspect will go to 6th house and create instability in their job setup with colleagues. It can also bring illnesses of sudden nature and health may be fluctuating')),
     ('Mars', 12): ('S23-2024 p.31',
         ('12th house is house of Losses, Expenses, Isolated Places, Foreign Lands, Asylums, Jails, Hospitals, Imagination etc.\n'
-         '\n'
-         'One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet.\n'
          '\n'
          'It represents that a persons energy and action are going in matters of 12th house. It can represent someone who is working as Jailer in Prison or Doctor at a Hospital or an Asylum. It can also show a sports person, who goes to other countries to represent his country in sports. This position of Mars can also make a person Spendthrift, as Mars is in the house of losses and expenses\n'
          '\n'
@@ -405,7 +402,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          "Jupiter's last aspect goes to 3rd house of Siblings and Self-effort. It shows the need to learn about the right area of self-efforts")),
     ('Jupiter', 8): ('S24 p.9',
-        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People. For a girl, Jupiter also represents Husband.\n'
+        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People.\n'
          '\n'
          '8th house is house of secrecy, occult knowledge, death, transformation, death and re-birth, In laws family, joint wealth with spouse etc.\n'
          '\n'
@@ -417,7 +414,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          "Jupiter's last aspect goes to 4th house of mother and home. It shows the need to learn about how to get peace of mind.")),
     ('Jupiter', 9): ('S24 p.10',
-        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People. For a girl, Jupiter also represents Husband.\n'
+        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People.\n'
          '\n'
          '9th house represents Religion, Law, Faith, Fortune, Gurus, Teachings of Father (as father is 1st Guru we get) etc.\n'
          '\n'
@@ -429,7 +426,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          "Jupiter's last aspect is on 5th house of Education. It shows the need to educate yourself.")),
     ('Jupiter', 10): ('S24 p.11',
-        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People. For a girl, Jupiter also represents Husband.\n'
+        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People.\n'
          '\n'
          '10th house represents things like Government, Father, Authority, Fame etc. Here, Authority should not be understood in literal sense, like someone got a Government job or became a Manager or CEO of a Firm. Here Authority means doing any work with complete perfection and your opinion matters when comes to making any decision related to that work, so even a good Hacker can be a person of authority as he is master of that particular work.\n'
          '\n'
@@ -441,7 +438,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          "Jupiter's last aspect goes to 6th house of disputes and enemies. It shows the need to find the right daily work routine. So, the biggest challenge with this position is to find the right career for yourself.")),
     ('Jupiter', 11): ('S24 p.12',
-        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People. For a girl, Jupiter also represents Husband.\n'
+        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People.\n'
          '\n'
          '11th house represents Elder Siblings, Large Organizations, Huge Structures, Higher Goals and Purposes for the Universe, Network Circle, Entrepreneurship, Friends, Gains, Income and Earnings etc.\n'
          '\n'
@@ -451,11 +448,9 @@ GRAHA_IN_BHAVA = {
          '\n'
          "Jupiter's next aspect goes to 5th house of education, children, creativity, risk taking abilities and speculative businesses. As Jupiter represents knowledge and 11th house is house of gains, this aspect will provide all the gain of knowledge and education. These people also impart same knowledge and education to their children. Person also gains from Speculative Businesses and his creativity.")),
     ('Jupiter', 12): ('S24 p.13',
-        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People. For a girl, Jupiter also represents Husband.\n'
+        ('Jupiter is the most benefic planet and it represents all the auspicious things like Knowledge, Wisdom, Law, Guru, Spirituality, Religion, Philosophy, Literature, Elderly People.\n'
          '\n'
          '12th house is house of Losses, Expenses, Isolated Places, Spirituality, Foreign Lands, Foreign Companies, Imagination, Sub-Conscious Mind, Charity, Donation, Asylums, Jails, Hospitals, Hidden Talent and Secrets of Other World etc.\n'
-         '\n'
-         'One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet.\n'
          '\n'
          "As Jupiter is knowledge, wisdom and God's blessings and 12th house is house of Spirituality, Hidden Talents and Secrets, this position of Jupiter becomes number one in following the path of Spirituality and Occult. These are highly spiritual beings who find their path in life in Occultism, Psychic, Spiritual Healing etc. They start teaching the world out of their experience that look towards spiritual path in life. They find their mental peace in spiritual realm and meditation.\n"
          '\n'
@@ -511,7 +506,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'You can be transformed (brought back from the dead) through your younger siblings (3rd House). When you are feeling dead, and your batteries need to be recharged your younger siblings can help you feel restored and renewed.\n'
          '\n'
-         "Wife – Venus is the wife in a man's chart. Its position can indicate where a male will meet his wife or significant others. With this position, you may meet your wife through younger siblings, social media, or short journeys (trips to the store or anywhere close to the home), at the movies, or a sports game.")),
+         "Wife – Venus is the wife in a man's chart. Its position can indicate where a male will meet his wife or significant others.")),
     ('Venus', 4): ('S24 pp.20-21',
         ('Venus – When you have Venus in the 4th house in Vedic astrology your passion goes toward the 4th house. You are passionate about beautifying the home, your homeland, mother, comforts, and having a peaceful mind and disposition.\n'
          '\n'
@@ -521,7 +516,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Loving Heart – You have a loving heart. Your love radiates and shines drawing other people to you.\n'
          '\n'
-         "Wife – Venus indicates the wife in the male's birth chart. Venus in the 4th house signifies that a male will meet their wife at home, through his mother, in their town or city.\n"
+         "Wife – Venus indicates the wife in the male's birth chart.\n"
          '\n'
          'Marriage/Relationships – Venus is the karaka of marriage, for both men and women. If you have Venus in the 4th house your mother can get involved in your marriage or relationship. This can be for good or bad. On a positive note, the mother can be highly supportive of your marriage and may have been the one who introduced, you to your spouse. On a negative note, if Venus is damaged in the 4th house, your mother can interfere in your relationship.')),
     ('Venus', 5): ('S24 pp.22-23',
@@ -529,7 +524,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Creativity – Venus is the planet of creativity in the house of visual creativity. You have great creative talents. You have a passion for the visual arts (pictures, painting, drawing, artwork). You may also be an artist who loves to devote time to your visual creativity. Venus in this house can also influence the native to pursue the art of stage performance (5th house). You may be an actor, musician, singer, or stage performer.\n'
          '\n'
-         'Where You Meet Her – Venus is the wife in a males chart. If you are a male, you will meet your girlfriend, wife, or significant other anywhere there is entertainment and fun. This could be at a club, party, festival, carnival, sports game. You also have good luck meeting a romantic partner in these places.\n'
+         'Where You Meet Her – Venus is the wife in a males chart. You also have good luck meeting a romantic partner in these places.\n'
          '\n'
          'Children – You are passionate about your children (especially your first-born child). Children bring a lot of love, inspiration, and joy into your life. Your children are very beautiful and can be profoundly creative.\n'
          '\n'
@@ -543,7 +538,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'The Less Privileged – You have a soft spot in your heart for the underdog. You have a passion for helping less privileged people, suffering, or in need of help. The 6th house in the house of suffering and you love spreading your Venusian energies as a beacon of healing light.\n'
          '\n'
-         'Wife – A male can meet his wife on the job. A work environment is a good place for a man to meet and engage with women.\n'
+         'Wife –\n'
          '\n'
          'Marriage – Venus is the indicator of marriage for both men and women. Your marriage life can be hard. There can be struggles and obstacles in the marriage. If other planet alignments support it, the marriage can break. However, this is not the case in all charts. Marriage life can be hard; however, it can make the marriage stronger when difficulties are overcome.\n'
          '\n'
@@ -569,7 +564,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Esoteric Knowledge – You love exploring the hidden side of life. Subjects like metaphysics, new age, occult, mysticism, sorcery, magic, astrology, numerology are of interest to you. Any hidden or secret information sparks your interest.\n'
          '\n'
-         'Wife – A man will meet his wife in a secret location. You can also keep your wife secret and may not reveal too much information about her to others. Your wife can be very secretive and may not want you to reveal too much information about her.\n'
+         'Wife – You can also keep your wife secret and may not reveal too much information about her to others. Your wife can be very secretive and may not want you to reveal too much information about her.\n'
          '\n'
          'Marriage – Marriage can go through many sudden ups and downs. The 8th house is the house of sudden things. There can be a lot of surprises and unseen events that take the marriage by storm. Marriage life can be difficult with this position because so many hidden and unseen thing disrupts the marriage.')),
     ('Venus', 9): ('S24 pp.30-31',
@@ -583,7 +578,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Marriage – Venus is the karaka of marriage for both men and women. If Venus is in your 9th house, the marriage life is fortunate.\n'
          '\n'
-         'Wife – In male charts, you will meet your wife on a long distant or foreign trip. The wife is spiritual, compassionate, and educated. If you are a male, you may have a long-distance relationship with your wife before being married.\n'
+         'Wife – The wife is spiritual, compassionate, and educated. If you are a male, you may have a long-distance relationship with your wife before being married.\n'
          '\n'
          'Buttocks, Thighs – The 9th house represent your buttocks, thighs, and Venus is beauty. Natives with this position have beautiful buttocks and attractive thighs.\n'
          '\n'
@@ -603,7 +598,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Women – Venus is the karaka of women, and the 10th house is your career. You work around or with a lot of women in your career. If you have an office job, your coworkers are mostly women. If your coworkers are men, they will have feminine personalities or be very artistic.\n'
          '\n'
-         'Wife – In a males chart, you could meet your wife or significant others at work. Since Venus brings women to your work environment, one of your coworkers or employees if you are a business owner could be that special someone. Your wife is career-oriented and authoritative.\n'
+         'Wife – Your wife is career-oriented and authoritative.\n'
          '\n'
          'Beautiful Knees – Venus is beauty, and the 10th relates to your knees. The planet Venus blesses you with attractive knees. Your knees can be very well-formed and prominent.')),
     ('Venus', 11): ('S24 pp.34-35',
@@ -619,7 +614,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Eldest Child – The 11th house is your eldest child spouse (it is the 7th house from the 5th) Your eldest child will have a very attractive partner.\n'
          '\n'
-         'Where you meet her – If you are a male, you will meet your wife at social events. You could meet her at an organization, community event, business meeting, concert, fundraising or, charity event. You meet your wife anywhere there are crowds and a lot of people around. With this position men have good luck meeting a significant other in a social setting.\n'
+         'Where you meet her – With this position men have good luck meeting a significant other in a social setting.\n'
          '\n'
          'Wife – The wife brings to the marriage financial gains and fulfillment of wishes.')),
     ('Venus', 12): ('S24 pp.36-37',
@@ -627,7 +622,7 @@ GRAHA_IN_BHAVA = {
          '\n'
          'Love: The 12th house relates to losses and escapism. With Venus in the 12th house, you could lose your lover, or you may escape the relationship. You could decide that you no longer want to be in a relationship and break up with your significant other.\n'
          '\n'
-         'Meet Wife: If you are a man, your will meet your wife in a place of isolation or on a foreign vacation. Men have good luck meeting women while foreign traveling or in private locations.\n'
+         'Meet Wife:\n'
          '\n'
          'Spirituality: You love spirituality and can be a devoted spiritualist.\n'
          '\n'
@@ -861,8 +856,6 @@ GRAHA_IN_BHAVA = {
     ('Rahu', 12): ('S25 p.29',
         ('12th house is house of Losses, Expenses, Isolated Places, Spirituality, Foreign Lands, Foreign Companies, Imagination, Sub-Conscious Mind, Charity, Donation, Asylums, Jails, Hospitals, Hidden Talent and Secrets of Other World etc.\n'
          '\n'
-         'One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet\n'
-         '\n'
          'Aspect-wise, in Vedic Astrology, Rahu has 5th and 9th house aspect. He is unable to impact 7th house from its place as Ketu is sitting there, which is the other axis of Rahu and represents all those things which are non-Rahu\n'
          '\n'
          'So Rahu in 12th house, 1st of all gives obsession towards reaching foreign lands as Rahu represents Foreign Things and 12th house itself is foreign lands. Due to its malefic nature, Rahu takes the person away from his home into foreign lands. This position can also show someone who is spendthrift. This position can show different type of careers. But best indication is As 12th house is also a house of Spirituality, it also shows someone who is immensely obsessed about spiritual pursuits. The end result depends on the sign Rahu is sitting in and also conjunction of Rahu with other planets.')),
@@ -981,10 +974,10 @@ LORD_IN = [
     (1, 10, '', False, ('When lagna lord is in 10 th the person is a workaholic. He is very attached to his profession. Wants to make a good name in his career and wants to reach the top post. He has good administrative skills, good leadership qualities and he is honest in his work.'), 'S26 p.25'),
     (1, 11, '', False, ('The person is very much goal oriented, his focus in life is on profits and fulfilment of desires. Very attached to elder siblings and also to friends, he has a good social circle. friends will help and support the native. The person will be generous and do lot of charities. Will have good name in the society.'), 'S26 p.26'),
     (1, 12, '', False, ('The native will incur lot of wasteful expenditures. He has a childhood away from home. Loves travelling to foreign countries. Interest in spirituality. He may undergo mental stress or sleep disorders. Loves to spend time in solitude.'), 'S26 p.27'),
-    (3, 3, '', False, ("Third lord Jup is posited in 3 rd house. His younger co born has an important say in native's matters. He has a good relationship with his younger co borns. He is good in written communication"), 'S27 p.22'),
-    (7, 10, '', False, ('7th House lord Venus is posited in 10 th House. Now blending the karakatwas of 7 th House and 10 th House, we can predict that the Spouse ( 7 th House ) is a partner in the profession ( 10 th House ) of the native'), 'S27 p.15'),
+    (3, 3, '', False, ("In her example chart (S27): Third lord Jup is posited in 3 rd house. His younger co born has an important say in native's matters. He has a good relationship with his younger co borns. He is good in written communication"), 'S27 p.22'),
+    (7, 10, '', False, ('In her example chart (S27): 7th House lord Venus is posited in 10 th House. Now blending the karakatwas of 7 th House and 10 th House, we can predict that the Spouse ( 7 th House ) is a partner in the profession ( 10 th House ) of the native'), 'S27 p.15'),
     (10, 7, '', False, ('Partnership business. In her example chart (S27): He was a Kirana merchant and later dealt with edible oil.'), 'S27 p.24'),
-    (4, 11, '', True, ('There is a Parivartana between 4 th Lord Saturn and 11 th lord Sun. So he has gains from property and has multiple properties. Also this native gets happiness ( 4 H ) when he is in the company of friends ( 11 H )'), 'S27 p.22'),
+    (4, 11, '', True, ('In her example chart (S27): There is a Parivartana between 4 th Lord Saturn and 11 th lord Sun. So he has gains from property and has multiple properties. Also this native gets happiness ( 4 H ) when he is in the company of friends ( 11 H )'), 'S27 p.22'),
 ]
 
 # ---- Graha in a rashi (S23-2024 pp.5, 11): (planet, rashi 1-12, text, source)
@@ -1108,7 +1101,7 @@ CONDITIONS = [
     ('saturn_afflicted_12', 'Saturn', 12, 'If Saturn is afflicted, you will not like isolation and being in a confined space.', 'S25 p.16'),
     ('rahu_md_9', 'Rahu', 9, 'Under Rahu Mahadasha, these people travel a lot in foreign lands or for pilgrimage purposes.', 'S25 p.26'),
     ('ketu_12_purpose', 'Ketu', 12, ('In early life, they can suffer a lot but after the age of 30-35 they can find the purpose of life and they put all their efforts to achieve it.'), 'S25 p.41'),
-    ('first_child_male', None, 5, ('5 th House is Kumbha rashi, a male rashi in which a male planet Mars is posited there. 5th lord Saturn is again posited in male rashi Simha. So his first child is Male.'), 'S27 p.24'),
+    ('first_child_male', None, 5, ('In her example chart (S27): 5 th House is Kumbha rashi, a male rashi in which a male planet Mars is posited there. 5th lord Saturn is again posited in male rashi Simha. So his first child is Male.'), 'S27 p.24'),
     ('twelfth_house', None, 12, ('One thing to always keep in mind with 12th house is that it basically remains the house of losses. So, whichever planet goes in 12th house, even exalted, is in the bucket of losses. Now, to gain out of any such planet, you need to put double effort in things related with that planet.'), 'S23-2024 p.19; S24 p.13; S25 p.29'),
 ]
 
