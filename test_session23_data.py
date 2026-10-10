@@ -50,8 +50,17 @@ class RuleSheets(unittest.TestCase):
             if x["status"] == "curated":
                 self.assertNotIn("yoga", (x["conjunction"] + " " + x["aspect"]).lower(), (x["a"], x["b"]))
 
-    def test_sun_and_saturn_digbala_are_taught(self):
-        self.assertEqual({p: rules()["digbala"][p]["status"] for p in ("Sun", "Saturn")}, {"Sun": "taught", "Saturn": "taught"})
+    def test_sun_saturn_and_mars_digbala_are_taught(self):
+        self.assertEqual({p: rules()["digbala"][p]["status"] for p in ("Sun", "Saturn", "Mars")},
+                         {"Sun": "taught", "Saturn": "taught", "Mars": "taught"})
+        self.assertEqual(rules()["digbala"]["Mars"]["source"], "S23-2024 p.29")
+
+    def test_dusthana_malefic_rule_from_session_25(self):
+        rows = [x for x in rules()["class_rules"] if x["class"] == "Dusthana" and x["applies"] == "malefic"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["slide"], "S25 p.10")
+        import session23_teacher_slides as ts
+        self.assertEqual(rows[0]["text"], ts.CLASS_RULE_TEXT["dusthana_malefic"][0])
 
     def test_apoklima_wording_is_kept_as_printed(self):
         apok = next(c for c in rules()["classes"] if c["name"] == "Apoklima")
@@ -83,6 +92,7 @@ class RuleSheets(unittest.TestCase):
         has = lambda cls, who, frag: any(x["class"] == cls and x["applies"] == who and frag in x["text"] for x in cr)
         self.assertTrue(has("Kendra", "benefic", "smaller efforts"))
         self.assertTrue(has("Upachaya", "malefic", "good results"))
+        self.assertTrue(has("Upachaya", "malefic", "mostly in the 30s"))           # R2: S23 + S26 + S23-2024/S24
         self.assertTrue(has("Apachaya", "malefic", "do not do well"))
         self.assertTrue(has("Panapara", "any", "moderately strong"))
         self.assertTrue(any(x["class"] == "Apoklima" and x["exclude_houses"] == [9] for x in cr))
@@ -125,11 +135,13 @@ class CuratedContent(unittest.TestCase):
             self.assertEqual(x["status"], "taught")
             self.assertEqual("\n\n".join(x["points"]), slides.SUN_SLIDE_TEXT[x["house"]][1], x["house"])
 
-    def test_other_rows_are_curated_with_3_to_5_points(self):
-        for x in (r for r in rules()["graha_in_bhava"] if r["planet"] != "Sun"):
-            self.assertEqual(x["status"], "curated", (x["planet"], x["house"]))
-            self.assertTrue(3 <= len(x["points"]) <= 5, (x["planet"], x["house"], len(x["points"])))
-            self.assertTrue(all(len(p.split()) >= 5 for p in x["points"]), (x["planet"], x["house"]))
+    def test_every_graha_bhava_row_is_taught(self):
+        import session23_teacher_slides as ts
+        for x in rules()["graha_in_bhava"]:
+            self.assertEqual(x["status"], "taught", (x["planet"], x["house"]))
+            if x["planet"] != "Sun":
+                src, text = ts.GRAHA_IN_BHAVA[(x["planet"], x["house"])]
+                self.assertEqual(("\n\n".join(x["points"]), x["source"], x["extra"]), (text, src, []), (x["planet"], x["house"]))
 
     def test_no_two_rows_share_text(self):
         # taught Sun slides legitimately repeat lines ("Every planet has something good and something bad")
@@ -184,6 +196,40 @@ class CuratedContent(unittest.TestCase):
             self.assertIsNone(banned.search(t), t)
 
 
+class TeacherRows(unittest.TestCase):
+    """Sessions 23 (2024 deck) to 27: the rows come from session23_teacher_slides.py."""
+
+    def test_new_keys_equal_the_teacher_module(self):
+        import session23_teacher_slides as ts
+        r = rules()
+        self.assertEqual(r["bhava_nature"], [dict(house=h, nature=n, planet=p, text=t, status="taught", source=s)
+                                             for h, n, p, t, s in ts.BHAVA_NATURE])
+        self.assertEqual(r["aspect_meaning"], [dict(planet=p, aspect=a, from_house=f, text=t, status="taught", source=s)
+                                               for p, a, f, t, s in ts.ASPECT_MEANING])
+        self.assertEqual(r["life_areas"], [dict(no=n, area=a, houses=list(h), karakas=list(k), karaka_female=kf, link=l, source=s)
+                                           for n, a, h, k, kf, l, s in ts.LIFE_AREAS])
+        self.assertEqual(r["conditions"], [dict(key=k, planet=p, house=h, text=t, status="taught", source=s)
+                                           for k, p, h, t, s in ts.CONDITIONS])
+        self.assertEqual(r["remedies"], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
+
+    def test_lord_in_and_graha_rashi_rows_follow_the_shipped_ones(self):
+        import session23_teacher_slides as ts
+        r = rules()
+        self.assertEqual(r["bhava_lord_in"][0]["lord_of"], 2)                  # the Session 23 row stays first
+        self.assertEqual(r["bhava_lord_in"][1:], [dict(lord_of=a, sits_in=b, text=t, status="taught", source=s, condition=c, exchange=x)
+                                                  for a, b, c, x, t, s in ts.LORD_IN])
+        self.assertEqual(r["graha_rashi"][1:], [dict(planet=p, rashi=n, text=t, status="taught", source=s)
+                                                for p, n, t, s in ts.GRAHA_RASHI])
+        self.assertEqual((r["bhava_lord_in"][0]["condition"], r["bhava_lord_in"][0]["exchange"]), ("", False))
+
+    def test_json_is_previous_plus_teacher_slides(self):
+        import apply_teacher_slides
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        self.assertEqual(apply_teacher_slides.apply(prev), rules())
+        self.assertEqual(prev["meta"]["version"], 1)
+        self.assertEqual(rules()["meta"], b23.META)
+
+
 class TaughtLayerExamples(unittest.TestCase):
     def test_second_lord_in_seventh_is_taught_from_the_recording(self):
         rows = [x for x in rules()["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (2, 7)]
@@ -225,7 +271,8 @@ class WorkbookRoundTrip(unittest.TestCase):
         import openpyxl
         names = openpyxl.load_workbook(self.xlsx).sheetnames
         for n in ("README", "Classes", "ClassRules", "Badhaka", "DignityEffect", "Digbala", "DashaRoleText",
-                  "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi", "Chart", "Classes_Calc", "Roles_Calc",
+                  "GrahaInBhava", "GrahaPair", "BhavaLordIn", "GrahaRashi", "BhavaNature", "AspectMeaning",
+                  "LifeAreas", "Conditions", "Remedies", "Chart", "Classes_Calc", "Roles_Calc",
                   "Dasha_Calc", "Predict_Calc", "Ref_Calc"):
             self.assertIn("S23_" + n, names)
 
@@ -390,6 +437,50 @@ class SheetValidation(unittest.TestCase):
             x = pathlib.Path(d, "w.xlsx")
             wb.save(x)
             self.assertIn("Node (no rulership)", b23.read_workbook(x)["dignity_effect"])
+
+    def test_new_sheet_bad_values_are_named(self):
+        def edit(wb):
+            wb["S23_BhavaNature"].cell(row=2, column=2, value="benefik")
+            wb["S23_AspectMeaning"].cell(row=self.find(wb, "AspectMeaning", 1, "Saturn"), column=2, value=5)
+            wb["S23_LifeAreas"].cell(row=3, column=4, value="Jupitor")
+            wb["S23_Conditions"].cell(row=2, column=1, value="saturn_maturs")
+            wb["S23_Remedies"].cell(row=2, column=1, value="Moom")
+            wb["S23_BhavaLordIn"].cell(row=2, column=6, value="strng")
+            wb["S23_BhavaLordIn"].cell(row=3, column=7, value="maybe")
+            self.saturn_row = self.find(wb, "AspectMeaning", 1, "Saturn")
+        msg = self.build_after(edit)
+        self.assertIn("S23_BhavaNature row 2: Nature 'benefik' is not one of benefic, malefic, any", msg)
+        self.assertIn(f"S23_AspectMeaning row {self.saturn_row}: Aspect 5 is not one of Saturn's aspects (3, 7, 10)", msg)
+        self.assertIn("S23_LifeAreas row 3: Karaka 'Jupitor'", msg)
+        self.assertIn("S23_Conditions row 2: Key 'saturn_maturs'", msg)
+        self.assertIn("S23_Remedies row 2: Topic 'Moom'", msg)
+        self.assertIn("S23_BhavaLordIn row 2: Condition 'strng' is not one of (blank), strong, weak", msg)
+        self.assertIn("S23_BhavaLordIn row 3: Exchange 'maybe' is not one of (blank), yes", msg)
+
+    def test_life_areas_must_be_1_to_16(self):
+        msg = self.build_after(lambda wb: wb["S23_LifeAreas"].delete_rows(5))
+        self.assertIn("S23_LifeAreas: no row for area 4", msg)
+
+    def test_duplicate_condition_row(self):
+        def edit(wb):
+            ws = wb["S23_Conditions"]
+            ws.append([c.value for c in ws[2]])
+        msg = self.build_after(edit)
+        self.assertRegex(msg, r"S23_Conditions: 2 rows for \w+")
+
+    def test_old_bhava_lord_in_sheet_reads_with_blank_new_columns(self):
+        import tempfile
+        import openpyxl
+        with tempfile.TemporaryDirectory() as d:
+            wb = openpyxl.Workbook()
+            b23.write_data_sheets(wb, rules())
+            ws = wb["S23_BhavaLordIn"]
+            ws.delete_cols(6, 2)                                   # the sheet as the previous release wrote it
+            for r in range(ws.max_row, 2, -1):
+                ws.delete_rows(r)
+            x = pathlib.Path(d, "w.xlsx")
+            wb.save(x)
+            self.assertEqual(b23.read_workbook(x)["bhava_lord_in"], rules()["bhava_lord_in"][:1])
 
     def test_check_only_reads_and_writes_nothing(self):
         import tempfile

@@ -58,8 +58,13 @@ SHEETS = {
     PREFIX + "DashaRoleText": ["Role", "Kind", "Text", "Slide"],
     PREFIX + "GrahaInBhava": ["Planet", "House", "Points", "Extra", "Status", "Source"],
     PREFIX + "GrahaPair": ["A", "B", "Conjunction", "Aspect", "Status", "Source"],
-    PREFIX + "BhavaLordIn": ["LordOf", "SitsIn", "Text", "Status", "Source"],
+    PREFIX + "BhavaLordIn": ["LordOf", "SitsIn", "Text", "Status", "Source", "Condition", "Exchange"],
     PREFIX + "GrahaRashi": ["Planet", "Rashi", "Text", "Status", "Source"],
+    PREFIX + "BhavaNature": ["House", "Nature", "Planet", "Text", "Status", "Source"],
+    PREFIX + "AspectMeaning": ["Planet", "Aspect", "FromHouse", "Text", "Status", "Source"],
+    PREFIX + "LifeAreas": ["No", "Area", "Houses", "Karaka", "KarakaFemale", "Link", "Source"],
+    PREFIX + "Conditions": ["Key", "Planet", "House", "Text", "Status", "Source"],
+    PREFIX + "Remedies": ["Topic", "Text", "Source"],
 }
 LONG_COLUMNS = ("Nature", "Rule", "Text", "Points", "Extra", "Conjunction", "Aspect", "Source", "OtherNames")
 
@@ -71,6 +76,10 @@ README_LINES = [
     "Keep the S23_ClassRules rows grouped in the order of the ten classes (Kendra … Trishadaya): the Excel calculator joins their texts in sheet order.",
     "S23_Chart, S23_Classes_Calc, S23_Roles_Calc, S23_Dasha_Calc, S23_Predict_Calc and S23_Ref_Calc are the live calculator (formulas) — set the signs on S23_Chart.",
     "When a later session teaches a graha, replace its 'curated' rows and set Status to taught.",
+    "Sessions 23 (2024 deck) to 27: S23_BhavaNature (benefic/malefic in each house), S23_AspectMeaning, S23_LifeAreas "
+    "(Ready Reckoner), S23_Conditions (sentences that hold only for some charts; Key is one of a fixed list) and S23_Remedies. "
+    "Blank House / Planet / Aspect / FromHouse means 'any'. In S23_BhavaLordIn, Condition is strong / weak / blank and "
+    "Exchange is yes for a Parivartana row.",
 ]
 
 
@@ -97,8 +106,16 @@ def rules_to_rows(rules):
         PREFIX + "GrahaInBhava": [[r["planet"], r["house"], "\n\n".join(r["points"]), "\n".join(r["extra"]), r["status"], r["source"]]
                                   for r in rules["graha_in_bhava"]],
         PREFIX + "GrahaPair": [[r["a"], r["b"], r["conjunction"], r["aspect"], r["status"], r["source"]] for r in rules["graha_pair"]],
-        PREFIX + "BhavaLordIn": [[r["lord_of"], r["sits_in"], r["text"], r["status"], r["source"]] for r in rules["bhava_lord_in"]],
+        PREFIX + "BhavaLordIn": [[r["lord_of"], r["sits_in"], r["text"], r["status"], r["source"], r["condition"],
+                                  "yes" if r["exchange"] else ""] for r in rules["bhava_lord_in"]],
         PREFIX + "GrahaRashi": [[r["planet"], r["rashi"], r["text"], r["status"], r["source"]] for r in rules["graha_rashi"]],
+        PREFIX + "BhavaNature": [[r["house"], r["nature"], r["planet"], r["text"], r["status"], r["source"]] for r in rules["bhava_nature"]],
+        PREFIX + "AspectMeaning": [[r["planet"], r["aspect"], r["from_house"], r["text"], r["status"], r["source"]]
+                                   for r in rules["aspect_meaning"]],
+        PREFIX + "LifeAreas": [[r["no"], r["area"], _join_ints(r["houses"]), ", ".join(r["karakas"]), r["karaka_female"], r["link"],
+                                r["source"]] for r in rules["life_areas"]],
+        PREFIX + "Conditions": [[r["key"], r["planet"], r["house"], r["text"], r["status"], r["source"]] for r in rules["conditions"]],
+        PREFIX + "Remedies": [[r["topic"], r["text"], r["source"]] for r in rules["remedies"]],
     }
 
 
@@ -145,6 +162,21 @@ NODE_LABEL = "Node (no rulership)"         # optional row: a dignity text for Ra
 DASHA_ROLES = ["Maraka lord", "Maraka occupant", "Badhakadhipati", "Badhaka occupant", "Dusthana lord",
                "Trishadaya lord"]
 BADHAKA_MODES = ["Chara", "Sthira", "Dwisabhava"]
+NATURES = ["benefic", "malefic", "any"]
+# Aspects in the teacher's count (Rahu and Ketu count anti-clockwise: 2nd, 5th, 9th).
+ASPECT_COUNTS = {"Sun": [7], "Moon": [7], "Mars": [4, 7, 8], "Mercury": [7], "Jupiter": [5, 7, 9], "Venus": [7],
+                 "Saturn": [3, 7, 10], "Rahu": [2, 5, 9], "Ketu": [2, 5, 9]}
+# Conditional sentences (S23_Conditions): the engines evaluate exactly these keys (spec §6.6).
+CONDITION_KEYS = ("saturn_matures", "saturn_retro_1", "saturn_afflicted_10_young", "saturn_mars_12", "saturn_afflicted_6",
+                  "saturn_afflicted_12", "jupiter_md_8", "jupiter_md_11", "venus_dasha_9", "rahu_md_9",
+                  "twelfth_hidden_talent", "upachaya_30s", "ketu_12_purpose", "venus_afflicted", "venus_good",
+                  "venus_mercury_5", "seventh_lord_12", "mercury_foreign_language", "moon_dual_10", "venus_meets_wife",
+                  "jupiter_husband", "first_child_male")
+SHEET_ONLY_CONDITION_KEYS = ("twelfth_house",)      # shown by Layer 1 itself (the 12th-house line)
+LIFE_AREA_COUNT = 16
+LINKS = ["", "PAC"]
+META = {"source": "Sessions 23 (2024 and 2026 decks) to 27 slides + recording", "version": 2,
+        "statuses": ["taught", "curated", "blend", "standard"]}
 
 
 class _Sheets:
@@ -187,8 +219,14 @@ class _Sheets:
 
     def pick(self, sheet, row, col, v, allowed):
         if v not in allowed:
-            self.bad(sheet, row, f"{col} {v!r} is not one of {', '.join(allowed)}")
+            self.bad(sheet, row, f"{col} {v!r} is not one of {', '.join(x or '(blank)' for x in allowed)}")
         return v
+
+    def opt_num(self, sheet, row, col, v, lo=1, hi=12):
+        return None if v in (None, "") else self.num(sheet, row, col, v, lo, hi)
+
+    def opt_pick(self, sheet, row, col, v, allowed):
+        return None if v in (None, "") else self.pick(sheet, row, col, v, allowed)
 
     def text(self, sheet, row, col, v):
         if not _s(v).strip():
@@ -300,16 +338,57 @@ def read_workbook(path_or_wb):
     for sh, i, r in rd.rows("BhavaLordIn"):
         out["bhava_lord_in"].append(dict(lord_of=rd.num(sh, i, "LordOf", r[0]), sits_in=rd.num(sh, i, "SitsIn", r[1]),
                                          text=rd.text(sh, i, "Text", r[2]), status=rd.pick(sh, i, "Status", r[3], STATUSES),
-                                         source=_s(r[4])))
+                                         source=_s(r[4]), condition=rd.pick(sh, i, "Condition", _s(r[5]), ["", "strong", "weak"]),
+                                         exchange=rd.pick(sh, i, "Exchange", _s(r[6]).lower(), ["", "yes"]) == "yes"))
     out["graha_rashi"] = []
     for sh, i, r in rd.rows("GrahaRashi"):
         out["graha_rashi"].append(dict(planet=rd.pick(sh, i, "Planet", r[0], PLANETS), rashi=rd.num(sh, i, "Rashi", r[1]),
                                        text=rd.text(sh, i, "Text", r[2]), status=rd.pick(sh, i, "Status", r[3], STATUSES),
                                        source=_s(r[4])))
-    for key, sheet, fields in (("bhava_lord_in", "BhavaLordIn", ("lord_of", "sits_in")), ("graha_rashi", "GrahaRashi", ("planet", "rashi"))):
+    out["bhava_nature"] = []
+    for sh, i, r in rd.rows("BhavaNature"):
+        out["bhava_nature"].append(dict(house=rd.opt_num(sh, i, "House", r[0]), nature=rd.pick(sh, i, "Nature", r[1], NATURES),
+                                        planet=rd.opt_pick(sh, i, "Planet", r[2], PLANETS), text=rd.text(sh, i, "Text", r[3]),
+                                        status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
+    out["aspect_meaning"] = []
+    for sh, i, r in rd.rows("AspectMeaning"):
+        planet = rd.pick(sh, i, "Planet", r[0], PLANETS + ["any"])
+        aspect = rd.opt_num(sh, i, "Aspect", r[1])
+        if aspect is not None and planet in ASPECT_COUNTS and aspect not in ASPECT_COUNTS[planet]:
+            rd.bad(sh, i, f"Aspect {aspect} is not one of {planet}'s aspects ({', '.join(map(str, ASPECT_COUNTS[planet]))})")
+        out["aspect_meaning"].append(dict(planet=planet, aspect=aspect, from_house=rd.opt_num(sh, i, "FromHouse", r[2]),
+                                          text=rd.text(sh, i, "Text", r[3]), status=rd.pick(sh, i, "Status", r[4], STATUSES),
+                                          source=_s(r[5])))
+    out["life_areas"] = []
+    for sh, i, r in rd.rows("LifeAreas"):
+        karakas = [k.strip() for k in _s(r[3]).split(",") if k.strip()]
+        if not karakas:
+            rd.bad(sh, i, "Karaka is empty")
+        out["life_areas"].append(dict(no=rd.num(sh, i, "No", r[0], 1, LIFE_AREA_COUNT), area=rd.text(sh, i, "Area", r[1]),
+                                      houses=rd.nums(sh, i, "Houses", r[2]),
+                                      karakas=[rd.pick(sh, i, "Karaka", k, PLANETS) for k in karakas],
+                                      karaka_female=_s(r[4]) and rd.pick(sh, i, "KarakaFemale", _s(r[4]), PLANETS),
+                                      link=rd.pick(sh, i, "Link", _s(r[5]), LINKS), source=_s(r[6])))
+        if not out["life_areas"][-1]["houses"]:
+            rd.bad(sh, i, "Houses is empty")
+    _expect(rd, PREFIX + "LifeAreas", [x["no"] for x in out["life_areas"]], list(range(1, LIFE_AREA_COUNT + 1)),
+            lambda k: f"area {k}")
+    out["conditions"] = []
+    for sh, i, r in rd.rows("Conditions"):
+        out["conditions"].append(dict(key=rd.pick(sh, i, "Key", r[0], list(CONDITION_KEYS + SHEET_ONLY_CONDITION_KEYS)),
+                                      planet=rd.opt_pick(sh, i, "Planet", r[1], PLANETS), house=rd.opt_num(sh, i, "House", r[2]),
+                                      text=rd.text(sh, i, "Text", r[3]), status=rd.pick(sh, i, "Status", r[4], STATUSES),
+                                      source=_s(r[5])))
+    out["remedies"] = []
+    for sh, i, r in rd.rows("Remedies"):
+        out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], PLANETS + ["Tip"]), text=rd.text(sh, i, "Text", r[1]),
+                                    source=_s(r[2])))
+    for key, sheet, fields in (("bhava_lord_in", "BhavaLordIn", ("lord_of", "sits_in", "condition", "exchange")),
+                               ("graha_rashi", "GrahaRashi", ("planet", "rashi")),
+                               ("conditions", "Conditions", ("key", "planet", "house"))):
         seen = [tuple(x[f] for f in fields) for x in out[key]]
         for k in sorted({k for k in seen if seen.count(k) > 1}, key=str):
-            rd.bad(PREFIX + sheet, None, f"{seen.count(k)} rows for {' / '.join(map(str, k))} (keep one)")
+            rd.bad(PREFIX + sheet, None, f"{seen.count(k)} rows for {' / '.join('any' if v is None else str(v) for v in k)} (keep one)")
 
     if rd.problems:
         raise SystemExit("The Session 23 sheets have {} problem{} — nothing was published:\n  - {}".format(
@@ -472,8 +551,7 @@ def build(xlsx_path=None, json_path=JSON_PATH, index_path=INDEX, write_page=Fals
         raise SystemExit(f"Reference tables came out empty ({', '.join(empty)}) — nothing was published. "
                          "Check the master workbook's sheets and scripts/build_data.py.")
     rules["reference"] = reference
-    rules["meta"] = {"source": "Session 23 slides + recording (8 Oct 2026)", "version": 1,
-                     "statuses": ["taught", "curated", "blend", "standard"]}
+    rules["meta"] = dict(META)
     json_path.write_text(json.dumps(rules, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     if write_page:
         write_page_block(index_path, rules)

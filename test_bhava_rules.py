@@ -483,8 +483,9 @@ class PredictionLayers(unittest.TestCase):
         self.assertTrue(tenth["points"] and tenth["extra"])
         fourth = br.graha_bhava(RULES, LAGNA, dict(SIGNS, Sun=7), "Sun", None, True)
         self.assertIn("loses directional strength", fourth["digbala_line"])
-        jup = br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)                    # curated, 7th, Kendra
-        self.assertEqual((jup["house"], jup["status"]), (7, "curated"))
+        jup = br.graha_bhava(RULES, LAGNA, SIGNS, "Jupiter", None, True)                    # 7th, Kendra (S24 p.8)
+        self.assertEqual((jup["house"], jup["status"]), (7, "taught"))
+        self.assertTrue(jup["points"][0].strip())
         self.assertEqual(jup["classes"], ["Kendra", "Apachaya", "Maraka"])
         self.assertEqual(jup["class_texts"], next(r for r in br.class_readings(RULES, LAGNA, SIGNS)
                                                     if r["planet"] == "Jupiter")["texts"])
@@ -537,19 +538,24 @@ class PredictionLayers(unittest.TestCase):
         self.assertIn("Dusthana", mars["text"])
         self.assertIn(RULES["reference"]["BHAVA_INFO"]["4"]["sig"].rstrip("."), mars["text"])
         self.assertIn(RULES["reference"]["BHAVA_INFO"]["12"]["sig"].rstrip("."), mars["text"])
-        own = next(r for r in br.bhava_bhava(RULES, LAGNA, dict(SIGNS, Sun=4)) if r["lord_of"] == 1)
-        self.assertEqual(own["sits_in"], 1)
+        own = next(r for r in br.bhava_bhava(RULES, LAGNA, dict(SIGNS, Jupiter=8)) if r["lord_of"] == 5)
+        self.assertEqual((own["sits_in"], own["status"]), (5, "blend"))      # the 5th lord in the 5th is not taught
         self.assertIn("own bhava", own["text"])
 
     def test_graha_rashi_blends_rashi_fields_and_dignity(self):
-        moon = next(r for r in br.graha_rashi(RULES, LAGNA, SIGNS, {"Moon": 5.0}) if r["planet"] == "Moon")
-        tula = RULES["reference"]["RASHI"][6]
+        moon = next(r for r in br.graha_rashi(RULES, LAGNA, dict(SIGNS, Moon=8), {"Moon": 5.0}) if r["planet"] == "Moon")
+        tula = RULES["reference"]["RASHI"][8]                                 # Dhanu: Moon there is not taught
         self.assertEqual((moon["tatwa"], moon["direction"], moon["varna"], moon["mode"]),
                          (tula["tatwa"], tula["direction"], tula["varna"], tula["mode"]))
         self.assertEqual(moon["status"], "blend")
-        self.assertEqual(moon["dignity"], "Neutral House")                   # Libra is Venus's; Moon-Venus are neutral
+        self.assertEqual(moon["dignity"], "Neutral House")                   # Dhanu is Jupiter's; Moon-Jupiter are neutral
         self.assertTrue(moon["strength_line"].startswith("Neutral House"))
         self.assertIn(tula["sanskrit"], moon["text"])
+
+    def test_moon_in_tula_is_taught(self):
+        moon = next(r for r in br.graha_rashi(RULES, LAGNA, SIGNS, {"Moon": 5.0}) if r["planet"] == "Moon")
+        self.assertEqual(moon["status"], "taught")                          # S23-2024 p.11: Tula, balance
+        self.assertIn("balance", moon["text"])
 
     def test_node_outside_exaltation_has_no_rulership(self):
         # Rāhu and Ketu own no rāśi: no "Own House", no sthāna-bala percentage, no dignity line
