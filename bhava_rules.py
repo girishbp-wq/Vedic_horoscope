@@ -678,6 +678,160 @@ def bhava_bhava(rules, ctx):
     return out
 
 
+# ---------------------------------------------------------------- Life areas (S27 pp.5-16)
+def _karakas(rules, ctx, row):
+    """The area's karakas; for a row with a female karaka (Marriage) the form's gender chooses (R4)."""
+    sg, female = ctx["signs"], row["karaka_female"]
+    planets, note = list(row["karakas"]), ""
+    if female:
+        if ctx["gender"] == "Female":
+            planets = [female]
+            r = _condition_row(rules, "jupiter_husband", "Jupiter", None)
+            note = r["text"] if r else ""
+        elif ctx["gender"] == "Male":
+            v = planets[0]
+            r = _condition_row(rules, "venus_meets_wife", v, house_of(ctx["lagna"], sg[v])) if v in sg else None
+            note = r["text"] if r else ""
+        else:
+            note = f"For a woman's chart the husband's karaka is {female}."
+    out = []
+    for k in planets:
+        if k not in sg:
+            continue
+        out.append({"planet": k, "house": house_of(ctx["lagna"], sg[k]), "sign": sg[k],
+                    "rashi": rules["reference"]["RASHI"][sg[k]]["sanskrit"],
+                    "dignity": dignity(rules, k, sg[k], ctx["degs"].get(k))["label"], "combust": combust(rules, ctx, k),
+                    "retro": bool(ctx["retro"].get(k)), "strength": strength(rules, ctx, k), "note": note})
+    return out
+
+
+def _aspects(rules, ctx, planet_a, planet_b):
+    """Aspect names of planet_a's aspects that fall on planet_b's sign."""
+    sg = ctx["signs"]
+    return [aspect_name(planet_a, h) for h, t in aspect_signs(rules, planet_a, sg[planet_a]) if t == sg[planet_b]]
+
+
+def pac_links(rules, ctx, a, b):
+    """S27 pp.17-20: Position, Aspect, Conjunction links between houses a and b through their lords."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    la, lb = house_lord(rules, lagna, a), house_lord(rules, lagna, b)
+    A, B = ordinal(a), ordinal(b)
+    at = lambda p: house_of(lagna, sg[p]) if p in sg else None
+    hits = lambda p, h: p in sg and any(t == house_sign(lagna, h) for _, t in aspect_signs(rules, p, sg[p]))
+    out = []
+    if at(la) == b:
+        out.append(f"{A} lord in the {B}")
+    if at(lb) == a:
+        out.append(f"{B} lord in the {A}")
+    if at(la) == b and at(lb) == a and la != lb:
+        out.append(f"Exchange between the {A} and {B} lords")
+    if la != lb and la in sg and lb in sg and sg[la] == sg[lb]:
+        out.append(f"The {A} and {B} lords are together")
+    if hits(la, b):
+        out.append(f"The {A} lord aspects the {B} house")
+    if hits(lb, a):
+        out.append(f"The {B} lord aspects the {A} house")
+    if la != lb and la in sg and lb in sg:
+        if _aspects(rules, ctx, la, lb):
+            out.append(f"The {A} lord aspects the {B} lord")
+        if _aspects(rules, ctx, lb, la):
+            out.append(f"The {B} lord aspects the {A} lord")
+    return out
+
+
+def planet_link(rules, ctx, p, q):
+    """A conjunction or mutual aspect between two planets (S27 p.13: 'Mer and Ketu Combo')."""
+    sg = ctx["signs"]
+    if p not in sg or q not in sg:
+        return []
+    out = []
+    if sg[p] == sg[q]:
+        out.append(f"{p} and {q} are together in the {ordinal(house_of(ctx['lagna'], sg[p]))}")
+    for x, y in ((p, q), (q, p)):
+        out += [f"{x} aspects {y} ({name} aspect)" for name in _aspects(rules, ctx, x, y)]
+    return out
+
+
+def _bhava_step(rules, ctx, h, layer2):
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    sign = house_sign(lagna, h)
+    occ = []
+    for p in occupants(lagna, sg)[h]:
+        g = graha_bhava(rules, lagna, sg, p, ctx["degs"].get(p), ctx["waxing"])
+        occ.append({"planet": p, "nature": nature(p), "text": "\n\n".join(g["points"]), "status": g["status"],
+                          "nature_lines": [x["text"] for x in g["nature_lines"]]})
+    aspecting = [{"by": a["by"], "aspect": aspect_name(a["by"], a["house_aspect"]),
+                  "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(lagna, sg[a["by"]]))}
+                 for a in aspects_on(rules, ctx, sign)]
+    lord_p, lord, company = house_lord(rules, lagna, h), None, []
+    if lord_p in sg:
+        y = house_of(lagna, sg[lord_p])
+        entry = next(e for e in layer2 if e["lord_of"] == h or e["exchange"] == h)
+        lord = {"planet": lord_p, "house": y, "sign": sg[lord_p], "rashi": rules["reference"]["RASHI"][sg[lord_p]]["sanskrit"],
+                "placement_line": placement(rules, lagna, h, y)[1],
+                "dignity": dignity(rules, lord_p, sg[lord_p], ctx["degs"].get(lord_p))["label"],
+                "strength": strength(rules, ctx, lord_p), "text": entry["text"], "status": entry["status"],
+                "dictum": _dictum(rules, ctx, h)}
+        company = with_lord(rules, ctx, lord_p)
+    return {"house": h, "sign": sign, "rashi": rules["reference"]["RASHI"][sign]["sanskrit"],
+            "sign_line": sign_line(rules, sign), "occupants": occ, "aspecting": aspecting, "lord": lord,
+            "with_lord": company}
+
+
+def _summary(bhavas, karakas, pac, link):
+    """Step 7: what supports the area and what puts it under pressure — two lists, no score."""
+    good, bad = [], []
+    benefic = lambda p: nature_class(p) == "benefic"
+    for b in bhavas:
+        H = ordinal(b["house"])
+        for o in b["occupants"]:
+            (good if benefic(o["planet"]) else bad).append(f"{o['planet']} ({nature(o['planet'])}) in the {H}")
+        for a in b["aspecting"]:
+            (good if benefic(a["by"]) else bad).append(f"{a['by']} ({nature(a['by'])}) aspects the {H}")
+        lord = b["lord"]
+        if lord:
+            L = lord["planet"]
+            if lord["strength"] == "strong":
+                good.append(f"The {H} lord {L} is strong")
+            elif lord["strength"] == "weak":
+                bad.append(f"The {H} lord {L} is weak")
+            if lord["dictum"]:
+                good.append(f"The {H} lord {L} aspects its own house")
+            if lord["house"] in (6, 8, 12):
+                bad.append(f"The {H} lord {L} is in the {ordinal(lord['house'])}, a difficult placement")
+            for w in b["with_lord"]:
+                what = "is with" if w["how"] == "with" else "aspects"
+                (good if benefic(w["planet"]) else bad).append(f"{w['planet']} ({nature(w['planet'])}) {what} the {H} lord")
+    for k in karakas:
+        if k["strength"] == "strong":
+            good.append(f"Karaka {k['planet']} is strong")
+        elif k["strength"] == "weak":
+            bad.append(f"Karaka {k['planet']} is weak")
+    good += [f"PAC link: {x}" for x in pac or []] + list(link or [])
+    return good, bad
+
+
+def life_area(rules, ctx, no):
+    """Session 27's 7-step method for one Ready Reckoner area: the house(s), occupants, aspects, the lord, its company,
+    the karaka(s), and what supports or presses on it. Love marriage adds the PAC link between the 5th and 7th and the
+    Mercury-Ketu combination."""
+    row = next(r for r in rules["life_areas"] if r["no"] == no)
+    layer2 = bhava_bhava(rules, ctx)
+    bhavas = [_bhava_step(rules, ctx, h, layer2) for h in row["houses"]]
+    karakas = _karakas(rules, ctx, row)
+    pac = link = None
+    if row["link"] == "PAC" and len(row["houses"]) == 2:
+        pac = pac_links(rules, ctx, *row["houses"])
+        link = planet_link(rules, ctx, *row["karakas"][:2]) if len(row["karakas"]) >= 2 else []
+    supports, pressure = _summary(bhavas, karakas, pac, link)
+    return {"no": no, "area": row["area"], "houses": list(row["houses"]), "link": row["link"], "source": row["source"],
+            "bhavas": bhavas, "karakas": karakas, "pac": pac, "planet_link": link, "supports": supports, "pressure": pressure}
+
+
+def life_areas(rules, ctx):
+    return [life_area(rules, ctx, r["no"]) for r in rules["life_areas"]]
+
+
 def graha_rashi(rules, lagna, signs, degs):
     """Layer 3: each planet in its rāśi — tatwa, direction, varna, mode — with the dignity strength line."""
     out = []

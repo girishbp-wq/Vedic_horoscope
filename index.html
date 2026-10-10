@@ -6504,6 +6504,100 @@ function s23BhavaBhava(ctx){
   }
   return out;
 }
+/* ---- Life areas (S27 pp.5-16) — mirrors life_area() ---- */
+function s23Karakas(ctx, row){
+  const sg=ctx.signs, female=row.karaka_female;
+  let planets=row.karakas.slice(), note="";
+  if(female){
+    if(ctx.gender==="Female"){ planets=[female]; const r=s23ConditionRow("jupiter_husband","Jupiter",null); note=r?r.text:""; }
+    else if(ctx.gender==="Male"){ const v=planets[0]; const r=sg[v]!==undefined ? s23ConditionRow("venus_meets_wife",v,s23HouseOf(ctx.lagna,sg[v])) : null; note=r?r.text:""; }
+    else note=`For a woman's chart the husband's karaka is ${female}.`;
+  }
+  return planets.filter(k=>sg[k]!==undefined).map(k=>({planet:k, house:s23HouseOf(ctx.lagna,sg[k]), sign:sg[k], rashi:RASHI[sg[k]].sanskrit,
+    dignity:planetDignity(k, sg[k]+1, ctx.degs[k]).label, combust:s23Combust(ctx,k), retro:!!ctx.retro[k], strength:s23Strength(ctx,k), note}));
+}
+function s23AspectNames(ctx, a, b){ return s23AspectSigns(a, ctx.signs[a]).filter(([,t])=>t===ctx.signs[b]).map(([h])=>aspectOrd(a,h)); }
+function s23PacLinks(ctx, a, b){
+  const lg=ctx.lagna, sg=ctx.signs, la=s23HouseLord(lg,a), lb=s23HouseLord(lg,b), A=ord(a), B=ord(b), out=[];
+  const at=p=>sg[p]===undefined ? null : s23HouseOf(lg,sg[p]);
+  const hits=(p,h)=>sg[p]!==undefined && s23AspectSigns(p,sg[p]).some(([,t])=>t===s23HouseSign(lg,h));
+  if(at(la)===b) out.push(`${A} lord in the ${B}`);
+  if(at(lb)===a) out.push(`${B} lord in the ${A}`);
+  if(at(la)===b && at(lb)===a && la!==lb) out.push(`Exchange between the ${A} and ${B} lords`);
+  if(la!==lb && sg[la]!==undefined && sg[lb]!==undefined && sg[la]===sg[lb]) out.push(`The ${A} and ${B} lords are together`);
+  if(hits(la,b)) out.push(`The ${A} lord aspects the ${B} house`);
+  if(hits(lb,a)) out.push(`The ${B} lord aspects the ${A} house`);
+  if(la!==lb && sg[la]!==undefined && sg[lb]!==undefined){
+    if(s23AspectNames(ctx,la,lb).length) out.push(`The ${A} lord aspects the ${B} lord`);
+    if(s23AspectNames(ctx,lb,la).length) out.push(`The ${B} lord aspects the ${A} lord`);
+  }
+  return out;
+}
+function s23PlanetLink(ctx, p, q){
+  const sg=ctx.signs;
+  if(sg[p]===undefined || sg[q]===undefined) return [];
+  const out=[];
+  if(sg[p]===sg[q]) out.push(`${p} and ${q} are together in the ${ord(s23HouseOf(ctx.lagna,sg[p]))}`);
+  for(const [x,y] of [[p,q],[q,p]]) for(const name of s23AspectNames(ctx,x,y)) out.push(`${x} aspects ${y} (${name} aspect)`);
+  return out;
+}
+function s23BhavaStep(ctx, h, layer2){
+  const lg=ctx.lagna, sg=ctx.signs, sign=s23HouseSign(lg,h), lagnaN=lg+1, pbr={};
+  for(const p of S23_PLANETS) if(sg[p]!==undefined) pbr[p]=sg[p]+1;
+  const occupants=s23Occ(lg,sg)[h].map(p=>{
+    const g=s23GrahaBhava(lagnaN, pbr, p, ctx.degs[p], ctx.waxing);
+    return {planet:p, nature:s23NatureAt(p), text:g.points.join("\n\n"), status:g.status, nature_lines:g.nature_lines.map(x=>x.text)};
+  });
+  const aspecting=s23AspectsOn(ctx, sign).map(a=>({by:a.by, aspect:aspectOrd(a.by,a.house_aspect),
+    meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg,sg[a.by]))}));
+  const lordP=s23HouseLord(lg,h);
+  let lord=null, company=[];
+  if(sg[lordP]!==undefined){
+    const y=s23HouseOf(lg,sg[lordP]), entry=layer2.find(e=>e.lord_of===h || e.exchange===h);
+    lord={planet:lordP, house:y, sign:sg[lordP], rashi:RASHI[sg[lordP]].sanskrit, placement_line:s23Placement(lg,h,y)[1],
+      dignity:planetDignity(lordP, sg[lordP]+1, ctx.degs[lordP]).label, strength:s23Strength(ctx,lordP),
+      text:entry.text, status:entry.status, dictum:s23Dictum(ctx,h)};
+    company=s23WithLord(ctx, lordP);
+  }
+  return {house:h, sign, rashi:RASHI[sign].sanskrit, sign_line:s23SignLine(sign), occupants, aspecting, lord, with_lord:company};
+}
+function s23Summary(bhavas, karakas, pac, link){
+  const good=[], bad=[], benefic=p=>s23NatureClass(p)==="benefic";
+  for(const b of bhavas){
+    const H=ord(b.house);
+    for(const o of b.occupants) (benefic(o.planet)?good:bad).push(`${o.planet} (${s23NatureAt(o.planet)}) in the ${H}`);
+    for(const a of b.aspecting) (benefic(a.by)?good:bad).push(`${a.by} (${s23NatureAt(a.by)}) aspects the ${H}`);
+    const lord=b.lord;
+    if(lord){
+      const L=lord.planet;
+      if(lord.strength==="strong") good.push(`The ${H} lord ${L} is strong`);
+      else if(lord.strength==="weak") bad.push(`The ${H} lord ${L} is weak`);
+      if(lord.dictum) good.push(`The ${H} lord ${L} aspects its own house`);
+      if([6,8,12].includes(lord.house)) bad.push(`The ${H} lord ${L} is in the ${ord(lord.house)}, a difficult placement`);
+      for(const w of b.with_lord) (benefic(w.planet)?good:bad).push(`${w.planet} (${s23NatureAt(w.planet)}) ${w.how==="with"?"is with":"aspects"} the ${H} lord`);
+    }
+  }
+  for(const k of karakas){
+    if(k.strength==="strong") good.push(`Karaka ${k.planet} is strong`);
+    else if(k.strength==="weak") bad.push(`Karaka ${k.planet} is weak`);
+  }
+  for(const x of (pac||[])) good.push(`PAC link: ${x}`);
+  for(const x of (link||[])) good.push(x);
+  return [good, bad];
+}
+function s23LifeArea(ctx, no){
+  const row=S23.life_areas.find(r=>r.no===no), layer2=s23BhavaBhava(ctx);
+  const bhavas=row.houses.map(h=>s23BhavaStep(ctx, h, layer2)), karakas=s23Karakas(ctx, row);
+  let pac=null, link=null;
+  if(row.link==="PAC" && row.houses.length===2){
+    pac=s23PacLinks(ctx, row.houses[0], row.houses[1]);
+    link=row.karakas.length>=2 ? s23PlanetLink(ctx, row.karakas[0], row.karakas[1]) : [];
+  }
+  const [supports, pressure]=s23Summary(bhavas, karakas, pac, link);
+  return {no, area:row.area, houses:row.houses.slice(), link:row.link, source:row.source, bhavas, karakas, pac, planet_link:link, supports, pressure};
+}
+function s23LifeAreas(ctx){ return S23.life_areas.map(r=>s23LifeArea(ctx, r.no)); }
+
 function s23GrahaRashi(lagnaN, pbr, degs){
   const lg=lagnaN-1, sg=s23Signs(pbr), out=[];
   for(const p of S23_PLANETS){

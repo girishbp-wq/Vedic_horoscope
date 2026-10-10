@@ -175,3 +175,37 @@ class AspectsAndRashi(unittest.TestCase):
             moon = next(r for r in br.graha_rashi(RULES, c["lagna"], c["signs"], c["degs"]) if r["planet"] == "Moon")
             row = next(r for r in RULES["graha_rashi"] if (r["planet"], r["rashi"]) == ("Moon", c["signs"]["Moon"] + 1))
             self.assertEqual((moon["status"], moon["text"], row["source"]), ("taught", row["text"], source))
+
+
+def area(name_or_chart, no, **kw):
+    return br.life_area(RULES, ctx(name_or_chart, **kw), no)
+
+
+class LifeAreas(unittest.TestCase):
+    def test_mother(self):                                                  # S27 p.14
+        a = area("S23_2024_C", 8)
+        self.assertEqual((a["area"], a["houses"]), ("Mother", [4]))
+        b = a["bhavas"][0]
+        self.assertEqual((b["house"], b["rashi"], b["occupants"]), (4, "Karkataka", []))
+        self.assertEqual([x["by"] for x in b["aspecting"]], ["Jupiter", "Venus", "Rahu"])
+        self.assertEqual(b["lord"]["planet"], "Moon")
+        self.assertIn(("Saturn", "aspect"), [(w["planet"], w["how"]) for w in b["with_lord"]])
+        self.assertEqual([k["planet"] for k in a["karakas"]], ["Moon"])
+
+    def test_marriage(self):                                                # S27 pp.15-16
+        a = area("S23_2024_C", 11)
+        b = a["bhavas"][0]
+        for frag in ("movable (Chara)", "Vayu", "West"):
+            self.assertIn(frag, b["sign_line"])
+        self.assertEqual([o["planet"] for o in b["occupants"]], ["Moon"])
+        self.assertIn("Saturn", [x["by"] for x in b["aspecting"]])
+        self.assertEqual((b["lord"]["planet"], b["lord"]["house"]), ("Venus", 10))
+        self.assertEqual(b["lord"]["status"], "taught")                     # 7th lord in the 10th, S27 p.15
+        jup = next(w for w in b["with_lord"] if w["planet"] == "Jupiter")
+        self.assertEqual((jup["how"], jup["rules"]), ("with", [9, 12]))
+        self.assertIn(("Ketu", "aspect"), [(w["planet"], w["how"]) for w in b["with_lord"]])
+
+    def test_chart_2_ketu_in_lagna_aspected_by_saturn(self):              # S27 p.21
+        b = area("S27_CHART_2", 1)["bhavas"][0]
+        self.assertIn("Ketu", [o["planet"] for o in b["occupants"]])
+        self.assertIn("Saturn", [x["by"] for x in b["aspecting"]])

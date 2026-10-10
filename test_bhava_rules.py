@@ -947,3 +947,65 @@ class Aspects(unittest.TestCase):
         e = next(r for r in br.bhava_bhava(RULES, br.context(0, {"Venus": 9, "Ketu": 5})) if r["lord_of"] == 7)
         ketu = next(w for w in e["with_lord"] if w["planet"] == "Ketu")
         self.assertEqual(ketu["meanings"], [m["text"] for m in br.aspect_meaning(RULES, "Ketu", 5, 6)])
+
+
+class LifeAreas(unittest.TestCase):
+    """The 7-step method for the 16 Ready Reckoner areas (S27 pp.5-16)."""
+
+    def ctx(self, signs=None, **kw):
+        return br.context(LAGNA, signs or SIGNS, {}, **kw)
+
+    def test_all_16_areas_run(self):
+        got = br.life_areas(RULES, self.ctx())
+        self.assertEqual([a["no"] for a in got], list(range(1, 17)))
+        for a in got:
+            self.assertEqual([b["house"] for b in a["bhavas"]], a["houses"])
+            self.assertEqual(sorted(a), sorted(["no", "area", "houses", "link", "source", "bhavas", "karakas", "pac",
+                                                "planet_link", "supports", "pressure"]))
+
+    def test_foreign_travel_has_two_bhavas_and_rahu(self):
+        a = br.life_area(RULES, self.ctx(), 15)
+        self.assertEqual([b["house"] for b in a["bhavas"]], [9, 12])
+        self.assertEqual([k["planet"] for k in a["karakas"]], ["Rahu"])
+        self.assertIsNone(a["pac"])
+
+    def test_love_marriage_pac(self):
+        # Simha Lagna: 5th Dhanu (Jupiter), 7th Kumbha (Saturn). Jupiter in Kumbha = the 5th lord in the 7th.
+        a = br.life_area(RULES, self.ctx(dict(SIGNS, Jupiter=10, Mercury=7, Ketu=7)), 16)
+        self.assertEqual(a["pac"][0], "5th lord in the 7th")
+        self.assertIn("Mercury and Ketu are together in the 4th", a["planet_link"])
+        self.assertIn("PAC link: 5th lord in the 7th", a["supports"])
+        # Jupiter in Mesha and Saturn in Vrishabha: neither in, nor aspecting, the other's house or lord
+        none = br.life_area(RULES, self.ctx(dict(SIGNS, Jupiter=0, Saturn=1, Mercury=2, Ketu=1, Rahu=7)), 16)
+        self.assertEqual((none["pac"], none["planet_link"]), ([], []))
+
+    def test_marriage_karaka_without_gender(self):
+        k = br.life_area(RULES, self.ctx(), 11)["karakas"]
+        self.assertEqual([x["planet"] for x in k], ["Venus"])
+        self.assertEqual(k[0]["note"], "For a woman's chart the husband's karaka is Mars.")
+
+    def test_marriage_karaka_female_is_mars_with_jupiter_note(self):
+        k = br.life_area(RULES, self.ctx(gender="Female"), 11)["karakas"]
+        self.assertEqual([x["planet"] for x in k], ["Mars"])
+        self.assertIn("Jupiter also represents Husband", k[0]["note"])
+
+    def test_marriage_karaka_male_notes_where_he_meets_his_wife(self):
+        k = br.life_area(RULES, self.ctx(dict(SIGNS, Venus=8), gender="Male"), 11)["karakas"]   # Venus in the 5th
+        self.assertEqual(k[0]["planet"], "Venus")
+        want = next(r["text"] for r in RULES["conditions"] if (r["key"], r["house"]) == ("venus_meets_wife", 5))
+        self.assertEqual(k[0]["note"], want)
+
+    def test_supports_and_pressure_wording(self):
+        # Simha Lagna, Mother (4th = Vrischika, lord Mars). Jupiter in the 4th; Saturn aspects it from Kumbha (10th aspect);
+        # Mars in Makara (6th): exalted but in a dusthana.
+        signs = {"Jupiter": 7, "Saturn": 10, "Mars": 9, "Moon": 3}
+        a = br.life_area(RULES, br.context(LAGNA, signs, {"Mars": 10, "Moon": 10}), 8)
+        self.assertEqual(a["supports"][:2], ["Jupiter (benefic) in the 4th", "The 4th lord Mars is strong"])
+        self.assertIn("Saturn (malefic) aspects the 4th", a["pressure"])
+        self.assertIn("The 4th lord Mars is in the 6th, a difficult placement", a["pressure"])
+        self.assertIn("Karaka Moon is strong", a["supports"])               # own sign Karkataka
+
+    def test_partial_chart_has_no_lord_or_karaka(self):
+        a = br.life_area(RULES, br.context(LAGNA, {"Sun": 4}), 8)          # only the Sun is known
+        self.assertIsNone(a["bhavas"][0]["lord"])
+        self.assertEqual(a["karakas"], [])

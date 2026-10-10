@@ -125,6 +125,7 @@ function extra(c, lg, pbr){
     sign_lines: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23SignLine),
     male_signs: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23IsMaleSign),
     conditions: s23ChartConditions(ctx), condition_keys: S23_CONDITION_KEYS,
+    life_areas: s23LifeAreas(ctx),
   };
 }
 """
@@ -160,6 +161,7 @@ def python_extra(c):
         "sign_lines": [br.sign_line(RULES, s) for s in range(12)],
         "male_signs": [br.is_male_sign(RULES, s) for s in range(12)],
         "conditions": br.chart_conditions(RULES, ctx), "condition_keys": list(br.CONDITION_KEYS),
+        "life_areas": br.life_areas(RULES, ctx),
     }
 
 
@@ -266,6 +268,27 @@ class JsEngine(unittest.TestCase):
             full = run_page(JS_CANON + "return layers(job);", charts[i], self.tmp)[k]
             self.fail(f"{len(bad)} mismatches; first: chart {i} layer {k}: "
                       f"{first_difference(python_layers(charts[i])[k], full)}")
+
+    def test_partial_chart_new_layers_equal_python(self):
+        # a chart whose Moon or nodes are not known (no birth time for the Moon's sign, a missing entry …)
+        charts = random_charts(300, 4242)
+        for i, c in enumerate(charts):
+            for p in (("Rahu", "Ketu"), ("Moon",), ("Moon", "Rahu", "Ketu"))[i % 3]:
+                c["signs"].pop(p)
+        body = JS_CANON + """return job.map(c => {
+            const lg = c.lagna + 1, pbr = {};
+            for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
+            const ctx = ctxOf(c, lg, pbr);
+            return {bhava_bhava: fp(s23BhavaBhava(ctx)), conditions: fp(s23ChartConditions(ctx)), life_areas: fp(s23LifeAreas(ctx))};
+        });"""
+        got = run_page(body, charts, self.tmp)
+        bad = []
+        for i, (c, g) in enumerate(zip(charts, got)):
+            ctx = ctx_of(c)
+            mine = {"bhava_bhava": br.bhava_bhava(RULES, ctx), "conditions": br.chart_conditions(RULES, ctx),
+                    "life_areas": br.life_areas(RULES, ctx)}
+            bad += [(i, k) for k, v in mine.items() if fingerprint(v) != g[k]]
+        self.assertEqual(bad, [])
 
     def test_moon_waxing_matches_python_and_the_page_tithi(self):
         rnd = random.Random(7)
