@@ -477,6 +477,19 @@ class SheetValidation(unittest.TestCase):
         msg = self.build_after(lambda wb: wb["S23_LifeAreas"].delete_rows(5))
         self.assertIn("S23_LifeAreas: no row for area 4", msg)
 
+    def test_life_area_cells_the_excel_sheet_cannot_read(self):
+        def edit(wb):
+            ws = wb["S23_LifeAreas"]
+            ws.cell(row=2, column=3, value="1, 2, 3")                  # three houses
+            ws.cell(row=3, column=3, value="2; 11")                    # a semicolon
+            ws.cell(row=4, column=4, value="Moon, Venus, Sun")         # three karakas
+            ws.cell(row=17, column=3, value="5")                       # Love marriage (PAC) with one house
+        msg = self.build_after(edit)
+        self.assertIn("S23_LifeAreas row 2: Houses '1, 2, 3' — at most two houses", msg)
+        self.assertIn("S23_LifeAreas row 3: Houses '2; 11' — separate the houses with a comma", msg)
+        self.assertIn("S23_LifeAreas row 4: Karaka 'Moon, Venus, Sun' — at most two karakas", msg)
+        self.assertIn("S23_LifeAreas row 17: Link PAC needs two houses and two karakas", msg)
+
     def test_duplicate_condition_row(self):
         def edit(wb):
             ws = wb["S23_Conditions"]

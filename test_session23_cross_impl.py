@@ -1304,6 +1304,32 @@ class MasterWorkbookInstall(unittest.TestCase):
         i = texts.index("My extra Kendra note.")
         self.assertEqual((rules[i - 1]["class"], rules[i + 1]["class"]), ("Kendra", "Trikona"))
 
+    def test_user_row_after_a_dropped_shipped_row_keeps_its_group(self):
+        # a later release drops a shipped Kendra row; the user's own row that followed it must stay among the Kendra rows
+        import copy
+        import build_session23 as b23
+        new = {k: v for k, v in RULES.items() if k != "reference"}
+        old = copy.deepcopy(new)
+        last_kendra = max(i for i, r in enumerate(old["class_rules"]) if r["class"] == "Kendra")
+        old["class_rules"].insert(last_kendra + 1, {"class": "Kendra", "applies": "any", "exclude_houses": [],
+                                                    "text": "A shipped line dropped later.", "slide": "4"})
+        wb = openpyxl.Workbook()
+        b23.write_data_sheets(wb, old)
+        ws = wb["S23_ClassRules"]
+        mine = last_kendra + 4                                               # sheet row just after the shipped extra line
+        ws.insert_rows(mine)
+        for j, v in enumerate(["Kendra", "any", "", "My own Kendra line.", ""], 1):
+            ws.cell(row=mine, column=j, value=v)
+        report = self.mx.upgrade_data_sheets(wb, new, old)
+        self.assertIn(("S23_ClassRules", ("Kendra", "any", 2)), report["kept"])
+        x = pathlib.Path(self.tmp.name, "dropped.xlsx")
+        wb.save(x)
+        rules = b23.read_workbook(x)["class_rules"]                         # grouping still validates
+        texts = [r["text"] for r in rules]
+        self.assertNotIn("A shipped line dropped later.", texts)
+        i = texts.index("My own Kendra line.")
+        self.assertEqual((rules[i - 1]["class"], rules[i + 1]["class"]), ("Kendra", "Trikona"))
+
     def test_old_bhava_lord_in_header_upgraded(self):
         import build_session23 as b23
         self.install_previous_release()

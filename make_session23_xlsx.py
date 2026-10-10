@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """The Session 23 calculator sheets, and how they get into the master workbook.
 
-    python3 make_session23_xlsx.py --install              # add the S23_ sheets to Classification_for_Horoscope_Analysis_v7_1.xlsx
+    python3 make_session23_xlsx.py --install              # add or upgrade the S23_ sheets in Classification_for_Horoscope_Analysis_v7_1.xlsx
     python3 make_session23_xlsx.py --install --reset-data # ... and overwrite the S23_ data sheets from session23_rules.json
     python3 make_session23_xlsx.py --export [FILE]        # a standalone workbook (default Session23_Rules.xlsx)
 
---install keeps a backup of the master (…before-session23-DATE.xlsx), adds the data sheets only when they are not
-there yet (your edits are never overwritten unless you say --reset-data) and rebuilds the calculator sheets.
+--install keeps a backup of the master (backups/…before-session23-DATE_TIME.xlsx), then writes the data sheets if
+there are none, or upgrades them row by row: a row still as shipped takes the new text, a row you edited is kept and
+listed, a shipped row you deleted stays deleted, new rows and sheets are added. It always rebuilds the calculator sheets.
+Rows kept as you edited them do not get the release's new text; --reset-data overwrites every data sheet instead.
 
 Calculator sheets (all formulas — change the signs on S23_Chart and everything recalculates):
 
-  S23_Chart         inputs: Lagna, the nine grahas' signs and degrees, birth date-time, "now"
+  S23_Chart         inputs: Lagna, the nine grahas' signs, degrees and retrograde flags, birth date-time, "now", gender
   S23_Classes_Calc  the ten class tables (house, rāśi, planets, lord, where the lord sits), the house x class matrix,
                     the Badhaka block and the twelve house lords
   S23_Roles_Calc    Maraka / Badhaka / Dusthana / Trishadaya roles of the nine grahas
   S23_Dasha_Calc    Vimśottarī: nine Mahādaśās and 81 Bhuktis from the Moon's longitude, and the running pair
-  S23_Predict_Calc  graha + bhāva: house, nature, the cell text, dignity, digbala, classes and class-rule texts
+  S23_Predict_Calc  graha + bhāva: house, nature, the cell text, dignity, digbala, classes and class-rule texts,
+                    the Session 26 lines, the 12th-house line and the conditional readings (with "active now")
+  S23_LifeArea_Calc Session 27's 7 steps for the area of life picked in B2 (Ready Reckoner)
   S23_Ref_Calc      lookup tables copied from the page (rāśi table, dignity degrees and grid, daśā constants)
 
 The text rows are looked up in the S23_ data sheets (GrahaInBhava, ClassRules, DignityEffect, Digbala), so editing a
@@ -1028,7 +1032,13 @@ def upgrade_data_sheets(wb, rules, previous):
         before = None
         for k, u in user:
             if k not in fresh_keys and shipped.get(k) != u:       # added (or edited and since dropped) by the user
-                at = next((i + 1 for i, (kk, _) in enumerate(out) if kk == before), len(out) if before else 0)
+                at = next((i + 1 for i, (kk, _) in enumerate(out) if kk == before), None)
+                if at is None and before is not None and isinstance(k, tuple):
+                    # the row it followed is gone: keep it after the last row of its own group (e.g. its class)
+                    at = next((i + 1 for i in range(len(out) - 1, -1, -1)
+                               if isinstance(out[i][0], tuple) and out[i][0][0] == k[0]), None)
+                if at is None:
+                    at = len(out) if before is not None else 0
                 out.insert(at, (k, raw[k]))
                 if (name, k) not in report["kept"]:
                     report["kept"].append((name, k))
@@ -1127,6 +1137,9 @@ def main(argv=None):
                     print(f"{label}:")
                     for sheet, key in items:
                         print(f"  {sheet}: {key}")
+            if up["kept"]:
+                print("The rows above keep your wording, so they did not get this release's text: compare them with "
+                      "session23_rules.json, or run --install --reset-data to take every row from it (your edits stay in the backup).")
         print("Open the workbook in Excel and save once, so the calculator results are stored with it.")
         return 0
     if "--export" in argv:

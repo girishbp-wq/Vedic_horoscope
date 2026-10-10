@@ -370,8 +370,20 @@ def read_workbook(path_or_wb):
                                       karakas=[rd.pick(sh, i, "Karaka", k, PLANETS) for k in karakas],
                                       karaka_female=_s(r[4]) and rd.pick(sh, i, "KarakaFemale", _s(r[4]), PLANETS),
                                       link=rd.pick(sh, i, "Link", _s(r[5]), LINKS), source=_s(r[6])))
-        if not out["life_areas"][-1]["houses"]:
+        row = out["life_areas"][-1]
+        if not row["houses"]:
             rd.bad(sh, i, "Houses is empty")
+        # the Excel calculator (S23_LifeArea_Calc) reads up to two houses and two karakas, separated by commas
+        if ";" in _s(r[2]):
+            rd.bad(sh, i, f"Houses {_s(r[2])!r} — separate the houses with a comma")
+        elif len(row["houses"]) > 2:
+            rd.bad(sh, i, f"Houses {_s(r[2])!r} — at most two houses")
+        if ";" in _s(r[3]):
+            rd.bad(sh, i, f"Karaka {_s(r[3])!r} — separate the karakas with a comma")
+        elif len(karakas) > 2:
+            rd.bad(sh, i, f"Karaka {_s(r[3])!r} — at most two karakas")
+        if row["link"] == "PAC" and (len(row["houses"]) != 2 or len(karakas) != 2):
+            rd.bad(sh, i, "Link PAC needs two houses and two karakas")
     _expect(rd, PREFIX + "LifeAreas", [x["no"] for x in out["life_areas"]], list(range(1, LIFE_AREA_COUNT + 1)),
             lambda k: f"area {k}")
     out["conditions"] = []
