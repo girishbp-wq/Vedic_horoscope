@@ -468,6 +468,21 @@ class SheetValidation(unittest.TestCase):
         msg = self.build_after(edit)
         self.assertRegex(msg, r"S23_Conditions: 2 rows for \w+")
 
+    def test_duplicate_aspect_meaning_row(self):
+        def edit(wb):
+            ws = wb["S23_AspectMeaning"]
+            ws.append([c.value for c in ws[2]])
+        self.assertRegex(self.build_after(edit), r"S23_AspectMeaning: 2 rows for \w+")
+
+    def test_parivartana_typed_both_ways(self):
+        def edit(wb):
+            ws = wb["S23_BhavaLordIn"]
+            r = next(r for r in range(2, ws.max_row + 1) if ws.cell(row=r, column=7).value == "yes")
+            row = [c.value for c in ws[r]]
+            row[0], row[1] = row[1], row[0]
+            ws.append(row)
+        self.assertIn("S23_BhavaLordIn: 2 Parivartana rows for houses 4 and 11 (keep one)", self.build_after(edit))
+
     def test_old_bhava_lord_in_sheet_reads_with_blank_new_columns(self):
         import tempfile
         import openpyxl

@@ -1072,6 +1072,59 @@ class ExcelSession23(unittest.TestCase):
             self.assertEqual(wb[mx.PREFIX + "Chart"].cell(row=mx.PLANET_ROW0 + k, column=1).value, p)
 
 
+@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
+class ExcelLifeAreas(unittest.TestCase):
+    """S23_LifeArea_Calc, recalculated by LibreOffice, equals bhava_rules.life_area for every area."""
+
+    @classmethod
+    def setUpClass(cls):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        import test_teacher_charts as tc
+        cls.mx = mx
+        cls.tmp_dir = tempfile.TemporaryDirectory()
+        tmp = pathlib.Path(cls.tmp_dir.name)
+        cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
+        charts = [dict(tc.CHARTS["S23_2024_C"], birth=datetime.datetime(1980, 1, 1, 6, 0), gender=None),
+                  dict(tc.CHARTS["S27_CHART_2"], birth=datetime.datetime(1972, 5, 9, 14, 0), gender="Male")]
+        for c, g in zip(calc_charts(3, 515), ("Female", "Male", None)):
+            charts.append(dict(c, gender=g))
+        for c in charts:
+            c["waxing"] = _waxing_of(c)
+        base = tmp / "base.xlsx"
+        mx.build_workbook(base)
+        src, cls.out = tmp / "in", tmp / "out"
+        src.mkdir()
+        cls.out.mkdir()
+        areas = [r["area"] for r in RULES["life_areas"]]
+        paths, cls.cases = [], []
+        for i, c in enumerate(charts):
+            for no, area in enumerate(areas, 1):
+                wb = openpyxl.load_workbook(base)
+                mx.set_inputs(wb, c, cls.now)
+                wb[mx.PREFIX + "LifeArea_Calc"][mx.AREA_CELL] = area
+                f = src / f"c{i}_a{no:02d}.xlsx"
+                wb.save(f)
+                paths.append(f)
+                cls.cases.append((c, no, f.name))
+        _lo_recalc(paths, cls.out)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+
+    def test_every_area_equals_python(self):
+        for c, no, name in self.cases:
+            wb = openpyxl.load_workbook(self.out / name, data_only=True)
+            got = self.mx.life_area_from_sheet(wb[self.mx.PREFIX + "LifeArea_Calc"])
+            d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+            ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                             d["age"], d["maha"], d["bhukti"])
+            want = br.life_area(RULES, ctx, no)
+            self.assertIsNone(first_difference(want, got), name)
+
+
 @unittest.skipUnless(openpyxl, "openpyxl is needed for the workbook checks")
 class MasterWorkbookInstall(unittest.TestCase):
     """`make_session23_xlsx.py --install` adds the S23_ sheets to the master workbook and touches nothing else."""
@@ -1164,9 +1217,12 @@ class MasterWorkbookInstall(unittest.TestCase):
     def test_sign_inputs_only_accept_a_sign_from_the_list(self):
         self.mx.install_in_master(self.master)
         lists = [d for d in openpyxl.load_workbook(self.master)["S23_Chart"].data_validations.dataValidation if d.type == "list"]
-        self.assertEqual(len(lists), 1)
-        self.assertTrue(lists[0].showErrorMessage)          # a typed 'Vrishabha' is refused, not silently accepted
-        self.assertIn("B3", str(lists[0].sqref))
+        signs = [d for d in lists if "B3" in str(d.sqref)]
+        self.assertEqual(len(signs), 1)
+        self.assertTrue(signs[0].showErrorMessage)          # a typed 'Vrishabha' is refused, not silently accepted
+        others = sorted(str(d.sqref) for d in lists if d is not signs[0])
+        self.assertEqual(others, sorted([self.mx.GENDER_CELL, f"F{self.mx.PLANET_ROW0}:F{self.mx.PLANET_ROW0 + 8}"]))
+        self.assertTrue(all(d.showErrorMessage for d in lists))
 
     def test_degree_inputs_only_accept_a_degree_within_the_sign(self):
         self.mx.install_in_master(self.master)

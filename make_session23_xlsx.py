@@ -41,7 +41,7 @@ import bhava_rules as br
 ROOT = pathlib.Path(__file__).resolve().parent
 PREFIX = b23.PREFIX
 JSON_PATH = ROOT / "session23_rules.json"
-CALC_NAMES = ["Chart", "Classes_Calc", "Roles_Calc", "Dasha_Calc", "Predict_Calc", "Ref_Calc"]
+CALC_NAMES = ["Chart", "Classes_Calc", "Roles_Calc", "Dasha_Calc", "Predict_Calc", "LifeArea_Calc", "Ref_Calc"]
 CALC_SHEETS = [PREFIX + n for n in CALC_NAMES]
 
 # ---- layout contract (used by the tests) -------------------------------------------------------
@@ -65,6 +65,15 @@ COMBUST_COL, AFFLICTED_COL, MILD_COL = 20, 21, 22   # Predict_Calc helper column
 FLAG_ROW0 = 16                               # Predict_Calc: class-rule flags, one row per planet (header row 15)
 NATURE_FLAG_ROW0 = 28                        # Predict_Calc: Session 26 line flags, one row per planet (header row 27)
 COND_ROW0 = 40                               # Predict_Calc: conditional readings, one row per candidate (header row 39)
+# LifeArea_Calc (Session 27's 7 steps for the area chosen in B2); life_area_from_sheet() reads it back.
+AREA_CELL = "B2"
+REF_SIGNLINE_COL, REF_BHAVA_COL0 = 39, 41    # Ref_Calc: sign line per sign; house, short name, significations, people, body
+HELP_ROW0 = 3                                # LifeArea_Calc: per-planet helper table in columns AA.. (header row 2)
+BLOCK_ROW0, BLOCK_ROWS = 20, 75              # LifeArea_Calc: one block of 75 rows per house of the area (two blocks)
+KARAKA_ROW0 = BLOCK_ROW0 + 2 * BLOCK_ROWS + 1
+PAC_ROW0 = KARAKA_ROW0 + 3
+LINK_ROW0 = PAC_ROW0 + 9
+SUPPORT_COL, PRESSURE_COL = 19, 20
 
 HEAD_FILL = PatternFill("solid", fgColor="6B1D2B")
 HEAD_FONT = Font(bold=True, color="FFFFFF")
@@ -135,7 +144,15 @@ def _ref_sheet(ws, rules):
     for i, (name, lord) in enumerate(ref["NAKSHATRAS"]):
         ws.cell(row=3 + i, column=36, value=name)
         ws.cell(row=3 + i, column=37, value=lord)
-    for c in range(1, 38):
+    _head(ws, 2, ["Sign line (S27)"], col0=REF_SIGNLINE_COL)
+    for i in range(12):
+        ws.cell(row=3 + i, column=REF_SIGNLINE_COL, value=br.sign_line(rules, i))
+    _head(ws, 2, ["House", "Name", "Significations", "People", "Body"], col0=REF_BHAVA_COL0)
+    for h in range(1, 13):
+        b = ref["BHAVA_INFO"][str(h)]
+        for j, v in enumerate([h, br._short_name(b["nm"]), br._clean(b["sig"]), b["rel"], b["body"]]):
+            ws.cell(row=2 + h, column=REF_BHAVA_COL0 + j, value=v)
+    for c in range(1, 46):
         ws.column_dimensions[L(c)].width = 14
 
 
@@ -180,10 +197,12 @@ def _chart_sheet(ws, rules):
                  "not the absolute longitude; degrees decide Deep Exalted / Deep Debilitated and Moolatrikona. "
                  "Gender and the retrograde column feed the Sessions 24-27 readings (S23_Predict_Calc, S23_LifeArea_Calc).")
     ws["A23"].alignment = WRAP
-    sex = DataValidation(type="list", formula1='"Male,Female"', allow_blank=True)
+    sex = DataValidation(type="list", formula1='"Male,Female"', allow_blank=True, showErrorMessage=True,
+                         errorTitle="Gender", error="Choose Male or Female, or leave the cell empty.")
     ws.add_data_validation(sex)
     sex.add(GENDER_CELL)
-    yes = DataValidation(type="list", formula1='"yes"', allow_blank=True)
+    yes = DataValidation(type="list", formula1='"yes"', allow_blank=True, showErrorMessage=True,
+                         errorTitle="Retrograde", error="Type yes for a retrograde planet, or leave the cell empty.")
     ws.add_data_validation(yes)
     yes.add(f"{L(RETRO_COL)}{PLANET_ROW0}:{L(RETRO_COL)}{PLANET_ROW0 + 8}")
     dv = DataValidation(type="list", formula1="=S23_Ref_Calc!$B$3:$B$14", allow_blank=False,
@@ -512,6 +531,348 @@ def _predict_s24_27(ws, rules):
         ws.cell(row=r, column=19, value=f"=MID({keys},3,32000)")
 
 
+# ---- LifeArea_Calc ---------------------------------------------------------------------------------
+H_NAME, H_SIGN, H_HOUSE, H_NATURE, H_CLASS, H_DIG, H_COMB, H_RETRO = range(27, 35)
+H_COUNT, H_TARGET, H_ANAME, H_TC = 35, 38, 41, 44          # three aspect slots each
+H_OWNHIT, H_STRENGTH, H_RULES = 47, 48, 49
+H_ROWS, H_MEAN = 50, 59                                      # per slot: rows (specific, count, general), meanings m1-m3
+H_DEFAULT = 68
+
+
+def _life_area_sheet(ws, rules):
+    """Session 27's 7-step method for the area chosen in B2 — equal to bhava_rules.life_area (see life_area_from_sheet)."""
+    ref = rules["reference"]
+    n_rules = len(rules["class_rules"])
+    ws["A1"] = "Life areas (Session 27) — pick the area in B2; the 7 steps follow for the chart on S23_Chart"
+    ws["A1"].font = Font(bold=True, color="6B1D2B", size=13)
+    hr = lambda c: f"${L(c)}${HELP_ROW0}:${L(c)}${HELP_ROW0 + 8}"
+    hf = lambda c, x: f"INDEX({hr(c)},MATCH({x},{hr(H_NAME)},0))"              # helper field of the planet named by x
+    names = "S23_Ref_Calc!$B$3:$B$14"
+    lords = f"S23_Classes_Calc!$C${HOUSELORD_ROW0}:$C${HOUSELORD_ROW0 + 11}"
+    sign_of_house = lambda h: f"MOD(S23_Chart!$D$3+{h}-1,12)"
+    bh = lambda j, h: f"INDEX(S23_Ref_Calc!${L(REF_BHAVA_COL0 + j)}$3:${L(REF_BHAVA_COL0 + j)}$14,{h})"   # 1 name, 2 sig, 3 people, 4 body
+    gender = f"S23_Chart!{GENDER_CELL}"
+    LA = lambda c: f"S23_LifeAreas!${c}$1:${c}$60"
+    AM_P, AM_A, AM_F, AM_T = (f"S23_AspectMeaning!${c}$2:${c}$300" for c in "ABCD")
+    AM_TEXT = "S23_AspectMeaning!$D$1:$D$300"
+    CK, CP, CH, CT = (f"S23_Conditions!${c}$2:${c}$300" for c in "ABCD")
+    C_TEXT = "S23_Conditions!$D$1:$D$300"
+    LO, SI, LT, LS, LC, LX = (f"S23_BhavaLordIn!${c}$2:${c}$300" for c in "ABCDFG")
+    L_TEXT, L_STATUS = "S23_BhavaLordIn!$C$1:$C$300", "S23_BhavaLordIn!$D$1:$D$300"
+    matrix = f"S23_Classes_Calc!$C${MATRIX_ROW0 + 1}:$L${MATRIX_ROW0 + 12}"
+    ci = {c: br.CLASS_ORDER.index(c) + 1 for c in ("Kendra", "Trikona", "Dusthana", "Badhaka")}
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+
+    # ---- the area
+    top = [(2, "Area of life (pick)", None), (3, "Row in S23_LifeAreas", f'=MATCH({AREA_CELL},{LA("B")},0)'),
+           (4, "No", f"=INDEX({LA('A')},$B$3)"), (5, "Houses", f'=INDEX({LA("C")},$B$3)&""'),
+           (6, "Link", f'=INDEX({LA("F")},$B$3)&""'), (7, "Source", f'=INDEX({LA("G")},$B$3)&""'),
+           (8, "House 1", '=VALUE(TRIM(LEFT($B$5,FIND(",",$B$5&",")-1)))'),
+           (9, "House 2", '=IFERROR(VALUE(TRIM(MID($B$5,FIND(",",$B$5)+1,9))),"")'),
+           (10, "Karakas (Ready Reckoner)", f'=INDEX({LA("D")},$B$3)&""'), (11, "Karaka for a woman's chart", f'=INDEX({LA("E")},$B$3)&""'),
+           (12, "Karaka 1", f'=IF(AND($B$11<>"",{gender}="Female"),$B$11,TRIM(LEFT($B$10,FIND(",",$B$10&",")-1)))'),
+           (13, "Karaka 2", f'=IF(AND($B$11<>"",{gender}="Female"),"",IFERROR(TRIM(MID($B$10,FIND(",",$B$10)+1,99)),""))')]
+    for r, label, f in top:
+        cell(r, 1, label)
+        if f:
+            cell(r, 2, f)
+    ws[AREA_CELL] = rules["life_areas"][7]["area"]
+    ws[AREA_CELL].fill = INPUT_FILL
+    dv = DataValidation(type="list", formula1=f"=S23_LifeAreas!$B$2:$B${1 + len(rules['life_areas'])}", allow_blank=False)
+    ws.add_data_validation(dv)
+    dv.add(AREA_CELL)
+    best = lambda key, planet, house: [f"SUMPRODUCT(({CK}={key})*({CP}={pl})*({CH}={hh})*ROW({CK}))"
+                                       for pl, hh in ((planet, house), ('""', house), (planet, '""'), ('""', '""'))]
+    jh = best('"jupiter_husband"', '"Jupiter"', '""')
+    vm = best('"venus_meets_wife"', "$B$12", hf(H_HOUSE, "$B$12"))
+    pick = lambda b: f"IF({b[0]}>0,{b[0]},IF({b[1]}>0,{b[1]},IF({b[2]}>0,{b[2]},{b[3]})))"
+    cell(14, 1, "Karaka note")
+    cell(14, 2, (f'=IF($B$11="","",IF({gender}="Female",IF({jh[2]}>0,INDEX({C_TEXT},{jh[2]}),IF({jh[3]}>0,INDEX({C_TEXT},{jh[3]}),"")),'
+                 f'IF({gender}="Male",IF({pick(vm)}>0,INDEX({C_TEXT},{pick(vm)}),""),'
+                 f'"For a woman\'s chart the husband\'s karaka is "&$B$11&".")))'))
+    for r, label, col in ((15, "Supports", SUPPORT_COL), (16, "Pressure", PRESSURE_COL)):
+        cell(r, 1, label)
+        parts = "&".join(f'IF(${L(col)}${x}<>"",CHAR(10)&${L(col)}${x},"")' for x in range(BLOCK_ROW0, LINK_ROW0 + 3))
+        cell(r, 2, f"=MID({parts},2,32000)").alignment = WRAP
+    ws.column_dimensions["A"].width = 24
+    ws.column_dimensions["B"].width = 60
+
+    # ---- helper table: one row per planet
+    _head(ws, HELP_ROW0 - 1, ["Graha", "Sign #", "House", "Nature", "Benefic / malefic", "Dignity", "Combust?", "Retro?",
+                              "Aspect 1", "Aspect 2", "Aspect 3", "Falls on 1", "Falls on 2", "Falls on 3", "Name 1", "Name 2",
+                              "Name 3", "Her count 1", "Her count 2", "Her count 3", "Aspects own sign?", "Strength (R3)",
+                              "Rules houses"], col0=H_NAME)
+    strong = ",".join(f'$' + L(H_DIG) + '{r}="' + x + '"' for x in br.STRONG_LABELS)
+    weak = ",".join(f'$' + L(H_DIG) + '{r}="' + x + '"' for x in br.WEAK_LABELS)
+    for k, p in enumerate(br.PLANET_ORDER):
+        r, pr, cr = HELP_ROW0 + k, PREDICT_ROW0 + k, PLANET_ROW0 + k
+        cell(r, H_NAME, p)
+        cell(r, H_SIGN, f"=S23_Chart!$D${cr}")
+        cell(r, H_HOUSE, f"=S23_Chart!$E${cr}")
+        cell(r, H_NATURE, f"=S23_Predict_Calc!$C${pr}")
+        cell(r, H_CLASS, f'=IF({L(H_NATURE)}{r}="benefic","benefic","malefic")')
+        cell(r, H_DIG, f"=S23_Predict_Calc!$F${pr}")
+        cell(r, H_COMB, f"=S23_Predict_Calc!${L(COMBUST_COL)}${pr}")
+        cell(r, H_RETRO, f'=S23_Chart!${L(RETRO_COL)}${cr}="yes"')
+        counts = ref["SPECIAL_ASPECTS"][p]
+        for sl in range(3):
+            if sl < len(counts):
+                h = counts[sl]
+                cell(r, H_COUNT + sl, h)
+                cell(r, H_TARGET + sl, f"=MOD({L(H_SIGN)}{r}+{h}-1,12)")
+                cell(r, H_ANAME + sl, br.aspect_name(p, h))
+                cell(r, H_TC + sl, br.teacher_count(p, h))
+            else:
+                cell(r, H_TARGET + sl, '=""')
+        own = ",".join(f'AND({L(H_TARGET + sl)}{r}<>"",INDEX(S23_Ref_Calc!$D$3:$D$14,N({L(H_TARGET + sl)}{r})+1)=${L(H_NAME)}{r})'
+                       for sl in range(len(counts)))
+        cell(r, H_OWNHIT, f"=OR({own})")
+        sh, wh = f"OR({strong.format(r=r)},{L(H_OWNHIT)}{r})", f"OR({weak.format(r=r)},{L(H_COMB)}{r})"
+        cell(r, H_STRENGTH, f'=IF(AND({sh},NOT({wh})),"strong",IF(AND({wh},NOT({sh})),"weak","depends"))')
+        cell(r, H_RULES, "=MID(" + "&".join(f'IF(INDEX({lords},{h})=${L(H_NAME)}{r},", {h}","")' for h in range(1, 13)) + ",3,99)")
+        for sl in range(3):
+            if sl >= len(counts):
+                for j in range(3):
+                    cell(r, H_MEAN + 3 * sl + j, '=""')
+                continue
+            tc = f"{L(H_TC + sl)}{r}"
+            rows_ = [f"SUMPRODUCT(({AM_P}=${L(H_NAME)}{r})*({AM_A}={tc})*({AM_F}={L(H_HOUSE)}{r})*ROW({AM_P}))",
+                     f'SUMPRODUCT(({AM_P}=${L(H_NAME)}{r})*({AM_A}={tc})*({AM_F}="")*ROW({AM_P}))',
+                     f'SUMPRODUCT(({AM_P}=${L(H_NAME)}{r})*({AM_A}="")*({AM_F}="")*ROW({AM_P}))']
+            for j in range(3):
+                cell(r, H_ROWS + 3 * sl + j, f"={rows_[j]}")
+            sp, cn, gn = (f"{L(H_ROWS + 3 * sl + j)}{r}" for j in range(3))
+            cell(r, H_MEAN + 3 * sl, f'=IF({sp}>0,INDEX({AM_TEXT},{sp}),IF(AND({cn}=0,{gn}=0),${L(H_DEFAULT)}${HELP_ROW0},""))')
+            cell(r, H_MEAN + 3 * sl + 1, f'=IF({cn}>0,INDEX({AM_TEXT},{cn}),"")')
+            cell(r, H_MEAN + 3 * sl + 2, f'=IF({gn}>0,INDEX({AM_TEXT},{gn}),"")')
+    dflt = f'SUMPRODUCT(({AM_P}="any")*({AM_A}="")*({AM_F}="")*ROW({AM_P}))'
+    cell(HELP_ROW0, H_DEFAULT, f'=IF({dflt}>0,INDEX({AM_TEXT},{dflt}),"")')
+    cell(HELP_ROW0 - 1, H_DEFAULT, "Default aspect meaning")
+
+    # ---- one block per house of the area
+    def summary(r, cond_good, cond_bad, text):
+        cell(r, SUPPORT_COL, f'=IF({cond_good},{text},"")')
+        cell(r, PRESSURE_COL, f'=IF({cond_bad},{text},"")')
+
+    _head(ws, BLOCK_ROW0 - 1, ["Step", "Planet / house", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                               "Supports", "Pressure"])
+    for blk, hcell in enumerate(("$B$8", "$B$9")):
+        b0 = BLOCK_ROW0 + blk * BLOCK_ROWS
+        hb, sb = f"$B${b0}", f"$C${b0}"
+        H = _ord(hb)
+        cell(b0, 1, "bhava")
+        cell(b0, 2, f'=IF({hcell}="","",{hcell})')
+        cell(b0, 3, f'=IF($B${b0}="","",{sign_of_house(hb)})')
+        cell(b0, 4, f'=IF($B${b0}="","",INDEX({names},$C${b0}+1))')
+        cell(b0, 5, f'=IF($B${b0}="","",INDEX(S23_Ref_Calc!${L(REF_SIGNLINE_COL)}$3:${L(REF_SIGNLINE_COL)}$14,$C${b0}+1))')
+        r = b0 + 1
+        for k, p in enumerate(br.PLANET_ORDER):                                     # 2 · planets in the house
+            hrow, pr = HELP_ROW0 + k, PREDICT_ROW0 + k
+            cell(r, 1, "occupant")
+            cell(r, 2, p)
+            cell(r, 3, f'=AND({hb}<>"",${L(H_HOUSE)}${hrow}={hb})')
+            cell(r, 4, f"=${L(H_NATURE)}${hrow}")
+            cell(r, 5, f"=S23_Predict_Calc!$E${pr}")
+            cell(r, 6, f"=S23_Predict_Calc!$D${pr}")
+            cell(r, 7, f"=S23_Predict_Calc!$P${pr}")
+            txt = f'$B{r}&" ("&$D{r}&") in the "&{H}'
+            summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
+            r += 1
+        for k, p in enumerate(br.PLANET_ORDER):                                     # 3 · planets aspecting it
+            hrow = HELP_ROW0 + k
+            for sl in range(3):
+                cell(r, 1, "aspect")
+                cell(r, 2, p)
+                cell(r, 3, f'=AND({hb}<>"",${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}={sb})')
+                cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
+                for j in range(3):
+                    cell(r, 5 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
+                txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H}'
+                summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
+                r += 1
+        lr = r                                                                      # 4 · the lord
+        B, C = f"$B${lr}", f"$C${lr}"
+        cell(lr, 1, "lord")
+        cell(lr, 2, f'=IF({hb}="","",INDEX({lords},{hb}))')
+        cell(lr, 3, f'=IF({B}="","",{hf(H_HOUSE, B)})')
+        cell(lr, 4, f'=IF({B}="","",{hf(H_SIGN, B)})')
+        cell(lr, 5, f'=IF({B}="","",INDEX({names},$D${lr}+1))')
+        cls = "&".join(f'IF(INDEX({matrix},{C},{ci[c]})=1," and {c}","")' for c in ("Kendra", "Trikona", "Dusthana", "Badhaka"))
+        cell(lr, 23, f'=IF({B}="","",MID({cls},6,99))')
+        kt = "&".join(f'IF(AND(OR(AND(S23_ClassRules!$A${2 + m}="Kendra",INDEX({matrix},{C},{ci["Kendra"]})=1),'
+                      f'AND(S23_ClassRules!$A${2 + m}="Trikona",INDEX({matrix},{C},{ci["Trikona"]})=1)),S23_ClassRules!$B${2 + m}="any",'
+                      f'NOT(ISNUMBER(SEARCH(", "&{C}&",",", "&S23_ClassRules!$C${2 + m}&","))))," "&S23_ClassRules!$D${2 + m},"")'
+                      for m in range(n_rules))
+        cell(lr, 24, f'=IF({B}="","",{kt})')
+        cell(lr, 6, (f'=IF({B}="","",IF({C}={hb},"The lord sits in its own bhava, so the matters of this house are protected and strengthened.",'
+                     f'"Placed in the "&{_ord(C)}&" house"&IF($W${lr}<>"",", a "&$W${lr}&" bhava","")&"."'
+                     f'&$X${lr}&IF(OR({C}=6,{C}=8,{C}=12)," A difficult placement.","")))'))
+        cell(lr, 7, f'=IF({B}="","",{hf(H_DIG, B)})')
+        cell(lr, 8, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
+        lord_y = f"INDEX({lords},{C})"
+        cell(lr, 12, f'=IF({B}="",FALSE,AND({C}<>{hb},{hf(H_HOUSE, lord_y)}={hb},{lord_y}<>{B}))')
+        lo_, hi_ = f"MIN({hb},{C})", f"MAX({hb},{C})"
+        cell(lr, 13, f'=IF({B}="",0,SUMPRODUCT(({LX}="yes")*((({LO}={lo_})*({SI}={hi_}))+(({LO}={hi_})*({SI}={lo_})))*ROW({LO})))')
+        for col, cond in ((14, '""'), (15, '"strong"'), (16, '"weak"')):
+            cell(lr, col, f'=IF({B}="",0,SUMPRODUCT(({LO}={hb})*({SI}={C})*({LC}={cond})*({LX}<>"yes")*ROW({LO})))')
+        st = f"$H${lr}"
+        use_s, use_w = f'OR({st}="strong",{st}="depends")', f'OR({st}="weak",{st}="depends")'
+        cell(lr, 22, (f'=MID(IF($N${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$N${lr}),"")'
+                      f'&IF(AND($O${lr}>0,{use_s}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$O${lr}),"")'
+                      f'&IF(AND($P${lr}>0,{use_w}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$P${lr}),""),3,32000)'))
+        cell(lr, 17, (f'=IF({B}="","","The lord of the "&{H}&" house ("&{bh(1, hb)}&") is placed in the "&{_ord(C)}&" house ("&{bh(1, C)}'
+                      f'&"), in "&$E${lr}&". Blend their karakatwas — "&{H}&" house: "&{bh(2, hb)}&". "&{_ord(C)}&" house: "&{bh(2, C)}'
+                      f'&". People: "&{bh(3, hb)}&" with "&{bh(3, C)}&". Body: "&{bh(4, hb)}&" with "&{bh(4, C)}&".")'))
+        cell(lr, 18, (f'=IF({B}="","","Parivartana: the lords of the "&{_ord(lo_)}&" and "&{_ord(hi_)}&" houses have exchanged signs. '
+                      f'Blend the two houses — "&{_ord(lo_)}&" house: "&{bh(2, lo_)}&". "&{_ord(hi_)}&" house: "&{bh(2, hi_)}&".")'))
+        cell(lr, 9, f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_TEXT},$M${lr}),$R${lr}),IF($V${lr}<>"",$V${lr},$Q${lr})))')
+        cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),"blend"),'
+                      f'IF($N${lr}>0,INDEX({L_STATUS},$N${lr}),IF(AND($O${lr}>0,{use_s}),INDEX({L_STATUS},$O${lr}),'
+                      f'IF(AND($P${lr}>0,{use_w}),INDEX({L_STATUS},$P${lr}),"blend")))))'))
+        hits = ",".join(f'{hf(H_TARGET + sl, B)}={sb}' for sl in range(3))
+        cell(lr, 11, f'=IF({B}="","",IF(OR({hits}),"The lord aspects its own house, so the "&{H}&" house is strong.",""))')
+        summary(lr, f'$H${lr}="strong"', f'$H${lr}="weak"', f'"The "&{H}&" lord "&{B}&" is "&$H${lr}')
+        cell(lr + 1, 1, "lord (2)")
+        cell(lr + 1, SUPPORT_COL, f'=IF(AND({B}<>"",$K${lr}<>""),"The "&{H}&" lord "&{B}&" aspects its own house","")')
+        cell(lr + 1, PRESSURE_COL, f'=IF(AND({B}<>"",OR({C}=6,{C}=8,{C}=12)),"The "&{H}&" lord "&{B}&" is in the "&{_ord(C)}&", a difficult placement","")')
+        r = lr + 2
+        for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · with the lord
+            hrow = HELP_ROW0 + k
+            cell(r, 1, "with")
+            cell(r, 2, p)
+            cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_SIGN)}${hrow}=$D${lr})')
+            cell(r, 4, f'=${L(H_RULES)}${hrow}&""')
+            txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") is with the "&{H}&" lord"'
+            summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
+            r += 1
+        for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · aspecting the lord
+            hrow = HELP_ROW0 + k
+            for sl in range(3):
+                cell(r, 1, "with-aspect")
+                cell(r, 2, p)
+                cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}=$D${lr})')
+                cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
+                cell(r, 5, f'=${L(H_RULES)}${hrow}&""')
+                for j in range(3):
+                    cell(r, 6 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
+                txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H}&" lord"'
+                summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
+                r += 1
+        assert r == b0 + BLOCK_ROWS, (r, b0)
+
+    # ---- 6 · karakas
+    for i, kc in enumerate(("$B$12", "$B$13")):
+        r = KARAKA_ROW0 + i
+        B = f"$B${r}"
+        cell(r, 1, "karaka")
+        cell(r, 2, f'=IF({kc}="","",{kc})')
+        cell(r, 3, f'=IF({B}="","",{hf(H_HOUSE, B)})')
+        cell(r, 4, f'=IF({B}="","",{hf(H_SIGN, B)})')
+        cell(r, 5, f'=IF({B}="","",INDEX({names},$D${r}+1))')
+        cell(r, 6, f'=IF({B}="","",{hf(H_DIG, B)})')
+        cell(r, 7, f'=IF({B}="","",{hf(H_COMB, B)})')
+        cell(r, 8, f'=IF({B}="","",{hf(H_RETRO, B)})')
+        cell(r, 9, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
+        cell(r, 10, f'=IF({B}="","",$B$14)')
+        summary(r, f'$I${r}="strong"', f'$I${r}="weak"', f'"Karaka "&{B}&" is "&$I${r}')
+
+    # ---- PAC link (Love marriage) and the karakas' combination
+    pac_on = '$B$6="PAC"'
+    a, b = "$B$8", "$B$9"
+    la, lb = f"INDEX({lords},{a})", f"INDEX({lords},{b})"
+    A, Bo = _ord(a), _ord(b)
+    at = lambda x: hf(H_HOUSE, x)
+    hits_sign = lambda x, sgn: "OR(" + ",".join(f"{hf(H_TARGET + sl, x)}={sgn}" for sl in range(3)) + ")"
+    items = [(f"{at(la)}={b}", f'{A}&" lord in the "&{Bo}'),
+             (f"{at(lb)}={a}", f'{Bo}&" lord in the "&{A}'),
+             (f"AND({at(la)}={b},{at(lb)}={a},{la}<>{lb})", f'"Exchange between the "&{A}&" and "&{Bo}&" lords"'),
+             (f"AND({la}<>{lb},{hf(H_SIGN, la)}={hf(H_SIGN, lb)})", f'"The "&{A}&" and "&{Bo}&" lords are together"'),
+             (hits_sign(la, sign_of_house(b)), f'"The "&{A}&" lord aspects the "&{Bo}&" house"'),
+             (hits_sign(lb, sign_of_house(a)), f'"The "&{Bo}&" lord aspects the "&{A}&" house"'),
+             (f"AND({la}<>{lb},{hits_sign(la, hf(H_SIGN, lb))})", f'"The "&{A}&" lord aspects the "&{Bo}&" lord"'),
+             (f"AND({la}<>{lb},{hits_sign(lb, hf(H_SIGN, la))})", f'"The "&{Bo}&" lord aspects the "&{A}&" lord"')]
+    for i, (cond, text) in enumerate(items):
+        r = PAC_ROW0 + i
+        cell(r, 1, "pac")
+        cell(r, 2, f'=IF(AND({pac_on},{b}<>""),IF({cond},{text},""),"")')
+        cell(r, SUPPORT_COL, f'=IF($B{r}<>"","PAC link: "&$B{r},"")')
+    pp, qq = "$B$12", "$B$13"
+    on = f'AND({pac_on},{qq}<>"")'
+    name_hit = lambda x, y: (f'IF({hf(H_TARGET, x)}={hf(H_SIGN, y)},{hf(H_ANAME, x)},IF({hf(H_TARGET + 1, x)}={hf(H_SIGN, y)},'
+                             f'{hf(H_ANAME + 1, x)},{hf(H_ANAME + 2, x)}))')
+    links = [(f"{hf(H_SIGN, pp)}={hf(H_SIGN, qq)}", f'{pp}&" and "&{qq}&" are together in the "&{_ord(hf(H_HOUSE, pp))}'),
+             (hits_sign(pp, hf(H_SIGN, qq)), f'{pp}&" aspects "&{qq}&" ("&{name_hit(pp, qq)}&" aspect)"'),
+             (hits_sign(qq, hf(H_SIGN, pp)), f'{qq}&" aspects "&{pp}&" ("&{name_hit(qq, pp)}&" aspect)"')]
+    for i, (cond, text) in enumerate(links):
+        r = LINK_ROW0 + i
+        cell(r, 1, "link")
+        cell(r, 2, f'=IF({on},IF({cond},{text},""),"")')
+        cell(r, SUPPORT_COL, f'=$B{r}&""')
+    for c in range(3, 19):
+        ws.column_dimensions[L(c)].width = 18
+    for c in (SUPPORT_COL, PRESSURE_COL):
+        ws.column_dimensions[L(c)].width = 40
+
+
+def life_area_from_sheet(ws):
+    """Read a recalculated S23_LifeArea_Calc back into the shape bhava_rules.life_area returns."""
+    v = lambda r, c: ws.cell(row=r, column=c).value
+    txt = lambda r, c: "" if v(r, c) is None else str(v(r, c))
+    num = lambda r, c: int(round(float(v(r, c))))
+    yes = lambda r, c: bool(v(r, c)) and v(r, c) not in ("FALSE", 0)
+    rules_list = lambda s: [int(x) for x in s.split(",") if x.strip()]
+    means = lambda r, c0: [txt(r, c0 + j) for j in range(3) if txt(r, c0 + j)]
+    link = txt(6, 2)
+    houses = [num(8, 2)] + ([num(9, 2)] if txt(9, 2) else [])
+    bhavas, supports, pressure = [], [], []
+    for blk in range(len(houses)):
+        b0 = BLOCK_ROW0 + blk * BLOCK_ROWS
+        r = b0 + 1
+        occ = []
+        for _ in range(9):
+            if yes(r, 3):
+                occ.append({"planet": txt(r, 2), "nature": txt(r, 4), "text": txt(r, 5), "status": txt(r, 6),
+                            "nature_lines": txt(r, 7).split("\n") if txt(r, 7) else []})
+            r += 1
+        asp = []
+        for _ in range(27):
+            if yes(r, 3):
+                asp.append({"by": txt(r, 2), "aspect": txt(r, 4), "meanings": means(r, 5)})
+            r += 1
+        lord = None
+        if txt(r, 2):
+            lord = {"planet": txt(r, 2), "house": num(r, 3), "sign": num(r, 4), "rashi": txt(r, 5), "placement_line": txt(r, 6),
+                    "dignity": txt(r, 7), "strength": txt(r, 8), "text": txt(r, 9), "status": txt(r, 10), "dictum": txt(r, 11)}
+        r += 2
+        company = []
+        for _ in range(9):
+            if yes(r, 3):
+                company.append({"planet": txt(r, 2), "how": "with", "aspect": "", "rules": rules_list(txt(r, 4)), "meanings": []})
+            r += 1
+        for _ in range(27):
+            if yes(r, 3):
+                company.append({"planet": txt(r, 2), "how": "aspect", "aspect": txt(r, 4), "rules": rules_list(txt(r, 5)),
+                                "meanings": means(r, 6)})
+            r += 1
+        bhavas.append({"house": num(b0, 2), "sign": num(b0, 3), "rashi": txt(b0, 4), "sign_line": txt(b0, 5),
+                       "occupants": occ, "aspecting": asp, "lord": lord, "with_lord": company})
+    karakas = []
+    for i in range(2):
+        r = KARAKA_ROW0 + i
+        if txt(r, 2):
+            karakas.append({"planet": txt(r, 2), "house": num(r, 3), "sign": num(r, 4), "rashi": txt(r, 5), "dignity": txt(r, 6),
+                            "combust": yes(r, 7), "retro": yes(r, 8), "strength": txt(r, 9), "note": txt(r, 10)})
+    for r in range(BLOCK_ROW0, LINK_ROW0 + 3):
+        if txt(r, SUPPORT_COL):
+            supports.append(txt(r, SUPPORT_COL))
+        if txt(r, PRESSURE_COL):
+            pressure.append(txt(r, PRESSURE_COL))
+    pac = [txt(PAC_ROW0 + i, 2) for i in range(8) if txt(PAC_ROW0 + i, 2)] if link == "PAC" else None
+    plink = [txt(LINK_ROW0 + i, 2) for i in range(3) if txt(LINK_ROW0 + i, 2)] if link == "PAC" else None
+    return {"no": num(4, 2), "area": txt(2, 2), "houses": houses, "link": link, "source": txt(7, 2), "bhavas": bhavas,
+            "karakas": karakas, "pac": pac, "planet_link": plink, "supports": supports, "pressure": pressure}
+
+
 # ---- assembly --------------------------------------------------------------------------------------
 def build_calc_sheets(wb, rules):
     """(Re)create the six calculator sheets at the end of `wb`; the data sheets and everything else stay as they are."""
@@ -524,6 +885,7 @@ def build_calc_sheets(wb, rules):
     _roles_sheet(sheets["Roles_Calc"])
     _dasha_sheet(sheets["Dasha_Calc"])
     _predict_sheet(sheets["Predict_Calc"], rules)
+    _life_area_sheet(sheets["LifeArea_Calc"], rules)
     _ref_sheet(sheets["Ref_Calc"], rules)
     for ws in sheets.values():
         ws.sheet_properties.tabColor = "2E7D78"

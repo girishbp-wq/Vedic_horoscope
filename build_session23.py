@@ -381,9 +381,14 @@ def read_workbook(path_or_wb):
     for sh, i, r in rd.rows("Remedies"):
         out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], PLANETS + ["Tip"]), text=rd.text(sh, i, "Text", r[1]),
                                     source=_s(r[2])))
+    swaps = [frozenset((x["lord_of"], x["sits_in"])) for x in out["bhava_lord_in"] if x["exchange"]]
+    for k in sorted({k for k in swaps if swaps.count(k) > 1}, key=sorted):
+        a, b = sorted(k)
+        rd.bad(PREFIX + "BhavaLordIn", None, f"{swaps.count(k)} Parivartana rows for houses {a} and {b} (keep one)")
     for key, sheet, fields in (("bhava_lord_in", "BhavaLordIn", ("lord_of", "sits_in", "condition", "exchange")),
                                ("graha_rashi", "GrahaRashi", ("planet", "rashi")),
-                               ("conditions", "Conditions", ("key", "planet", "house"))):
+                               ("conditions", "Conditions", ("key", "planet", "house")),
+                               ("aspect_meaning", "AspectMeaning", ("planet", "aspect", "from_house"))):
         seen = [tuple(x[f] for f in fields) for x in out[key]]
         for k in sorted({k for k in seen if seen.count(k) > 1}, key=str):
             rd.bad(PREFIX + sheet, None, f"{seen.count(k)} rows for {' / '.join('any' if v is None else str(v) for v in k)} (keep one)")
