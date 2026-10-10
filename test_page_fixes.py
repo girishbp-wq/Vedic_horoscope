@@ -590,6 +590,31 @@ class ConditionLines(unittest.TestCase):
 
 
 @needs_browser
+class Remedies(unittest.TestCase):
+    def test_teacher_remedies_and_tips(self):
+        r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate(() => ({
+              text: document.getElementById('akshara-body').textContent,
+              remedies: S23.remedies,
+              tips: [...document.querySelectorAll('#akshara-body .s23-tips li')].map(li => li.textContent),
+            }));
+        """)
+        for x in r["remedies"]:
+            if x["topic"] != "Tip":
+                self.assertIn(x["text"].split("\n")[0], r["text"])
+        self.assertIn("Lord Vishnu", r["text"])
+        self.assertIn("debilitated or an afflicted Moon", r["text"])
+        self.assertIn("Tips of the day", r["text"])
+        tips = [x for x in r["remedies"] if x["topic"] == "Tip"]
+        self.assertEqual(len(r["tips"]), 3)
+        self.assertTrue(r["tips"][0].startswith(tips[0]["text"].split("\n")[0]), r["tips"][0])
+        self.assertIn("S24 p.38", r["tips"][0])
+
+
+@needs_browser
 class DashaOutsideItsSpan(unittest.TestCase):
     def test_no_running_period_is_claimed_outside_the_120_years(self):
         r = run_page("""

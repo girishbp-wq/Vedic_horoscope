@@ -4882,12 +4882,19 @@ function renderGrahaReference() {
 
   /* "Tip of the Day" remedies to strengthen a graha. */
   html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Remedies to Strengthen a Graha</h4>`;
-  for (const p of ["Jupiter","Venus","Saturn"]) {
-    html += `<p style="margin:10px 0 4px;"><strong>${p}</strong></p>
-      <ul>${GRAHA_REMEDIES[p].map(r=>`<li>${r}</li>`).join("")}</ul>`;
+  // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-25 (S23.remedies, from the S23_Remedies sheet)
+  const s23Rem = p => S23.remedies.filter(r=>r.topic===p);
+  for (const p of ["Moon","Mercury","Jupiter","Venus","Saturn"]) {
+    const old = GRAHA_REMEDIES[p] || [], taught = s23Rem(p);
+    if (!old.length && !taught.length) continue;
+    html += `<p style="margin:10px 0 4px;"><strong>${p}</strong>${p==="Moon"?` <span class="dig-note">for a debilitated or an afflicted Moon</span>`:""}</p>
+      <ul>${old.map(r=>`<li>${r}</li>`).join("")}${taught.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
     if (p==="Saturn") html += `<p class="dig-note">${SATURN_GREATEST_REMEDY}</p>`;
   }
-  html += `<p class="akshara-note">Remedies are given in the course decks for Jupiter, Venus and Saturn; other grahas will be added as their session slides are supplied.</p>`;
+  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn; other grahas will be added as their session slides are supplied.</p>`;
+  const tips = s23Rem("Tip");
+  if (tips.length) html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Tips of the day</h4>`
+    +`<ul class="s23-tips">${tips.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
   document.getElementById("akshara-body").innerHTML = html;
 }
 
