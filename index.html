@@ -586,6 +586,14 @@ details.section[open] > summary::after { content: "−"; }
 .s23-chip.s23-exchange { background: #e6eefb; color: #24467a; border-color: #b4c7e8; }
 #s23-bb td p { margin: 0 0 4px; }
 .s23-meanings { margin: 2px 0 4px; padding-left: 18px; font-size: 12px; color: var(--muted); }
+.s23-area-btns { margin-top: 10px; }
+.s23-steps { padding-left: 22px; margin: 6px 0 10px; }
+.s23-steps > li { margin: 6px 0; overflow-wrap: anywhere; }
+.s23-steps ul { margin: 4px 0; padding-left: 18px; }
+.s23-more summary { cursor: pointer; color: var(--maroon); font-size: 12px; }
+.s23-sumgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 680px) { .s23-sumgrid { grid-template-columns: 1fr; } }
+@media print { .s23-more { display: none; } }
 .s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
@@ -1185,6 +1193,15 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
           <span class="section-sub">Running Mahādaśā and Bhukti · Maraka, Badhaka, Dusthana and Trishadaya lords · watch periods (Session 23)</span>
         </summary>
         <div class="section-body" id="s23-dasha-body"></div>
+      </details>
+
+      <details class="section" open>
+        <summary>
+          <span class="section-num">L</span>
+          <span class="section-title">Life areas</span>
+          <span class="section-sub">Session 27 · the 7-step method for the Ready Reckoner's 16 areas of life</span>
+        </summary>
+        <div class="section-body" id="s23-life-body"></div>
       </details>
 
       <details class="section" open>
@@ -6844,9 +6861,62 @@ function s23BuildPredictions(sid, lagnaN, extra){
 function renderS23Sections(sid, lagnaN, extra){
   const c=document.getElementById("s23-classes-body"), p=document.getElementById("s23-predict-body");
   if(!c || !p) return;
-  if(!lagnaN || !sid){ c.innerHTML=s23NoLagna(); p.innerHTML=s23NoLagna(); return; }
+  const life=document.getElementById("s23-life-body");
+  if(!lagnaN || !sid){ c.innerHTML=s23NoLagna(); p.innerHTML=s23NoLagna(); if(life) life.innerHTML=s23NoLagna(); return; }
+  if(life){ const {pbr, degs, waxing}=s23Inputs(sid); renderS23LifeAreas(life, s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra))); }
   c.innerHTML=s23BuildClasses(sid, lagnaN);
   p.innerHTML=s23BuildPredictions(sid, lagnaN, extra);
+}
+
+/* ---- Life areas section (Session 27): one button per Ready Reckoner area, the 7 steps for the chosen one ---- */
+let s23AreaShown = 1;
+function s23PlanetLine(p, extra){ return `${GLYPH9[p]} <strong>${p}</strong>${extra||""}`; }
+function s23AreaBhava(b, multi){
+  const H=ord(b.house), L=b.lord;
+  let h=multi?`<h5 class="s23-class-head">${H} house</h5>`:"";
+  h+=`<ol class="s23-steps">`
+    +`<li><strong>The bhāva.</strong> The ${H} house is ${s23RashiCell(b.sign)} — ${_esc(b.sign_line)}</li>`
+    +`<li><strong>Planets in it.</strong> `+(b.occupants.length ? `<ul>${b.occupants.map(o=>`<li>${s23PlanetLine(o.planet, ` <span class="s23-chip s23-nature ${o.nature.replace(" ","-")}">${o.nature}</span>`)} ${s23Tag(o.status)}`
+        +(o.nature_lines.length?`<ul class="s23-nature-lines">${o.nature_lines.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
+        +`<details class="s23-more"><summary>Her reading for ${o.planet} in the ${H}</summary>${s23Para(o.text)}</details></li>`).join("")}</ul>` : "none.")+`</li>`
+    +`<li><strong>Planets aspecting it.</strong> `+(b.aspecting.length ? `<ul>${b.aspecting.map(a=>`<li>${s23PlanetLine(a.by, ` (${a.aspect} aspect)`)}${s23MeaningList(a.meanings)}</li>`).join("")}</ul>` : "none.")+`</li>`
+    +`<li><strong>The lord.</strong> `+(L ? `${s23PlanetLine(L.planet)} sits in the ${ord(L.house)} house, ${s23RashiCell(L.sign)} · ${L.dignity} · <span class="s23-chip">${L.strength==="depends"?"strength depends":L.strength}</span>`
+        +`<p class="s23-placement">${_esc(L.placement_line)}</p><p class="s23-text">${s23Para(L.text)} ${s23Tag(L.status)}</p>`
+        +(L.dictum?`<p class="s23-dictum"><strong>${_esc(L.dictum)}</strong></p>`:"") : "its sign is not known.")+`</li>`
+    +`<li><strong>With / aspecting the lord.</strong> `+(b.with_lord.length ? `<ul>${b.with_lord.map(w=>`<li>${s23PlanetLine(w.planet, w.how==="with"?" is with the lord":` aspects the lord (${w.aspect})`)}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}${s23MeaningList(w.meanings)}</li>`).join("")}</ul>` : "none.")+`</li>`
+    +`</ol>`;
+  return h;
+}
+function s23AreaPane(a){
+  const multi=a.bhavas.length>1;
+  let h=`<h4 class="pane-h">${a.no} · ${_esc(a.area)}</h4>`
+    +`<p class="rnote">Ready Reckoner: ${a.houses.map(ord).join(" and ")} house${multi?"s":""} and lord${multi?"s":""} · karaka ${S23.life_areas.find(r=>r.no===a.no).karakas.join(" + ")}${s23Src(a.source)}</p>`;
+  h+=a.bhavas.map(b=>s23AreaBhava(b, multi)).join("");
+  h+=`<ol class="s23-steps" start="6"><li><strong>The karaka.</strong> `+(a.karakas.length ? `<ul>${a.karakas.map(k=>`<li>${s23PlanetLine(k.planet)} in the ${ord(k.house)} house, ${s23RashiCell(k.sign)} · ${k.dignity} · <span class="s23-chip">${k.strength==="depends"?"strength depends":k.strength}</span>`
+      +(k.combust?` <span class="s23-chip lost">combust</span>`:"")+(k.retro?` <span class="section-flag flag-retro">℞ Retro</span>`:"")
+      +(k.note?`<p class="rnote s23-karaka-note">${_esc(k.note)}</p>`:"")+`</li>`).join("")}</ul>` : "not placed in this chart.")+`</li>`;
+  if(a.pac!==null){
+    h+=`<li><strong>PAC link between the ${a.houses.map(ord).join(" and ")}.</strong> `+(a.pac.length?`<ul>${a.pac.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`:"none found.")
+      +` <span class="s23-sub">${a.planet_link!==null?"Mercury and Ketu:":""}</span> `+(a.planet_link && a.planet_link.length?`<ul>${a.planet_link.map(x=>`<li>${_esc(x)}</li>`).join("")}</ul>`:"no conjunction or aspect.")+`</li>`;
+  }
+  h+=`<li><strong>Summary.</strong><div class="s23-sumgrid"><div><p class="s23-sub">Supports</p><ul class="s23-supports">${a.supports.map(x=>`<li>${_esc(x)}</li>`).join("")||"<li>—</li>"}</ul></div>`
+    +`<div><p class="s23-sub">Pressure</p><ul class="s23-pressure">${a.pressure.map(x=>`<li>${_esc(x)}</li>`).join("")||"<li>—</li>"}</ul></div></div></li></ol>`;
+  return h;
+}
+function renderS23LifeAreas(el, ctx){
+  const areas=s23LifeAreas(ctx);
+  if(!areas.some(a=>a.no===s23AreaShown)) s23AreaShown=areas[0].no;
+  let h=`<p>Session 27: to answer a question about one area of life, read its bhāva from the <strong>Ready Reckoner</strong> in seven steps — the bhāva and its sign, the planets in it, the planets aspecting it, where its lord sits, the planets with or aspecting the lord, and the bhāva kāraka — then weigh what supports it against what presses on it. There is no score; the two lists are for you to weigh.</p>`;
+  h+=s23TagLegend();
+  h+=`<div class="s23-area-btns rtab-bar">${areas.map(a=>`<button type="button" class="rtab s23-area-btn${a.no===s23AreaShown?" active":""}" data-area="${a.no}">${_esc(a.area)}</button>`).join("")}</div>`;
+  h+=areas.map(a=>`<div class="rpane s23-area-pane" id="s23-area-${a.no}" data-print-title="Life area ${a.no} · ${_esc(a.area)}"${a.no===s23AreaShown?"":` style="display:none"`}>${s23AreaPane(a)}</div>`).join("");
+  el.innerHTML=h;
+  el.onclick=e=>{
+    const b=e.target.closest(".s23-area-btn"); if(!b) return;
+    s23AreaShown=+b.dataset.area;
+    el.querySelectorAll(".s23-area-btn").forEach(x=>x.classList.toggle("active", x===b));
+    el.querySelectorAll(".s23-area-pane").forEach(p=>p.style.display=(p.id==="s23-area-"+s23AreaShown)?"":"none");
+  };
 }
 
 /* ---- Daśā–Bhukti section: roles linked to the running Mahādaśā / Bhukti ---- */
@@ -6988,6 +7058,7 @@ function runUxRefine(){
       ["Planetary Details",["Graha Placements","Graha Drishti","Tatwa","Chara","Exaltation","Kuja","Classification"]],
       ["Bhāvas (Houses)",["Bhāva Analysis"]],
       ["Daśā–Bhukti",["Daśā–Bhukti"]],
+      ["Life areas",["Life areas"]],
       ["Predictive & Remedies",["Predictive","Jyothirlinga","Gurubala","Sade Sati","Saturn Combinations","Parihara"]],
       ["Choughadiya",["Choughadiya"]],
       ["Mantras",["Akshara","Beejakshari","Mantra"]]
