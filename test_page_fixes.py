@@ -510,6 +510,44 @@ class LabelsAndText(unittest.TestCase):
 
 
 @needs_browser
+class LayerOneCards(unittest.TestCase):
+    """Graha + Bhava cards: Session 26 lines, the 12th-house line after the dignity line, source chips."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate(() => {
+              // Simha Lagna; Jupiter 5 deg Karkataka (deep exalted) in the 12th; Venus in Kanya (2nd)
+              const sid = {Sun: 20, Moon: 200, Mars: 300, Mercury: 40, Jupiter: 95, Venus: 160, Saturn: 250, Rahu: 10, Ketu: 190};
+              renderS23Sections(sid, 5);
+              const card = p => document.querySelector(`#s23-predict-body .s23-gb[data-planet="${p}"]`);
+              const jup = card('Jupiter');
+              const digP = jup.querySelector('.s23-dig-line').closest('p'), tw = jup.querySelector('.s23-twelfth');
+              return {jup: jup.textContent, digText: digP.textContent, nextIsTwelfth: digP.nextElementSibling === tw,
+                      twelfth: tw ? tw.textContent : '', venus: card('Venus').textContent, sun: card('Sun').textContent,
+                      chips: [...jup.querySelectorAll('.s23-src')].map(e => e.textContent)};
+            });
+        """)
+
+    def test_card_shows_nature_twelfth_and_source(self):
+        r = self.r
+        self.assertIn("benefic", r["jup"])
+        self.assertIn("Benefic planets bring ease and comfort", r["jup"])
+        self.assertTrue(any(c.startswith("S24 p.") for c in r["chips"]), r["chips"])
+        self.assertIn("Deep Exalted:", r["digText"])
+        self.assertTrue(r["nextIsTwelfth"])                    # right after the dignity line
+        self.assertIn("even exalted, is in the bucket of losses", r["twelfth"])
+
+    def test_benefic_house_line_and_mild_sun(self):
+        self.assertIn("A benefic in the 2nd house indicates that", self.r["venus"])
+        self.assertIn("mild malefic", self.r["sun"])
+        self.assertIn("(mild) Malefic planets bring struggle", self.r["sun"])
+
+
+@needs_browser
 class DashaOutsideItsSpan(unittest.TestCase):
     def test_no_running_period_is_claimed_outside_the_120_years(self):
         r = run_page("""

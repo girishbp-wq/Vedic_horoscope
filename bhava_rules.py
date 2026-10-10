@@ -424,6 +424,24 @@ def _dignity_texts(rules, d):
     return f"{d['label']}: {eff['text']}", eff["status"]
 
 
+def bhava_nature_lines(rules, planet, house):
+    """Session 26 lines for a planet of this nature in this house: the general line, the house's lines, then lines
+    for this planet itself (R11). The Sun, a mild malefic, takes the malefic lines marked "(mild) " (R10)."""
+    kind = nature_class(planet)
+    rows = [r for r in rules["bhava_nature"] if r["nature"] in (kind, "any") and r["house"] in (None, house)
+            and r["planet"] in (None, planet)]
+    group = lambda r: 0 if r["house"] is None else 1 if r["planet"] is None else 2
+    return [{"text": ("(mild) " if planet == MILD_MALEFIC else "") + r["text"], "status": r["status"], "source": r["source"]}
+            for r in sorted(rows, key=group)]
+
+
+def twelfth_line(rules, house):
+    """The 12th-house line (S23-2024 p.19, S24 p.13, S25 p.29), shown right after the dignity line."""
+    if house != 12:
+        return ""
+    return next((r["text"] for r in rules["conditions"] if r["key"] == "twelfth_house"), "")
+
+
 def graha_bhava(rules, lagna, signs, planet, deg, waxing):
     """Layer 1: the planet's cell text for its house, dignity line, digbala line and class readings."""
     house = house_of(lagna, signs[planet])
@@ -442,8 +460,9 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing):
         digbala_line = ""
     return {"planet": planet, "house": house, "nature": nature(planet),
             "moon_strength": moon_strength(waxing) if planet == "Moon" else "",
-            "status": cell["status"], "points": cell["points"],
+            "status": cell["status"], "source": cell["source"], "points": cell["points"],
             "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
+            "twelfth_line": twelfth_line(rules, house), "nature_lines": bhava_nature_lines(rules, planet, house),
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
             "classes": reading["classes"], "class_texts": reading["texts"]}
 

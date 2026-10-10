@@ -579,7 +579,9 @@ details.section[open] > summary::after { content: "−"; }
 .s23-chip.lost { background: #fde0e0; color: #8a1e22; border-color: #e3a2a4; }
 .s23-chip.s23-nature.benefic { background: #e8f3ea; color: #2d6a3a; border-color: #a9d1b2; }
 .s23-chip.s23-nature.malefic, .s23-chip.s23-nature.mild-malefic { background: #f7ece4; color: #7a3b16; border-color: #dcb79c; }
-.s23-points, .s23-extra, .s23-class-texts { margin: 2px 0 6px; padding-left: 18px; }
+.s23-points, .s23-extra, .s23-class-texts, .s23-nature-lines { margin: 2px 0 6px; padding-left: 18px; }
+.s23-src { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 8px; background: #efe9f7; color: #5a3d7a; border: 1px solid #d6c8ea; white-space: nowrap; }
+.s23-twelfth-line { font-style: italic; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
 .s23-pairs { padding-left: 18px; margin: 4px 0 12px; }
@@ -6336,6 +6338,18 @@ function s23WatchPeriods(D, roles, now, years){
 }
 
 /* ---- the four prediction layers ---- */
+function s23BhavaNatureLines(p, house){
+  const kind=s23NatureClass(p);
+  const rows=S23.bhava_nature.filter(r=>(r.nature===kind||r.nature==="any") && (r.house===null||r.house===house) && (r.planet===null||r.planet===p));
+  const group=r=>r.house===null ? 0 : (r.planet===null ? 1 : 2);
+  return rows.map((r,i)=>[group(r),i,r]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])
+    .map(([,,r])=>({text:(p==="Sun"?"(mild) ":"")+r.text, status:r.status, source:r.source}));
+}
+function s23TwelfthLine(house){
+  if(house!==12) return "";
+  const r=S23.conditions.find(x=>x.key==="twelfth_house");
+  return r ? r.text : "";
+}
 function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
   const lg=lagnaN-1, sg=s23Signs(pbr), house=s23HouseOf(lg,sg[planet]);
   const cell=S23.graha_in_bhava.find(x=>x.planet===planet && x.house===house);
@@ -6347,8 +6361,9 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
   if(dg==="strong") digbalaLine=`${planet} gains directional strength (digbala) in the ${ord(house)} house.`;
   else if(dg==="lost") digbalaLine=`${planet} loses directional strength (digbala) in the ${ord(house)} house, opposite its strongest house, the ${ord(row.strong)}.`;
   return {planet, house, nature:s23NatureAt(planet), moon_strength: planet==="Moon" ? s23MoonStrength(moonWaxing) : "",
-    status:cell.status, points:cell.points, extra:cell.extra,
+    status:cell.status, source:cell.source, points:cell.points, extra:cell.extra,
     dignity:{label:dig.label, flag:dig.flag, bala:dig.bala, note:dig.note}, dignity_line:dignityLine, dignity_status:dignityStatus,
+    twelfth_line:s23TwelfthLine(house), nature_lines:s23BhavaNatureLines(planet, house),
     digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts};
 }
 function s23ShortName(nm){ return nm.split(" · ")[0].split(" (")[0]; }
@@ -6445,6 +6460,7 @@ const S23_TAG_TITLES = {
   blend:    "Generated from her tables by a template",
   standard: "A standard rule she has not stated yet"
 };
+function s23Src(source){ return source ? ` <span class="s23-src" title="Where the teacher says this">${_esc(source)}</span>` : ""; }
 function s23Tag(status){ return status ? `<span class="s23-tag ${status}" title="${S23_TAG_TITLES[status]}">${status}</span>` : ""; }
 function s23Inputs(sid){
   const pbr={}, degs={};
@@ -6545,11 +6561,13 @@ function s23BuildPredictions(sid, lagnaN){
       +`<span class="section-flag flag-${g.dignity.flag}${deep} s23-dig">${g.dignity.label}</span>`
       +(g.digbala_line?`<span class="s23-chip ${s23Digbala(p,g.house)}">Digbala ${s23Digbala(p,g.house)==="strong"?"✓":"✗"}</span>`:"")
       +`<span class="s23-chip">${g.classes.join(" · ")||"—"}</span></p>`
-      +`<ul class="s23-points">${g.points.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`
+      +`<ul class="s23-points">${g.points.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>${s23Src(g.source)}`
       +(g.extra.length?`<p class="s23-sub">From the recording</p><ul class="s23-extra">${g.extra.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`:"")
       +`<p class="s23-sub">Strength</p>`
       +(g.dignity_line?`<p><span class="s23-dig-line">${_esc(g.dignity_line)}</span> ${s23Tag(g.dignity_status)}</p>`:"")
+      +(g.twelfth_line?`<p class="s23-twelfth"><span class="s23-twelfth-line">${_esc(g.twelfth_line)}</span> ${s23Tag("taught")}</p>`:"")
       +(g.digbala_line?`<p><span class="s23-digbala-line">${_esc(g.digbala_line)}</span> ${s23Tag(g.digbala_status)}</p>`:"")
+      +(g.nature_lines.length?`<p class="s23-sub">A ${g.nature} in this house (Session 26)</p><ul class="s23-nature-lines">${g.nature_lines.map(x=>`<li>${_esc(x.text)} ${s23Tag(x.status)}${s23Src(x.source)}</li>`).join("")}</ul>`:"")
       +(g.class_texts.length?`<p class="s23-sub">From the bhāva classes</p><ul class="s23-class-texts">${g.class_texts.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
       +`</div>`;
   }

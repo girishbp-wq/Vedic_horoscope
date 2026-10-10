@@ -673,3 +673,43 @@ class Helpers(unittest.TestCase):
 
     def test_male_signs(self):
         self.assertEqual([s for s in range(12) if br.is_male_sign(RULES, s)], [0, 2, 4, 6, 8, 10])
+
+
+class LayerOne(unittest.TestCase):
+    """Session 26 benefic/malefic lines and the 12th-house line on each Graha + Bhava card."""
+
+    def gb(self, planet, sign, signs=None, deg=None):
+        return br.graha_bhava(RULES, LAGNA, dict(signs or SIGNS, **{planet: sign}), planet, deg, True)
+
+    def test_benefic_in_2nd_gets_general_and_house_lines(self):
+        lines = [x["text"] for x in self.gb("Venus", 5)["nature_lines"]]      # Kanya = 2nd for Simha Lagna
+        self.assertTrue(lines[0].startswith("Benefic planets bring ease and comfort"), lines[0])
+        self.assertTrue(lines[1].startswith("A benefic in the 2nd house indicates that"), lines[1])
+        self.assertFalse(any("malefic" in t.lower() and "benefic" not in t.lower() for t in lines))
+
+    def test_saturn_in_3rd_gets_its_own_line(self):
+        sat = [x["text"] for x in self.gb("Saturn", 6)["nature_lines"]]       # Tula = 3rd
+        mars = [x["text"] for x in self.gb("Mars", 6)["nature_lines"]]
+        own = [t for t in sat if t not in mars]
+        self.assertEqual(len(own), 1)
+        self.assertIn("younger co borns", own[0])
+        self.assertTrue(sat[0].startswith("Malefic planets bring struggle and pressure"))
+
+    def test_any_planet_rows_apply_to_both_natures(self):
+        jup = [x["text"] for x in self.gb("Jupiter", 9)["nature_lines"]]     # Makara = 6th
+        self.assertTrue(any("dusthana and a malefic house" in t for t in jup), jup)
+
+    def test_sun_lines_are_mild(self):
+        lines = [x["text"] for x in self.gb("Sun", 0)["nature_lines"]]         # Mesha = 9th
+        self.assertTrue(lines)
+        self.assertTrue(all(t.startswith("(mild) ") for t in lines), lines)
+        self.assertTrue(all(x["status"] == "taught" and x["source"].startswith("S26 p.") for x in self.gb("Sun", 0)["nature_lines"]))
+
+    def test_exalted_in_12th_keeps_the_bucket_line(self):
+        jup = self.gb("Jupiter", 3, deg=5)                                    # Karkataka = 12th, exalted
+        self.assertEqual((jup["house"], jup["dignity"]["label"]), (12, "Deep Exalted"))
+        self.assertIn("even exalted, is in the bucket of losses", jup["twelfth_line"])
+        self.assertEqual(self.gb("Jupiter", 2)["twelfth_line"], "")
+
+    def test_card_carries_its_source(self):
+        self.assertTrue(self.gb("Jupiter", 10)["source"].startswith("S24 p."))

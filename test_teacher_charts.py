@@ -71,3 +71,16 @@ class S27Chart1(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class S23_2024(unittest.TestCase):
+    def test_moon_readings_have_no_malefic_lines(self):
+        malefic = {r["text"] for r in RULES["bhava_nature"] if r["nature"] == "malefic"}
+        malefic |= {r["text"] for r in RULES["class_rules"] if r["applies"] == "malefic"}
+        for name in ("S23_2024_A", "S23_2024_B", "S23_2024_C", "S23_2024_D"):
+            c = CHARTS[name]
+            g = br.graha_bhava(RULES, c["lagna"], c["signs"], "Moon", c["degs"]["Moon"], False)   # A, C, D are waning
+            self.assertEqual(g["status"], "taught", name)
+            self.assertEqual(g["nature"], "benefic", name)
+            self.assertFalse({x["text"] for x in g["nature_lines"]} & malefic, name)
+            self.assertFalse(set(g["class_texts"]) & malefic, name)
