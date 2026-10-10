@@ -396,7 +396,7 @@ class Vimshottari(unittest.TestCase):
 
 class PartialCharts(unittest.TestCase):
     def test_bhava_bhava_skips_lords_whose_sign_is_not_given(self):
-        rows = br.bhava_bhava(RULES, LAGNA, {"Sun": 4})                   # only the Sun is known
+        rows = br.bhava_bhava(RULES, br.context(LAGNA, {"Sun": 4}))                   # only the Sun is known
         self.assertEqual({r["lord"] for r in rows}, {"Sun"})
         self.assertEqual(len(rows), 1)
 
@@ -449,7 +449,7 @@ class PredictionLayers(unittest.TestCase):
     def test_taught_examples_are_verbatim(self):
         # layer 2: second lord (Mercury for Simha Lagna) in the 7th (Kumbha)
         in7 = dict(SIGNS, Mercury=10)
-        row = next(r for r in br.bhava_bhava(RULES, LAGNA, in7) if (r["lord_of"], r["sits_in"]) == (2, 7))
+        row = next(r for r in br.bhava_bhava(RULES, br.context(LAGNA, in7)) if (r["lord_of"], r["sits_in"]) == (2, 7))
         want = next(x for x in RULES["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (2, 7))
         self.assertEqual((row["status"], row["text"]), ("taught", want["text"]))
         # layer 4: Jupiter and Mercury in one sign
@@ -531,16 +531,19 @@ class PredictionLayers(unittest.TestCase):
         self.assertIn("Spouse", f["significations"])
 
     def test_bhava_bhava_blends_and_marks_own_house(self):
-        rows = br.bhava_bhava(RULES, LAGNA, SIGNS)
-        self.assertEqual([r["lord_of"] for r in rows], list(range(1, 13)))
+        rows = br.bhava_bhava(RULES, br.context(LAGNA, SIGNS))
+        # Venus (10th lord) in Mithuna and Mercury (11th lord) in Vrishabha: one Parivartana entry under the 10th
+        self.assertEqual([r["lord_of"] for r in rows], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12])
+        self.assertEqual(next(r for r in rows if r["lord_of"] == 10)["exchange"], 11)
         mars = next(r for r in rows if r["lord_of"] == 4)                    # Mars owns the 4th, sits in the 12th
         self.assertEqual((mars["lord"], mars["sits_in"], mars["status"]), ("Mars", 12, "blend"))
-        self.assertIn("Dusthana", mars["text"])
+        self.assertIn("Dusthana", mars["placement_line"])
+        self.assertIn("A difficult placement.", mars["placement_line"])
         self.assertIn(RULES["reference"]["BHAVA_INFO"]["4"]["sig"].rstrip("."), mars["text"])
         self.assertIn(RULES["reference"]["BHAVA_INFO"]["12"]["sig"].rstrip("."), mars["text"])
-        own = next(r for r in br.bhava_bhava(RULES, LAGNA, dict(SIGNS, Jupiter=8)) if r["lord_of"] == 5)
+        own = next(r for r in br.bhava_bhava(RULES, br.context(LAGNA, dict(SIGNS, Jupiter=8))) if r["lord_of"] == 5)
         self.assertEqual((own["sits_in"], own["status"]), (5, "blend"))      # the 5th lord in the 5th is not taught
-        self.assertIn("own bhava", own["text"])
+        self.assertIn("own bhava", own["placement_line"])
 
     def test_graha_rashi_blends_rashi_fields_and_dignity(self):
         moon = next(r for r in br.graha_rashi(RULES, LAGNA, dict(SIGNS, Moon=8), {"Moon": 5.0}) if r["planet"] == "Moon")
@@ -577,7 +580,7 @@ class PredictionLayers(unittest.TestCase):
         for p in br.PLANET_ORDER:
             g = br.graha_bhava(RULES, LAGNA, chart, p, None, True)
             seen |= {g["status"], g["digbala_status"], g["dignity_status"]}
-        seen |= {r["status"] for r in br.bhava_bhava(RULES, LAGNA, chart)}
+        seen |= {r["status"] for r in br.bhava_bhava(RULES, br.context(LAGNA, chart))}
         seen |= {r["status"] for r in br.graha_rashi(RULES, LAGNA, chart, {})}
         gg = br.graha_graha(RULES, LAGNA, chart)
         seen |= {c["status"] for c in gg["conjunctions"]} | {a["status"] for a in gg["aspects"]}
@@ -832,3 +835,74 @@ class Conditions(unittest.TestCase):
     def test_order_follows_the_key_list(self):
         got = [c["key"] for c in self.conds(self.base(Saturn=7, Jupiter=8, Mercury=12), age=20, maha="Jupiter")]
         self.assertEqual(got, sorted(got, key=br.CONDITION_KEYS.index))
+
+
+
+class LayerTwo(unittest.TestCase):
+    """Session 27: the lord of house X in house Y, in sign S."""
+
+    def entry(self, lagna, signs, x, degs=None):
+        return next(r for r in br.bhava_bhava(RULES, br.context(lagna, signs, degs or {})) if r["lord_of"] == x)
+
+    def rows(self, x, y, cond=""):
+        return next(r["text"] for r in RULES["bhava_lord_in"]
+                    if (r["lord_of"], r["sits_in"], r["condition"], r["exchange"]) == (x, y, cond, False))
+
+    def test_depends_shows_both_lines(self):
+        e = self.entry(3, {"Moon": 8}, 1)                                   # Karkataka Lagna, Moon in Dhanu (6th)
+        self.assertEqual((e["sits_in"], e["strength"], e["status"]), (6, "depends", "taught"))
+        self.assertEqual(e["text"], "\n\n".join([self.rows(1, 6), self.rows(1, 6, "strong"), self.rows(1, 6, "weak")]))
+
+    def test_weak_lord_shows_weak_line(self):
+        e = self.entry(4, {"Sun": 9}, 1)                                    # Simha Lagna, Sun in Makara: Saturn's, an enemy
+        self.assertEqual((e["sits_in"], e["strength"]), (6, "weak"))
+        self.assertEqual(e["text"], "\n\n".join([self.rows(1, 6), self.rows(1, 6, "weak")]))
+
+    def test_strong_lord_shows_strong_line(self):
+        e = self.entry(4, {"Sun": 11}, 1)                                   # Sun in Meena (8th): Jupiter's, a friend
+        self.assertEqual((e["sits_in"], e["strength"]), (8, "strong"))
+        self.assertEqual(e["text"], "\n\n".join([self.rows(1, 8), self.rows(1, 8, "strong")]))
+
+    def test_difficult_placement_wording(self):
+        e = self.entry(LAGNA, SIGNS, 4)                                     # Mars, 4th lord, in the 12th
+        self.assertEqual(e["placement"], ["Dusthana"])
+        self.assertEqual(e["placement_line"], "Placed in the 12th house, a Dusthana bhava. A difficult placement.")
+        k = self.entry(LAGNA, dict(SIGNS, Mars=0), 4)                       # Mesha = 9th: Trikona, and Badhaka for Simha
+        self.assertTrue(k["placement_line"].startswith("Placed in the 9th house, a Trikona and Badhaka bhava. Planets posited in a Trikona"),
+                        k["placement_line"])
+        self.assertNotIn("difficult", k["placement_line"])
+
+    def test_blend_names_the_sign_and_both_houses(self):
+        e = self.entry(LAGNA, SIGNS, 4)
+        self.assertEqual(e["status"], "blend")
+        self.assertTrue(e["text"].startswith("The lord of the 4th house ("), e["text"])
+        self.assertIn("in Karkataka", e["text"])
+        self.assertEqual(e["sign_line"], br.sign_line(RULES, 3))
+
+    def test_dictum_when_the_lord_aspects_its_house(self):
+        e = self.entry(0, {"Mars": 5}, 1)                                   # Mesha Lagna, Mars in Kanya: 8th aspect on Mesha
+        self.assertEqual(e["dictum"], "The lord aspects its own house, so the 1st house is strong.")
+        self.assertEqual(self.entry(0, {"Mars": 4}, 1)["dictum"], "")        # Simha: Mars aspects Vrischika, Kumbha, Meena
+
+    def test_with_and_aspecting_the_lord(self):
+        e = self.entry(0, {"Venus": 9, "Jupiter": 9, "Ketu": 5, "Saturn": 4, "Mars": 2}, 7)
+        self.assertEqual(e["with_lord"][0], {"planet": "Jupiter", "how": "with", "aspect": "", "rules": [9, 12], "meanings": []})
+        ketu = [w for w in e["with_lord"] if w["planet"] == "Ketu"]
+        self.assertEqual([(w["how"], w["aspect"]) for w in ketu], [("aspect", br.aspect_name("Ketu", 5))])
+        self.assertNotIn("Venus", [w["planet"] for w in e["with_lord"]])
+
+    def test_parivartana_is_one_entry(self):
+        rows = br.bhava_bhava(RULES, br.context(6, {"Saturn": 4, "Sun": 9}))     # Tula: 4L Saturn in Simha, 11L Sun in Makara
+        four = next(r for r in rows if r["lord_of"] == 4)
+        self.assertEqual((four["exchange"], four["status"]), (11, "taught"))
+        self.assertTrue(four["text"].startswith("There is a Parivartana between 4 th Lord Saturn and 11 th lord Sun"))
+        self.assertNotIn(11, [r["lord_of"] for r in rows])
+        self.assertIsNone(next(r for r in rows if r["lord_of"] == 5)["exchange"])   # 5L Saturn in the 11th: no exchange
+
+    def test_parivartana_without_her_text_is_a_blend_of_both_houses(self):
+        rows = br.bhava_bhava(RULES, br.context(0, {"Mars": 9, "Saturn": 0}))     # Mesha: 1L Mars in Makara, 10L/11L Saturn in Mesha
+        one = next(r for r in rows if r["lord_of"] == 1)
+        self.assertEqual((one["exchange"], one["status"]), (10, "blend"))
+        self.assertTrue(one["text"].startswith("Parivartana: the lords of the 1st and 10th houses have exchanged signs."))
+        self.assertNotIn(10, [r["lord_of"] for r in rows])
+        self.assertIn(11, [r["lord_of"] for r in rows])

@@ -96,3 +96,57 @@ class Conditions(unittest.TestCase):
         c = next(c for c in got if c["key"] == "first_child_male")
         self.assertEqual((c["planet"], c["house"], c["source"]), ("Saturn", 5, "S27 p.24"))
         self.assertIn("first child is Male", c["text"])
+
+
+
+def layer2(name, house):
+    return next(r for r in br.bhava_bhava(RULES, ctx(name)) if r["lord_of"] == house or r["exchange"] == house)
+
+
+class S27LayerTwo(unittest.TestCase):
+    def test_lagna_lord_in_6th(self):
+        e = layer2("S23_2024_C", 1)
+        self.assertEqual((e["lord"], e["sits_in"], RULES["reference"]["RASHI"][e["sign"]]["sanskrit"]), ("Mars", 6, "Kanya"))
+        self.assertIn("continuous or repeated", e["sign_line"])
+        self.assertIn("property", e["sign_line"])
+        self.assertEqual(e["dictum"], "The lord aspects its own house, so the 1st house is strong.")
+        self.assertEqual(e["status"], "taught")
+        self.assertTrue(e["text"].startswith("It is a difficult placement"))
+        self.assertIn("In her example chart (S27)", e["text"])
+
+    def test_7th_lord_with_jupiter_and_ketu_aspect(self):
+        e = layer2("S23_2024_C", 7)
+        self.assertEqual((e["lord"], e["sits_in"], e["status"]), ("Venus", 10, "taught"))
+        jup = next(w for w in e["with_lord"] if w["planet"] == "Jupiter")
+        self.assertEqual((jup["how"], jup["rules"]), ("with", [9, 12]))
+        ketu = next(w for w in e["with_lord"] if w["planet"] == "Ketu")
+        self.assertEqual((ketu["how"], ketu["aspect"]), ("aspect", br.aspect_name("Ketu", 5)))
+
+    def test_chart_2_third_lord_in_third(self):
+        e = layer2("S27_CHART_2", 3)
+        self.assertEqual((e["lord"], e["sits_in"], e["status"], e["source"]), ("Jupiter", 3, "taught", "S27 p.22"))
+
+    def test_chart_2_parivartana_4_11(self):
+        rows = br.bhava_bhava(RULES, ctx("S27_CHART_2"))
+        four = next(r for r in rows if r["lord_of"] == 4)
+        self.assertEqual((four["exchange"], four["status"]), (11, "taught"))
+        self.assertNotIn(11, [r["lord_of"] for r in rows])
+
+    def test_book_chart_saturn_mars_exchange(self):
+        rows = br.bhava_bhava(RULES, ctx("BOOK_SRI_CHAITANYA"))
+        # Tula Lagna: Mars (2L, 7L) in Makara (4th); Saturn (4L, 5L) in Vrischika (2nd)
+        e = next(r for r in rows if r["exchange"])
+        self.assertEqual((e["lord_of"], e["lord"], e["exchange"]), (2, "Mars", 4))
+
+
+class S26Series(unittest.TestCase):
+    def test_lagna_lord_in_each_house(self):
+        import session23_teacher_slides as ts
+        for h in range(1, 13):
+            c = s26_karkataka(h)
+            e = layer2(c, 1)
+            want = next(t for a, b, cond, x, t, s in ts.LORD_IN if (a, b, cond, x) == (1, h, "", False))
+            self.assertEqual(e["sits_in"], h)
+            self.assertTrue(e["text"].startswith(want), h)
+        eleventh = s26_karkataka(11)
+        self.assertEqual(br.dignity(RULES, "Moon", eleventh["signs"]["Moon"], 3)["label"], "Deep Exalted")   # S26 p.26

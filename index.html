@@ -583,6 +583,8 @@ details.section[open] > summary::after { content: "−"; }
 .s23-src { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 8px; background: #efe9f7; color: #5a3d7a; border: 1px solid #d6c8ea; white-space: nowrap; }
 .s23-twelfth-line { font-style: italic; }
 .s23-conds { margin: 2px 0 6px; padding-left: 18px; }
+.s23-chip.s23-exchange { background: #e6eefb; color: #24467a; border-color: #b4c7e8; }
+#s23-bb td p { margin: 0 0 4px; }
 .s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
@@ -6428,30 +6430,67 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
     digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts};
 }
 function s23ShortName(nm){ return nm.split(" · ")[0].split(" (")[0]; }
-function s23PositionWording(lg, lordOf, sitsIn){
-  if(lordOf===sitsIn) return "The lord sits in its own bhava, so the matters of this house are protected and strengthened.";
-  const classes=["Kendra","Trikona","Dusthana"].filter(c=>s23ClassHousesAt(c,lg).includes(sitsIn));
-  if(!classes.length) return `The lord is placed in the ${ord(sitsIn)} house.`;
+const S23_PLACEMENT_CLASSES = ["Kendra","Trikona","Dusthana","Badhaka"];
+function s23Placement(lg, lordOf, sitsIn){
+  if(lordOf===sitsIn) return [[], "The lord sits in its own bhava, so the matters of this house are protected and strengthened."];
+  const classes=S23_PLACEMENT_CLASSES.filter(c=>s23ClassHousesAt(c,lg).includes(sitsIn));
+  let line=`Placed in the ${ord(sitsIn)} house`+(classes.length?`, a ${classes.join(" and ")} bhava`:"")+".";
   const texts=[];
-  for(const c of classes) for(const r of S23.class_rules)
+  for(const c of ["Kendra","Trikona"]) if(classes.includes(c)) for(const r of S23.class_rules)
     if(r.class===c && r.applies==="any" && !r.exclude_houses.includes(sitsIn)) texts.push(r.text);
-  return `Placed in the ${ord(sitsIn)} house, a ${classes.join(" and ")} bhava: `+texts.join(" ");
+  if(texts.length) line+=" "+texts.join(" ");
+  if([6,8,12].includes(sitsIn)) line+=" A difficult placement.";
+  return [classes, line];
 }
-function s23BhavaBhava(lagnaN, pbr){
-  const lg=lagnaN-1, sg=s23Signs(pbr), out=[];
-  for(let h=1;h<=12;h++){
-    const lord=s23HouseLord(lg,h), sits=s23HouseOf(lg,sg[lord]);
-    const taught=S23.bhava_lord_in.find(x=>x.lord_of===h && x.sits_in===sits);
-    let text, status;
-    if(taught){ text=taught.text; status=taught.status; }
-    else {
-      const a=BHAVA_INFO[h], b=BHAVA_INFO[sits];
-      text=`The lord of the ${ord(h)} house (${s23ShortName(a.nm)}) is placed in the ${ord(sits)} house (${s23ShortName(b.nm)}). `
-        +`Blend their karakatwas — ${ord(h)} house: ${s23Clean(a.sig)}. ${ord(sits)} house: ${s23Clean(b.sig)}. `
-        +`People: ${a.rel} with ${b.rel}. Body: ${a.body} with ${b.body}. ${s23PositionWording(lg,h,sits)}`;
-      status="blend";
+function s23Dictum(ctx, house){
+  const lord=s23HouseLord(ctx.lagna, house), target=s23HouseSign(ctx.lagna, house);
+  if(ctx.signs[lord]!==undefined && s23AspectSigns(lord, ctx.signs[lord]).some(([,t])=>t===target))
+    return `The lord aspects its own house, so the ${ord(house)} house is strong.`;
+  return "";
+}
+function s23WithLord(ctx, lord){
+  const sg=ctx.signs, lg=ctx.lagna;
+  const out=S23_PLANETS.filter(p=>p!==lord && sg[p]!==undefined && sg[p]===sg[lord])
+    .map(p=>({planet:p, how:"with", aspect:"", rules:s23LordsHouses(lg,p), meanings:[]}));
+  for(const a of s23AspectsOn(ctx, sg[lord])) if(a.by!==lord)
+    out.push({planet:a.by, how:"aspect", aspect:aspectOrd(a.by, a.house_aspect), rules:s23LordsHouses(lg,a.by), meanings:[]});
+  return out;
+}
+function s23Blend(x, y, sign){
+  const a=BHAVA_INFO[x], b=BHAVA_INFO[y];
+  return `The lord of the ${ord(x)} house (${s23ShortName(a.nm)}) is placed in the ${ord(y)} house (${s23ShortName(b.nm)}), in ${RASHI[sign].sanskrit}. `
+    +`Blend their karakatwas — ${ord(x)} house: ${s23Clean(a.sig)}. ${ord(y)} house: ${s23Clean(b.sig)}. `
+    +`People: ${a.rel} with ${b.rel}. Body: ${a.body} with ${b.body}.`;
+}
+function s23ExchangeBlend(x, y){
+  return `Parivartana: the lords of the ${ord(x)} and ${ord(y)} houses have exchanged signs. Blend the two houses — `
+    +`${ord(x)} house: ${s23Clean(BHAVA_INFO[x].sig)}. ${ord(y)} house: ${s23Clean(BHAVA_INFO[y].sig)}.`;
+}
+function s23BhavaBhava(ctx){
+  const lg=ctx.lagna, sg=ctx.signs, out=[], lordOf={}, sits={};
+  for(let h=1;h<=12;h++){ lordOf[h]=s23HouseLord(lg,h); if(sg[lordOf[h]]!==undefined) sits[h]=s23HouseOf(lg, sg[lordOf[h]]); }
+  for(let x=1;x<=12;x++){
+    if(sits[x]===undefined) continue;
+    const lord=lordOf[x], y=sits[x];
+    const swap=(y!==x && sits[y]===x && lordOf[y]!==lord) ? y : null;
+    if(swap!==null && swap<x) continue;
+    const strength=s23Strength(ctx, lord);
+    let text, status, source, dictum;
+    if(swap!==null){
+      const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x)));
+      [text, status, source] = row ? [row.text, row.status, row.source] : [s23ExchangeBlend(x,y), "blend", ""];
+      dictum=[s23Dictum(ctx,x), s23Dictum(ctx,y)].filter(Boolean).join(" ");
+    } else {
+      const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange);
+      const pick={strong:["strong"], weak:["weak"], depends:["strong","weak"]}[strength];
+      const chosen=rows.filter(r=>r.condition==="").concat(...pick.map(c=>rows.filter(r=>r.condition===c)));
+      if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
+      else [text, status, source] = [s23Blend(x, y, sg[lord]), "blend", ""];
+      dictum=s23Dictum(ctx, x);
     }
-    out.push({lord_of:h, lord, sits_in:sits, text, status});
+    const [classes, line]=s23Placement(lg, x, y);
+    out.push({lord_of:x, lord, sits_in:y, sign:sg[lord], text, status, source, sign_line:s23SignLine(sg[lord]),
+      placement:classes, placement_line:line, strength, dictum, with_lord:s23WithLord(ctx, lord), exchange:swap});
   }
   return out;
 }
@@ -6652,11 +6691,19 @@ function s23BuildPredictions(sid, lagnaN, extra){
   h+=`</div>`;
   // layer 2
   h+=`<h4 class="pane-h">2 · Bhāva + Bhāva — each bhāva lord in the house it sits in</h4>`
-    +`<p class="rnote">Taught example: the 2nd lord in the 7th. The other combinations blend the two bhāvas' karakatwas in the same way.</p>`
-    +`<div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-bb"><thead><tr><th class="w18">Lord of → sits in</th><th class="w82">Blend</th></tr></thead><tbody>`;
-  for(const r of s23BhavaBhava(lagnaN, pbr)){
-    h+=`<tr data-lord-of="${r.lord_of}" data-sits="${r.sits_in}" data-lord="${r.lord}" data-status="${r.status}">`
-      +`<td><strong>${ord(r.lord_of)} lord</strong><br>${GLYPH9[r.lord]} ${r.lord} → ${ord(r.sits_in)}<br>${s23Tag(r.status)}</td><td class="s23-text">${s23Para(r.text)}</td></tr>`;
+    +`<p class="rnote">Session 27: blend the karakatwas of the lord's own bhāva, the bhāva it sits in and the rāśi it sits in; then see where it is placed, whether it aspects its own house (that house becomes strong), and which planets are with it or aspect it. The teacher's own readings are tagged <em>taught</em> (Sessions 23, 26, 27); a Lagna lord in the 6th or 8th shows her line for a strong or weak lord.</p>`
+    +`<div class="table-scroll s23-scroll"><table class="rtable s23-table" id="s23-bb"><thead><tr><th class="w18">Lord of → sits in</th><th class="w52">Reading</th><th class="w30">Sign · placement · company</th></tr></thead><tbody>`;
+  for(const r of s23BhavaBhava(ctx)){
+    const chips=(r.dictum?`<span class="s23-chip strong" title="${_esc(r.dictum)}">dictum: ${ord(r.lord_of)} strong</span>`:"")
+      +(r.exchange?`<span class="s23-chip s23-exchange">Parivartana ${r.lord_of} ↔ ${r.exchange}</span>`:"")
+      +(r.status==="taught" && S23.bhava_lord_in.some(x=>x.lord_of===r.lord_of && x.sits_in===r.sits_in && x.condition)?`<span class="s23-chip">lord: ${r.strength==="depends"?"depends on strength":r.strength}</span>`:"");
+    const company=r.with_lord.length ? r.with_lord.map(w=>`${GLYPH9[w.planet]} ${w.planet} ${w.how==="with"?"with the lord":`aspects it (${w.aspect})`}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}`).join("; ") : "—";
+    h+=`<tr data-lord-of="${r.lord_of}" data-sits="${r.sits_in}" data-lord="${r.lord}" data-status="${r.status}" data-exchange="${r.exchange||""}" data-dictum="${r.dictum?1:0}">`
+      +`<td><strong>${ord(r.lord_of)} lord</strong><br>${GLYPH9[r.lord]} ${r.lord} → ${ord(r.sits_in)}${r.exchange?` (↔ ${ord(r.exchange)})`:""}<br>${s23Tag(r.status)}${s23Src(r.source)}<br>${chips}</td>`
+      +`<td class="s23-text">${s23Para(r.text)}</td>`
+      +`<td><p class="s23-sign-line">${_esc(r.sign_line)}</p><p class="s23-placement">${_esc(r.placement_line)}</p>`
+      +(r.dictum?`<p class="s23-dictum"><strong>${_esc(r.dictum)}</strong></p>`:"")
+      +`<p class="s23-company"><span class="s23-sub">With / aspecting the lord:</span> ${company}</p></td></tr>`;
   }
   h+=`</tbody></table></div>`;
   // layer 3

@@ -614,6 +614,33 @@ class Remedies(unittest.TestCase):
         self.assertIn("S24 p.38", r["tips"][0])
 
 
+# The teacher's S27 Chart 1 (= S23-2024 p.13): Mesha Lagna; sidereal longitudes (sign * 30 + degree)
+S27_CHART_1_SID = {"Sun": 324, "Moon": 209, "Mars": 163, "Mercury": 308, "Jupiter": 299, "Venus": 284,
+                   "Saturn": 142, "Rahu": 345, "Ketu": 165}
+
+
+@needs_browser
+class LayerTwoTable(unittest.TestCase):
+    def test_columns_and_chips(self):
+        r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            return await page.evaluate((sid) => {
+              renderS23Sections(sid, 1);
+              const row = h => document.querySelector(`#s23-bb tr[data-lord-of="${h}"]`);
+              return {one: row(1).textContent, oneDictum: row(1).dataset.dictum, seven: row(7).textContent,
+                      head: [...document.querySelectorAll('#s23-bb thead th')].map(th => th.textContent)};
+            }, %s);
+        """ % json.dumps(S27_CHART_1_SID))
+        self.assertEqual(r["head"], ["Lord of → sits in", "Reading", "Sign · placement · company"])
+        self.assertEqual(r["oneDictum"], "1")
+        for frag in ("Kanya", "continuous or repeated", "A difficult placement.", "the 1st house is strong", "S26 p.21"):
+            self.assertIn(frag, r["one"])
+        self.assertIn("Jupiter with the lord — lord of the 9th and 12th", r["seven"])
+        self.assertIn("Ketu aspects it", r["seven"])
+
+
 @needs_browser
 class DashaOutsideItsSpan(unittest.TestCase):
     def test_no_running_period_is_claimed_outside_the_120_years(self):

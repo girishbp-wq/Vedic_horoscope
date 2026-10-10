@@ -570,37 +570,93 @@ def _short_name(nm):
     return nm.split(" · ")[0].split(" (")[0]
 
 
-def _position_wording(rules, lagna, lord_of, sits_in):
+PLACEMENT_CLASSES = ("Kendra", "Trikona", "Dusthana", "Badhaka")
+
+
+def placement(rules, lagna, lord_of, sits_in):
+    """S27 p.6: the classes of the house the lord sits in, and the sentence for them. A lord in the 6th, 8th or 12th
+    is 'a difficult placement'."""
     if lord_of == sits_in:
-        return "The lord sits in its own bhava, so the matters of this house are protected and strengthened."
-    classes = [c for c in ("Kendra", "Trikona", "Dusthana") if sits_in in class_houses(rules, c, lagna)]
-    if not classes:
-        return f"The lord is placed in the {ordinal(sits_in)} house."
-    texts = [r["text"] for c in classes for r in rules["class_rules"]
+        return [], "The lord sits in its own bhava, so the matters of this house are protected and strengthened."
+    classes = [c for c in PLACEMENT_CLASSES if sits_in in class_houses(rules, c, lagna)]
+    line = f"Placed in the {ordinal(sits_in)} house" + (f", a {' and '.join(classes)} bhava" if classes else "") + "."
+    texts = [r["text"] for c in ("Kendra", "Trikona") if c in classes for r in rules["class_rules"]
              if r["class"] == c and r["applies"] == "any" and sits_in not in r["exclude_houses"]]
-    return f"Placed in the {ordinal(sits_in)} house, a {' and '.join(classes)} bhava: " + " ".join(texts)
+    if texts:
+        line += " " + " ".join(texts)
+    if sits_in in (6, 8, 12):
+        line += " A difficult placement."
+    return classes, line
 
 
-def bhava_bhava(rules, lagna, signs):
-    """Layer 2: one entry per bhava lord — the lord's own bhava blended with the bhava it sits in."""
+def _dictum(rules, ctx, house):
+    """S27 p.11: a lord aspecting its own house fortifies that house."""
+    lord = house_lord(rules, ctx["lagna"], house)
+    target = house_sign(ctx["lagna"], house)
+    if lord in ctx["signs"] and any(t == target for _, t in aspect_signs(rules, lord, ctx["signs"][lord])):
+        return f"The lord aspects its own house, so the {ordinal(house)} house is strong."
+    return ""
+
+
+def with_lord(rules, ctx, lord):
+    """S27 p.16: planets conjoined with the lord, then planets aspecting it, each with the houses it rules."""
+    sg = ctx["signs"]
+    out = [{"planet": p, "how": "with", "aspect": "", "rules": lords_houses(rules, ctx["lagna"], p), "meanings": []}
+           for p in PLANET_ORDER if p != lord and p in sg and sg[p] == sg[lord]]
+    out += [{"planet": a["by"], "how": "aspect", "aspect": aspect_name(a["by"], a["house_aspect"]),
+             "rules": lords_houses(rules, ctx["lagna"], a["by"]), "meanings": []}
+            for a in aspects_on(rules, ctx, sg[lord]) if a["by"] != lord]
+    return out
+
+
+def _blend(rules, lagna, x, y, sign):
     info = rules["reference"]["BHAVA_INFO"]
+    a, b = info[str(x)], info[str(y)]
+    return (f"The lord of the {ordinal(x)} house ({_short_name(a['nm'])}) is placed in the {ordinal(y)} house "
+            f"({_short_name(b['nm'])}), in {rules['reference']['RASHI'][sign]['sanskrit']}. Blend their karakatwas — "
+            f"{ordinal(x)} house: {_clean(a['sig'])}. {ordinal(y)} house: {_clean(b['sig'])}. "
+            f"People: {a['rel']} with {b['rel']}. Body: {a['body']} with {b['body']}.")
+
+
+def _exchange_blend(rules, x, y):
+    info = rules["reference"]["BHAVA_INFO"]
+    return (f"Parivartana: the lords of the {ordinal(x)} and {ordinal(y)} houses have exchanged signs. Blend the two "
+            f"houses — {ordinal(x)} house: {_clean(info[str(x)]['sig'])}. {ordinal(y)} house: {_clean(info[str(y)]['sig'])}.")
+
+
+def bhava_bhava(rules, ctx):
+    """Layer 2 (Sessions 23, 26, 27): for each house X, its lord in house Y and sign S — the teacher's text (with her
+    strong/weak lines chosen by R3) or a blend of both houses, the sign line, the placement, the dictum and the planets
+    with or aspecting the lord. A Parivartana pair gives one entry, under the smaller house."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    lord_of = {h: house_lord(rules, lagna, h) for h in range(1, 13)}
+    sits = {h: house_of(lagna, sg[lord_of[h]]) for h in range(1, 13) if lord_of[h] in sg}
     out = []
-    for h in range(1, 13):
-        lord = house_lord(rules, lagna, h)
-        if lord not in signs:                                 # a partial chart: this lord's sign is not known
+    for x in range(1, 13):
+        if x not in sits:                                     # a partial chart: this lord's sign is not known
             continue
-        sits = house_of(lagna, signs[lord])
-        taught = next((x for x in rules["bhava_lord_in"] if (x["lord_of"], x["sits_in"]) == (h, sits)), None)
-        if taught:
-            text, status = taught["text"], taught["status"]
+        lord, y = lord_of[x], sits[x]
+        swap = (y if y != x and sits.get(y) == x and lord_of[y] != lord else None)
+        if swap is not None and swap < x:
+            continue                                          # shown with the smaller house of the pair
+        strength_word = strength(rules, ctx, lord)
+        if swap is not None:
+            row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}), None)
+            text, status, source = (row["text"], row["status"], row["source"]) if row else (_exchange_blend(rules, x, y), "blend", "")
+            dictum = " ".join(d for d in (_dictum(rules, ctx, x), _dictum(rules, ctx, y)) if d)
         else:
-            a, b = info[str(h)], info[str(sits)]
-            text = (f"The lord of the {ordinal(h)} house ({_short_name(a['nm'])}) is placed in the {ordinal(sits)} house "
-                    f"({_short_name(b['nm'])}). Blend their karakatwas — {ordinal(h)} house: {_clean(a['sig'])}. "
-                    f"{ordinal(sits)} house: {_clean(b['sig'])}. People: {a['rel']} with {b['rel']}. "
-                    f"Body: {a['body']} with {b['body']}. {_position_wording(rules, lagna, h, sits)}")
-            status = "blend"
-        out.append({"lord_of": h, "lord": lord, "sits_in": sits, "text": text, "status": status})
+            rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]]
+            pick = {"strong": ("strong",), "weak": ("weak",), "depends": ("strong", "weak")}[strength_word]
+            chosen = [r for r in rows if r["condition"] == ""] + [r for c in pick for r in rows if r["condition"] == c]
+            if chosen:
+                text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
+            else:
+                text, status, source = _blend(rules, lagna, x, y, sg[lord]), "blend", ""
+            dictum = _dictum(rules, ctx, x)
+        classes, line = placement(rules, lagna, x, y)
+        out.append({"lord_of": x, "lord": lord, "sits_in": y, "sign": sg[lord], "text": text, "status": status,
+                    "source": source, "sign_line": sign_line(rules, sg[lord]), "placement": classes, "placement_line": line,
+                    "strength": strength_word, "dictum": dictum, "with_lord": with_lord(rules, ctx, lord), "exchange": swap})
     return out
 
 

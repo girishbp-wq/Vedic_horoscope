@@ -106,7 +106,7 @@ function layers(c){
     tables: s23ClassificationTables(lg, pbr), matrix: s23HouseClassMatrix(lg), badhaka: s23Badhaka(lg, pbr),
     roles: s23Roles(lg, pbr), readings: s23ClassReadings(lg, pbr),
     graha_bhava: PL.map(p => s23GrahaBhava(lg, pbr, p, c.degs[p], c.waxing)),
-    bhava_bhava: s23BhavaBhava(lg, pbr), graha_rashi: s23GrahaRashi(lg, pbr, c.degs),
+    bhava_bhava: s23BhavaBhava(ctxOf(c, lg, pbr)), graha_rashi: s23GrahaRashi(lg, pbr, c.degs),
     graha_graha: s23GrahaGraha(lg, pbr, c.degs),
     five_step: [1,2,3,4,5,6,7,8,9,10,11,12].map(h => s23FiveStep(lg, pbr, h)),
     ...extra(c, lg, pbr),
@@ -137,7 +137,7 @@ def python_layers(c):
         "badhaka": br.badhaka(RULES, lg, sg), "roles": br.planet_roles(RULES, lg, sg),
         "readings": br.class_readings(RULES, lg, sg),
         "graha_bhava": [br.graha_bhava(RULES, lg, sg, p, degs[p], w) for p in br.PLANET_ORDER],
-        "bhava_bhava": br.bhava_bhava(RULES, lg, sg), "graha_rashi": br.graha_rashi(RULES, lg, sg, degs),
+        "bhava_bhava": br.bhava_bhava(RULES, ctx_of(c)), "graha_rashi": br.graha_rashi(RULES, lg, sg, degs),
         "graha_graha": br.graha_graha(RULES, lg, sg, degs),
         "five_step": [br.five_step(RULES, lg, sg, h) for h in range(1, 13)],
         **python_extra(c),
@@ -333,7 +333,9 @@ const EXTRACT = () => {
               classTexts: $('.s23-class-texts > li', c).map(li => norm(li.innerText)),
               tags: $('.s23-tag', c).map(x => x.textContent)})),
     bb: $('#s23-bb tbody tr[data-lord-of]').map(tr => ({lord_of: +tr.dataset.lordOf, sits_in: +tr.dataset.sits, lord: tr.dataset.lord,
-              status: tr.dataset.status, text: norm(tr.querySelector('.s23-text').textContent), tags: $('.s23-tag', tr).map(x => x.textContent)})),
+              status: tr.dataset.status, text: norm(tr.querySelector('.s23-text').textContent), tags: $('.s23-tag', tr).map(x => x.textContent),
+              exchange: +(tr.dataset.exchange || 0), dictum: tr.dataset.dictum === '1',
+              signLine: norm(tr.querySelector('.s23-sign-line').textContent), placement: norm(tr.querySelector('.s23-placement').textContent)})),
     gr: $('#s23-gr tbody tr[data-planet]').map(tr => ({planet: tr.dataset.planet, sign: +tr.dataset.sign, status: tr.dataset.status,
               tatwa: tr.dataset.tatwa, direction: tr.dataset.direction, varna: tr.dataset.varna, mode: tr.dataset.mode,
               dignity: tr.dataset.dignity, text: norm(tr.nextElementSibling.textContent), tags: $('.s23-tag', tr).map(x => x.textContent)})),
@@ -538,9 +540,14 @@ class BrowserSession23(unittest.TestCase):
                 self.assertEqual(g["extra"], [_norm(x) for x in want["extra"]])
                 self.assertEqual(g["classTexts"], [_norm(x) for x in want["class_texts"]])
                 self.assertIn(want["status"], g["tags"])
-            for r, want in zip(d["bb"], br.bhava_bhava(RULES, lg, signs)):
-                self.assertEqual((r["lord_of"], r["sits_in"], r["lord"], r["status"], r["text"]),
-                                 (want["lord_of"], want["sits_in"], want["lord"], want["status"], _norm(want["text"])))
+            bb = br.bhava_bhava(RULES, br.context(lg, signs, degs))
+            self.assertEqual(len(d["bb"]), len(bb))
+            for r, want in zip(d["bb"], bb):
+                self.assertEqual((r["lord_of"], r["sits_in"], r["lord"], r["status"], r["text"], r["exchange"], r["dictum"]),
+                                 (want["lord_of"], want["sits_in"], want["lord"], want["status"], _norm(want["text"]),
+                                  want["exchange"] or 0, bool(want["dictum"])))
+                self.assertEqual(r["signLine"], _norm(want["sign_line"]))
+                self.assertEqual(r["placement"], _norm(want["placement_line"]))
                 self.assertIn(want["status"], r["tags"])
             for r, want in zip(d["gr"], br.graha_rashi(RULES, lg, signs, degs)):
                 self.assertEqual((r["planet"], r["sign"], r["status"], r["tatwa"], r["direction"], r["varna"], r["mode"], r["dignity"], r["text"]),
