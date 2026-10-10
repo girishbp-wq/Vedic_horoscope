@@ -343,7 +343,8 @@ const EXTRACT = () => {
               combust: li.dataset.combust, text: norm(li.querySelector('.s23-text').textContent),
               note: norm((li.querySelector('.s23-combust') || {textContent: ''}).textContent)})),
     asp: $('#s23-asp > li').map(li => ({by: li.dataset.by, to: li.dataset.to, h: +li.dataset.h, status: li.dataset.status,
-              text: norm(li.querySelector('.s23-text').textContent), jup: !!li.querySelector('.s23-jup')})),
+              text: norm(li.querySelector('.s23-text').textContent), jup: !!li.querySelector('.s23-jup'),
+              meanings: $('.s23-meanings li', li).map(x => norm(x.textContent))})),
     predictText: predict ? predict.innerText : '',
     classesText: document.getElementById('s23-classes-body').innerText,
   };
@@ -557,8 +558,9 @@ class BrowserSession23(unittest.TestCase):
             self.assertEqual([(c["a"], c["b"], c["house"], c["status"], _norm(c["text"])) for c in gg["conjunctions"]],
                              [(c["a"], c["b"], c["house"], c["status"], c["text"]) for c in d["conj"]])
             self.assertEqual([c["note"] for c in d["conj"]], [_norm(c["combust_note"]) for c in gg["conjunctions"]])
-            self.assertEqual([(a["by"], a["to"], a["house_aspect"], a["status"], _norm(a["text"]), a["jupiter_flag"]) for a in gg["aspects"]],
-                             [(a["by"], a["to"], a["h"], a["status"], a["text"], a["jup"]) for a in d["asp"]])
+            self.assertEqual([(a["by"], a["to"], a["house_aspect"], a["status"], _norm(a["text"]), a["jupiter_flag"],
+                              [_norm(m) for m in a["meanings"]]) for a in gg["aspects"]],
+                             [(a["by"], a["to"], a["h"], a["status"], a["text"], a["jup"], a["meanings"]) for a in d["asp"]])
             self.assertIn("taught", d["predictText"].lower())      # the legend explains the tags
             self.assertIn("curated", d["predictText"].lower())
 

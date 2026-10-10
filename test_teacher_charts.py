@@ -150,3 +150,28 @@ class S26Series(unittest.TestCase):
             self.assertTrue(e["text"].startswith(want), h)
         eleventh = s26_karkataka(11)
         self.assertEqual(br.dignity(RULES, "Moon", eleventh["signs"]["Moon"], 3)["label"], "Deep Exalted")   # S26 p.26
+
+
+class AspectsAndRashi(unittest.TestCase):
+    def test_mother_4th_aspects(self):
+        c = CHARTS["S23_2024_C"]
+        got = br.five_step(RULES, c["lagna"], c["signs"], 4)["aspecting"]
+        self.assertEqual([a["by"] for a in got], ["Jupiter", "Venus", "Rahu"])           # S27 p.14
+
+    def test_book_chart_listed_aspects_found(self):
+        c = CHARTS["BOOK_SRI_CHAITANYA"]
+        got = {(a["by"], a["to"], a["house_aspect"]) for a in br.graha_graha(RULES, c["lagna"], c["signs"])["aspects"]}
+        for want in (("Sun", "Moon", 7), ("Mars", "Venus", 4), ("Mars", "Moon", 8), ("Jupiter", "Moon", 9),
+                     ("Jupiter", "Venus", 5), ("Saturn", "Mars", 3), ("Saturn", "Moon", 10)):
+            self.assertIn(want, got)
+        lagna = br.five_step(RULES, c["lagna"], c["signs"], 1)["aspecting"]
+        twelfth = br.five_step(RULES, c["lagna"], c["signs"], 12)["aspecting"]
+        self.assertIn(("Venus", 7), [(a["by"], a["house_aspect"]) for a in lagna])            # S27 p.20 (iv)
+        self.assertIn(("Mercury", 7), [(a["by"], a["house_aspect"]) for a in twelfth])         # S27 p.20 (v)
+
+    def test_moon_rashi_rows_are_taught(self):
+        for name, source in (("S23_2024_D", "S23-2024 p.5"), ("S23_2024_C", "S23-2024 p.11")):
+            c = CHARTS[name]
+            moon = next(r for r in br.graha_rashi(RULES, c["lagna"], c["signs"], c["degs"]) if r["planet"] == "Moon")
+            row = next(r for r in RULES["graha_rashi"] if (r["planet"], r["rashi"]) == ("Moon", c["signs"]["Moon"] + 1))
+            self.assertEqual((moon["status"], moon["text"], row["source"]), ("taught", row["text"], source))

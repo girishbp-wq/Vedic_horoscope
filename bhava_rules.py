@@ -286,6 +286,23 @@ def teacher_count(planet, h):
     return (13 - h) % 12 + 1 if planet in ("Rahu", "Ketu") else h
 
 
+def aspect_meaning(rules, planet, h, from_house=None):
+    """What an aspect means (S24, S27): the planet's reading for this aspect from its house, then for this aspect,
+    then for its aspects in general; when the teacher gives none, 'to see, to influence' (S27 p.18).
+    `h` is counted forward; Rahu and Ketu rows use her anti-clockwise count."""
+    c = teacher_count(planet, h)
+    rows = rules["aspect_meaning"]
+    find = lambda pl, a, f: next((r for r in rows if (r["planet"], r["aspect"], r["from_house"]) == (pl, a, f)), None)
+    found = [r for r in ((find(planet, c, from_house) if from_house else None), find(planet, c, None), find(planet, None, None)) if r]
+    if not found:
+        found = [r for r in (find("any", None, None),) if r]
+    return [{"text": r["text"], "status": r["status"], "source": r["source"]} for r in found]
+
+
+def _meanings(rules, planet, h, from_house):
+    return [m["text"] for m in aspect_meaning(rules, planet, h, from_house)]
+
+
 def strength(rules, ctx, planet):
     """R3: 'strong' (exalted, Moolatrikona, own or friend's sign, or aspecting its own sign), 'weak' (debilitated,
     enemy's sign or combust), 'depends' when neither — or both — hold."""
@@ -604,7 +621,8 @@ def with_lord(rules, ctx, lord):
     out = [{"planet": p, "how": "with", "aspect": "", "rules": lords_houses(rules, ctx["lagna"], p), "meanings": []}
            for p in PLANET_ORDER if p != lord and p in sg and sg[p] == sg[lord]]
     out += [{"planet": a["by"], "how": "aspect", "aspect": aspect_name(a["by"], a["house_aspect"]),
-             "rules": lords_houses(rules, ctx["lagna"], a["by"]), "meanings": []}
+             "rules": lords_houses(rules, ctx["lagna"], a["by"]),
+             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(ctx["lagna"], sg[a["by"]]))}
             for a in aspects_on(rules, ctx, sg[lord]) if a["by"] != lord]
     return out
 
@@ -722,7 +740,8 @@ def graha_graha(rules, lagna, signs, degs=None):
                     text += " " + row["aspect"]
                 aspects.append({"by": p, "to": q, "house_aspect": h, "house": house_of(lagna, signs[q]),
                                 "text": text, "status": row["status"] if row["aspect"].strip() else "blend",
-                                "jupiter_flag": p == "Jupiter"})
+                                "jupiter_flag": p == "Jupiter",
+                                "meanings": _meanings(rules, p, h, house_of(lagna, signs[p]))})
     return {"conjunctions": conjunctions, "aspects": aspects}
 
 
@@ -731,7 +750,8 @@ def five_step(rules, lagna, signs, house):
     info = rules["reference"]["BHAVA_INFO"][str(house)]
     sign = house_sign(lagna, house)
     lord = house_lord(rules, lagna, house)
-    aspecting = [{"by": p, "house_aspect": h} for p in PLANET_ORDER if p in signs
+    aspecting = [{"by": p, "house_aspect": h, "aspect": aspect_name(p, h),
+                  "meanings": _meanings(rules, p, h, house_of(lagna, signs[p]))} for p in PLANET_ORDER if p in signs
                  for h in rules["reference"]["SPECIAL_ASPECTS"][p] if (signs[p] + h - 1) % 12 == sign]
     return {"house": house, "name": info["nm"], "significations": info["sig"], "sign": sign, "lord": lord,
             "lord_house": house_of(lagna, signs[lord]) if lord in signs else None,

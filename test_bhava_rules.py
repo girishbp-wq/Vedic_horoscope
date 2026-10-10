@@ -526,7 +526,8 @@ class PredictionLayers(unittest.TestCase):
         f = br.five_step(RULES, LAGNA, SIGNS, 7)
         self.assertEqual((f["house"], f["sign"], f["lord"], f["lord_house"]), (7, 10, "Saturn", 6))
         self.assertEqual(f["occupants"], ["Jupiter"])
-        self.assertEqual(f["aspecting"], [{"by": "Mars", "house_aspect": 8}])
+        self.assertEqual([(a["by"], a["house_aspect"], a["aspect"]) for a in f["aspecting"]], [("Mars", 8, "8th")])
+        self.assertIn("transformation", f["aspecting"][0]["meanings"][0])
         self.assertEqual(f["karakas"], [{"planet": "Venus", "house": 11}])
         self.assertIn("Spouse", f["significations"])
 
@@ -906,3 +907,43 @@ class LayerTwo(unittest.TestCase):
         self.assertTrue(one["text"].startswith("Parivartana: the lords of the 1st and 10th houses have exchanged signs."))
         self.assertNotIn(10, [r["lord_of"] for r in rows])
         self.assertIn(11, [r["lord_of"] for r in rows])
+
+
+class Aspects(unittest.TestCase):
+    """Aspect meanings: Jupiter from each house (S24), Jupiter/Saturn/Mars counts (S27), the default (S27 p.18)."""
+
+    def row(self, planet, aspect, frm):
+        return next(r["text"] for r in RULES["aspect_meaning"] if (r["planet"], r["aspect"], r["from_house"]) == (planet, aspect, frm))
+
+    def test_jupiter_5th_from_2nd_uses_s24_then_s27(self):
+        got = [m["text"] for m in br.aspect_meaning(RULES, "Jupiter", 5, 2)]
+        self.assertEqual(got, [self.row("Jupiter", 5, 2), self.row("Jupiter", 5, None), self.row("Jupiter", None, None)])
+        self.assertEqual(br.aspect_meaning(RULES, "Jupiter", 5, 2)[0]["source"], "S24 p.3")
+
+    def test_jupiter_7th_has_no_count_row(self):
+        got = [m["text"] for m in br.aspect_meaning(RULES, "Jupiter", 7, 4)]
+        self.assertEqual(got, [self.row("Jupiter", 7, 4), self.row("Jupiter", None, None)])
+
+    def test_saturn_10th_is_karmic_responsibility(self):
+        got = [m["text"] for m in br.aspect_meaning(RULES, "Saturn", 10, 4)]
+        self.assertIn("karmic responsibility", got[0])
+        self.assertEqual(got[1], self.row("Saturn", None, None))
+
+    def test_venus_7th_uses_the_default(self):
+        self.assertEqual([m["text"] for m in br.aspect_meaning(RULES, "Venus", 7, 1)], [self.row("any", None, None)])
+
+    def test_rahu_counts_anticlockwise(self):
+        self.assertEqual([m["text"] for m in br.aspect_meaning(RULES, "Rahu", 9)], [self.row("any", None, None)])
+
+    def test_layers_carry_meanings(self):
+        gg = br.graha_graha(RULES, LAGNA, SIGNS)
+        for a in gg["aspects"]:
+            frm = br.house_of(LAGNA, SIGNS[a["by"]])
+            self.assertEqual(a["meanings"], [m["text"] for m in br.aspect_meaning(RULES, a["by"], a["house_aspect"], frm)])
+        f = br.five_step(RULES, LAGNA, SIGNS, 7)
+        for a in f["aspecting"]:
+            self.assertEqual(a["aspect"], br.aspect_name(a["by"], a["house_aspect"]))
+            self.assertTrue(a["meanings"])
+        e = next(r for r in br.bhava_bhava(RULES, br.context(0, {"Venus": 9, "Ketu": 5})) if r["lord_of"] == 7)
+        ketu = next(w for w in e["with_lord"] if w["planet"] == "Ketu")
+        self.assertEqual(ketu["meanings"], [m["text"] for m in br.aspect_meaning(RULES, "Ketu", 5, 6)])

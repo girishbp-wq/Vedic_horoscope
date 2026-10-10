@@ -585,6 +585,7 @@ details.section[open] > summary::after { content: "−"; }
 .s23-conds { margin: 2px 0 6px; padding-left: 18px; }
 .s23-chip.s23-exchange { background: #e6eefb; color: #24467a; border-color: #b4c7e8; }
 #s23-bb td p { margin: 0 0 4px; }
+.s23-meanings { margin: 2px 0 4px; padding-left: 18px; font-size: 12px; color: var(--muted); }
 .s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
 .s23-points li, .s23-extra li, .s23-class-texts li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
@@ -6310,6 +6311,14 @@ function s23AspectsOn(ctx, sign){
   return out;
 }
 function s23TeacherCount(p, h){ return (p==="Rahu"||p==="Ketu") ? (13-h)%12+1 : h; }
+function s23AspectMeaning(p, h, fromHouse){
+  const c=s23TeacherCount(p, h), rows=S23.aspect_meaning;
+  const find=(pl,a,f)=>rows.find(r=>r.planet===pl && r.aspect===a && r.from_house===f)||null;
+  let found=[fromHouse ? find(p,c,fromHouse) : null, find(p,c,null), find(p,null,null)].filter(Boolean);
+  if(!found.length) found=[find("any",null,null)].filter(Boolean);
+  return found.map(r=>({text:r.text, status:r.status, source:r.source}));
+}
+function s23Meanings(p, h, fromHouse){ return s23AspectMeaning(p, h, fromHouse).map(m=>m.text); }
 function s23Strength(ctx, p){
   const sign=ctx.signs[p], label=planetDignity(p, sign+1, ctx.degs[p]).label, own=PLANET_OWN_HOUSES[p]||[];
   const strong=S23_STRONG_LABELS.includes(label) || s23AspectSigns(p, sign).some(([,t])=>own.includes(t+1));
@@ -6453,7 +6462,8 @@ function s23WithLord(ctx, lord){
   const out=S23_PLANETS.filter(p=>p!==lord && sg[p]!==undefined && sg[p]===sg[lord])
     .map(p=>({planet:p, how:"with", aspect:"", rules:s23LordsHouses(lg,p), meanings:[]}));
   for(const a of s23AspectsOn(ctx, sg[lord])) if(a.by!==lord)
-    out.push({planet:a.by, how:"aspect", aspect:aspectOrd(a.by, a.house_aspect), rules:s23LordsHouses(lg,a.by), meanings:[]});
+    out.push({planet:a.by, how:"aspect", aspect:aspectOrd(a.by, a.house_aspect), rules:s23LordsHouses(lg,a.by),
+      meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg, sg[a.by]))});
   return out;
 }
 function s23Blend(x, y, sign){
@@ -6538,7 +6548,8 @@ function s23GrahaGraha(lagnaN, pbr, degs){
       const row=s23PairRow(p,q), hasAspect=row.aspect.trim().length>0;
       let text=`${p}'s ${aspectOrd(p, h)} aspect falls on ${q}: ${p}'s qualities (${KARAKATWAS[p].qualities}) colour what ${q} signifies (${KARAKATWAS[q].signifies}).`;
       if(hasAspect) text+=" "+row.aspect;
-      aspects.push({by:p, to:q, house_aspect:h, house:s23HouseOf(lg,sg[q]), text, status:hasAspect?row.status:"blend", jupiter_flag:p==="Jupiter"});
+      aspects.push({by:p, to:q, house_aspect:h, house:s23HouseOf(lg,sg[q]), text, status:hasAspect?row.status:"blend", jupiter_flag:p==="Jupiter",
+        meanings:s23Meanings(p, h, s23HouseOf(lg,sg[p]))});
     }
   }
   return {conjunctions, aspects};
@@ -6547,7 +6558,8 @@ function s23FiveStep(lagnaN, pbr, house){
   const lg=lagnaN-1, sg=s23Signs(pbr), info=BHAVA_INFO[house], sign=s23HouseSign(lg,house), lord=s23HouseLord(lg,house);
   const aspecting=[];
   for(const p of S23_PLANETS){ if(sg[p]===undefined) continue;
-    for(const h of SPECIAL_ASPECTS[p]) if((sg[p]+h-1)%12===sign) aspecting.push({by:p, house_aspect:h}); }
+    for(const h of SPECIAL_ASPECTS[p]) if((sg[p]+h-1)%12===sign)
+      aspecting.push({by:p, house_aspect:h, aspect:aspectOrd(p,h), meanings:s23Meanings(p, h, s23HouseOf(lg,sg[p]))}); }
   return {house, name:info.nm, significations:info.sig, sign, lord, lord_house: sg[lord]!==undefined ? s23HouseOf(lg,sg[lord]) : null,
     occupants:s23Occ(lg,sg)[house], aspecting, karakas:info.karaka.filter(k=>sg[k]!==undefined).map(k=>({planet:k, house:s23HouseOf(lg,sg[k])}))};
 }
@@ -6560,6 +6572,7 @@ const S23_TAG_TITLES = {
   blend:    "Generated from her tables by a template",
   standard: "A standard rule she has not stated yet"
 };
+function s23MeaningList(ms){ return ms && ms.length ? `<ul class="s23-meanings">${ms.map(m=>`<li>${_esc(m)}</li>`).join("")}</ul>` : ""; }
 function s23Src(source){ return source ? ` <span class="s23-src" title="Where the teacher says this">${_esc(source)}</span>` : ""; }
 function s23Tag(status){ return status ? `<span class="s23-tag ${status}" title="${S23_TAG_TITLES[status]}">${status}</span>` : ""; }
 function s23Inputs(sid){
@@ -6638,7 +6651,7 @@ function s23BuildClasses(sid, lagnaN){
       +`data-aspecting="${f.aspecting.map(a=>a.by+":"+a.house_aspect).join(",")}" data-karakas="${f.karakas.map(k=>k.planet+":"+k.house).join(",")}">`
       +`<td><strong>${hh}</strong> · ${_esc(s23ShortName(f.name))} ${s23RashiCell(f.sign)}</td>`
       +`<td>${GLYPH9[f.lord]} ${f.lord} → ${ord(f.lord_house)}${f.lord_house===hh?" (own bhāva)":""}</td><td>${s23Planets(f.occupants)}</td>`
-      +`<td>${f.aspecting.length?f.aspecting.map(a=>`${a.by} (${aspectOrd(a.by, a.house_aspect)})`).join(", "):"—"}</td>`
+      +`<td>${f.aspecting.length?f.aspecting.map(a=>`<span title="${_esc(a.meanings.join(" "))}">${a.by} (${aspectOrd(a.by, a.house_aspect)})</span>`).join(", "):"—"}</td>`
       +`<td>${f.karakas.length?f.karakas.map(k=>`${GLYPH9[k.planet]} ${k.planet} in ${ord(k.house)}`).join(", "):"—"}</td></tr>`;
   }
   return h+`</tbody></table></div>`;
@@ -6729,7 +6742,7 @@ function s23BuildPredictions(sid, lagnaN, extra){
     ? `<ul class="s23-pairs" id="s23-asp">${gg.aspects.map(a=>`<li data-by="${a.by}" data-to="${a.to}" data-h="${a.house_aspect}" data-status="${a.status}">`
         +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}`
         +(a.jupiter_flag?` <span class="section-flag flag-exalted flag-deep s23-jup">Aspect &gt; placement</span>`:"")
-        +`<br><span class="s23-text">${_esc(a.text)}</span></li>`).join("")}</ul>`
+        +`<br><span class="s23-text">${_esc(a.text)}</span>${s23MeaningList(a.meanings)}</li>`).join("")}</ul>`
     : `<ul class="s23-pairs" id="s23-asp"><li class="rnote">No planet-to-planet aspects in this chart.</li></ul>`;
   return h;
 }
