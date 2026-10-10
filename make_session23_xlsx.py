@@ -48,6 +48,9 @@ CALC_SHEETS = [PREFIX + n for n in CALC_NAMES]
 LAGNA_CELL, PLANET_ROW0 = "B3", 5            # Chart: Lagna sign; planets in rows 5-13 (name, sign, degree, sign #, house)
 MOON_LON_CELL, SUN_LON_CELL, WAXING_CELL = "B15", "B16", "B17"
 BIRTH_CELL, NOW_CELL = "B18", "B19"
+GENDER_CELL, AGE_CELL = "B20", "B21"          # Chart: Male / Female / blank; age in years at "Now"
+RETRO_COL = 6                                # Chart: column F, "yes" for a retrograde planet (rows 5-13)
+DASHA_RUNNING_CELL = "B11"                   # Dasha_Calc: TRUE when "Now" falls inside the 120-year span
 CLASS_ROW0, CLASS_ROWS = 4, 33               # Classes_Calc: class tables (header row 3)
 BADHAKA_ROW = 40                             # B mode, C house, D rāśi, E lord, F occupants (header row 39)
 MATRIX_ROW0 = 44                             # header row; houses 1-12 in the next twelve rows
@@ -56,8 +59,12 @@ ROLES_ROW0 = 3                               # Roles_Calc (header row 2)
 DASHA_ROW0, DASHA_CUR_ROW = 24, 8            # Dasha_Calc: 81 Bhukti rows; running Mahādaśā in B8, Bhukti in B9
 PREDICT_ROW0 = 3                             # Predict_Calc (header row 2); 9 planets
 PREDICT_COLS = dict(planet=1, house=2, nature=3, status=4, points=5, dignity=6, dignity_line=7,
-                    digbala_line=8, classes=9, class_texts=10, extra=11)
+                    digbala_line=8, classes=9, class_texts=10, extra=11,
+                    moon_strength=15, nature_lines=16, twelfth_line=17, conditions=18, active=19)
+COMBUST_COL, AFFLICTED_COL, MILD_COL = 20, 21, 22   # Predict_Calc helper columns
 FLAG_ROW0 = 16                               # Predict_Calc: class-rule flags, one row per planet (header row 15)
+NATURE_FLAG_ROW0 = 28                        # Predict_Calc: Session 26 line flags, one row per planet (header row 27)
+COND_ROW0 = 40                               # Predict_Calc: conditional readings, one row per candidate (header row 39)
 
 HEAD_FILL = PatternFill("solid", fgColor="6B1D2B")
 HEAD_FONT = Font(bold=True, color="FFFFFF")
@@ -160,10 +167,25 @@ def _chart_sheet(ws, rules):
     ws["A19"], ws[NOW_CELL] = "Now (overwrite to freeze)", "=NOW()"
     for c in (BIRTH_CELL, NOW_CELL):
         ws[c].number_format, ws[c].fill = DATE_FMT, INPUT_FILL
-    ws["A21"] = ("Yellow cells are inputs. The Lagna and signs have drop-downs (page spelling). "
+    ws["A20"], ws[GENDER_CELL] = "Gender (Male / Female / blank)", None
+    ws[GENDER_CELL].fill = INPUT_FILL
+    ws["A21"], ws[AGE_CELL] = "Age at 'Now' (years)", f"=({NOW_CELL}-{BIRTH_CELL})/365.25"
+    ws[AGE_CELL].number_format = "0.00"
+    ws.cell(row=4, column=RETRO_COL, value="Retrograde? (yes / blank)").fill = HEAD_FILL
+    ws.cell(row=4, column=RETRO_COL).font = HEAD_FONT
+    for k in range(9):
+        ws.cell(row=PLANET_ROW0 + k, column=RETRO_COL).fill = INPUT_FILL
+    ws["A23"] = ("Yellow cells are inputs. The Lagna and signs have drop-downs (page spelling). "
                  "Houses count from the Lagna sign. Enter each degree as the degree within its sign (0 to under 30), "
-                 "not the absolute longitude; degrees decide Deep Exalted / Deep Debilitated and Moolatrikona.")
-    ws["A21"].alignment = WRAP
+                 "not the absolute longitude; degrees decide Deep Exalted / Deep Debilitated and Moolatrikona. "
+                 "Gender and the retrograde column feed the Sessions 24-27 readings (S23_Predict_Calc, S23_LifeArea_Calc).")
+    ws["A23"].alignment = WRAP
+    sex = DataValidation(type="list", formula1='"Male,Female"', allow_blank=True)
+    ws.add_data_validation(sex)
+    sex.add(GENDER_CELL)
+    yes = DataValidation(type="list", formula1='"yes"', allow_blank=True)
+    ws.add_data_validation(yes)
+    yes.add(f"{L(RETRO_COL)}{PLANET_ROW0}:{L(RETRO_COL)}{PLANET_ROW0 + 8}")
     dv = DataValidation(type="list", formula1="=S23_Ref_Calc!$B$3:$B$14", allow_blank=False,
                         showErrorMessage=True, errorTitle="Pick a rashi from the list",
                         error="Choose the sign from the drop-down — the list's spelling is the one the formulas look up.")
@@ -176,7 +198,7 @@ def _chart_sheet(ws, rules):
     ws.add_data_validation(deg)
     deg.add(f"C{PLANET_ROW0}:C{PLANET_ROW0 + 8}")
     ws.column_dimensions["A"].width = 30
-    for c in "BCDE":
+    for c in "BCDEF":
         ws.column_dimensions[c].width = 18
 
 
@@ -294,6 +316,8 @@ def _dasha_sheet(ws):
     ws.cell(row=DASHA_CUR_ROW + 2, column=2, value=f"=IFERROR(MATCH(1,G{DASHA_ROW0}:G{last},0),1)")
     ws.cell(row=DASHA_CUR_ROW, column=2, value=f"=INDEX(C{DASHA_ROW0}:C{last},B{DASHA_CUR_ROW + 2})")
     ws.cell(row=DASHA_CUR_ROW + 1, column=2, value=f"=INDEX(D{DASHA_ROW0}:D{last},B{DASHA_CUR_ROW + 2})")
+    ws.cell(row=DASHA_CUR_ROW + 3, column=1, value="A daśā is running at 'Now'?")
+    ws.cell(row=DASHA_CUR_ROW + 3, column=2, value=f"=ISNUMBER(MATCH(1,G{DASHA_ROW0}:G{last},0))")
     # Mahādaśā table
     _head(ws, 12, ["#", "Mahādaśā lord", "Years", "Starts", "Ends"])
     for i in range(9):
@@ -379,11 +403,113 @@ def _predict_sheet(ws, rules):
                  f'OR(S23_ClassRules!$B${cr}="any",S23_ClassRules!$B${cr}=IF($C{pr}="mild malefic","malefic",$C{pr})),'
                  f'NOT(ISNUMBER(SEARCH(", "&$B{pr}&",",", "&S23_ClassRules!$C${cr}&",")))),1,0)')
             ws.cell(row=fr, column=2 + m, value=f)
+    _predict_s24_27(ws, rules)
     for c, w in zip("ABCDEFGHIJK", (12, 7, 9, 10, 60, 20, 50, 50, 28, 60, 60)):
         ws.column_dimensions[c].width = w
+    for c in "OPQRS":
+        ws.column_dimensions[c].width = 50
     for r in range(PREDICT_ROW0, PREDICT_ROW0 + 9):
-        for c in (5, 7, 8, 10, 11):
+        for c in (5, 7, 8, 10, 11, 16, 17, 18):
             ws.cell(row=r, column=c).alignment = WRAP
+
+
+def _predict_s24_27(ws, rules):
+    """Sessions 23 (2024) - 27 on S23_Predict_Calc: the Moon's paksha strength, the Session 26 lines for a benefic or
+    malefic in the house, the 12th-house line and the conditional readings (bhava_rules.chart_conditions)."""
+    P = lambda name: PREDICT_ROW0 + br.PLANET_ORDER.index(name)          # a planet's row on this sheet
+    house = lambda name: f"$B${P(name)}"
+    sign = lambda name: f"S23_Chart!$D${PLANET_ROW0 + br.PLANET_ORDER.index(name)}"
+    aff = lambda name: f"${L(AFFLICTED_COL)}${P(name)}"
+    retro = lambda name: f'S23_Chart!${L(RETRO_COL)}${PLANET_ROW0 + br.PLANET_ORDER.index(name)}="yes"'
+    lord = lambda h: f"S23_Classes_Calc!$C${HOUSELORD_ROW0 + h - 1}"
+    house_of = lambda expr: f"INDEX($B${PREDICT_ROW0}:$B${PREDICT_ROW0 + 8},MATCH({expr},$A${PREDICT_ROW0}:$A${PREDICT_ROW0 + 8},0))"
+    sign_of = lambda expr: f"INDEX(S23_Chart!$D${PLANET_ROW0}:$D${PLANET_ROW0 + 8},MATCH({expr},S23_Chart!$A${PLANET_ROW0}:$A${PLANET_ROW0 + 8},0))"
+    age, gender = f"S23_Chart!{AGE_CELL}", f"S23_Chart!{GENDER_CELL}"
+    run = f"S23_Dasha_Calc!{DASHA_RUNNING_CELL}"
+    maha, bhukti = f"S23_Dasha_Calc!$B${DASHA_CUR_ROW}", f"S23_Dasha_Calc!$B${DASHA_CUR_ROW + 1}"
+    sun = br.PLANET_ORDER.index("Sun")
+    combustible = ",".join(f'$A{{r}}="{p}"' for p in rules["reference"]["COMBUST_PLANETS"])
+    for name, col in (("Moon strength", 15), ("Session 26 lines", 16), ("12th-house line", 17), ("When it applies (conditions)", 18),
+                      ("Active now (keys)", 19), ("Combust?", COMBUST_COL), ("Afflicted? (R5)", AFFLICTED_COL), ("(mild) prefix", MILD_COL)):
+        c = ws.cell(row=2, column=col, value=name)
+        c.fill, c.font = HEAD_FILL, HEAD_FONT
+    # Session 26 line flags: per planet and S23_BhavaNature row, the group the row falls in (0 general, 1 house, 2 planet) or -1
+    n_bn = len(rules["bhava_nature"])
+    ws.cell(row=NATURE_FLAG_ROW0 - 2, column=1, value="Which S23_BhavaNature rows apply (0 general, 1 this house, 2 this planet, -1 no)").font = Font(bold=True, color="6B1D2B")
+    _head(ws, NATURE_FLAG_ROW0 - 1, ["Graha"] + [f"row {m + 2}" for m in range(n_bn)])
+    for k, p in enumerate(br.PLANET_ORDER):
+        fr, r = NATURE_FLAG_ROW0 + k, PREDICT_ROW0 + k
+        ws.cell(row=fr, column=1, value=p)
+        kind = f'IF($C{r}="benefic","benefic","malefic")'
+        for m in range(n_bn):
+            b = 2 + m
+            h, nat, pl = f"S23_BhavaNature!$A${b}", f"S23_BhavaNature!$B${b}", f"S23_BhavaNature!$C${b}"
+            ws.cell(row=fr, column=2 + m, value=(f'=IF(AND(OR({nat}={kind},{nat}="any"),OR({h}="",{h}=$B{r}),OR({pl}="",{pl}=$A{r})),'
+                                                 f'IF({h}="",0,IF({pl}="",1,2)),-1)'))
+    for k, p in enumerate(br.PLANET_ORDER):
+        r, fr = PREDICT_ROW0 + k, NATURE_FLAG_ROW0 + k
+        ws.cell(row=r, column=15, value=f'=IF($A{r}="Moon",IF(S23_Chart!{WAXING_CELL},"Shukla (waxing) — stronger","Krishna (waning) — weaker"),"")')
+        passes = "&".join(f'IF({L(2 + m)}{fr}={g},CHAR(10)&${L(MILD_COL)}{r}&S23_BhavaNature!$D${2 + m},"")'
+                          for g in range(3) for m in range(n_bn))
+        ws.cell(row=r, column=16, value=f"=MID({passes},2,32000)")
+        ws.cell(row=r, column=17, value=(f'=IF($B{r}=12,IFERROR(INDEX(S23_Conditions!$D$1:$D$300,MATCH("twelfth_house",'
+                                         f'S23_Conditions!$A$1:$A$300,0)),""),"")'))
+        ws.cell(row=r, column=COMBUST_COL, value=(f'=AND(OR({combustible.format(r=r)}),S23_Chart!$D${PLANET_ROW0 + k}=S23_Chart!$D${PLANET_ROW0 + sun},'
+                                                  f'ABS(S23_Chart!$C${PLANET_ROW0 + k}-S23_Chart!$C${PLANET_ROW0 + sun})<={rules["reference"]["COMBUST_ORB"]})'))
+        ws.cell(row=r, column=AFFLICTED_COL, value=f'=OR($F{r}="Debilitated",$F{r}="Deep Debilitated",$F{r}="Enemy\'s House",${L(COMBUST_COL)}{r})')
+        ws.cell(row=r, column=MILD_COL, value=f'=IF($A{r}="Sun","(mild) ","")')
+    # the candidate conditional readings, in bhava_rules.CONDITION_KEYS order (and planet order within a key)
+    dasha = lambda test: f'IF({run},IF({test},"yes","no"),"")'
+    young = lambda limit: f"{age}<{limit}"
+    hin = lambda name, hs: "OR(" + ",".join(f"{house(name)}={h}" for h in hs) + ")"
+    male = lambda s_expr: f"MOD({s_expr},2)=0"
+    fifth_sign = "MOD(S23_Chart!$D$3+4,12)"
+    rows = [("saturn_matures", '"Saturn"', house("Saturn"), f"AND({hin('Saturn', (1, 2, 3, 5, 7, 10))},{young(br.SATURN_MATURES_AGE)})", '""'),
+            ("saturn_retro_1", '"Saturn"', "1", f"AND({house('Saturn')}=1,{retro('Saturn')})", '""'),
+            ("saturn_afflicted_10_young", '"Saturn"', "10", f"AND({house('Saturn')}=10,{aff('Saturn')},{young(br.SATURN_MATURES_AGE)})", '""'),
+            ("saturn_mars_12", '"Saturn"', "12", f"AND({house('Saturn')}=12,{house('Mars')}=12)", '""'),
+            ("saturn_afflicted_6", '"Saturn"', "6", f"AND({house('Saturn')}=6,{aff('Saturn')})", '""'),
+            ("saturn_afflicted_12", '"Saturn"', "12", f"AND({house('Saturn')}=12,{aff('Saturn')})", '""'),
+            ("jupiter_md_8", '"Jupiter"', "8", f"{house('Jupiter')}=8", dasha(f'{maha}="Jupiter"')),
+            ("jupiter_md_11", '"Jupiter"', "11", f"{house('Jupiter')}=11", dasha(f'{maha}="Jupiter"')),
+            ("venus_dasha_9", '"Venus"', "9", f"{house('Venus')}=9", dasha(f'OR({maha}="Venus",{bhukti}="Venus")')),
+            ("rahu_md_9", '"Rahu"', "9", f"{house('Rahu')}=9", dasha(f'{maha}="Rahu"'))]
+    rows += [("twelfth_hidden_talent", f'"{p}"', "12", f"{house(p)}=12", dasha(f'OR({maha}="{p}",{bhukti}="{p}")')) for p in br.PLANET_ORDER]
+    rows += [("upachaya_30s", f'"{p}"', house(p), hin(p, (3, 6, 10, 11)), '""') for p in br.PLANET_ORDER]
+    rows += [("ketu_12_purpose", '"Ketu"', "12", f"AND({house('Ketu')}=12,{young(br.KETU_PURPOSE_AGE)})", '""'),
+             ("venus_afflicted", '"Venus"', house("Venus"), f"AND({hin('Venus', (2, 8, 11))},{aff('Venus')})", '""'),
+             ("venus_good", '"Venus"', house("Venus"), f"AND({hin('Venus', (2, 8, 11))},NOT({aff('Venus')}))", '""'),
+             ("venus_mercury_5", '"Venus"', "5", f"AND({house('Venus')}=5,{house('Mercury')}=5)", '""'),
+             ("seventh_lord_12", lord(7), "12", f"{house_of(lord(7))}=12", '""'),
+             ("mercury_foreign_language", '"Mercury"', "2",
+              f'AND({house("Mercury")}=2,OR({sign("Rahu")}={sign("Mercury")},AND({lord(12)}<>"Mercury",{sign_of(lord(12))}={sign("Mercury")})))', '""'),
+             ("moon_dual_10", '"Moon"', "10", f'AND({house("Moon")}=10,INDEX(S23_Ref_Calc!$E$3:$E$14,{sign("Moon")}+1)="Dwisabhava")', '""'),
+             ("venus_meets_wife", '"Venus"', house("Venus"), f'{gender}="Male"', '""'),
+             ("jupiter_husband", '"Jupiter"', house("Jupiter"), f'{gender}="Female"', '""'),
+             ("first_child_male", lord(5), "5",
+              f"AND({male(fifth_sign)},OR({house('Sun')}=5,{house('Mars')}=5,{house('Jupiter')}=5),{male(sign_of(lord(5)))})", '""')]
+    assert [k for k, *_ in rows] == sorted((k for k, *_ in rows), key=br.CONDITION_KEYS.index)
+    ws.cell(row=COND_ROW0 - 2, column=1, value="Conditional readings (S23_Conditions): which hold for this chart").font = Font(bold=True, color="6B1D2B")
+    _head(ws, COND_ROW0 - 1, ["Key", "Planet", "House", "Holds?", "Active now?", "Row in S23_Conditions", "Text"])
+    K, Pl, H = "S23_Conditions!$A$2:$A$300", "S23_Conditions!$B$2:$B$300", "S23_Conditions!$C$2:$C$300"
+    for i, (key, planet, h, holds, active) in enumerate(rows):
+        r = COND_ROW0 + i
+        ws.cell(row=r, column=1, value=key)
+        ws.cell(row=r, column=2, value=f"={planet}")
+        ws.cell(row=r, column=3, value=f"={h}")
+        ws.cell(row=r, column=4, value=f"={holds}")
+        ws.cell(row=r, column=5, value=f"={active}")
+        best = [f"SUMPRODUCT(({K}=$A{r})*({Pl}={pl})*({H}={hh})*ROW({K}))"
+                for pl, hh in ((f"$B{r}", f"$C{r}"), ('""', f"$C{r}"), (f"$B{r}", '""'), ('""', '""'))]
+        ws.cell(row=r, column=6, value=f"=IF({best[0]}>0,{best[0]},IF({best[1]}>0,{best[1]},IF({best[2]}>0,{best[2]},{best[3]})))")
+        ws.cell(row=r, column=7, value=f'=IF(F{r}>0,INDEX(S23_Conditions!$D$1:$D$300,F{r}),"")')
+    last = COND_ROW0 + len(rows) - 1
+    for k, p in enumerate(br.PLANET_ORDER):
+        r = PREDICT_ROW0 + k
+        texts = "&".join(f'IF(AND($B${c}=$A{r},$D${c},$F${c}>0),CHAR(10)&$G${c},"")' for c in range(COND_ROW0, last + 1))
+        keys = "&".join(f'IF(AND($B${c}=$A{r},$D${c},$F${c}>0,$E${c}="yes"),", "&$A${c},"")' for c in range(COND_ROW0, last + 1))
+        ws.cell(row=r, column=18, value=f"=MID({texts},2,32000)")
+        ws.cell(row=r, column=19, value=f"=MID({keys},3,32000)")
 
 
 # ---- assembly --------------------------------------------------------------------------------------
@@ -458,6 +584,9 @@ def set_inputs(wb, chart, now):
     for k, p in enumerate(br.PLANET_ORDER):
         ws.cell(row=PLANET_ROW0 + k, column=2, value=names[chart["signs"][p]])
         ws.cell(row=PLANET_ROW0 + k, column=3, value=chart["degs"][p])
+    for k, p in enumerate(br.PLANET_ORDER):
+        ws.cell(row=PLANET_ROW0 + k, column=RETRO_COL, value="yes" if (chart.get("retro") or {}).get(p) else None)
+    ws[GENDER_CELL] = chart.get("gender") or None
     ws[BIRTH_CELL] = chart["birth"]
     ws[NOW_CELL] = now
 

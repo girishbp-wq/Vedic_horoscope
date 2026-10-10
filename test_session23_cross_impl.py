@@ -872,6 +872,24 @@ def calc_charts(n, seed):
     return out
 
 
+def condition_charts():
+    """The teacher's worked charts plus charts that make the rarer conditional readings hold."""
+    import datetime
+    import test_teacher_charts as tc
+    out = []
+    for name in ("S23_2024_A", "S23_2024_B", "S23_2024_C", "S23_2024_D", "S27_CHART_2"):
+        c = dict(tc.CHARTS[name], birth=datetime.datetime(1995, 3, 10, 8, 30), gender="Female")
+        out.append(c)
+    base = {p: 7 for p in br.PLANET_ORDER}                                  # Simha Lagna; all in Vrischika (4th) …
+    out.append({"lagna": 4, "signs": dict(base, Saturn=4, Rahu=1, Ketu=7), "degs": {p: 12.0 for p in br.PLANET_ORDER},
+                "retro": {"Saturn": True, "Rahu": True, "Ketu": True}, "birth": datetime.datetime(2001, 6, 1, 4, 0), "gender": "Male"})
+    out.append({"lagna": 4, "signs": dict(base, Saturn=1, Sun=1, Rahu=2, Ketu=8), "degs": dict({p: 12.0 for p in br.PLANET_ORDER}, Saturn=10.0),
+                "retro": {}, "birth": datetime.datetime(2002, 2, 2, 2, 0), "gender": None})   # Saturn combust in the 10th, young
+    for c in out:
+        c["waxing"] = _waxing_of(c)
+    return out
+
+
 def dignity_boundary_charts(n=36):
     """Every planet placed at sign/degree values that straddle the exaltation, debilitation and MT boundaries."""
     import datetime
@@ -908,7 +926,7 @@ class ExcelSession23(unittest.TestCase):
         cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
         base = tmp / "base.xlsx"
         mx.build_workbook(base)
-        cls.charts = calc_charts(24, 77) + dignity_boundary_charts()
+        cls.charts = calc_charts(24, 77) + dignity_boundary_charts() + condition_charts()
         src = tmp / "in"
         src.mkdir()
         paths = []
@@ -991,6 +1009,25 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(got["digbala_line"] or "", want["digbala_line"], (i, p))
                 self.assertEqual(got["classes"] or "", ", ".join(want["classes"]), (i, p))
                 self.assertEqual(got["class_texts"] or "", "\n".join(want["class_texts"]), (i, p))
+
+    def test_new_layer_one_lines_equal_python(self):
+        mx = self.mx
+        new = ("moon_strength", "nature_lines", "twelfth_line", "conditions", "active")
+        for i, c, wb in self.each():
+            ws = wb[mx.PREFIX + "Predict_Calc"]
+            d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+            ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                             d["age"], d["maha"], d["bhukti"])
+            conds = br.chart_conditions(RULES, ctx)
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.PREDICT_ROW0 + k
+                g = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
+                got = {name: ws.cell(row=r, column=mx.PREDICT_COLS[name]).value or "" for name in new}
+                want = {"moon_strength": g["moon_strength"], "nature_lines": "\n".join(x["text"] for x in g["nature_lines"]),
+                        "twelfth_line": g["twelfth_line"],
+                        "conditions": "\n".join(x["text"] for x in conds if x["planet"] == p),
+                        "active": ", ".join(x["key"] for x in conds if x["planet"] == p and x["active"])}
+                self.assertEqual(got, want, (i, p))
 
     def test_dignity_labels_equal_python(self):
         mx = self.mx
