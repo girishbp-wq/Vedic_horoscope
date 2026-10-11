@@ -1174,3 +1174,66 @@ class ChartReadings(unittest.TestCase):
     def test_partial_chart_no_raise(self):
         for signs in ({}, {"Moon": 3}, {"Rahu": 0, "Ketu": 6}):
             self.assertIsInstance(self.items(4, signs), list)
+
+
+class DegreeStages(unittest.TestCase):
+    def st(self, planet, deg, age=None):
+        return br.degree_stage(RULES, planet, deg, age)
+
+    def test_band_edges(self):
+        self.assertEqual((self.st("Jupiter", 0.0)["stage"], len(self.st("Jupiter", 0.0)["lines"])), ("At 0 degree", 2))
+        for deg, stage in ((0.99, "Infant"), (1.0, "Young"), (5.999, "Young"), (6.0, "Adult"), (17.99, "Adult"),
+                           (18.0, "Mature"), (26.0, "Old"), (29.999, "Old")):
+            self.assertEqual(self.st("Jupiter", deg)["stage"], stage, deg)
+            self.assertEqual(len(self.st("Jupiter", deg)["lines"]), 1, deg)
+        rahu = self.st("Rahu", 26.5)
+        self.assertEqual((rahu["stage"], len(rahu["lines"])), ("Old", 2))
+        self.assertIn("lose their strength of giving malefic results", rahu["lines"][1])
+        self.assertEqual(len(self.st("Jupiter", 0.5)["lines"]), 1)                  # not a malefic
+        self.assertEqual(len(self.st("Sun", 27)["lines"]), 1)                       # her list leaves out the Sun
+
+    def test_age_note(self):
+        self.assertEqual(self.st("Saturn", 0.0, 34.6)["age_note"], "Age 34: past 32, so it now gives its results.")
+        self.assertEqual(self.st("Saturn", 0.0, 25)["age_note"], "Age 25: results from about 32.")
+        self.assertEqual(self.st("Saturn", 0.0)["age_note"], "")
+        self.assertEqual(self.st("Jupiter", 10, 34)["age_note"], "")
+
+    def test_no_degree(self):
+        self.assertIsNone(self.st("Mars", None))
+
+    def test_her_malefics(self):
+        import session28_29_teacher_texts as t
+        self.assertEqual(br.DEGREE_MALEFICS, t.MALEFICS_FOR_DEGREES)
+
+
+class DeeperDasha(unittest.TestCase):
+    def test_children_sum_to_parent(self):
+        rnd = _random.Random(3)
+        for _ in range(200):
+            lord = rnd.choice(RULES["reference"]["VORDER"])
+            start = _dt.datetime(1950, 1, 1) + _dt.timedelta(days=rnd.uniform(0, 30000))
+            years = rnd.uniform(0.001, 20)
+            kids = br.sub_periods(RULES, lord, start, years)
+            self.assertEqual(len(kids), 9)
+            self.assertEqual(kids[0]["lord"], lord)
+            self.assertEqual(kids[0]["start"], start)
+            self.assertEqual(kids[-1]["end"], start + _dt.timedelta(days=years * 365.25))
+            for a, b in zip(kids, kids[1:]):
+                self.assertEqual(a["end"], b["start"])
+            self.assertAlmostEqual(sum(k["years"] for k in kids), years, places=9)
+
+    def test_chain_boundary_instant(self):
+        birth, moon = _dt.datetime(1990, 5, 15, 1, 0), 123.4
+        v = br.vimshottari(RULES, moon, birth, _dt.datetime(2026, 1, 1))
+        b = v["cur_bhukti"]
+        years = RULES["reference"]["VYEARS"]
+        kids = br.sub_periods(RULES, b["lord"], b["start"], years[v["cur_maha"]["lord"]] * years[b["lord"]] / 120)
+        now = kids[4]["start"]
+        chain = br.dasha_chain(RULES, br.vimshottari(RULES, moon, birth, now), now)
+        self.assertEqual((chain[2]["lord"], chain[2]["start"]), (kids[4]["lord"], kids[4]["start"]))
+
+    def test_chain_outside_span_is_empty(self):
+        birth, moon = _dt.datetime(1990, 5, 15, 1, 0), 123.4
+        v = br.vimshottari(RULES, moon, birth, birth)
+        for now in (v["span_start"] - _dt.timedelta(days=1), v["span_end"] + _dt.timedelta(days=1)):
+            self.assertEqual(br.dasha_chain(RULES, br.vimshottari(RULES, moon, birth, now), now), [])

@@ -566,6 +566,42 @@ def vimshottari(rules, moon_lon, birth, now):
             "span_start": timeline[0]["start"], "span_end": timeline[8]["end"]}
 
 
+DASHA_LEVELS = ("Mahādaśā", "Bhukti", "Pratyantara", "Sookshma", "Prāṇa")
+
+
+def sub_periods(rules, lord, start, years):
+    """S29 pp.5, 11: the nine periods inside a period of `years` ruled by `lord`, in the daśā order from `lord`,
+    each `years × its years / 120` long. The last one ends exactly where the parent ends."""
+    ref = rules["reference"]
+    order, ys = ref["VORDER"], ref["VYEARS"]
+    add = lambda dt, y: dt + datetime.timedelta(days=y * _YEAR_DAYS)
+    out, x, li = [], start, order.index(lord)
+    for j in range(9):
+        sub = order[(li + j) % 9]
+        y = years * ys[sub] / 120
+        end = add(start, years) if j == 8 else add(x, y)
+        out.append({"lord": sub, "start": x, "end": end, "years": y})
+        x = end
+    return out
+
+
+def dasha_chain(rules, dasha, now):
+    """The running Mahādaśā, Bhukti, Pratyantara, Sookshma and Prāṇa: [{level, lord, start, end}]; [] outside the span."""
+    if not dasha["running"]:
+        return []
+    ys = rules["reference"]["VYEARS"]
+    m, b = dasha["cur_maha"], dasha["cur_bhukti"]
+    chain = [{"level": DASHA_LEVELS[0], "lord": m["lord"], "start": m["start"], "end": m["end"]},
+             {"level": DASHA_LEVELS[1], "lord": b["lord"], "start": b["start"], "end": b["end"]}]
+    lord, start, years = b["lord"], b["start"], ys[m["lord"]] * ys[b["lord"]] / 120
+    for level in DASHA_LEVELS[2:]:
+        kids = sub_periods(rules, lord, start, years)
+        k = next((k for k in kids if k["start"] <= now < k["end"]), kids[-1])
+        chain.append({"level": level, "lord": k["lord"], "start": k["start"], "end": k["end"]})
+        lord, start, years = k["lord"], k["start"], k["years"]
+    return chain
+
+
 def _applicable_roles(roles, as_maha):
     """Trishadaya is taught as an effect of the Mahādaśā, so a Bhukti lord does not carry it."""
     return [r for r in roles if as_maha or r != "Trishadaya lord"]
@@ -647,6 +683,28 @@ def bhava_nature_lines(rules, planet, house):
             for r in sorted(rows, key=group)]
 
 
+DEGREE_MALEFICS = ("Mars", "Saturn", "Rahu", "Ketu")     # S28 p.17 names these (not the Sun)
+
+
+def degree_stage(rules, planet, deg, age=None):
+    """S28 p.17: the planet's stage by its degree in the sign — {stage, lines, age_note}; None without a degree.
+    Her malefic sentence is added for Mars, Saturn, Rahu and Ketu at 0-1° or 26-30°. Nothing else depends on it."""
+    if deg is None:
+        return None
+    rows = [r for r in rules.get("degree_stages", []) if r["from"] <= deg < r["to"]
+            and (r["applies"] == "any" or planet in DEGREE_MALEFICS)]
+    rows.sort(key=lambda r: r["applies"] != "any")               # her stage lines first, then the malefic line
+    if not rows:
+        return None
+    after = max((r["after_age"] for r in rows if r["after_age"] is not None), default=None)
+    note = ""
+    if after is not None and age is not None:
+        a = int(age)
+        note = f"Age {a}: past {after}, so it now gives its results." if age >= after else f"Age {a}: results from about {after}."
+    stage = next((r["stage"] for r in rows if r["applies"] == "any"), rows[0]["stage"])
+    return {"stage": stage, "lines": [r["text"] for r in rows], "age_note": note}
+
+
 def twelfth_line(rules, house):
     """The 12th-house line (S23-2024 p.19, S24 p.13, S25 p.29), shown right after the dignity line."""
     if house != 12:
@@ -679,6 +737,7 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
             "twelfth_line": twelfth_line(rules, house), "nature_lines": bhava_nature_lines(rules, planet, house),
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
             "classes": reading["classes"], "class_texts": reading["texts"],
+            "degree_stage": degree_stage(rules, planet, deg, ctx["age"]),
             "readings": [x["text"] for x in chart_readings(rules, ctx)
                          if (x["kind"] == "in" and planet in x["on"]) or (x["kind"] == "aspects planet" and planet in x["with"])]}
 

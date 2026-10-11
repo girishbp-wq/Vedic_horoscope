@@ -26,9 +26,10 @@ CHARTS = {
                                      "Rahu": (KARKATAKA, 3), "Moon": (TULA, 18), "Ketu": (MAKARA, 3), "Jupiter": (MESHA, 26),
                                      "Venus": (MESHA, 25), "Saturn": (MESHA, 27)}, retro=("Rahu", "Ketu")),
     # S23-2024 p.13 = S27 Chart 1 (pp.8-16): Moon in the 7th, Mesha Lagna
-    "S23_2024_C": _chart(MESHA, {"Saturn": (SIMHA, 22), "Mars": (KANYA, 13), "Ketu": (KANYA, 15), "Moon": (TULA, 29),
-                                 "Jupiter": (MAKARA, 29), "Venus": (MAKARA, 14), "Sun": (KUMBHA, 24), "Mercury": (KUMBHA, 8),
-                                 "Rahu": (MEENA, 15)}, retro=("Saturn", "Mars", "Rahu", "Ketu")),
+    "S23_2024_C": dict(_chart(MESHA, {"Saturn": (SIMHA, 22), "Mars": (KANYA, 13), "Ketu": (KANYA, 15), "Moon": (TULA, 29),
+                                      "Jupiter": (MAKARA, 29), "Venus": (MAKARA, 14), "Sun": (KUMBHA, 24),
+                                      "Mercury": (KUMBHA, 8), "Rahu": (MEENA, 15)}, retro=("Saturn", "Mars", "Rahu", "Ketu")),
+                       gender="Male", birth_time="10:10"),                  # S29 p.31: "Male Native", born 10.10 a.m.
     # S23-2024 p.17: Moon in the 10th in a dual sign, Dhanu Lagna
     "S23_2024_D": _chart(DHANU, {"Rahu": (DHANU, 2), "Sun": (MAKARA, 28), "Venus": (MAKARA, 2), "Mercury": (KUMBHA, 16),
                                  "Jupiter": (KUMBHA, 0), "Mars": (MESHA, 27), "Saturn": (MITHUNA, 4), "Ketu": (MITHUNA, 2),
@@ -301,3 +302,58 @@ class S28Chart3Readings(unittest.TestCase):
         mars2 = next(a for a in next(r for r in br.bhava_bhava(RULES, self.c) if r["lord_of"] == 2)["house_aspects"]
                      if a["by"] == "Mars")
         self.assertTrue([t for t in mars2["readings"] if "Two malefics" in t])
+
+
+import datetime as _dt
+import session28_29_teacher_texts as _t28
+
+# S29 pp.7-9: male, born 8 June 1982 (time not given), Moon 13°36'37" Dhanu = Purvashadha pada 1
+S29_CHART_A = dict(moon_lon=240 + 13 + 36 / 60 + 37 / 3600, birth=_dt.datetime(1982, 6, 8, 12, 0), gender="Male")
+
+
+class S27Chart1FromS29(unittest.TestCase):
+    def test_gender_and_birth_time(self):
+        c = CHARTS["S23_2024_C"]
+        self.assertEqual((c["gender"], c["birth_time"]), ("Male", "10:10"))
+        got = br.chart_conditions(RULES, ctx("S23_2024_C", gender=c["gender"]))
+        self.assertIn(("venus_meets_wife", "Venus", 10), [(x["key"], x["planet"], x["house"]) for x in got])
+
+
+class S28Chart3Degrees(unittest.TestCase):
+    def test_degree_stages(self):
+        c = CHARTS["S28_CHART_3"]
+        card = lambda p: br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], False, ctx=ctx("S28_CHART_3"))
+        self.assertEqual(card("Saturn")["degree_stage"]["stage"], "At 0 degree")
+        self.assertEqual(len(card("Saturn")["degree_stage"]["lines"]), 3)          # 0°, infant, the malefic line
+        self.assertEqual(card("Moon")["degree_stage"]["stage"], "Young")
+
+
+class S29ChartA(unittest.TestCase):
+    def dasha(self, now):
+        return br.vimshottari(RULES, S29_CHART_A["moon_lon"], S29_CHART_A["birth"], now)
+
+    def test_chain_1982(self):
+        now = _dt.datetime(2024, 9, 18, 12, 0)
+        v = self.dasha(now)
+        chain = br.dasha_chain(RULES, v, now)
+        self.assertEqual([c["level"] for c in chain], list(br.DASHA_LEVELS))
+        self.assertEqual([c["lord"] for c in chain[:2]], ["Mars", "Moon"])
+        self.assertEqual(chain[1]["end"].date(), _dt.date(2025, 1, 7))
+        # level 2 by an independent loop: the Moon Bhukti of Mars, divided from the Moon in the daśā order
+        order, years = RULES["reference"]["VORDER"], RULES["reference"]["VYEARS"]
+        span, x = 7 * 10 / 120, chain[1]["start"]
+        for k in range(9):
+            sub = order[(order.index("Moon") + k) % 9]
+            end = x + _dt.timedelta(days=span * years[sub] / 120 * 365.25)
+            if x <= now < end:
+                break
+            x = end
+        self.assertEqual(chain[2]["lord"], sub)
+
+    def test_venus_bhukti_dates_1982(self):
+        venus = self.dasha(_dt.datetime(1990, 1, 1))["timeline"][0]
+        self.assertEqual(venus["lord"], "Venus")
+        starts = {b["lord"]: b["start"].date() for b in venus["bhuktis"]}
+        self.assertEqual(starts["Sun"], _dt.date(1985, 5, 9))
+        self.assertEqual(starts["Moon"], _dt.date(1986, 5, 9))
+        self.assertEqual(starts["Ketu"], _dt.date(2000, 11, 7))
