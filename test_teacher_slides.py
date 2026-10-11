@@ -109,3 +109,73 @@ class ExampleAndConditionText(unittest.TestCase):
             for (planet, house), (_, cell) in ts.GRAHA_IN_BHAVA.items():
                 if (p is None or p == planet) and (h is None or h == house):
                     self.assertNotIn(text, cell, (key, planet, house))
+
+
+class S28_29Texts(unittest.TestCase):
+    """Sessions 28-29 (Round 1): her Chart 3 texts, the degree stages and the S29 tip."""
+
+    LORD_KEYS = [(2, 9, "", False), (3, 9, "", False), (4, 7, "", False), (5, 8, "", False), (6, 6, "", False),
+                 (7, 4, "weak", False), (8, 12, "", True), (8, 12, "weak", False), (9, 5, "", False),
+                 (10, 4, "weak", False), (11, 6, "", False)]
+    SRC = re.compile(r"^(S28|S29) pp?\.\d+(-\d+)?$")
+    LABEL = "In her example chart (S28): "
+    SPECS = (["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu", "benefic", "malefic"]
+             + [f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} lord" for n in range(1, 13)])
+
+    @classmethod
+    def setUpClass(cls):
+        import session28_29_teacher_texts as t
+        cls.t = t
+
+    def test_lord_in_keys(self):
+        self.assertEqual(sorted((a, b, c, x) for a, b, c, x, _, _ in self.t.LORD_IN), sorted(self.LORD_KEYS))
+
+    def test_example_label_and_sources(self):
+        for row in self.t.LORD_IN:
+            self.assertTrue(row[4].startswith(self.LABEL), row)
+            self.assertRegex(row[5], self.SRC, row)
+        for row in self.t.CHART_READINGS:
+            self.assertTrue(row[5].startswith(self.LABEL), row)
+            self.assertRegex(row[6], self.SRC, row)
+        for row in self.t.DEGREE_STAGES + self.t.REMEDIES:
+            self.assertRegex(row[-1], self.SRC, row)
+
+    def test_chart_readings_vocabulary(self):
+        keys = []
+        for kind, planet, with_, house, cond, text, _ in self.t.CHART_READINGS:
+            self.assertIn(kind, ("in", "aspects", "aspects lord", "aspects planet"))
+            self.assertIn(planet, self.SPECS)
+            self.assertIn(with_, self.SPECS + [""])
+            if kind == "aspects planet":                  # Planet aspects the planet named in With
+                self.assertIsNone(house)
+                self.assertIn(with_, self.SPECS[:9])
+            else:
+                self.assertIn(house, range(1, 13))
+            self.assertIn(cond, ("", "exalted", "debilitated"))
+            self.assertTrue(text.strip())
+            keys.append((kind, planet, with_, house, cond))
+        self.assertEqual(len(keys), len(set(keys)))
+        for required in [("aspects", "Jupiter", "", 1, ""), ("aspects", "benefic", "", 1, ""),
+                         ("aspects", "malefic", "malefic", 2, ""), ("in", "Mercury", "Ketu", 4, "debilitated"),
+                         ("in", "Rahu", "", 10, ""), ("aspects", "Saturn", "", 6, ""),
+                         ("aspects lord", "Rahu", "", 11, ""), ("aspects lord", "8th lord", "", 11, "")]:
+            self.assertIn(required, keys)
+
+    def test_degree_bands_cover_0_to_30(self):
+        bands = sorted((f, to) for f, to, stage, applies, *_ in self.t.DEGREE_STAGES
+                       if applies == "any" and stage != "At 0 degree")
+        self.assertEqual(bands[0][0], 0)
+        self.assertEqual(bands[-1][1], 30)
+        for (_, a), (b, _) in zip(bands, bands[1:]):
+            self.assertEqual(a, b)
+        malefic = sorted((f, to) for f, to, _, applies, *_ in self.t.DEGREE_STAGES if applies == "malefic")
+        self.assertEqual(malefic, [(0, 1), (26, 30)])
+        self.assertEqual(self.t.MALEFICS_FOR_DEGREES, ("Mars", "Saturn", "Rahu", "Ketu"))
+
+    def test_no_editorial_marks_left(self):
+        texts = ([r[4] for r in self.t.LORD_IN] + [r[5] for r in self.t.CHART_READINGS]
+                 + [r[5] for r in self.t.DEGREE_STAGES] + [r[1] for r in self.t.REMEDIES])
+        for text in texts:
+            self.assertNotIn("[", text)
+            self.assertNotIn(" ,", text)
+            self.assertNotIn(" .", text)
