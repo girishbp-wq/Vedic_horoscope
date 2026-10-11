@@ -4,7 +4,7 @@
     python apply_teacher_slides.py
 
 Reads session23_rules.previous.json (the rules as shipped before these sessions), adds the rows from
-session23_teacher_slides.py, and writes session23_rules.json and the SESSION23-DATA block of index.html.
+session23_teacher_slides.py (Sessions 23-27) and session28_29_teacher_texts.py (Sessions 28-29), and writes session23_rules.json and the SESSION23-DATA block of index.html.
 On the user's PC the same rows reach the master workbook through `make_session23_xlsx.py --install`.
 """
 import copy
@@ -14,6 +14,7 @@ import sys
 
 import build_session23 as b23
 import session23_teacher_slides as ts
+import session28_29_teacher_texts as t28
 
 ROOT = pathlib.Path(__file__).resolve().parent
 PREVIOUS = ROOT / "session23_rules.previous.json"
@@ -64,8 +65,31 @@ def apply(previous):
     return out
 
 
+def apply_s28_29(rules):
+    """A copy of `rules` (as apply() returns them) with the Sessions 28-29 rows from session28_29_teacher_texts."""
+    rules = copy.deepcopy(rules)
+    rules["bhava_lord_in"] += [dict(lord_of=a, sits_in=b, text=x, status="taught", source=s, condition=c, exchange=e)
+                               for a, b, c, e, x, s in t28.LORD_IN]
+    for r in rules["class_rules"]:
+        r["when"] = t28.CLASS_RULE_WHEN.get((r["class"], r["applies"]), "")
+    rules["remedies"] += [dict(topic=t, text=x, source=s) for t, x, s in t28.REMEDIES]
+    new = {
+        "chart_readings": [_taught(kind=k, planet=p, **{"with": w}, house=h, condition=c, text=x, source=s)
+                           for k, p, w, h, c, x, s in t28.CHART_READINGS],
+        "degree_stages": [{"from": f, "to": to, "stage": st, "applies": a, "after_age": ag, "text": x, "source": s}
+                          for f, to, st, a, ag, x, s in t28.DEGREE_STAGES],
+    }
+    out = {}
+    for k, v in rules.items():                 # new keys go before `reference` and `meta`, in sheet order
+        if k == "reference":
+            out.update(new)
+        out[k] = v
+    out["meta"] = dict(b23.META)
+    return out
+
+
 def main():
-    rules = apply(json.loads(PREVIOUS.read_text(encoding="utf-8")))
+    rules = apply_s28_29(apply(json.loads(PREVIOUS.read_text(encoding="utf-8"))))
     if b23.JSON_PATH.exists():                 # the reference tables come from the master workbook: keep the current ones
         rules["reference"] = json.loads(b23.JSON_PATH.read_text(encoding="utf-8"))["reference"]
     b23.JSON_PATH.write_text(json.dumps(rules, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

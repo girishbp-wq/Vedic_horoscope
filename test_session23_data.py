@@ -219,31 +219,52 @@ class TeacherRows(unittest.TestCase):
                                            for n, a, h, k, kf, l, s in ts.LIFE_AREAS])
         self.assertEqual(r["conditions"], [dict(key=k, planet=p, house=h, text=t, status="taught", source=s)
                                            for k, p, h, t, s in ts.CONDITIONS])
-        self.assertEqual(r["remedies"], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
+        self.assertEqual(r["remedies"][:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
 
     def test_lord_in_and_graha_rashi_rows_follow_the_shipped_ones(self):
         import session23_teacher_slides as ts
         r = rules()
         self.assertEqual(r["bhava_lord_in"][0]["lord_of"], 2)                  # the Session 23 row stays first
-        self.assertEqual(r["bhava_lord_in"][1:], [dict(lord_of=a, sits_in=b, text=t, status="taught", source=s, condition=c, exchange=x)
-                                                  for a, b, c, x, t, s in ts.LORD_IN])
+        self.assertEqual(r["bhava_lord_in"][1:1 + len(ts.LORD_IN)],
+                         [dict(lord_of=a, sits_in=b, text=t, status="taught", source=s, condition=c, exchange=x)
+                          for a, b, c, x, t, s in ts.LORD_IN])
         self.assertEqual(r["graha_rashi"][1:], [dict(planet=p, rashi=n, text=t, status="taught", source=s)
                                                 for p, n, t, s in ts.GRAHA_RASHI])
         self.assertEqual((r["bhava_lord_in"][0]["condition"], r["bhava_lord_in"][0]["exchange"]), ("", False))
 
-    def test_json_is_previous_plus_teacher_slides(self):
+    def test_json_is_previous_plus_both_rounds(self):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
         # the reference tables come from the master workbook's own sheets, not from the slides
         drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
-        self.assertEqual(drop(apply_teacher_slides.apply(prev)), drop(rules()))
+        self.assertEqual(drop(apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))), drop(rules()))
         # key order too: the workbook build and this script must write the same file, so publish sees no change
+        both = apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))
         built = b23.read_workbook(self.__class__._exported())
         for k, rows in built.items():
             if isinstance(rows, list):
-                self.assertEqual([list(r) for r in rows], [list(r) for r in apply_teacher_slides.apply(prev)[k]], k)
+                self.assertEqual([list(r) for r in rows], [list(r) for r in both[k]], k)
         self.assertEqual(prev["meta"]["version"], 1)
         self.assertEqual(rules()["meta"], b23.META)
+
+    def test_round1_rows_present(self):
+        import session28_29_teacher_texts as t
+        r = rules()
+        self.assertEqual(r["bhava_lord_in"][-len(t.LORD_IN):],
+                         [dict(lord_of=a, sits_in=b, text=x, status="taught", source=s, condition=c, exchange=e)
+                          for a, b, c, e, x, s in t.LORD_IN])
+        self.assertEqual(r["chart_readings"], [dict(kind=k, planet=p, **{"with": w}, house=h, condition=c, text=x,
+                                                    status="taught", source=s)
+                                               for k, p, w, h, c, x, s in t.CHART_READINGS])
+        self.assertEqual(r["degree_stages"], [dict(**{"from": f}, to=to, stage=st, applies=a, after_age=ag, text=x, source=s)
+                                              for f, to, st, a, ag, x, s in t.DEGREE_STAGES])
+        whens = {(c["class"], c["applies"]): c["when"] for c in r["class_rules"] if c["when"]}
+        self.assertEqual(whens, {("Dusthana", "malefic"): "not weak"})
+        self.assertEqual(r["remedies"][-1], dict(topic="Tip", text=t.REMEDIES[0][1], source="S29 p.50"))
+        keys = list(r)
+        self.assertLess(keys.index("chart_readings"), keys.index("degree_stages"))
+        self.assertLess(keys.index("degree_stages"), keys.index("reference"))
+        self.assertEqual(r["meta"]["version"], 3)
 
 
 class TaughtLayerExamples(unittest.TestCase):
@@ -465,6 +486,43 @@ class SheetValidation(unittest.TestCase):
         self.assertIn(f"S23_GrahaInBhava row {self.row}: Planet 'Saturnn'", msg)
         self.assertIn("nothing was published", msg)
         self.assertIn("S23_GrahaInBhava: no row for Saturn in house 1", msg)
+
+    def test_chart_readings_bad_cells(self):
+        def edit(wb):
+            ws = wb["S23_ChartReadings"]
+            ws.cell(row=2, column=1, value="near")
+            ws.cell(row=3, column=2, value="Saturnn")
+            ws.cell(row=4, column=5, value="retro")
+            for c in range(1, 9):                                   # row 6 repeats row 5
+                ws.cell(row=6, column=c, value=ws.cell(row=5, column=c).value)
+        msg = self.build_after(edit)
+        self.assertIn("S23_ChartReadings row 2: Kind 'near' is not one of in, aspects, aspects lord, aspects planet", msg)
+        self.assertIn("S23_ChartReadings row 3: Planet 'Saturnn' is not a planet, benefic, malefic or 'Nth lord'", msg)
+        self.assertIn("S23_ChartReadings row 4: Condition 'retro' is not one of (blank), exalted, debilitated", msg)
+        self.assertIn("S23_ChartReadings: 2 rows for", msg)
+
+    def test_degree_stage_overlap(self):
+        def edit(wb):
+            ws = wb["S23_DegreeStages"]
+            r = self.find(wb, "DegreeStages", 3, "Adult")
+            ws.cell(row=r, column=1, value=5)
+        msg = self.build_after(edit)
+        self.assertIn("S23_DegreeStages: bands overlap", msg)
+
+    def test_degree_stage_bad_numbers(self):
+        def edit(wb):
+            ws = wb["S23_DegreeStages"]
+            ws.cell(row=4, column=2, value=31)
+            ws.cell(row=5, column=5, value="x")
+        msg = self.build_after(edit)
+        self.assertIn("S23_DegreeStages row 4: From and To must be degrees from 0 to 30, From before To", msg)
+        self.assertIn("S23_DegreeStages row 5: AfterAge 'x' is not a whole number", msg)
+
+    def test_class_rule_bad_when(self):
+        def edit(wb):
+            wb["S23_ClassRules"].cell(row=2, column=6, value="always")
+        msg = self.build_after(edit)
+        self.assertIn("S23_ClassRules row 2: When 'always' is not one of (blank), not weak", msg)
 
     def test_house_that_is_not_a_number(self):
         msg = self.build_after(lambda wb: wb["S23_GrahaInBhava"].cell(row=5, column=2, value="x"))

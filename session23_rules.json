@@ -148,49 +148,56 @@
    "applies": "benefic",
    "exclude_houses": [],
    "text": "Benefic grahas in Kendras lead to powerful manifestations with smaller efforts; they enhance the internal strength of the individual.",
-   "slide": "4"
+   "slide": "4",
+   "when": ""
   },
   {
    "class": "Kendra",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "Malefic grahas in Kendras can cause struggle and pose challenges for accomplishments.",
-   "slide": "4"
+   "slide": "4",
+   "when": ""
   },
   {
    "class": "Kendra",
    "applies": "any",
    "exclude_houses": [],
    "text": "Grahas placed in a Kendra are highly active.",
-   "slide": "4"
+   "slide": "4",
+   "when": ""
   },
   {
    "class": "Trikona",
    "applies": "benefic",
    "exclude_houses": [],
    "text": "Benefics in a Trikona ease the flow of destiny.",
-   "slide": "7"
+   "slide": "7",
+   "when": ""
   },
   {
    "class": "Trikona",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "Malefics in a Trikona could cause challenges to be faced.",
-   "slide": "7"
+   "slide": "7",
+   "when": ""
   },
   {
    "class": "Trikona",
    "applies": "any",
    "exclude_houses": [],
    "text": "Planets posited in a Trikona get closely associated with destiny and gain strength.",
-   "slide": "7"
+   "slide": "7",
+   "when": ""
   },
   {
    "class": "Panapara",
    "applies": "any",
    "exclude_houses": [],
    "text": "Grahas posited in the Panapara houses are moderately strong; these are money-related houses.",
-   "slide": "10"
+   "slide": "10",
+   "when": ""
   },
   {
    "class": "Apoklima",
@@ -199,7 +206,8 @@
     9
    ],
    "text": "Planets placed in the Apoklima houses are considered weak — delicate, sensitive, highly intelligent, fluctuating, undecided, with a spiritual inclination.",
-   "slide": "12"
+   "slide": "12",
+   "when": ""
   },
   {
    "class": "Apoklima",
@@ -210,77 +218,88 @@
     12
    ],
    "text": "The 9th house is the exception among the Apoklima houses: it is not counted as a bad position for the planets.",
-   "slide": "12"
+   "slide": "12",
+   "when": ""
   },
   {
    "class": "Upachaya",
    "applies": "any",
    "exclude_houses": [],
    "text": "Planets placed in the Upachaya houses grow and improve over time.",
-   "slide": "14"
+   "slide": "14",
+   "when": ""
   },
   {
    "class": "Upachaya",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "A malefic planet placed here bestows good results during its dasa period; the results come through struggle and effort and grow with time — mostly in the 30s.",
-   "slide": "14; S26 p.5; S23-2024 p.22"
+   "slide": "14; S26 p.5; S23-2024 p.22",
+   "when": ""
   },
   {
    "class": "Apachaya",
    "applies": "any",
    "exclude_houses": [],
    "text": "Planets located in the Apachaya houses lose their strength through time.",
-   "slide": "16"
+   "slide": "16",
+   "when": ""
   },
   {
    "class": "Apachaya",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "Natural malefics do not do well in these houses.",
-   "slide": "16"
+   "slide": "16",
+   "when": ""
   },
   {
    "class": "Maraka",
    "applies": "any",
    "exclude_houses": [],
    "text": "A planet occupying the 2nd or 7th can cause death-like suffering or disturbance of the health during its dasa, if it operates before the time of death is promised.",
-   "slide": "17"
+   "slide": "17",
+   "when": ""
   },
   {
    "class": "Dusthana",
    "applies": "any",
    "exclude_houses": [],
    "text": "The 6th, 8th and 12th are evil and malefic houses; their lords bring problems, impediments, enemies, lawsuits, accidents, injuries and surgeries during their dasa-bukti period.",
-   "slide": "19"
+   "slide": "19",
+   "when": ""
   },
   {
    "class": "Dusthana",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "Malefic planets in dusthana houses (6th, 8th, and 12th) give good results.",
-   "slide": "S25 p.10"
+   "slide": "S25 p.10",
+   "when": "not weak"
   },
   {
    "class": "Badhaka",
    "applies": "any",
    "exclude_houses": [],
    "text": "A planet in the Badhakasthana obstructs that sign and can bring barriers and disabilities.",
-   "slide": "21"
+   "slide": "21",
+   "when": ""
   },
   {
    "class": "Trishadaya",
    "applies": "any",
    "exclude_houses": [],
    "text": "The 3rd, 6th and 11th stand for desire, anger and greed; they are opposite to the 9th, 12th and 5th.",
-   "slide": "23"
+   "slide": "23",
+   "when": ""
   },
   {
    "class": "Trishadaya",
    "applies": "malefic",
    "exclude_houses": [],
    "text": "Slide 23: when the lord of a Trishadaya house is a natural malefic (Saturn, Mars or Sun) and sits in its own house, the results are simply amazing during its Maha Dasha.",
-   "slide": "23"
+   "slide": "23",
+   "when": ""
   }
  ],
  "badhaka": {
@@ -2411,6 +2430,105 @@
    "source": "S27 p.22",
    "condition": "",
    "exchange": true
+  },
+  {
+   "lord_of": 2,
+   "sits_in": 9,
+   "text": "In her example chart (S28): 2 nd Lord Saturn is posited in 9 th House. This native gets finances from his father. He has Vaak Siddhi. The family members are Dharmic in nature.",
+   "status": "taught",
+   "source": "S28 p.4",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 3,
+   "sits_in": 9,
+   "text": "In her example chart (S28): Saturn being the 3 rd lord posited in 9 th house, indicates that the native puts lot of efforts to please his father, it also indicates that he is very traditional.",
+   "status": "taught",
+   "source": "S28 p.12",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 4,
+   "sits_in": 7,
+   "text": "In her example chart (S28): 4 rth lord is posited in 7 th, so he will be providing happiness to spouse or he will find peace of mind when he does business or interacting with others.",
+   "status": "taught",
+   "source": "S28 p.6",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 5,
+   "sits_in": 8,
+   "text": "In her example chart (S28): 5 th lord Mars is in the 8 th house, The native will be worried about his son all the time. 5 th lord in the 8 th house makes the native interested in learning occult subjects.",
+   "status": "taught",
+   "source": "S28 p.7",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 6,
+   "sits_in": 6,
+   "text": "In her example chart (S28): 6 th lord in the 6 th house makes the native health conscious. He could be competitive. He will get loans easily.",
+   "status": "taught",
+   "source": "S28 p.8",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 7,
+   "sits_in": 4,
+   "text": "In her example chart (S28): 7 th lord Mercury is debilitated and posited in the 4 th house, conjoined with Ketu in a Dwiswabhava rashi ( jala tatwa - emotional ) So the quality of the married life is not that great as Ketu ( fault finder and litigation ) creates hurdles in marital life. The wife is a great Critic, fault finder and creates litigation in her talks and actions.\n\n7th Lord Mercury is in 4 th house ( Mother ) with Ketu. The wife of this native always have a separative influence towards his mother ie her mother in law.",
+   "status": "taught",
+   "source": "S28 pp.9-10",
+   "condition": "weak",
+   "exchange": false
+  },
+  {
+   "lord_of": 8,
+   "sits_in": 12,
+   "text": "In her example chart (S28): 8th Lord Moon is debilitated and posited in 12 th house. His worries and tensions is due to expenses and losses.",
+   "status": "taught",
+   "source": "S28 p.11",
+   "condition": "weak",
+   "exchange": false
+  },
+  {
+   "lord_of": 8,
+   "sits_in": 12,
+   "text": "In her example chart (S28): 12 th lord Mars is debilitated and posited in 8 th house and 8 th lord Moon is in Parivartana with 12 th lord Mars. The native might lose his inheritance or unearned money.",
+   "status": "taught",
+   "source": "S28 p.16",
+   "condition": "",
+   "exchange": true
+  },
+  {
+   "lord_of": 9,
+   "sits_in": 5,
+   "text": "In her example chart (S28): 9 th lord Sun is exalted and posited in 5th house. This native got benefits from the government in the education of his son.",
+   "status": "taught",
+   "source": "S28 p.12",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 10,
+   "sits_in": 4,
+   "text": "In her example chart (S28): 10 th lord Mercury is debilitated and conjoined with Ketu. Thus the profession of the native would suffer if he does any profession other than Rahu karakatwas.",
+   "status": "taught",
+   "source": "S28 p.13",
+   "condition": "weak",
+   "exchange": false
+  },
+  {
+   "lord_of": 11,
+   "sits_in": 6,
+   "text": "In her example chart (S28): 11 th lord Venus is in 6 th house. So sometimes the gains can result in quarrels and litigation. Friends could become enemies at times.",
+   "status": "taught",
+   "source": "S28 p.15",
+   "condition": "",
+   "exchange": false
   }
  ],
  "graha_rashi": [
@@ -3614,6 +3732,377 @@
    "topic": "Tip",
    "text": "Do not give your used or old clothes to beggars\nDo not use it for cleaning or mopping the house\nYou can donate them to any needy or poor people, but before giving them away, soak them in water adding rock salt, wash them well and then donate.",
    "source": "S27 p.25"
+  },
+  {
+   "topic": "Tip",
+   "text": "Never wear black coloured clothes when you are visiting a temple, a guru or when performing a vrata or a puja",
+   "source": "S29 p.50"
+  }
+ ],
+ "chart_readings": [
+  {
+   "kind": "aspects",
+   "planet": "Jupiter",
+   "with": "",
+   "house": 1,
+   "condition": "",
+   "text": "In her example chart (S28): Jupiter is aspecting lagna, indicate the nature of the native. Here as Jup is aspecting, the person will be satwik in nature, dharmic and religious.",
+   "status": "taught",
+   "source": "S28 p.2"
+  },
+  {
+   "kind": "aspects",
+   "planet": "benefic",
+   "with": "",
+   "house": 1,
+   "condition": "",
+   "text": "In her example chart (S28): Jupiter a benefic is aspecting the lagna, so life will be smooth going and easy.",
+   "status": "taught",
+   "source": "S28 p.2"
+  },
+  {
+   "kind": "aspects",
+   "planet": "1st lord",
+   "with": "",
+   "house": 1,
+   "condition": "",
+   "text": "In her example chart (S28): As LL Jup is aspecting the Lagna and the bhava karaka Sun ( Arogya karaka ) is exalted, he will have a good health in general.",
+   "status": "taught",
+   "source": "S28 p.2"
+  },
+  {
+   "kind": "aspects",
+   "planet": "malefic",
+   "with": "malefic",
+   "house": 2,
+   "condition": "",
+   "text": "In her example chart (S28): Two malefics are aspecting the 2 nd bhava. So there is no easy flow of money.",
+   "status": "taught",
+   "source": "S28 p.3"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Mars",
+   "with": "Rahu",
+   "house": 2,
+   "condition": "",
+   "text": "In her example chart (S28): Mars and Rahu are aspecting the 2 nd bhava. This native could have aggressive, anger, fast and loud speech. Family members could be short tempered. The native would like to have spicy, hot food and might also like to try different cuisines as well. The native's eyes would become Red ( mars ) and wide ( rahu influence ) while he talks in anger. The native has a cut mark near the eyebrows.",
+   "status": "taught",
+   "source": "S28 p.3"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Mars",
+   "with": "Saturn",
+   "house": 3,
+   "condition": "",
+   "text": "In her example chart (S28): Mars and Saturn are aspecting the 3 rd house. The native had undergone a surgery ( Mars aspect ) in the wrist area ( 3 rd house ). His written communication would be very commanding and because of Saturn's aspect, there could be delay in communication. He would like to undertake new ventures. As Mars is aspecting he will be brave.",
+   "status": "taught",
+   "source": "S28 p.5"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Jupiter",
+   "with": "",
+   "house": 3,
+   "condition": "",
+   "text": "In her example chart (S28): As Jupiter is aspecting the words that he writes are big in size.",
+   "status": "taught",
+   "source": "S28 p.5"
+  },
+  {
+   "kind": "aspects",
+   "planet": "3rd lord",
+   "with": "",
+   "house": 3,
+   "condition": "",
+   "text": "In her example chart (S28): 3 rd house is also support as 3 rd lord is aspecting 3 rd house he will get good support.",
+   "status": "taught",
+   "source": "S28 p.5"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Ketu",
+   "with": "",
+   "house": 3,
+   "condition": "",
+   "text": "In her example chart (S28): Ketu's aspect on the third house makes him give pauses when he is communicating.",
+   "status": "taught",
+   "source": "S28 p.5"
+  },
+  {
+   "kind": "in",
+   "planet": "Ketu",
+   "with": "",
+   "house": 4,
+   "condition": "",
+   "text": "In her example chart (S28): Ketu a malefic in 4 rth house will not give peace of mind, the native will be detached to his family. The native will own a small vehicle as ketu denotes small. The house of the native may also be small.",
+   "status": "taught",
+   "source": "S28 p.6"
+  },
+  {
+   "kind": "in",
+   "planet": "Mercury",
+   "with": "Ketu",
+   "house": 4,
+   "condition": "debilitated",
+   "text": "In her example chart (S28): Mercury is also posited, though it is a benefic it is weak and debilitated. Mother will be intelligent and also a fault finder. There will be a break in education.",
+   "status": "taught",
+   "source": "S28 p.6"
+  },
+  {
+   "kind": "in",
+   "planet": "Sun",
+   "with": "",
+   "house": 5,
+   "condition": "exalted",
+   "text": "In her example chart (S28): Exalted Sun is posited in the 5 th bhava. The native's son would be egoistic, dominating and also a good administrator.",
+   "status": "taught",
+   "source": "S28 p.7"
+  },
+  {
+   "kind": "in",
+   "planet": "Venus",
+   "with": "",
+   "house": 6,
+   "condition": "",
+   "text": "In her example chart (S28): Venus is posited in the 6 th house, so the enemies of the native can be wife, daughter or ladies. Enemies would talk very pleasantly. He may be working with female colleagues. Venus in 6 th will give hormonal imbalance like thyroid, indigestion, loss of appetite.\n\nKaraka for wife ie Venus is posited in 6 th house ( house of litigation and quarrels ). His wife always quarrels with the native for small things.",
+   "status": "taught",
+   "source": "S28 pp.8-10"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Saturn",
+   "with": "",
+   "house": 6,
+   "condition": "",
+   "text": "In her example chart (S28): Saturn gives chronic disease and thyroid is chronic.",
+   "status": "taught",
+   "source": "S28 p.8"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Moon",
+   "with": "",
+   "house": 6,
+   "condition": "",
+   "text": "In her example chart (S28): Emotional disturbances leading to diseases as moon is aspecting.",
+   "status": "taught",
+   "source": "S28 p.8"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Rahu",
+   "with": "",
+   "house": 6,
+   "condition": "",
+   "text": "In her example chart (S28): Rahu gives undiagnosable disease.",
+   "status": "taught",
+   "source": "S28 p.8"
+  },
+  {
+   "kind": "in",
+   "planet": "Jupiter",
+   "with": "",
+   "house": 7,
+   "condition": "",
+   "text": "In her example chart (S28): 7th House is Mithuna rashi ( Vayu tatwa ) occupied by Jup, a planet of wisdom. This native's spouse is intelligent and always gives advice to the native.",
+   "status": "taught",
+   "source": "S28 p.9"
+  },
+  {
+   "kind": "aspects planet",
+   "planet": "Rahu",
+   "with": "Venus",
+   "house": null,
+   "condition": "",
+   "text": "In her example chart (S28): Venus aspected by Rahu makes the wife very unconventional and dominating. Venus ( karaka for relationships ) is aspected by Rahu, thereby spoiling the same.",
+   "status": "taught",
+   "source": "S28 p.10"
+  },
+  {
+   "kind": "in",
+   "planet": "Mars",
+   "with": "",
+   "house": 8,
+   "condition": "",
+   "text": "In her example chart (S28): Mars is posited in the 8 th house. The native has Kuja dosha. The family members of the spouse are very dominating. Chances of surgeries or accidents are there. It makes the person impatient.",
+   "status": "taught",
+   "source": "S28 p.11"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Ketu",
+   "with": "",
+   "house": 8,
+   "condition": "",
+   "text": "In her example chart (S28): Ketu is aspecting the 8 th house. The family members of the spouse are critics or fault finders.",
+   "status": "taught",
+   "source": "S28 p.11"
+  },
+  {
+   "kind": "in",
+   "planet": "Saturn",
+   "with": "",
+   "house": 9,
+   "condition": "",
+   "text": "In her example chart (S28): Saturn is posited in 9 th house. The father of the native is hard working and highly disciplined.",
+   "status": "taught",
+   "source": "S28 p.12"
+  },
+  {
+   "kind": "in",
+   "planet": "Rahu",
+   "with": "",
+   "house": 10,
+   "condition": "",
+   "text": "In her example chart (S28): Rahu is posited in 10 th house. The native can do a profession related to export, forex, chemicals, fertilizers, photography, or could work abroad preferably in Muslim countries.",
+   "status": "taught",
+   "source": "S28 p.13"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Sun",
+   "with": "",
+   "house": 11,
+   "condition": "",
+   "text": "In her example chart (S28): As sun is aspecting his elder sibling might be popular or good in administration.",
+   "status": "taught",
+   "source": "S28 p.14"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Jupiter",
+   "with": "",
+   "house": 11,
+   "condition": "",
+   "text": "In her example chart (S28): This native will have a good friend circle as jupiter is aspecting.",
+   "status": "taught",
+   "source": "S28 p.14"
+  },
+  {
+   "kind": "aspects lord",
+   "planet": "8th lord",
+   "with": "",
+   "house": 11,
+   "condition": "",
+   "text": "In her example chart (S28): Planets aspecting 11 th lord Venus are 8th lord Moon, This native could get inheritance.",
+   "status": "taught",
+   "source": "S28 p.15"
+  },
+  {
+   "kind": "aspects lord",
+   "planet": "Rahu",
+   "with": "",
+   "house": 11,
+   "condition": "",
+   "text": "In her example chart (S28): Rahu's aspect on 11 th lord Venus can create gains from foreign source or outsiders.",
+   "status": "taught",
+   "source": "S28 p.15"
+  },
+  {
+   "kind": "in",
+   "planet": "Moon",
+   "with": "",
+   "house": 12,
+   "condition": "",
+   "text": "In her example chart (S28): Moon is posited in 12 th house. Expenses towards mother is possible.",
+   "status": "taught",
+   "source": "S28 p.16"
+  },
+  {
+   "kind": "in",
+   "planet": "8th lord",
+   "with": "",
+   "house": 12,
+   "condition": "",
+   "text": "In her example chart (S28): Moon is 8th Lord. So the native could get hospitalised due to chronic ailments.",
+   "status": "taught",
+   "source": "S28 p.16"
+  },
+  {
+   "kind": "aspects",
+   "planet": "Venus",
+   "with": "",
+   "house": 12,
+   "condition": "",
+   "text": "In her example chart (S28): Venus aspect on 12 th house can cause expenses due to wife as well.",
+   "status": "taught",
+   "source": "S28 p.16"
+  }
+ ],
+ "degree_stages": [
+  {
+   "from": 0,
+   "to": 0.0166666666666667,
+   "stage": "At 0 degree",
+   "applies": "any",
+   "after_age": 30,
+   "text": "At 0 degree - If a planet is at 0 degree at the time person was born, then actually it means it just entered that particular sign at the exact moment of birth. Planets at 0° have 0 power. Lifelong? Certainly not. These planets gain strength through time and start making their impact on native's life after 30 years of age.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "stage": "Infant",
+   "applies": "any",
+   "after_age": 32,
+   "text": "Between 0 to 1° - If a planet is placed between these degrees, it is called infant. This again is a powerless state of planet and gives results after 30-32 years.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 1,
+   "to": 6,
+   "stage": "Young",
+   "applies": "any",
+   "after_age": null,
+   "text": "Between 1° to 5° - It is called as young or teenager stage of a planet. Planets at these degrees are alive and kicking.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 6,
+   "to": 18,
+   "stage": "Adult",
+   "applies": "any",
+   "after_age": null,
+   "text": "Between 6 to 17 - It is known as Adult stage of a planet. Ready to take up the challenges and perform at best of abilities.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 18,
+   "to": 26,
+   "stage": "Mature",
+   "applies": "any",
+   "after_age": null,
+   "text": "Between 18 to 25 - It is Mature stage of a planet. They are much wiser now. These planets make us think like a matured person.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 26,
+   "to": 30,
+   "stage": "Old",
+   "applies": "any",
+   "after_age": null,
+   "text": "Between 26 to 29.99° These are old planets. Are they useless? Certainly not.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 0,
+   "to": 1,
+   "stage": "Malefic",
+   "applies": "malefic",
+   "after_age": null,
+   "text": "Actually, it is great to have all the malefic planets (Saturn, Rahu, Ketu, Mars) either at 0° to 1 or at 26 to 29.99°, because they lose their strength of giving malefic results.",
+   "source": "S28 p.17"
+  },
+  {
+   "from": 26,
+   "to": 30,
+   "stage": "Malefic",
+   "applies": "malefic",
+   "after_age": null,
+   "text": "Actually, it is great to have all the malefic planets (Saturn, Rahu, Ketu, Mars) either at 0° to 1 or at 26 to 29.99°, because they lose their strength of giving malefic results.",
+   "source": "S28 p.17"
   }
  ],
  "reference": {
@@ -4749,8 +5238,8 @@
   }
  },
  "meta": {
-  "source": "Sessions 23 (2024 and 2026 decks) to 27 slides + recording",
-  "version": 2,
+  "source": "Sessions 23 (2024 and 2026 decks) to 29 slides + recording",
+  "version": 3,
   "statuses": [
    "taught",
    "curated",

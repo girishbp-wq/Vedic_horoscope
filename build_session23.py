@@ -57,7 +57,7 @@ FIXED_REFERENCE = {
 # sheet name -> header row.  (The data sheets only; calculator sheets are added by make_session23_xlsx.py.)
 SHEETS = {
     PREFIX + "Classes": ["No", "Class", "SlideName", "Houses", "OtherNames", "Nature", "Rule", "Slides"],
-    PREFIX + "ClassRules": ["Class", "AppliesTo", "ExcludeHouses", "Text", "Slide"],
+    PREFIX + "ClassRules": ["Class", "AppliesTo", "ExcludeHouses", "Text", "Slide", "When"],
     PREFIX + "Badhaka": ["Mode", "House"],
     PREFIX + "DignityEffect": ["Label", "Band", "Text", "Status", "Slide"],
     PREFIX + "Digbala": ["Planet", "StrongHouse", "LostHouse", "Status", "Source"],
@@ -71,6 +71,8 @@ SHEETS = {
     PREFIX + "LifeAreas": ["No", "Area", "Houses", "Karaka", "KarakaFemale", "Link", "Source"],
     PREFIX + "Conditions": ["Key", "Planet", "House", "Text", "Status", "Source"],
     PREFIX + "Remedies": ["Topic", "Text", "Source"],
+    PREFIX + "ChartReadings": ["Kind", "Planet", "With", "House", "Condition", "Text", "Status", "Source"],
+    PREFIX + "DegreeStages": ["From", "To", "Stage", "Applies", "AfterAge", "Text", "Source"],
 }
 LONG_COLUMNS = ("Nature", "Rule", "Text", "Points", "Extra", "Conjunction", "Aspect", "Source", "OtherNames")
 
@@ -86,6 +88,11 @@ README_LINES = [
     "(Ready Reckoner), S23_Conditions (sentences that hold only for some charts; Key is one of a fixed list) and S23_Remedies. "
     "Blank House / Planet / Aspect / FromHouse means 'any'. In S23_BhavaLordIn, Condition is strong / weak / blank and "
     "Exchange is yes for a Parivartana row.",
+    "Sessions 28-29: S23_ChartReadings holds her Chart 3 sentences — Kind is in / aspects / aspects lord / aspects planet; "
+    "Planet and With are a planet, benefic, malefic or 'Nth lord' (e.g. 8th lord); House is blank for aspects planet; "
+    "Condition is blank, exalted or debilitated. S23_DegreeStages holds the degree bands (From up to, not including, To; "
+    "Applies any or malefic; AfterAge the age from which an early-degree planet gives its results). In S23_ClassRules, "
+    "When 'not weak' shows a rule only for a planet that is not weak.",
 ]
 
 
@@ -103,8 +110,8 @@ def rules_to_rows(rules):
     return {
         PREFIX + "Classes": [[c["no"], c["name"], c["slide_name"], _join_ints(c["houses"]) if c["houses"] else "by Lagna",
                               c["other_names"], c["nature"], c["rule"], c["slides"]] for c in rules["classes"]],
-        PREFIX + "ClassRules": [[r["class"], r["applies"], _join_ints(r["exclude_houses"]), r["text"], r["slide"]]
-                                for r in rules["class_rules"]],
+        PREFIX + "ClassRules": [[r["class"], r["applies"], _join_ints(r["exclude_houses"]), r["text"], r["slide"],
+                                 r.get("when", "")] for r in rules["class_rules"]],
         PREFIX + "Badhaka": [[m, h] for m, h in rules["badhaka"].items()],
         PREFIX + "DignityEffect": [[k, v["band"], v["text"], v["status"], v["slide"]] for k, v in rules["dignity_effect"].items()],
         PREFIX + "Digbala": [[p, v["strong"], v["lost"], v["status"], v["source"]] for p, v in rules["digbala"].items()],
@@ -122,6 +129,10 @@ def rules_to_rows(rules):
                                 r["source"]] for r in rules["life_areas"]],
         PREFIX + "Conditions": [[r["key"], r["planet"], r["house"], r["text"], r["status"], r["source"]] for r in rules["conditions"]],
         PREFIX + "Remedies": [[r["topic"], r["text"], r["source"]] for r in rules["remedies"]],
+        PREFIX + "ChartReadings": [[r["kind"], r["planet"], r["with"], r["house"], r["condition"], r["text"], r["status"],
+                                    r["source"]] for r in rules.get("chart_readings", [])],
+        PREFIX + "DegreeStages": [[r["from"], r["to"], r["stage"], r["applies"], r["after_age"], r["text"], r["source"]]
+                                  for r in rules.get("degree_stages", [])],
     }
 
 
@@ -180,7 +191,14 @@ CONDITION_KEYS = br.CONDITION_KEYS
 SHEET_ONLY_CONDITION_KEYS = ("twelfth_house",)      # shown by Layer 1 itself (the 12th-house line)
 LIFE_AREA_COUNT = 16
 LINKS = ["", "PAC"]
-META = {"source": "Sessions 23 (2024 and 2026 decks) to 27 slides + recording", "version": 2,
+# S23_ChartReadings (Sessions 28-29): what the engines match (spec §6.4)
+READING_KINDS = ["in", "aspects", "aspects lord", "aspects planet"]
+NTH_LORDS = [f"{n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} lord" for n in range(1, 13)]
+READING_SPECS = PLANETS + ["benefic", "malefic"] + NTH_LORDS
+READING_CONDITIONS = ["", "exalted", "debilitated"]
+CLASS_RULE_WHENS = ["", "not weak"]
+DEGREE_ZERO_STAGE = "At 0 degree"        # the 0°00' row sits inside the infant band
+META = {"source": "Sessions 23 (2024 and 2026 decks) to 29 slides + recording", "version": 3,
         "statuses": ["taught", "curated", "blend", "standard"]}
 
 
@@ -284,7 +302,8 @@ def read_workbook(path_or_wb):
         out["class_rules"].append({"class": rd.pick(sh, i, "Class", r[0], CLASS_NAMES),
                                    "applies": rd.pick(sh, i, "AppliesTo", r[1], ["any", "benefic", "malefic"]),
                                    "exclude_houses": rd.nums(sh, i, "ExcludeHouses", r[2]),
-                                   "text": rd.text(sh, i, "Text", r[3]), "slide": _s(r[4])})
+                                   "text": rd.text(sh, i, "Text", r[3]), "slide": _s(r[4]),
+                                   "when": rd.pick(sh, i, "When", _s(r[5]), CLASS_RULE_WHENS)})
     order = [CLASS_NAMES.index(x["class"]) for x in out["class_rules"] if x["class"] in CLASS_NAMES]
     if order != sorted(order):
         rd.bad(PREFIX + "ClassRules", None, "rows must stay grouped in the order of the ten classes (Kendra … Trishadaya)")
@@ -400,6 +419,43 @@ def read_workbook(path_or_wb):
     for sh, i, r in rd.rows("Remedies"):
         out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], PLANETS + ["Tip"]), text=rd.text(sh, i, "Text", r[1]),
                                     source=_s(r[2])))
+    out["chart_readings"] = []
+    for sh, i, r in rd.rows("ChartReadings"):
+        kind = rd.pick(sh, i, "Kind", _s(r[0]), READING_KINDS)
+        spec = lambda col, v: v if v in READING_SPECS else rd.bad(sh, i, f"{col} {v!r} is not a planet, benefic, malefic or 'Nth lord'")
+        planet, with_ = spec("Planet", _s(r[1])), _s(r[2]) and spec("With", _s(r[2]))
+        if kind == "aspects planet":
+            if with_ not in PLANETS:
+                rd.bad(sh, i, "With must name the planet that is aspected")
+            if r[3] not in (None, ""):
+                rd.bad(sh, i, "House must be blank for 'aspects planet'")
+            house = None
+        else:
+            house = rd.num(sh, i, "House", r[3])
+        out["chart_readings"].append({"kind": kind, "planet": planet, "with": with_ or "", "house": house,
+                                      "condition": rd.pick(sh, i, "Condition", _s(r[4]), READING_CONDITIONS),
+                                      "text": rd.text(sh, i, "Text", r[5]), "status": rd.pick(sh, i, "Status", r[6], STATUSES),
+                                      "source": _s(r[7])})
+    out["degree_stages"] = []
+    for sh, i, r in rd.rows("DegreeStages"):
+        try:
+            lo, hi = (int(v) if float(v).is_integer() else float(v) for v in (r[0], r[1]))
+            ok = 0 <= lo < hi <= 30
+        except (TypeError, ValueError):
+            lo = hi = None
+            ok = False
+        if not ok:
+            rd.bad(sh, i, "From and To must be degrees from 0 to 30, From before To")
+        out["degree_stages"].append({"from": lo, "to": hi, "stage": rd.text(sh, i, "Stage", r[2]),
+                                     "applies": rd.pick(sh, i, "Applies", _s(r[3]), ["any", "malefic"]),
+                                     "after_age": rd.opt_num(sh, i, "AfterAge", r[4], 0, 120),
+                                     "text": rd.text(sh, i, "Text", r[5]), "source": _s(r[6])})
+    for applies in ("any", "malefic"):
+        bands = sorted((x["from"], x["to"], x["stage"]) for x in out["degree_stages"] if x["applies"] == applies
+                       and x["from"] is not None and x["stage"] != DEGREE_ZERO_STAGE)
+        for (a0, a1, an), (b0, b1, bn) in zip(bands, bands[1:]):
+            if b0 < a1:
+                rd.bad(PREFIX + "DegreeStages", None, f"bands overlap: {an} ({a0}–{a1}) and {bn} ({b0}–{b1})")
     swaps = [frozenset((x["lord_of"], x["sits_in"])) for x in out["bhava_lord_in"] if x["exchange"]]
     for k in sorted({k for k in swaps if swaps.count(k) > 1}, key=sorted):
         a, b = sorted(k)
@@ -407,7 +463,8 @@ def read_workbook(path_or_wb):
     for key, sheet, fields in (("bhava_lord_in", "BhavaLordIn", ("lord_of", "sits_in", "condition", "exchange")),
                                ("graha_rashi", "GrahaRashi", ("planet", "rashi")),
                                ("conditions", "Conditions", ("key", "planet", "house")),
-                               ("aspect_meaning", "AspectMeaning", ("planet", "aspect", "from_house"))):
+                               ("aspect_meaning", "AspectMeaning", ("planet", "aspect", "from_house")),
+                               ("chart_readings", "ChartReadings", ("kind", "planet", "with", "house", "condition"))):
         seen = [tuple(x[f] for f in fields) for x in out[key]]
         for k in sorted({k for k in seen if seen.count(k) > 1}, key=str):
             rd.bad(PREFIX + sheet, None, f"{seen.count(k)} rows for {' / '.join('any' if v is None else str(v) for v in k)} (keep one)")

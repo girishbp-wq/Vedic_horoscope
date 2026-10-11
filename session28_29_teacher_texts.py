@@ -145,7 +145,7 @@ _MALEFIC_DEGREES = ("Actually, it is great to have all the malefic planets (Satu
 
 # (from, to, stage, applies, after_age, text, source) — S23_DegreeStages; degrees within the sign, `to` exclusive
 DEGREE_STAGES = [
-    (0, 1 / 60, "At 0 degree", "any", 30,
+    (0, 0.0166666666666667, "At 0 degree", "any", 30,     # 1/60 to 15 digits: Excel keeps it exactly
      "At 0 degree - If a planet is at 0 degree at the time person was born, then actually it means it just entered that "
      "particular sign at the exact moment of birth. Planets at 0° have 0 power. Lifelong? Certainly not. These planets "
      "gain strength through time and start making their impact on native's life after 30 years of age.", "S28 p.17"),
