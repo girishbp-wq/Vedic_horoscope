@@ -16,7 +16,8 @@ Calculator sheets (all formulas — change the signs on S23_Chart and everything
   S23_Classes_Calc  the ten class tables (house, rāśi, planets, lord, where the lord sits), the house x class matrix,
                     the Badhaka block and the twelve house lords
   S23_Roles_Calc    Maraka / Badhaka / Dusthana / Trishadaya roles of the nine grahas
-  S23_Dasha_Calc    Vimśottarī: nine Mahādaśās and 81 Bhuktis from the Moon's longitude, and the running pair
+  S23_Dasha_Calc    Vimśottarī: nine Mahādaśās and 81 Bhuktis from the Moon's longitude, the running pair, and
+                    (Session 29) the running Pratyantara, Sookshma and Prāṇa with the nine periods inside each level
   S23_Predict_Calc  graha + bhāva: house, nature, the cell text, dignity, digbala, classes and class-rule texts,
                     the Session 26 lines, the 12th-house line and the conditional readings (with "active now");
                     Sessions 28-29: strength (strong / weak / mixed / depends) and why, the degree stage and age note,
@@ -64,6 +65,9 @@ MATRIX_ROW0 = 44                             # header row; houses 1-12 in the ne
 HOUSELORD_ROW0 = 61                          # twelve rows: house, rāśi, lord (header row 57)
 ROLES_ROW0 = 3                               # Roles_Calc (header row 2)
 DASHA_ROW0, DASHA_CUR_ROW = 24, 8            # Dasha_Calc: 81 Bhukti rows; running Mahādaśā in B8, Bhukti in B9
+DASHA_CHAIN_ROW0 = 108                       # Dasha_Calc: running Mahādaśā … Prāṇa (level, lord, start, end, years)
+DASHA_PRAT_ROW0 = 116                        # Dasha_Calc: the 9 Pratyantaras of the running Bhukti (then the Sookshmas
+DASHA_SUB_STEP = 12                          #   of the running Pratyantara and the Prāṇas of the running Sookshma, 12 rows apart)
 PREDICT_ROW0 = 3                             # Predict_Calc (header row 2); 9 planets
 PREDICT_COLS = dict(planet=1, house=2, nature=3, status=4, points=5, dignity=6, dignity_line=7,
                     digbala_line=8, classes=9, class_texts=10, extra=11,
@@ -380,9 +384,54 @@ def _dasha_sheet(ws):
         ws.cell(row=r, column=7, value=f"=IF(AND(E{r}<=S23_Chart!{NOW_CELL},S23_Chart!{NOW_CELL}<F{r}),1,0)")
         for c in (5, 6):
             ws.cell(row=r, column=c).number_format = DATE_FMT
+    _dasha_chain(ws, vo, vy, last)
     ws.column_dimensions["A"].width = 38
     for c in "BCDEFG":
         ws.column_dimensions[c].width = 18
+
+
+def _dasha_chain(ws, vo, vy, last):
+    """S29 pp.5, 11 (bhava_rules.dasha_chain / sub_periods): the running Mahādaśā, Bhukti, Pratyantara, Sookshma and
+    Prāṇa, and the nine periods inside the running Bhukti, Pratyantara and Sookshma. Empty when no daśā runs at 'Now'."""
+    run, now = f"$B${DASHA_CUR_ROW + 3}", f"S23_Chart!{NOW_CELL}"
+    on = lambda f: f'=IF({run},{f},"")'
+    c0 = DASHA_CHAIN_ROW0
+    ws.cell(row=c0 - 2, column=1, value="Running now (Session 29): Mahādaśā › Bhukti › Pratyantara › Sookshma › Prāṇa").font = Font(bold=True, color="6B1D2B")
+    _head(ws, c0 - 1, ["Level", "Lord", "Starts", "Ends", "Years", "# in its table below"])
+    for j, level in enumerate(br.DASHA_LEVELS):
+        ws.cell(row=c0 + j, column=1, value=level)
+    mi = f"INT(($B${DASHA_CUR_ROW + 2}-1)/9)+1"
+    ws.cell(row=c0, column=2, value=on(f"$B${DASHA_CUR_ROW}"))
+    for c, src in ((3, "D"), (4, "E"), (5, "C")):
+        ws.cell(row=c0, column=c, value=on(f"INDEX(${src}$13:${src}$21,{mi})"))
+    ws.cell(row=c0 + 1, column=2, value=on(f"$B${DASHA_CUR_ROW + 1}"))
+    for c, src in ((3, "E"), (4, "F")):
+        ws.cell(row=c0 + 1, column=c, value=on(f"INDEX(${src}${DASHA_ROW0}:${src}${last},$B${DASHA_CUR_ROW + 2})"))
+    ws.cell(row=c0 + 1, column=5, value=on(f"$E${c0}*INDEX({vy},MATCH($B${c0 + 1},{vo},0))/120"))
+    titles = ("The nine Pratyantaras of the running Bhukti", "The nine Sookshmas of the running Pratyantara",
+              "The nine Prāṇas of the running Sookshma")
+    for t, title in enumerate(titles):
+        parent, t0, chain_row = c0 + 1 + t, DASHA_PRAT_ROW0 + t * DASHA_SUB_STEP, c0 + 2 + t
+        ws.cell(row=t0 - 2, column=1, value=title).font = Font(bold=True, color="6B1D2B")
+        _head(ws, t0 - 1, ["#", "Lord", "Starts", "Ends", "Years", "Running?"])
+        for j in range(9):
+            r = t0 + j
+            ws.cell(row=r, column=1, value=j + 1)
+            ws.cell(row=r, column=2, value=on(f"INDEX({vo},MOD(MATCH($B${parent},{vo},0)-1+{j},9)+1)"))
+            ws.cell(row=r, column=3, value=on(f"$C${parent}") if j == 0 else f"=D{r - 1}")
+            # the ninth ends exactly where its parent ends (start + years), as sub_periods()
+            ws.cell(row=r, column=4, value=on(f"C{r}+E{r}*365.25" if j < 8 else f"$C${parent}+$E${parent}*365.25"))
+            ws.cell(row=r, column=5, value=on(f"$E${parent}*INDEX({vy},MATCH(B{r},{vo},0))/120"))
+            ws.cell(row=r, column=6, value=f"=IF({run},IF(AND(C{r}<={now},{now}<D{r}),1,0),0)")
+            for c in (3, 4):
+                ws.cell(row=r, column=c).number_format = DATE_FMT
+        idx = f"$F${chain_row}"
+        ws.cell(row=chain_row, column=6, value=on(f"IFERROR(MATCH(1,$F${t0}:$F${t0 + 8},0),9)"))
+        for c, src in ((2, "B"), (3, "C"), (4, "D"), (5, "E")):
+            ws.cell(row=chain_row, column=c, value=on(f"INDEX(${src}${t0}:${src}${t0 + 8},{idx})"))
+    for r in range(c0, c0 + 5):
+        for c in (3, 4):
+            ws.cell(row=r, column=c).number_format = DATE_FMT
 
 
 # ---- Predict_Calc -------------------------------------------------------------------------------

@@ -1281,6 +1281,84 @@ class ExcelLifeAreas(unittest.TestCase):
         self.assertEqual(checked, 4)
 
 
+@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
+class ExcelDasha(unittest.TestCase):
+    """S23_Dasha_Calc, recalculated by LibreOffice: the running Pratyantara, Sookshma and Prana and the nine
+    Pratyantaras of the running Bhukti equal bhava_rules.dasha_chain / sub_periods (S29)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        import test_teacher_charts as tc
+        cls.mx = mx
+        cls.tmp_dir = tempfile.TemporaryDirectory()
+        tmp = pathlib.Path(cls.tmp_dir.name)
+        a = tc.S29_CHART_A
+        sign = int(a["moon_lon"] // 30)
+        moon_a = dict(calc_charts(1, 5)[0])
+        moon_a["signs"] = dict(moon_a["signs"], Moon=sign)
+        moon_a["degs"] = dict(moon_a["degs"], Moon=a["moon_lon"] - 30 * sign)
+        moon_a["birth"] = a["birth"]
+        cls.cases = [(moon_a, datetime.datetime(2024, 9, 18, 12, 0))]
+        cls.cases += [(c, datetime.datetime(2026, 10, 8, 12, 0)) for c in calc_charts(3, 909)]
+        future = dict(calc_charts(1, 31)[0], birth=datetime.datetime(2100, 1, 1))
+        cls.cases.append((future, datetime.datetime(2026, 10, 8, 12, 0)))          # before the span: nothing runs
+        base = tmp / "base.xlsx"
+        mx.build_workbook(base)
+        src, out = tmp / "in", tmp / "out"
+        src.mkdir()
+        out.mkdir()
+        paths = []
+        for i, (c, now) in enumerate(cls.cases):
+            wb = openpyxl.load_workbook(base)
+            mx.set_inputs(wb, c, now)
+            f = src / f"d{i}.xlsx"
+            wb.save(f)
+            paths.append(f)
+        _lo_recalc(paths, out)
+        cls.books = [openpyxl.load_workbook(out / p.name, data_only=True) for p in paths]
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+
+    def assertClose(self, got, want, where):
+        self.assertIsNotNone(got, where)
+        self.assertLess(abs((got - want).total_seconds()), 1, (where, got, want))
+
+    def test_chain_and_pratyantaras(self):
+        mx = self.mx
+        ran = 0
+        for i, ((c, now), wb) in enumerate(zip(self.cases, self.books)):
+            ws = wb[mx.PREFIX + "Dasha_Calc"]
+            d = br.vimshottari(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], now)
+            chain = br.dasha_chain(RULES, d, now)
+            rows = [ws.cell(row=mx.DASHA_CHAIN_ROW0 + j, column=1).value for j in range(5)]
+            self.assertEqual(rows, list(br.DASHA_LEVELS), i)
+            if not chain:
+                self.assertEqual([ws.cell(row=mx.DASHA_CHAIN_ROW0 + j, column=2).value or "" for j in range(5)], [""] * 5, i)
+                self.assertEqual([ws.cell(row=mx.DASHA_PRAT_ROW0 + j, column=2).value or "" for j in range(9)], [""] * 9, i)
+                continue
+            ran += 1
+            for j, x in enumerate(chain):
+                r = mx.DASHA_CHAIN_ROW0 + j
+                self.assertEqual(ws.cell(row=r, column=2).value, x["lord"], (i, j))
+                self.assertClose(ws.cell(row=r, column=3).value, x["start"], (i, j, "start"))
+                self.assertClose(ws.cell(row=r, column=4).value, x["end"], (i, j, "end"))
+            ys = RULES["reference"]["VYEARS"]
+            kids = br.sub_periods(RULES, chain[1]["lord"], chain[1]["start"], ys[chain[0]["lord"]] * ys[chain[1]["lord"]] / 120)
+            for j, k in enumerate(kids):
+                r = mx.DASHA_PRAT_ROW0 + j
+                self.assertEqual(ws.cell(row=r, column=2).value, k["lord"], (i, j))
+                self.assertClose(ws.cell(row=r, column=3).value, k["start"], (i, j, "prat start"))
+                self.assertClose(ws.cell(row=r, column=4).value, k["end"], (i, j, "prat end"))
+        self.assertEqual(ran, 4)
+        a = self.books[0][mx.PREFIX + "Dasha_Calc"]
+        self.assertEqual([a.cell(row=mx.DASHA_CHAIN_ROW0 + j, column=2).value for j in range(2)], ["Mars", "Moon"])
+
+
 @unittest.skipUnless(openpyxl, "openpyxl is needed for the workbook checks")
 class ExcelFormulaLimits(unittest.TestCase):
     """Every calculator formula runs in Excel 2007: no newer functions, at most 8,192 characters."""
