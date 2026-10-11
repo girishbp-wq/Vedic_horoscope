@@ -609,7 +609,8 @@ class Remedies(unittest.TestCase):
         self.assertIn("debilitated or an afflicted Moon", r["text"])
         self.assertIn("Tips of the day", r["text"])
         tips = [x for x in r["remedies"] if x["topic"] == "Tip"]
-        self.assertEqual(len(r["tips"]), 3)
+        self.assertEqual(len(r["tips"]), len(tips))
+        self.assertTrue(any("Never wear black coloured clothes" in t and "S29 p.50" in t for t in r["tips"]), r["tips"])
         self.assertTrue(r["tips"][0].startswith(tips[0]["text"].split("\n")[0]), r["tips"][0])
         self.assertIn("S24 p.38", r["tips"][0])
 
@@ -1252,7 +1253,8 @@ class Remedies(unittest.TestCase):
         self.assertIn("debilitated or an afflicted Moon", r["text"])
         self.assertIn("Tips of the day", r["text"])
         tips = [x for x in r["remedies"] if x["topic"] == "Tip"]
-        self.assertEqual(len(r["tips"]), 3)
+        self.assertEqual(len(r["tips"]), len(tips))
+        self.assertTrue(any("Never wear black coloured clothes" in t and "S29 p.50" in t for t in r["tips"]), r["tips"])
         self.assertTrue(r["tips"][0].startswith(tips[0]["text"].split("\n")[0]), r["tips"][0])
         self.assertIn("S24 p.38", r["tips"][0])
 
@@ -1538,3 +1540,69 @@ class CurrentLocationDay(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# Her Chart 3 (S28): Dhanur Lagna; sidereal longitudes (sign * 30 + degree)
+S28_CHART_3_SID = {"Sun": 10, "Moon": 211, "Mars": 101, "Mercury": 351, "Jupiter": 68, "Venus": 33,
+                   "Saturn": 120, "Rahu": 160, "Ketu": 340}
+
+
+@needs_browser
+class Round1Page(unittest.TestCase):
+    """Sessions 28-29 on the page: strength reasons, degree stages, her Chart 3 sentences, daśā to Prāṇa."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            const out = await page.evaluate((sid) => {
+              renderS23Sections(sid, 9);
+              const card = p => document.querySelector(`#s23-predict-body .s23-gb[data-planet="${p}"]`);
+              const q = (el, s) => el.querySelector(s) ? el.querySelector(s).textContent : null;
+              return {venusStrength: q(card('Venus'), '.s23-strength'), saturnDegree: q(card('Saturn'), '.s23-degree'),
+                      rahu: q(card('Rahu'), '.s23-readings'),
+                      eleven: q(document.querySelector('#s23-bb tr[data-lord-of="11"]'), '.s23-house-aspects'),
+                      area14: document.getElementById('s23-area-14').textContent};
+            }, SID);
+            await page.evaluate(() => renderDashaPane(buildDasha(253.6103, '1982-06-08', '12:00:00'), null));
+            out.chain = await page.evaluate(() => [...document.querySelectorAll('#s23-dasha-chain li')].map(li => li.textContent));
+            const count = l => page.evaluate(l => document.querySelectorAll(`tr.s23-sub[data-level="${l}"]`).length, l);
+            const click = sel => page.evaluate(sel => document.querySelector(sel).click(), sel);   // the section may be folded
+            await click('tr.s23-bhukti .s23-open');
+            out.level2 = await count(2);
+            await click('tr.s23-sub[data-level="2"] .s23-open');
+            out.level3 = await count(3);
+            await click('tr.s23-bhukti .s23-open');
+            out.closed = await count(2) + await count(3);
+            await page.setViewportSize({width: 390, height: 800});
+            out.width = await page.evaluate(() => document.documentElement.scrollWidth);
+            return out;
+        """.replace("SID", json.dumps(S28_CHART_3_SID)))
+
+    def test_strength_chip_reasons(self):
+        self.assertEqual(self.r["venusStrength"], "mixed — aspected by Saturn, aspected by Rahu (S29)")
+
+    def test_degree_line(self):
+        self.assertIn("At 0 degree", self.r["saturnDegree"])
+        self.assertIn("lose their strength of giving malefic results", self.r["saturnDegree"])
+
+    def test_reading_on_card(self):
+        self.assertIn("In her example chart (S28):", self.r["rahu"])
+        self.assertIn("export, forex", self.r["rahu"])
+
+    def test_layer2_house_aspects(self):
+        self.assertIn("Sun aspects the 11th (rules the 9th)", self.r["eleven"])
+
+    def test_life_area_shows_ruled_houses_and_gains(self):
+        self.assertIn("Saturn aspects the 11th (rules the 2nd and 3rd)", self.r["area14"])
+
+    def test_dasha_chain_and_open_rows(self):
+        self.assertEqual(len(self.r["chain"]), 5)
+        self.assertTrue(self.r["chain"][0].startswith("Mahādaśā:"), self.r["chain"])
+        self.assertTrue(self.r["chain"][4].startswith("Prāṇa:"), self.r["chain"])
+        self.assertEqual((self.r["level2"], self.r["level3"], self.r["closed"]), (9, 9, 0))
+
+    def test_no_horizontal_scroll_390(self):
+        self.assertLessEqual(self.r["width"], 390)

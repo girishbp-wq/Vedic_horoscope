@@ -601,6 +601,14 @@ details.section[open] > summary::after { content: "−"; }
 @media (max-width: 680px) { .s23-sumgrid { grid-template-columns: 1fr; } }
 @media print { .s23-more { display: none; } }
 .s23-chip.active { background: #fff1c9; color: #7a5300; border-color: #e6c46a; font-weight: 600; }
+.s23-chip.s23-strength { white-space: normal; }
+.s23-degree, .s23-readings li { font-size: 13.5px; }
+.s23-house-aspects { margin: 4px 0 0 16px; padding: 0; font-size: 13px; }
+.s23-chain { margin: 4px 0 10px 18px; font-size: 13.5px; }
+.s23-open { border: 0; background: none; cursor: pointer; color: var(--maroon); font-size: 13px; padding: 0 4px; }
+tr.s23-sub td { font-size: 12.5px; background: var(--parchment-2); }
+tr.s23-sub.now td { font-weight: 600; }
+@media print { .s23-open { display: none; } }
 .s23-points li, .s23-extra li, .s23-class-texts li, .s23-nature-lines li, .s23-conds li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
 .s23-pairs { padding-left: 18px; margin: 4px 0 12px; }
@@ -5662,6 +5670,8 @@ function renderDashaPane(D, roles){
   if(D.running){
     h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
     h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
+    h+=`<p class="s23-sub">Running now, down to Prāṇa (Session 29)</p><ul class="s23-chain" id="s23-dasha-chain">`
+      +s23DashaChain(D, now).map(c=>`<li data-level="${c.level}" data-lord="${c.lord}">${c.level}: ${G[c.lord]} ${c.lord} ${_fdate(c.start)} – ${_fdate(c.end)}</li>`).join("")+`</ul>`;
   } else {
     h+=`No daśā is running today: today is outside this chart's 120-year span (${_fdate(D.spanStart)} – ${_fdate(D.spanEnd)}).</p>`;
   }
@@ -5684,13 +5694,30 @@ function renderDashaPane(D, roles){
       +`<span class="maha-span">${_fdate(t.start)} — ${_fdate(t.end)} · ${t.years} yrs</span></div>`
       +`<table class="rtable dasha-table"><thead><tr><th>Bhukti (Antardaśā)</th><th>From</th><th>To</th></tr></thead><tbody>`;
     for(const b of t.bhuktis){
-      h+=`<tr class="${b.cur?'now':''}" data-bhukti="${b.lord}"><td>${G[t.lord]}–${G[b.lord]} ${t.lord}–${b.lord}${roles?" "+s23RoleChips(s23ApplicableRoles(roles[b.lord], false)):""}</td>`
+      h+=`<tr class="s23-bhukti${b.cur?' now':''}" data-bhukti="${b.lord}" data-level="1" data-lord="${b.lord}" data-start="${b.start.getTime()}" data-years="${t.years*VYEARS[b.lord]/120}">`
+        +`<td><button type="button" class="s23-open" aria-expanded="false" title="Show the Pratyantaras">▸</button> ${G[t.lord]}–${G[b.lord]} ${t.lord}–${b.lord}${roles?" "+s23RoleChips(s23ApplicableRoles(roles[b.lord], false)):""}</td>`
         +`<td>${_fdate(b.start)}</td><td>${_fdate(b.end)}</td></tr>`;
     }
     h+=`</tbody></table></div>`;
   }
-  h+=`<p class="rnote">Vimśottarī (120-yr) system, from the Moon's nakṣatra at birth. The highlighted row/block is the period running today. Dates are approximate (±) — for exact sandhi use a professional ephemeris.</p>`;
+  h+=`<p class="rnote">Vimśottarī (120-yr) system, from the Moon's nakṣatra at birth. The highlighted row/block is the period running today. `
+    +`Open a Bhukti (▸) for its nine Pratyantaras, and each of those for its Sookshmas and Prāṇas (Session 29). Dates are approximate (±) — for exact sandhi use a professional ephemeris.</p>`;
   el.innerHTML=h;
+  el.onclick=e=>{
+    const btn=e.target.closest(".s23-open"); if(!btn) return;
+    const tr=btn.closest("tr"), level=+tr.dataset.level;
+    if(btn.getAttribute("aria-expanded")==="true"){             // close: remove every deeper row that follows this one
+      let n=tr.nextElementSibling;
+      while(n && n.classList.contains("s23-sub") && +n.dataset.level>level){ const x=n.nextElementSibling; n.remove(); n=x; }
+      btn.setAttribute("aria-expanded","false"); btn.textContent="▸"; return;
+    }
+    const kids=s23SubPeriods(tr.dataset.lord, new Date(+tr.dataset.start), +tr.dataset.years), now=new Date(), name=S23_DASHA_LEVELS[level+1];
+    const rows=kids.map(k=>`<tr class="s23-sub${k.start<=now&&now<k.end?' now':''}" data-level="${level+1}" data-lord="${k.lord}" data-start="${k.start.getTime()}" data-years="${k.years}">`
+      +`<td style="padding-left:${12+level*14}px">${level+1<4?`<button type="button" class="s23-open" aria-expanded="false" title="Show the next level">▸</button> `:""}${name}: ${G[k.lord]} ${k.lord}</td>`
+      +`<td>${_fdate(k.start)}</td><td>${_fdate(k.end)}</td></tr>`).join("");
+    tr.insertAdjacentHTML("afterend", rows);
+    btn.setAttribute("aria-expanded","true"); btn.textContent="▾";
+  };
 }
 
 function renderTransitPane(natalSid, natalMoonR, lagnaN){
@@ -6920,6 +6947,20 @@ function s23Conditions(cs){
   return `<p class="s23-sub">When it applies (Sessions 23–27)</p><ul class="s23-conds">`
     +cs.map(c=>`<li data-key="${c.key}">${s23Para(c.text)} ${s23Tag(c.status)}${s23Src(c.source)}${c.active===true?` <span class="s23-chip active">active now</span>`:""}</li>`).join("")+`</ul>`;
 }
+function s23StrengthChip(st){
+  const tag=(st.word==="mixed" || st.reasons.includes("with Rahu")) ? " (S29)" : "";
+  const cls={strong:"strong", weak:"lost", mixed:"active", depends:""}[st.word];
+  return `<span class="s23-chip s23-strength ${cls}" title="Strength (Session 29)">${st.word} — ${_esc(st.reasons.join(", "))}${tag}</span>`;
+}
+function s23DegreeLine(ds, deg){
+  if(!ds) return "";
+  return `<p class="s23-degree"><strong>${_esc(ds.stage)}</strong> (${Math.floor(deg)}° in the sign) — ${ds.lines.map(_esc).join(" ")}`
+    +(ds.age_note?` <em>${_esc(ds.age_note)}</em>`:"")+`${s23Src("S28 p.17")}</p>`;
+}
+function s23ReadingList(texts, cls, head){
+  if(!texts || !texts.length) return "";
+  return (head?`<p class="s23-sub">${head}</p>`:"")+`<ul class="${cls}">${texts.map(t=>`<li>${s23Para(t)} ${s23Tag("taught")}</li>`).join("")}</ul>`;
+}
 function s23BuildPredictions(sid, lagnaN, extra){
   const {pbr, degs, waxing}=s23Inputs(sid), lg=lagnaN-1;
   const ctx=s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra)), conds=s23ChartConditions(ctx);
@@ -6929,13 +6970,14 @@ function s23BuildPredictions(sid, lagnaN, extra){
   // layer 1
   h+=`<h4 class="pane-h">1 · Graha + Bhāva — each planet in its house</h4><div class="s23-cards">`;
   for(const p of S23_PLANETS){
-    const g=s23GrahaBhava(lagnaN, pbr, p, degs[p], waxing), rashi=RASHI[pbr[p]-1];
+    const g=s23GrahaBhava(lagnaN, pbr, p, degs[p], waxing, ctx), rashi=RASHI[pbr[p]-1], st=s23StrengthDetail(ctx, p);
     const deep = g.dignity.label.startsWith("Deep") ? " flag-deep" : "";
     h+=`<div class="s23-card s23-gb" data-planet="${p}" data-house="${g.house}" data-status="${g.status}">`
       +`<h5>${GLYPH9[p]} ${p} in the ${ord(g.house)} house <small>${rashi.sanskrit} · ${_esc(s23ShortName(BHAVA_INFO[g.house].nm))}</small> ${s23Tag(g.status)}</h5>`
       +`<p class="s23-chips"><span class="s23-chip s23-nature ${g.nature.replace(" ","-")}">${g.nature}</span>`
       +(g.moon_strength?`<span class="s23-chip s23-paksha">${g.moon_strength}</span>`:"")
       +`<span class="section-flag flag-${g.dignity.flag}${deep} s23-dig">${g.dignity.label}</span>`
+      +s23StrengthChip(st)
       +(g.digbala_line?`<span class="s23-chip ${s23Digbala(p,g.house)}">Digbala ${s23Digbala(p,g.house)==="strong"?"✓":"✗"}</span>`:"")
       +`<span class="s23-chip">${g.classes.join(" · ")||"—"}</span></p>`
       +`<ul class="s23-points">${g.points.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>${s23Src(g.source)}`
@@ -6944,9 +6986,11 @@ function s23BuildPredictions(sid, lagnaN, extra){
       +(g.dignity_line?`<p><span class="s23-dig-line">${_esc(g.dignity_line)}</span> ${s23Tag(g.dignity_status)}</p>`:"")
       +(g.twelfth_line?`<p class="s23-twelfth"><span class="s23-twelfth-line">${_esc(g.twelfth_line)}</span> ${s23Tag("taught")}</p>`:"")
       +(g.digbala_line?`<p><span class="s23-digbala-line">${_esc(g.digbala_line)}</span> ${s23Tag(g.digbala_status)}</p>`:"")
+      +s23DegreeLine(g.degree_stage, degs[p])
       +(g.nature_lines.length?`<p class="s23-sub">A ${g.nature} in this house (Session 26)</p><ul class="s23-nature-lines">${g.nature_lines.map(x=>`<li>${_esc(x.text)} ${s23Tag(x.status)}${s23Src(x.source)}</li>`).join("")}</ul>`:"")
       +(g.class_texts.length?`<p class="s23-sub">From the bhāva classes</p><ul class="s23-class-texts">${g.class_texts.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
       +s23Conditions(conds.filter(c=>c.planet===p))
+      +s23ReadingList(g.readings, "s23-readings", "Her example chart (Session 28)")
       +`</div>`;
   }
   h+=`</div>`;
@@ -6957,14 +7001,18 @@ function s23BuildPredictions(sid, lagnaN, extra){
   for(const r of s23BhavaBhava(ctx)){
     const chips=(r.dictum?`<span class="s23-chip strong" title="${s23Attr(r.dictum)}">dictum: ${ord(r.lord_of)} strong</span>`:"")
       +(r.exchange?`<span class="s23-chip s23-exchange">Parivartana ${r.lord_of} ↔ ${r.exchange}</span>`:"")
-      +(r.status==="taught" && S23.bhava_lord_in.some(x=>x.lord_of===r.lord_of && x.sits_in===r.sits_in && x.condition)?`<span class="s23-chip">lord: ${r.strength==="depends"?"depends on strength":r.strength}</span>`:"");
-    const company=r.with_lord.length ? r.with_lord.map(w=>`${GLYPH9[w.planet]} ${w.planet} ${w.how==="with"?"with the lord":`aspects it (${w.aspect})`}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}`).join("; ") : "—";
+      +(r.status==="taught" && S23.bhava_lord_in.some(x=>x.lord_of===r.lord_of && x.sits_in===r.sits_in && x.condition)?`<span class="s23-chip">lord: ${r.strength==="depends"?"depends on strength":r.strength==="mixed"?"mixed (both lines)":r.strength}</span>`:"");
+    const company=r.with_lord.length ? r.with_lord.map(w=>`${GLYPH9[w.planet]} ${w.planet} ${w.how==="with"?"with the lord":`aspects it (${w.aspect})`}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}`
+      +(w.readings.length?` <span class="s23-readings">${w.readings.map(s23Para).join(" ")}</span>`:"")).join("; ") : "—";
+    const houseAsp=r.house_aspects.length ? `<ul class="s23-house-aspects">${r.house_aspects.map(a=>`<li>${GLYPH9[a.by]} ${[`${a.by} aspects the ${ord(a.house)}`, s23RuledPhrase(a.rules)].filter(Boolean).join(" ")} <span class="s23-sub">(${a.aspect} aspect)</span>`
+      +(a.readings.length?`<br><span class="s23-readings">${a.readings.map(s23Para).join(" ")}</span>`:"")+`</li>`).join("")}</ul>` : "—";
     h+=`<tr data-lord-of="${r.lord_of}" data-sits="${r.sits_in}" data-lord="${r.lord}" data-status="${r.status}" data-exchange="${r.exchange||""}" data-dictum="${r.dictum?1:0}">`
       +`<td><strong>${ord(r.lord_of)} lord</strong><br>${GLYPH9[r.lord]} ${r.lord} → ${ord(r.sits_in)}${r.exchange?` (↔ ${ord(r.exchange)})`:""}<br>${s23Tag(r.status)}${s23Src(r.source)}<br>${chips}</td>`
       +`<td class="s23-text">${s23Para(r.text)}</td>`
       +`<td><p class="s23-sign-line">${_esc(r.sign_line)}</p><p class="s23-placement">${_esc(r.placement_line)}</p>`
       +(r.dictum?`<p class="s23-dictum"><strong>${_esc(r.dictum)}</strong></p>`:"")
-      +`<p class="s23-company"><span class="s23-sub">With / aspecting the lord:</span> ${company}</p></td></tr>`;
+      +`<p class="s23-company"><span class="s23-sub">With / aspecting the lord:</span> ${company}</p>`
+      +`<div class="s23-company"><span class="s23-sub">Aspecting the house:</span> ${houseAsp}</div></td></tr>`;
   }
   h+=`</tbody></table></div>`;
   // layer 3
@@ -7016,11 +7064,11 @@ function s23AreaBhava(b, multi){
     +`<li><strong>Planets in it.</strong> `+(b.occupants.length ? `<ul>${b.occupants.map(o=>`<li>${s23PlanetLine(o.planet, ` <span class="s23-chip s23-nature ${o.nature.replace(" ","-")}">${o.nature}</span>`)} ${s23Tag(o.status)}`
         +(o.nature_lines.length?`<ul class="s23-nature-lines">${o.nature_lines.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
         +`<details class="s23-more"><summary>Her reading for ${o.planet} in the ${H}</summary>${s23Para(o.text)}</details></li>`).join("")}</ul>` : "none.")+`</li>`
-    +`<li><strong>Planets aspecting it.</strong> `+(b.aspecting.length ? `<ul>${b.aspecting.map(a=>`<li>${s23PlanetLine(a.by, ` (${a.aspect} aspect)`)}${s23MeaningList(a.meanings)}</li>`).join("")}</ul>` : "none.")+`</li>`
-    +`<li><strong>The lord.</strong> `+(L ? `${s23PlanetLine(L.planet)} sits in the ${ord(L.house)} house, ${s23RashiCell(L.sign)} · ${L.dignity} · <span class="s23-chip">${L.strength==="depends"?"strength depends":L.strength}</span>`
+    +`<li><strong>Planets aspecting it.</strong> `+(b.aspecting.length ? `<ul>${b.aspecting.map(a=>`<li>${s23PlanetLine(a.by, ` aspects the ${H}${a.rules.length?" "+s23RuledPhrase(a.rules):""} (${a.aspect} aspect)`)}${s23MeaningList(a.meanings)}${s23ReadingList(a.readings, "s23-readings")}</li>`).join("")}</ul>` : "none.")+`</li>`
+    +`<li><strong>The lord.</strong> `+(L ? `${s23PlanetLine(L.planet)} sits in the ${ord(L.house)} house, ${s23RashiCell(L.sign)} · ${L.dignity} · <span class="s23-chip">${L.strength==="depends"?"strength depends":L.strength==="mixed"?"mixed — malefic aspect":L.strength}</span>`
         +`<p class="s23-placement">${_esc(L.placement_line)}</p><p class="s23-text">${s23Para(L.text)} ${s23Tag(L.status)}</p>`
         +(L.dictum?`<p class="s23-dictum"><strong>${_esc(L.dictum)}</strong></p>`:"") : "its sign is not known.")+`</li>`
-    +`<li><strong>With / aspecting the lord.</strong> `+(b.with_lord.length ? `<ul>${b.with_lord.map(w=>`<li>${s23PlanetLine(w.planet, w.how==="with"?" is with the lord":` aspects the lord (${w.aspect})`)}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}${s23MeaningList(w.meanings)}</li>`).join("")}</ul>` : "none.")+`</li>`
+    +`<li><strong>With / aspecting the lord.</strong> `+(b.with_lord.length ? `<ul>${b.with_lord.map(w=>`<li>${s23PlanetLine(w.planet, w.how==="with"?" is with the lord":` aspects the lord (${w.aspect})`)}${w.rules.length?` — lord of the ${w.rules.map(ord).join(" and ")}`:""}${s23MeaningList(w.meanings)}${s23ReadingList(w.readings, "s23-readings")}</li>`).join("")}</ul>` : "none.")+`</li>`
     +`</ol>`;
   return h;
 }
@@ -7029,7 +7077,7 @@ function s23AreaPane(a){
   let h=`<h4 class="pane-h">${a.no} · ${_esc(a.area)}</h4>`
     +`<p class="rnote">Ready Reckoner: ${a.houses.map(ord).join(" and ")} house${multi?"s":""} and lord${multi?"s":""} · karaka ${S23.life_areas.find(r=>r.no===a.no).karakas.join(" + ")}${s23Src(a.source)}</p>`;
   h+=a.bhavas.map(b=>s23AreaBhava(b, multi)).join("");
-  h+=`<ol class="s23-steps" start="6"><li><strong>The karaka.</strong> `+(a.karakas.length ? `<ul>${a.karakas.map(k=>`<li>${s23PlanetLine(k.planet)} in the ${ord(k.house)} house, ${s23RashiCell(k.sign)} · ${k.dignity} · <span class="s23-chip">${k.strength==="depends"?"strength depends":k.strength}</span>`
+  h+=`<ol class="s23-steps" start="6"><li><strong>The karaka.</strong> `+(a.karakas.length ? `<ul>${a.karakas.map(k=>`<li>${s23PlanetLine(k.planet)} in the ${ord(k.house)} house, ${s23RashiCell(k.sign)} · ${k.dignity} · <span class="s23-chip">${k.strength==="depends"?"strength depends":k.strength==="mixed"?"mixed — malefic aspect":k.strength}</span>`
       +(k.combust?` <span class="s23-chip lost">combust</span>`:"")+(k.retro?` <span class="section-flag flag-retro">℞ Retro</span>`:"")
       +(k.note?`<p class="rnote s23-karaka-note">${_esc(k.note)}</p>`:"")+`</li>`).join("")}</ul>` : "not placed in this chart.")+`</li>`;
   if(a.pac!==null){
