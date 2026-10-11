@@ -29,6 +29,12 @@ What it fixes:
              mild malefic, the Moon and Mercury natural benefics (Session 26); Mars brothers and male friends, athlete;
              Mercury astrology and marketing; Planets: the Moon's food, travel and change of place, Mercury's astrology,
              marketing and hobbies.
+  Sessions 28-29
+             Bhava Info: the 3rd rules the wrist; Planet Profile / Planet Characteristics: Mars commanding and impatient,
+             Jupiter satwik, Saturn traditional, Rahu unconventional and dominating, Ketu critic and fault-finder, Venus
+             karaka for relationships, the Moon's emotional disturbance leading to disease; Planets: each planet's
+             Session 28 karakatwas (government, red eyes and spicy food, advice and big handwriting, hormonal imbalance,
+             chronic disease, outsiders and cuisines, litigation and small things).
 """
 import pathlib
 import sys
@@ -40,11 +46,13 @@ from make_session23_xlsx import backup_master
 
 
 class Patch:
-    """Set sheet!cell to `new` if it holds `old`. With part=True, `old` -> `new` is a substring
+    """Set sheet!cell to `new` if it holds `old` (or any of `old` when it is a tuple of the cell's known earlier
+    states, e.g. before and after an earlier release's patch). With part=True, `old` -> `new` is a substring
     replacement (every occurrence) inside the cell's text."""
 
     def __init__(self, sheet, cell, old, new, why, part=False):
-        self.sheet, self.cell, self.old, self.new, self.why, self.part = sheet, cell, old, new, why, part
+        self.olds = old if isinstance(old, tuple) else (old,)
+        self.sheet, self.cell, self.old, self.new, self.why, self.part = sheet, cell, self.olds[0], new, why, part
 
 
 def _text(v):
@@ -233,6 +241,57 @@ _S24_27 += [
 for sheet, cell, old, new, why in _S24_27:
     P.append(Patch(sheet, cell, old, new, why))
 
+
+# ---- Sessions 28-29 (spec §5.1): appended to the cells as the Sessions 23-27 patches left them
+_S28_29 = [("Bhava Info", "C7", "Neck, shoulders, throat, ears, arms, oesophagus, hands",
+            "Neck, shoulders, throat, ears, arms, oesophagus, hands, wrist", "S28 p.5: the 3rd house, the wrist area")]
+_MARS_TRAITS = ("Courageous, Aggressive, Energetic / Action-oriented, Adventurous, Hasty & Quick / Dynamic, Impulsive, Faithful, "
+                "Egoistic / Arrogant, Stubborn / Dominating, Quarrelsome, Anger, Retaliating")
+_SATURN_TRAITS = "If strong: patient, disciplined, hardworking, philosophical. If weak: lazy, melancholic, inferiority complex"
+_JUPITER_TRAITS = "Wise, Knowledgeable, Benevolent, Optimistic, Respectable, Generous, Spiritual, Just, Expansive"
+_VENUS_PEOPLE = "Spouse / Wife (Kalatra Karaka), Daughter, Daughter-in-law, Aunt"
+_MOON_HEALTH = "Mental health, fluids, immunity; Diseases: Cold, Cough, Phlegm, Mental disorders, Sinus, Swellings"
+for sheet, cells in (("Planet Profile", ("T7", "T9", "T11", "T12", "T13", "Q10", "W6")),
+                     ("Planet Characteristics", ("D31", "F31", "H31", "I31", "J31", "G28", "C34"))):
+    mars, jup, sat, rahu, ketu, venus, moon = cells
+    _S28_29 += [
+        (sheet, mars, _MARS_TRAITS, _MARS_TRAITS + ", Commanding, Impatient", "S28 pp.5, 11: Mars, commanding and impatient"),
+        (sheet, jup, _JUPITER_TRAITS, _JUPITER_TRAITS + ", Satwik", "S28 p.2: Jupiter, satwik"),
+        (sheet, sat, _SATURN_TRAITS, _SATURN_TRAITS + "; traditional", "S28 p.12: Saturn, traditional"),
+        (sheet, rahu, "(later session)", "Unconventional, Dominating", "S28 p.10: Rahu, unconventional and dominating"),
+        (sheet, ketu, "(later session)", "Critic, Fault-finder", "S28 pp.9, 11: Ketu, critic and fault-finder"),
+        (sheet, venus, _VENUS_PEOPLE, _VENUS_PEOPLE + "; karaka for relationships", "S28 p.10: Venus, karaka for relationships"),
+        (sheet, moon, _MOON_HEALTH, _MOON_HEALTH + "; emotional disturbance leading to disease",
+         "S28 p.8: the Moon, emotional disturbance leading to disease"),
+    ]
+for cell, old, add, why in (
+        ("D5", "the father, the soul, health and status", "government and administration", "S28 pp.7, 12, 14: the Sun, government, administrator"),
+        ("D6", "the mother, the mind and emotions, food, travel and change of place", "emotional disturbance leading to disease",
+         "S28 p.8: the Moon, emotional disturbance leading to disease"),
+        ("D7", "the younger co-born (sibling), courage, land and property", "red eyes, spicy and hot food", "S28 p.3: Mars, red eyes, spicy food"),
+        ("D9", "children, wealth, the guru and dharma", "advice, a good friend circle, big handwriting",
+         "S28 pp.5, 9, 14: Jupiter, advice, friend circle, handwriting"),
+        ("D10", "the spouse, marriage, vehicles and the arts", "relationships, the daughter, hormonal imbalance",
+         "S28 pp.8, 10: Venus, relationships, daughter, hormonal imbalance"),
+        ("D11", "longevity, profession, servants and the elderly", "delay, chronic disease, tradition",
+         "S28 pp.5, 8, 12: Saturn, delay, chronic disease, traditional"),
+        ("D12", "foreign matters, sudden gains and illusion", "foreign sources and outsiders, different cuisines, wide eyes",
+         "S28 pp.3, 15: Rahu, outsiders, cuisines, wide eyes"),
+        ("D13", "moksha, mysticism and past-life karma", "criticism and fault-finding, litigation, small things",
+         "S28 pp.6, 9, 11: Ketu, critic, litigation, small"),
+        ("C7", "energy, courage and aggression", "commanding and impatient", "S28 pp.5, 11: Mars, commanding and impatient"),
+        ("C9", "wisdom, nobility, expansion and good fortune", "satwik", "S28 p.2: Jupiter, satwik"),
+        ("C12", "obsession, amplification and unconventionality", "dominating", "S28 p.10: Rahu, dominating"),
+        ("C13", "detachment, spirituality and sudden severance", "critical and fault-finding", "S28 pp.9, 11: Ketu, critic, fault-finder")):
+    _S28_29.append(("Planets", cell, old, f"{old}; {add}", why))
+for sheet, cell, old, new, why in _S28_29:
+    earlier = next((x for x in P if (x.sheet, x.cell) == (sheet, cell) and not x.part), None)
+    if earlier is not None and earlier.new == old:
+        # one patch per cell: from the audit's value or the Sessions 23-27 value straight to this release's
+        earlier.olds, earlier.new, earlier.why = earlier.olds + (old,), new, f"{earlier.why}; {why}"
+    else:
+        P.append(Patch(sheet, cell, old, new, why))
+
 PATCHES = P
 
 
@@ -255,7 +314,7 @@ def apply_patches(wb, patches=PATCHES):
                 out.append(("already fixed", p, cur))
             else:
                 out.append(("skipped", p, cur))
-        elif cur == p.old or (p.old is None and cur in (None, "")):
+        elif cur in p.olds or (p.old is None and cur in (None, "")):
             cell.value = p.new
             out.append(("fixed", p, cur))
         elif cur == p.new:

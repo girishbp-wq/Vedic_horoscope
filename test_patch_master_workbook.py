@@ -32,7 +32,7 @@ def audit_state_workbook():
         if p.part:
             parts.setdefault((p.sheet, p.cell), []).append(p.old)
         elif p.old is not None:
-            ws[p.cell] = p.old
+            ws[p.cell] = p.olds[0]
     for (sheet, cell), olds in parts.items():
         wb[sheet][cell] = "=IF(1," + " & ".join(olds) + ")" if olds[0].startswith(("AND(", "ROUND(")) else "x " + " … ".join(olds) + " y"
     return wb
@@ -66,7 +66,7 @@ class GuardedPatching(unittest.TestCase):
         pm.apply_patches(wb)
         bi, pp, pc, pl = wb["Bhava Info"], wb["Planet Profile"], wb["Planet Characteristics"], wb["Planets"]
         self.assertEqual(bi["D16"].value, "Ketu, Saturn")                                # S25: Saturn, karaka of the 12th
-        self.assertTrue(bi["C7"].value.endswith(", hands"))
+        self.assertIn(", hands", bi["C7"].value)
         self.assertEqual(bi["C13"].value, "Thighs, buttocks")
         self.assertEqual(bi["C15"].value, "Legs, calves, shins; left ear")
         self.assertTrue(bi["E11"].value.endswith(", maternal grandmother"))
@@ -79,6 +79,34 @@ class GuardedPatching(unittest.TestCase):
         self.assertIn("Astrologer", pp["R8"].value)
         self.assertIn("food, travel and change of place", pl["D6"].value)
         self.assertIn("astrology", pl["D8"].value)
+
+    def test_sessions_28_29_patches(self):
+        wb = audit_state_workbook()
+        res = pm.apply_patches(wb)
+        s28 = [(s, p) for s, p in ((s, p) for s, p, _ in res) if "S28" in p.why or "S29" in p.why]
+        self.assertGreaterEqual(len(s28), 15)
+        self.assertEqual({s for s, _ in s28}, {"fixed"})
+        bi, pp, pc, pl = wb["Bhava Info"], wb["Planet Profile"], wb["Planet Characteristics"], wb["Planets"]
+        self.assertEqual(bi["C7"].value, "Neck, shoulders, throat, ears, arms, oesophagus, hands, wrist")
+        for ws, mars, rahu, ketu in ((pp, "T7", "T12", "T13"), (pc, "D31", "I31", "J31")):
+            self.assertTrue(ws[mars].value.endswith(", Commanding, Impatient"))
+            self.assertEqual(ws[rahu].value, "Unconventional, Dominating")
+            self.assertEqual(ws[ketu].value, "Critic, Fault-finder")
+        self.assertIn("fault-finding, litigation", pl["D13"].value)
+        self.assertIn("foreign sources and outsiders", pl["D12"].value)
+        self.assertIn("food, travel and change of place; emotional disturbance", pl["D6"].value)
+        self.assertEqual({s for s, _, _ in pm.apply_patches(wb)}, {"already fixed"})
+
+    def test_a_cell_after_the_sessions_24_27_patch_still_takes_the_session_28_text(self):
+        # a workbook patched in the Sessions 23-27 release: the 3rd house already has "hands"
+        wb = audit_state_workbook()
+        wb["Bhava Info"]["C7"] = "Neck, shoulders, throat, ears, arms, oesophagus, hands"
+        wb["Planet Characteristics"]["J31"] = "My own Ketu traits"
+        res = {(p.sheet, p.cell): s for s, p, _ in pm.apply_patches(wb)}
+        self.assertEqual(res[("Bhava Info", "C7")], "fixed")
+        self.assertEqual(wb["Bhava Info"]["C7"].value, "Neck, shoulders, throat, ears, arms, oesophagus, hands, wrist")
+        self.assertEqual(res[("Planet Characteristics", "J31")], "skipped")
+        self.assertEqual(wb["Planet Characteristics"]["J31"].value, "My own Ketu traits")
 
     def test_missing_sheet_is_reported(self):
         wb = audit_state_workbook()

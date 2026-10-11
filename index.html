@@ -2015,7 +2015,7 @@ const PLANET_PROFILE = {
     "Personality Traits": "Gentle, soft, caring, emotional; feminine energy; sensitive; imaginative; changes quickly like emotions",
     "Body Parts Ruled": "Left eye, Breast, Heart, Mind, Uterus, Urinary bladder",
     "Constitution (Tridosha)": "Kapha",
-    "General Health Indicator": "Mental health, fluids, immunity; Diseases: Cold, Cough, Phlegm, Mental disorders, Sinus, Swellings",
+    "General Health Indicator": "Mental health, fluids, immunity; Diseases: Cold, Cough, Phlegm, Mental disorders, Sinus, Swellings; emotional disturbance leading to disease",
     Nature: "Natural benefic (S26); waxing = stronger; feminine; water element; rules Karkataka",
     "Dasha Avatara": "Lord Krishna",
     "Birthday (Tithi)": "Nandana Samvatsara, Karthika Masa, Shukla Pournami",
@@ -2070,7 +2070,7 @@ const PLANET_PROFILE = {
     Relationships: "Younger Brother; brothers and male friends",
     "Profession / Status": "Commander in Chief; Dentist, Surgeon, Mechanic, Army, Security, Police, Fire engine dept, Supervisor, Engineer, Athlete",
     Reputation: "Bhoomi Karaka — Landed property; recognition through valour",
-    "Personality Traits": "Courageous, Aggressive, Energetic / Action-oriented, Adventurous, Hasty & Quick / Dynamic, Impulsive, Faithful, Egoistic / Arrogant, Stubborn / Dominating, Quarrelsome, Anger, Retaliating",
+    "Personality Traits": "Courageous, Aggressive, Energetic / Action-oriented, Adventurous, Hasty & Quick / Dynamic, Impulsive, Faithful, Egoistic / Arrogant, Stubborn / Dominating, Quarrelsome, Anger, Retaliating, Commanding, Impatient",
     "Body Parts Ruled": "Muscle, Bone marrow, RBC, Eyebrow, Teeth, Menstrual cycle",
     "Constitution (Tridosha)": "Pitta (Bile)",
     "General Health Indicator": "Diseases: Cuts, Wounds, Bleeding, BP, Piles, Anemia, Accidents",
@@ -2186,7 +2186,7 @@ const PLANET_PROFILE = {
     Relationships: "Children (Putra / Santana Karaka), Grandchildren, Elder Brother, Teachers",
     "Profession / Status": "DevaGuru / Minister (Portfolio); Priest, Banker, Judge, Teacher, Counsellor, Financier, Auditor, Bullion trader",
     Reputation: "Honour & Respect (Gauravam); reputation through wisdom, wealth (Dhana Karaka) and benevolence",
-    "Personality Traits": "Wise, Knowledgeable, Benevolent, Optimistic, Respectable, Generous, Spiritual, Just, Expansive",
+    "Personality Traits": "Wise, Knowledgeable, Benevolent, Optimistic, Respectable, Generous, Spiritual, Just, Expansive, Satwik",
     "Body Parts Ruled": "Liver, Pancreas, Gall bladder, Stomach, Thighs, Index finger, Nose, Fat, Ear",
     "Constitution (Tridosha)": "Vatha (Wind)",
     "General Health Indicator": "Diseases: Jaundice, Liver complaints, Diabetes, Indigestion, Obesity, Flatulence",
@@ -2240,7 +2240,7 @@ const PLANET_PROFILE = {
     "Moola Trikona Range": "0°–15° Tula",
     "Own House (Swakshetra)": "Vrishabha, Tula",
     "Soul / Mind / Body": "Pleasure & Love (Bhoga Karaka); Beauty, Romance, Artistic talent, Luxury",
-    Relationships: "Spouse / Wife (Kalatra Karaka), Daughter, Daughter-in-law, Aunt",
+    Relationships: "Spouse / Wife (Kalatra Karaka), Daughter, Daughter-in-law, Aunt; karaka for relationships",
     "Profession / Status": "Asura Guru / Shukracharya (Portfolio); Beautician, Costume designer, Artist, Musician, Singer, Dancer, Poet, Painter, Jeweller, Silk trader, Hotel & Event Management",
     Reputation: "Reputation through beauty, artistic talent, luxury and charm",
     "Personality Traits": "Pleasant, Artistic, Romantic, Charming, Sensual, Luxury-loving, Beauty-conscious, Refined",
@@ -2300,7 +2300,7 @@ const PLANET_PROFILE = {
     Relationships: "Elder brother, elderly & poor people, servants, handicapped, masses, employees",
     "Profession / Status": "Servants, labourers, cleaners, cobblers, iron/oil merchants, jailors, coffin makers, waste disposal",
     Reputation: "Earned slowly through hard work; humble / low status",
-    "Personality Traits": "If strong: patient, disciplined, hardworking, philosophical. If weak: lazy, melancholic, inferiority complex",
+    "Personality Traits": "If strong: patient, disciplined, hardworking, philosophical. If weak: lazy, melancholic, inferiority complex; traditional",
     "Body Parts Ruled": "Chin, middle finger, knees, knee-caps, buttocks, foreleg, feet",
     "Constitution (Tridosha)": "Vatha",
     "General Health Indicator": "Arthritis, chronic ailments, constipation, rheumatism, defective limbs, lethargy",
@@ -2357,7 +2357,7 @@ const PLANET_PROFILE = {
     Relationships: "(later session)",
     "Profession / Status": "(later session)",
     Reputation: "(later session)",
-    "Personality Traits": "(later session)",
+    "Personality Traits": "Unconventional, Dominating",
     "Body Parts Ruled": "(later session)",
     "Constitution (Tridosha)": "(later session)",
     "General Health Indicator": "(later session)",
@@ -2389,7 +2389,7 @@ const PLANET_PROFILE = {
     Relationships: "(later session)",
     "Profession / Status": "(later session)",
     Reputation: "(later session)",
-    "Personality Traits": "(later session)",
+    "Personality Traits": "Critic, Fault-finder",
     "Body Parts Ruled": "(later session)",
     "Constitution (Tridosha)": "(later session)",
     "General Health Indicator": "(later session)",
@@ -3302,15 +3302,15 @@ function houseFromLagna(lagnaRashi, planetRashi) {
 const GLYPH9 = { Sun:"☉", Moon:"☾", Mars:"♂", Mercury:"☿", Jupiter:"♃", Venus:"♀", Saturn:"♄", Rahu:"☊", Ketu:"☋" };
 
 const KARAKATWAS = {
-  Sun: { qualities: "authority, confidence and a commanding nature", signifies: "the father, the soul, health and status" },
-  Moon: { qualities: "emotion, nurture and a receptive mind", signifies: "the mother, the mind and emotions, food, travel and change of place" },
-  Mars: { qualities: "energy, courage and aggression", signifies: "the younger co-born (sibling), courage, land and property" },
+  Sun: { qualities: "authority, confidence and a commanding nature", signifies: "the father, the soul, health and status; government and administration" },
+  Moon: { qualities: "emotion, nurture and a receptive mind", signifies: "the mother, the mind and emotions, food, travel and change of place; emotional disturbance leading to disease" },
+  Mars: { qualities: "energy, courage and aggression; commanding and impatient", signifies: "the younger co-born (sibling), courage, land and property; red eyes, spicy and hot food" },
   Mercury: { qualities: "intellect, analysis and communication", signifies: "speech, intellect, education and business; astrology, marketing and hobbies" },
-  Jupiter: { qualities: "wisdom, nobility, expansion and good fortune", signifies: "children, wealth, the guru and dharma" },
-  Venus: { qualities: "refinement, charm and a taste for comfort", signifies: "the spouse, marriage, vehicles and the arts" },
-  Saturn: { qualities: "discipline, delay, hard work and detachment", signifies: "longevity, profession, servants and the elderly" },
-  Rahu: { qualities: "obsession, amplification and unconventionality", signifies: "foreign matters, sudden gains and illusion" },
-  Ketu: { qualities: "detachment, spirituality and sudden severance", signifies: "moksha, mysticism and past-life karma" },
+  Jupiter: { qualities: "wisdom, nobility, expansion and good fortune; satwik", signifies: "children, wealth, the guru and dharma; advice, a good friend circle, big handwriting" },
+  Venus: { qualities: "refinement, charm and a taste for comfort", signifies: "the spouse, marriage, vehicles and the arts; relationships, the daughter, hormonal imbalance" },
+  Saturn: { qualities: "discipline, delay, hard work and detachment", signifies: "longevity, profession, servants and the elderly; delay, chronic disease, tradition" },
+  Rahu: { qualities: "obsession, amplification and unconventionality; dominating", signifies: "foreign matters, sudden gains and illusion; foreign sources and outsiders, different cuisines, wide eyes" },
+  Ketu: { qualities: "detachment, spirituality and sudden severance; critical and fault-finding", signifies: "moksha, mysticism and past-life karma; criticism and fault-finding, litigation, small things" },
 };
 
 const NATURAL_FRIENDS = {
@@ -4283,7 +4283,7 @@ const BHAVA_INFO = {
       sig:"Self, personality and temperament, physical appearance & constitution, health and vitality, name and fame, life purpose and life path, place of birth, the east direction." },
    2:{ nm:"Dhana · Kutumbha · Vaak · Anna · Netra · Māraka Sthana", body:"Face, eyes, teeth, mouth, throat", karaka:["Jupiter"], rel:"Family members",
       sig:"Accumulated wealth and savings, liquid assets (gold, gems), family and lineage, source of income, speech, food habits, early (school) education, eyes; what one values. (Also a māraka.)" },
-   3:{ nm:"Bhratru · Parakrama Sthana (Sahaja)", body:"Neck, shoulders, throat, ears, arms, oesophagus, hands", karaka:["Mars"], rel:"Younger siblings, neighbours",
+   3:{ nm:"Bhratru · Parakrama Sthana (Sahaja)", body:"Neck, shoulders, throat, ears, arms, oesophagus, hands, wrist", karaka:["Mars"], rel:"Younger siblings, neighbours",
       sig:"Stamina, courage, will-power and self-effort, younger siblings, neighbours, communication and writing, marketing and media, hobbies, short journeys, partition of property, the drive to do business." },
    4:{ nm:"Matru · Sukha · Vidya · Vāhana · Bandhu Sthana", body:"Chest, heart, lungs, upper stomach", karaka:["Moon", "Venus"], rel:"Mother",
       sig:"Mother, home and motherland, domestic happiness & peace of mind, landed & ancestral property, fixed assets, vehicles, schooling up to under-graduate education, emotions." },
@@ -5480,7 +5480,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-10-11 · Sessions 23–27: the teacher's texts, Session 26 natures, Life areas; build date set automatically";
+const TOOL_VERSION = "2026-10-11 · Sessions 28-29: chart reading, strength, degree stages, daśā to Prāṇa";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }

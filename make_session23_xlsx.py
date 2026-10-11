@@ -6,8 +6,9 @@
     python3 make_session23_xlsx.py --export [FILE]        # a standalone workbook (default Session23_Rules.xlsx)
 
 --install keeps a backup of the master (backups/…before-session23-DATE_TIME.xlsx), then writes the data sheets if
-there are none, or upgrades them row by row: a row still as shipped takes the new text, a row you edited is kept and
-listed, a shipped row you deleted stays deleted, new rows and sheets are added. It always rebuilds the calculator sheets.
+there are none, or upgrades them row by row: a row still as an earlier release shipped it takes the new text, a row
+you edited is kept and listed, a shipped row you deleted stays deleted, new rows and sheets are added. It always
+rebuilds the calculator sheets.
 Rows kept as you edited them do not get the release's new text; --reset-data overwrites every data sheet instead.
 
 Calculator sheets (all formulas — change the signs on S23_Chart and everything recalculates):
@@ -26,8 +27,8 @@ Calculator sheets (all formulas — change the signs on S23_Chart and everything
                     summary rules, the houses each aspecting planet rules and her readings on the house and its lord
   S23_Ref_Calc      lookup tables copied from the page (rāśi table, dignity degrees and grid, daśā constants)
 
-The text rows are looked up in the S23_ data sheets (GrahaInBhava, ClassRules, DignityEffect, Digbala), so editing a
-curated text there changes the calculator at once.  Python (bhava_rules.py) and the page (index.html) are tested
+The text rows are looked up in the S23_ data sheets (GrahaInBhava, ClassRules, DignityEffect, Digbala, ChartReadings,
+DegreeStages, …), so editing a curated text there changes the calculator at once.  Python (bhava_rules.py) and the page (index.html) are tested
 against these formulas in test_session23_cross_impl.py.
 """
 import datetime
@@ -1202,6 +1203,13 @@ def backup_master(master, tag):
 PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 
 
+def shipped_versions():
+    """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply)."""
+    import apply_teacher_slides
+    first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
+    return [first, apply_teacher_slides.apply(first)]
+
+
 def _norm_cell(v):
     if isinstance(v, str):
         v = v.strip()
@@ -1234,8 +1242,11 @@ def _keyed(sheet, rows):
             k = r[0]
         elif short == "Conditions":
             k = (r[0], r[1], r[2])
-        else:                                                    # ClassRules, BhavaNature, Remedies
-            base = {"ClassRules": (r[0], r[1]), "BhavaNature": (r[0], r[1], r[2]), "Remedies": (r[0],)}[short]
+        elif short == "ChartReadings":
+            k = (r[0], r[1], r[2], r[3], r[4])
+        else:                                                    # ClassRules, BhavaNature, Remedies, DegreeStages
+            base = {"ClassRules": (0, 1), "BhavaNature": (0, 1, 2), "Remedies": (0,), "DegreeStages": (2, 3)}[short]
+            base = tuple(r[i] for i in base)                     # DegreeStages: (Stage, Applies)
             n = seen.get(base, 0)
             seen[base] = n + 1
             k = base + (n,)
@@ -1248,17 +1259,26 @@ def _sheet_rows(ws, width):
             if any(v not in (None, "") for v in r)]
 
 
+def _shipped_rows(previous):
+    prev = dict(previous)
+    for k in ("bhava_nature", "aspect_meaning", "life_areas", "conditions", "remedies", "chart_readings", "degree_stages"):
+        prev.setdefault(k, [])
+    prev["bhava_lord_in"] = [dict({"condition": "", "exchange": False}, **r) for r in prev["bhava_lord_in"]]
+    return b23.rules_to_rows(prev)
+
+
 def upgrade_data_sheets(wb, rules, previous):
     """Bring the S23_ data sheets of `wb` up to `rules`, keeping what the user changed.
 
-    A row still equal to the version shipped before (`previous`) is replaced; a row the user edited is kept and
-    listed; a shipped row the user deleted stays deleted; a row new in this release is added; a row the user added
-    stays, after the row it followed. Missing sheets are written whole."""
-    prev = dict(previous)
-    for k in ("bhava_nature", "aspect_meaning", "life_areas", "conditions", "remedies"):
-        prev.setdefault(k, [])
-    prev["bhava_lord_in"] = [dict({"condition": "", "exchange": False}, **r) for r in prev["bhava_lord_in"]]
-    new_rows, prev_rows = b23.rules_to_rows(rules), b23.rules_to_rows(prev)
+    `previous` is the rules shipped before, or a list of every earlier release's rules. A row still equal to a row
+    some release shipped is replaced; a row the user edited is kept and listed; a shipped row the user deleted stays
+    deleted; a row new in this release is added; a row the user added stays, after the row it followed. Missing
+    sheets are written whole."""
+    versions = previous if isinstance(previous, list) else [previous]
+    new_rows, shipped_rows = b23.rules_to_rows(rules), [_shipped_rows(v) for v in versions]
+    # the release this workbook was installed from: the latest one whose sheets are all there (a row of a later
+    # release that the workbook lacks was never installed, so it is added, not counted as deleted)
+    level = max((i for i, rows in enumerate(shipped_rows) if all(n in wb.sheetnames for n, r in rows.items() if r)), default=0)
     report = {"updated": 0, "added": 0, "kept": [], "deleted": [], "new_sheets": []}
     for name, header in b23.SHEETS.items():
         if name not in wb.sheetnames:
@@ -1267,7 +1287,9 @@ def upgrade_data_sheets(wb, rules, previous):
         user = _keyed(name, _sheet_rows(wb[name], len(header)))
         raw = {k: row for (k, _), row in zip(user, _sheet_rows(wb[name], len(header)))}
         user_norm = dict((k, r) for k, r in reversed(user))
-        shipped = dict(_keyed(name, prev_rows[name]))
+        shipped = [dict(_keyed(name, rows[name])) for rows in shipped_rows]
+        as_shipped = lambda k, u: any(x.get(k) == u for x in shipped)
+        installed = shipped[level]
         fresh = _keyed(name, new_rows[name])
         fresh_keys = {k for k, _ in fresh}
         out = []                                                   # [(key, values)]
@@ -1276,20 +1298,20 @@ def upgrade_data_sheets(wb, rules, previous):
                 u = user_norm[k]
                 if u == new:
                     out.append((k, values))
-                elif shipped.get(k) == u:
+                elif as_shipped(k, u):
                     out.append((k, values))
                     report["updated"] += 1
                 else:
                     out.append((k, raw[k]))
                     report["kept"].append((name, k))
-            elif k in shipped:
+            elif k in installed:
                 report["deleted"].append((name, k))
             else:
                 out.append((k, values))
                 report["added"] += 1
         before = None
         for k, u in user:
-            if k not in fresh_keys and shipped.get(k) != u:       # added (or edited and since dropped) by the user
+            if k not in fresh_keys and not as_shipped(k, u):      # added (or edited and since dropped) by the user
                 at = next((i + 1 for i, (kk, _) in enumerate(out) if kk == before), None)
                 if at is None and before is not None and isinstance(k, tuple):
                     # the row it followed is gone: keep it after the last row of its own group (e.g. its class)
@@ -1326,7 +1348,7 @@ def install_in_master(master, rules=None, reset_data=False, previous=None):
     if wrote_data:
         b23.write_data_sheets(wb, rules)
     else:
-        upgrade = upgrade_data_sheets(wb, rules, previous or json.loads(PREVIOUS_JSON.read_text(encoding="utf-8")))
+        upgrade = upgrade_data_sheets(wb, rules, previous or shipped_versions())
     build_calc_sheets(wb, rules)
     wb.save(master)
     return {"backup": backup, "wrote_data": wrote_data, "upgrade": upgrade,

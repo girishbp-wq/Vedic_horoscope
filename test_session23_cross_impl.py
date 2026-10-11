@@ -1576,6 +1576,52 @@ class MasterWorkbookInstall(unittest.TestCase):
         i = texts.index("My own Kendra line.")
         self.assertEqual((rules[i - 1]["class"], rules[i + 1]["class"]), ("Kendra", "Trikona"))
 
+    def install_s23_27_release(self):
+        """The master as the Sessions 23-27 release left it: no ChartReadings / DegreeStages sheets, ClassRules without When."""
+        import apply_teacher_slides as ats
+        import build_session23 as b23
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        s2327 = ats.apply(prev)
+        self.assertNotIn("chart_readings", s2327)
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, s2327)
+        for n in ("ChartReadings", "DegreeStages"):
+            if "S23_" + n in wb.sheetnames:
+                del wb["S23_" + n]
+        wb["S23_ClassRules"].delete_cols(6)
+        wb.save(self.master)
+        return s2327
+
+    def test_round1_upgrade_from_s23_27_workbook(self):
+        import build_session23 as b23
+        self.install_s23_27_release()
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((up["kept"], up["deleted"]), ([], []))                    # unedited S23-27 rows are not "yours"
+        self.assertEqual(sorted(up["new_sheets"]), ["S23_ChartReadings", "S23_DegreeStages"])
+        self.assertGreater(up["added"], 10)                                       # her S28 lord rows, the S29 tip
+        ws = openpyxl.load_workbook(self.master)["S23_ClassRules"]
+        self.assertEqual([c.value for c in ws[1]], b23.SHEETS["S23_ClassRules"])  # the old header gains When
+        want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
+        self.assertEqual(b23.read_workbook(self.master), want)
+        again = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((again["updated"], again["added"], again["kept"], again["new_sheets"]), (0, 0, [], []))
+
+    def test_edited_dusthana_row_kept(self):
+        import build_session23 as b23
+        self.install_s23_27_release()
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_ClassRules"]
+        r = next(i for i in range(2, ws.max_row + 1)
+                 if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value) == ("Dusthana", "malefic"))
+        ws.cell(row=r, column=4, value="My own Dusthana line.")
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["kept"], [("S23_ClassRules", ("Dusthana", "malefic", 0))])
+        rows = b23.read_workbook(self.master)["class_rules"]
+        mine = next(x for x in rows if (x["class"], x["applies"]) == ("Dusthana", "malefic"))
+        self.assertEqual(mine["text"], "My own Dusthana line.")
+        self.assertIn("S23_ChartReadings", openpyxl.load_workbook(self.master).sheetnames)
+
     def test_old_bhava_lord_in_header_upgraded(self):
         import build_session23 as b23
         self.install_previous_release()
