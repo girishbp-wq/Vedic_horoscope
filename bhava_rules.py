@@ -587,10 +587,11 @@ def sub_periods(rules, lord, start, years):
 
 def dasha_chain(rules, dasha, now):
     """The running Mahādaśā, Bhukti, Pratyantara, Sookshma and Prāṇa: [{level, lord, start, end}]; [] outside the span."""
-    if not dasha["running"]:
+    m = next((t for t in dasha["timeline"] if t["start"] <= now < t["end"]), None)
+    if m is None:
         return []
     ys = rules["reference"]["VYEARS"]
-    m, b = dasha["cur_maha"], dasha["cur_bhukti"]
+    b = next((x for x in m["bhuktis"] if x["start"] <= now < x["end"]), m["bhuktis"][-1])
     chain = [{"level": DASHA_LEVELS[0], "lord": m["lord"], "start": m["start"], "end": m["end"]},
              {"level": DASHA_LEVELS[1], "lord": b["lord"], "start": b["start"], "end": b["end"]}]
     lord, start, years = b["lord"], b["start"], ys[m["lord"]] * ys[b["lord"]] / 120

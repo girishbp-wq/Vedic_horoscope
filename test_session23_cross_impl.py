@@ -4,6 +4,7 @@ python3 -m unittest -v test_session23_cross_impl
 The JS runs in headless Chromium against the real index.html (all network blocked); results are compared to
 the Python engine on random charts by canonical-JSON fingerprint, and a mismatch is reported with the first
 differing path."""
+import datetime as _dt
 import json
 import os
 import pathlib
@@ -126,6 +127,9 @@ function extra(c, lg, pbr){
     male_signs: [0,1,2,3,4,5,6,7,8,9,10,11].map(s23IsMaleSign),
     conditions: s23ChartConditions(ctx), condition_keys: S23_CONDITION_KEYS,
     life_areas: s23LifeAreas(ctx),
+    strength_detail: Object.fromEntries(placed.map(p => [p, s23StrengthDetail(ctx, p)])),
+    chart_readings: s23ChartReadings(ctx),
+    degree_stages: Object.fromEntries(placed.map(p => [p, s23DegreeStage(p, c.degs[p], ctx.age)])),
   };
 }
 """
@@ -162,6 +166,9 @@ def python_extra(c):
         "male_signs": [br.is_male_sign(RULES, s) for s in range(12)],
         "conditions": br.chart_conditions(RULES, ctx), "condition_keys": list(br.CONDITION_KEYS),
         "life_areas": br.life_areas(RULES, ctx),
+        "strength_detail": {p: br.strength_detail(RULES, ctx, p) for p in placed},
+        "chart_readings": br.chart_readings(RULES, ctx),
+        "degree_stages": {p: br.degree_stage(RULES, p, c["degs"].get(p), ctx["age"]) for p in placed},
     }
 
 
@@ -289,6 +296,59 @@ class JsEngine(unittest.TestCase):
                     "life_areas": br.life_areas(RULES, ctx)}
             bad += [(i, k) for k, v in mine.items() if fingerprint(v) != g[k]]
         self.assertEqual(bad, [])
+
+    def test_partial_chart_round1_equal_python(self):
+        charts = random_charts(300, 2811)
+        for i, c in enumerate(charts):
+            for p in (("Rahu", "Ketu"), ("Moon",), ("Sun", "Moon", "Rahu", "Ketu"))[i % 3]:
+                c["signs"].pop(p)
+            if i % 2:
+                c["degs"] = {}                                     # no degrees at all
+        body = JS_CANON + """return job.map(c => {
+            const lg = c.lagna + 1, pbr = {};
+            for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
+            const ctx = ctxOf(c, lg, pbr), placed = PL.filter(p => ctx.signs[p] !== undefined);
+            return {strength: fp(Object.fromEntries(placed.map(p => [p, s23StrengthDetail(ctx, p)]))),
+                    readings: fp(s23ChartReadings(ctx)), bhava_bhava: fp(s23BhavaBhava(ctx)),
+                    degrees: fp(Object.fromEntries(placed.map(p => [p, s23DegreeStage(p, c.degs[p], ctx.age)]))),
+                    life_areas: fp(s23LifeAreas(ctx))};
+        });"""
+        got = run_page(body, charts, self.tmp)
+        bad = []
+        for i, (c, g) in enumerate(zip(charts, got)):
+            ctx = ctx_of(c)
+            placed = [p for p in br.PLANET_ORDER if p in ctx["signs"]]
+            mine = {"strength": {p: br.strength_detail(RULES, ctx, p) for p in placed},
+                    "readings": br.chart_readings(RULES, ctx), "bhava_bhava": br.bhava_bhava(RULES, ctx),
+                    "degrees": {p: br.degree_stage(RULES, p, c["degs"].get(p), ctx["age"]) for p in placed},
+                    "life_areas": br.life_areas(RULES, ctx)}
+            bad += [(i, k) for k, v in mine.items() if fingerprint(v) != g[k]]
+        self.assertEqual(bad, [])
+
+    def test_dasha_chain_parity(self):
+        import calendar
+        rnd = random.Random(29)
+        cases = [(240 + 13 + 36 / 60 + 37 / 3600, "1982-06-08", "12:00:00", "2024-09-18T12:00:00")]
+        for _ in range(60):
+            y, m, d = rnd.randint(1930, 2020), rnd.randint(1, 12), rnd.randint(1, 28)
+            hh, mm = rnd.randint(0, 23), rnd.randint(0, 59)
+            now = _dt.datetime(y, m, d) + _dt.timedelta(days=rnd.uniform(-20, 140 * 365.25))
+            cases.append((rnd.uniform(0, 360), f"{y:04d}-{m:02d}-{d:02d}", f"{hh:02d}:{mm:02d}:00",
+                          now.strftime("%Y-%m-%dT%H:%M:%S")))
+        body = """return job.map(([moon, dob, tob, now]) => {
+            const D = buildDasha(moon, dob, tob), t = new Date(now + 'Z');
+            return s23DashaChain(D, t).map(c => [c.level, c.lord, c.start.getTime() / 1000, c.end.getTime() / 1000]);
+        });"""
+        got = run_page(body, cases, self.tmp)
+        epoch = lambda dt: calendar.timegm(dt.timetuple()) + dt.microsecond / 1e6
+        for (moon, dob, tob, now), js in zip(cases, got):
+            birth = _dt.datetime.fromisoformat(f"{dob}T{tob}")
+            n = _dt.datetime.fromisoformat(now)
+            py = br.dasha_chain(RULES, br.vimshottari(RULES, moon, birth, n), n)
+            self.assertEqual([c[:2] for c in js], [[c["level"], c["lord"]] for c in py], (moon, dob, tob, now))
+            for (a, b), c in zip([(x[2], x[3]) for x in js], py):
+                self.assertAlmostEqual(a, epoch(c["start"]), delta=0.01)
+                self.assertAlmostEqual(b, epoch(c["end"]), delta=0.01)
 
     def test_moon_waxing_matches_python_and_the_page_tithi(self):
         rnd = random.Random(7)

@@ -6237,7 +6237,8 @@ function s23NatureAt(p){ return S23_BENEFICS.includes(p) ? "benefic" : (p==="Sun
 function s23NatureClass(p){ return S23_BENEFICS.includes(p) ? "benefic" : "malefic"; }
 function s23MoonStrength(waxing){ return waxing==null ? "" : (waxing ? "Shukla (waxing) — stronger" : "Krishna (waning) — weaker"); }
 function s23Mild(p, applies, text){ return p==="Sun" && applies==="malefic" ? "(mild) "+text : text; }
-function s23ClassReadingsAt(lg, sg){
+function s23ClassReadingsAt(lg, sg, ctx){
+  ctx=ctx||{lagna:lg, signs:sg, degs:{}, waxing:null, retro:{}, gender:null, age:null, maha:null, bhukti:null};
   const out=[];
   for(const p of S23_PLANETS){
     if(sg[p]===undefined) continue;
@@ -6245,7 +6246,8 @@ function s23ClassReadingsAt(lg, sg){
     const classes=S23_CLASS_ORDER.filter(c=>s23ClassHousesAt(c,lg).includes(house));
     const texts=[];
     for(const c of classes) for(const r of S23.class_rules)
-      if(r.class===c && (r.applies==="any"||r.applies===kind) && !r.exclude_houses.includes(house)) texts.push(s23Mild(p, r.applies, r.text));
+      if(r.class===c && (r.applies==="any"||r.applies===kind) && !r.exclude_houses.includes(house)
+         && !(r.when==="not weak" && s23Strength(ctx, p)==="weak")) texts.push(s23Mild(p, r.applies, r.text));
     out.push({planet:p, house, classes, texts});
   }
   return out;
@@ -6344,13 +6346,117 @@ function s23AspectMeaning(p, h, fromHouse){
   return found.map(r=>({text:r.text, status:r.status, source:r.source}));
 }
 function s23Meanings(p, h, fromHouse){ return s23AspectMeaning(p, h, fromHouse).map(m=>m.text); }
-function s23Strength(ctx, p){
-  const sign=ctx.signs[p], label=planetDignity(p, sign+1, ctx.degs[p]).label, own=PLANET_OWN_HOUSES[p]||[];
-  const strong=S23_STRONG_LABELS.includes(label) || s23AspectSigns(p, sign).some(([,t])=>own.includes(t+1));
-  const weak=S23_WEAK_LABELS.includes(label) || s23Combust(ctx, p);
-  return strong&&!weak ? "strong" : (weak&&!strong ? "weak" : "depends");
+/* Session 29 strength (spec D1): mirrors strength_detail() */
+const S23_STRENGTH_MALEFICS = ["Sun","Mars","Saturn","Rahu","Ketu"];
+function s23StrengthDetail(ctx, p){
+  const sg=ctx.signs, sign=sg[p], label=planetDignity(p, sign+1, ctx.degs[p]).label;
+  if(p==="Rahu"||p==="Ketu") return {word:"depends", reasons:[label]};
+  const weak=[];
+  if(S23_WEAK_LABELS.includes(label)) weak.push(label);
+  if(s23Combust(ctx, p)) weak.push("combust");
+  if(sg.Rahu===sign) weak.push("with Rahu");
+  if(weak.length) return {word:"weak", reasons:weak};
+  if(S23_STRONG_LABELS.includes(label)){
+    const mal=s23AspectsOn(ctx, sign).filter(a=>S23_STRENGTH_MALEFICS.includes(a.by) && a.by!==p).map(a=>`aspected by ${a.by}`);
+    return mal.length ? {word:"mixed", reasons:mal} : {word:"strong", reasons:[label]};
+  }
+  return {word:"depends", reasons:[label]};
 }
+function s23Strength(ctx, p){ return s23StrengthDetail(ctx, p).word; }
 function s23LordsHouses(lg, p){ const out=[]; for(let h=1;h<=12;h++) if(s23HouseLord(lg,h)===p) out.push(h); return out; }
+function s23RuledPhrase(hs){
+  if(!hs.length) return "";
+  const n=hs.map(ord);
+  return "(rules the "+(n.length===1 ? n[0] : n.slice(0,-1).join(", ")+" and "+n[n.length-1])+")";
+}
+/* Her Chart 3 sentences (S23_ChartReadings, spec §6.4): mirrors resolve_planets() / chart_readings() */
+function s23ResolvePlanets(ctx, spec){
+  const sg=ctx.signs;
+  if(spec==="benefic"||spec==="malefic") return S23_PLANETS.filter(p=>sg[p]!==undefined && s23NatureClass(p)===spec);
+  if(spec.endsWith(" lord")){ const lord=s23HouseLord(ctx.lagna, parseInt(spec, 10)); return sg[lord]!==undefined ? [lord] : []; }
+  return sg[spec]!==undefined ? [spec] : [];
+}
+function s23AspectsSign(sg, p, sign){ return s23AspectSigns(p, sg[p]).some(([,t])=>t===sign); }
+function s23ChartReadings(ctx){
+  const lg=ctx.lagna, sg=ctx.signs, out=[];
+  const flag=p=>planetDignity(p, sg[p]+1, ctx.degs[p]).flag;
+  for(const r of (S23.chart_readings||[])){
+    const kind=r.kind;
+    const cands=s23ResolvePlanets(ctx, r.planet).filter(p=>!r.condition || flag(p)===r.condition);
+    const partners=r.with ? s23ResolvePlanets(ctx, r.with) : null;
+    let on=[], withP=[];
+    if(kind==="aspects planet"){
+      const target=r.with;
+      if(sg[target]!==undefined){ on=cands.filter(p=>p!==target && s23AspectsSign(sg, p, sg[target])); withP=[target]; }
+    } else if(kind==="aspects lord"){
+      const lord=s23HouseLord(lg, r.house);
+      if(sg[lord]!==undefined) on=cands.filter(p=>p!==lord && s23AspectsSign(sg, p, sg[lord]));
+    } else {
+      const sign=s23HouseSign(lg, r.house);
+      const hits = kind==="in" ? (p=>sg[p]===sign) : (p=>s23AspectsSign(sg, p, sign));
+      on=cands.filter(hits);
+      if(partners!==null){
+        const together = kind==="in" ? ((p,q)=>sg[p]===sg[q]) : ((p,q)=>hits(q));
+        const pairs=[];
+        for(const p of on) for(const q of partners) if(q!==p && together(p,q)) pairs.push([p,q]);
+        if(r.planet===r.with){ const both=new Set(); for(const [p,q] of pairs){ both.add(p); both.add(q); } on=S23_PLANETS.filter(p=>both.has(p)); }
+        else { on=on.filter(p=>pairs.some(([pp])=>pp===p)); withP=partners.filter(q=>pairs.some(([,qq])=>qq===q)); }
+        if(!pairs.length) on=[];
+      }
+    }
+    if(on.length) out.push({kind, house:r.house, on, with:withP, text:r.text, status:r.status, source:r.source});
+  }
+  return out;
+}
+function s23AspectItems(ctx, house){
+  const lg=ctx.lagna, sg=ctx.signs;
+  const mine=s23ChartReadings(ctx).filter(x=>x.kind==="aspects" && x.house===house);
+  return s23AspectsOn(ctx, s23HouseSign(lg, house)).map(a=>({by:a.by, aspect:aspectOrd(a.by, a.house_aspect),
+    rules:s23LordsHouses(lg, a.by), meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg, sg[a.by])),
+    readings:mine.filter(x=>x.on[0]===a.by).map(x=>x.text)}));
+}
+/* Degree stages (S28 p.17): mirrors degree_stage() */
+const S23_DEGREE_MALEFICS = ["Mars","Saturn","Rahu","Ketu"];
+function s23DegreeStage(p, deg, age){
+  if(deg==null) return null;
+  const rows=(S23.degree_stages||[]).map((r,i)=>[r,i]).filter(([r])=>r.from<=deg && deg<r.to && (r.applies==="any"||S23_DEGREE_MALEFICS.includes(p)))
+    .sort((a,b)=>((a[0].applies!=="any")-(b[0].applies!=="any")) || a[1]-b[1]).map(([r])=>r);
+  if(!rows.length) return null;
+  let after=null;
+  for(const r of rows) if(r.after_age!=null && (after===null || r.after_age>after)) after=r.after_age;
+  let note="";
+  if(after!==null && age!=null){ const a=Math.trunc(age); note = age>=after ? `Age ${a}: past ${after}, so it now gives its results.` : `Age ${a}: results from about ${after}.`; }
+  const anyRow=rows.find(r=>r.applies==="any");
+  return {stage:anyRow ? anyRow.stage : rows[0].stage, lines:rows.map(r=>r.text), age_note:note};
+}
+/* The deeper Vimśottarī periods (S29 pp.5, 11): mirrors sub_periods() / dasha_chain() */
+const S23_DASHA_LEVELS = ["Mahādaśā","Bhukti","Pratyantara","Sookshma","Prāṇa"];
+function s23SubPeriods(lord, start, years){
+  const YR=365.25*24*3600*1000, add=(dt,y)=>new Date(dt.getTime()+y*YR);
+  const out=[], li=VORDER.indexOf(lord);
+  let x=new Date(start);
+  for(let j=0;j<9;j++){
+    const sub=VORDER[(li+j)%9], y=years*VYEARS[sub]/120, end= j===8 ? add(start, years) : add(x, y);
+    out.push({lord:sub, start:new Date(x), end, years:y});
+    x=end;
+  }
+  return out;
+}
+function s23DashaChain(D, now){
+  if(!D) return [];
+  const m=D.timeline.find(t=>t.start<=now && now<t.end);
+  if(!m) return [];
+  const b=m.bhuktis.find(t=>t.start<=now && now<t.end) || m.bhuktis[m.bhuktis.length-1];
+  const chain=[{level:S23_DASHA_LEVELS[0], lord:m.lord, start:m.start, end:m.end},
+               {level:S23_DASHA_LEVELS[1], lord:b.lord, start:b.start, end:b.end}];
+  let lord=b.lord, start=b.start, years=VYEARS[m.lord]*VYEARS[b.lord]/120;
+  for(const level of S23_DASHA_LEVELS.slice(2)){
+    const kids=s23SubPeriods(lord, start, years), k=kids.find(k=>k.start<=now && now<k.end) || kids[kids.length-1];
+    chain.push({level, lord:k.lord, start:k.start, end:k.end});
+    lord=k.lord; start=k.start; years=k.years;
+  }
+  return chain;
+}
 function s23SignLine(sign){
   const r=RASHI[sign];
   let t=`${r.sanskrit} is a ${S23_MODE_WORD[r.mode]} (${r.mode}) sign, ${r.tatwa} tatwa, ${r.direction}.`;
@@ -6447,12 +6553,13 @@ function s23TwelfthLine(house){
   const r=S23.conditions.find(x=>x.key==="twelfth_house");
   return r ? r.text : "";
 }
-function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
+function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
+  ctx=ctx||s23Ctx(lagnaN, pbr, deg!=null ? {[planet]:deg} : {}, moonWaxing);
   const lg=lagnaN-1, sg=s23Signs(pbr), house=s23HouseOf(lg,sg[planet]);
   const cell=S23.graha_in_bhava.find(x=>x.planet===planet && x.house===house);
   const dig=planetDignity(planet, sg[planet]+1, deg);
   const [dignityLine, dignityStatus]=s23DignityTexts(dig);
-  const reading=s23ClassReadingsAt(lg,sg).find(r=>r.planet===planet);
+  const reading=s23ClassReadingsAt(lg,sg,ctx).find(r=>r.planet===planet);
   const dg=s23Digbala(planet, house), row=S23.digbala[planet];
   let digbalaLine="";
   if(dg==="strong") digbalaLine=`${planet} gains directional strength (digbala) in the ${ord(house)} house.`;
@@ -6461,7 +6568,9 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing){
     status:cell.status, source:cell.source, points:cell.points, extra:cell.extra,
     dignity:{label:dig.label, flag:dig.flag, bala:dig.bala, note:dig.note}, dignity_line:dignityLine, dignity_status:dignityStatus,
     twelfth_line:s23TwelfthLine(house), nature_lines:s23BhavaNatureLines(planet, house),
-    digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts};
+    digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts,
+    degree_stage:s23DegreeStage(planet, deg, ctx.age),
+    readings:s23ChartReadings(ctx).filter(x=>(x.kind==="in" && x.on.includes(planet)) || (x.kind==="aspects planet" && x.with.includes(planet))).map(x=>x.text)};
 }
 function s23ShortName(nm){ return nm.split(" · ")[0].split(" (")[0]; }
 const S23_PLACEMENT_CLASSES = ["Kendra","Trikona","Dusthana","Badhaka"];
@@ -6478,17 +6587,19 @@ function s23Placement(lg, lordOf, sitsIn){
 }
 function s23Dictum(ctx, house){
   const lord=s23HouseLord(ctx.lagna, house), target=s23HouseSign(ctx.lagna, house);
+  if(ctx.signs[lord]!==undefined && planetDignity(lord, ctx.signs[lord]+1, ctx.degs[lord]).flag==="debilitated") return "";
   if(ctx.signs[lord]!==undefined && s23AspectSigns(lord, ctx.signs[lord]).some(([,t])=>t===target))
     return `The lord aspects its own house, so the ${ord(house)} house is strong.`;
   return "";
 }
 function s23WithLord(ctx, lord){
   const sg=ctx.signs, lg=ctx.lagna;
+  const mine=s23ChartReadings(ctx).filter(x=>x.kind==="aspects lord" && s23HouseLord(lg, x.house)===lord);
   const out=S23_PLANETS.filter(p=>p!==lord && sg[p]!==undefined && sg[p]===sg[lord])
-    .map(p=>({planet:p, how:"with", aspect:"", rules:s23LordsHouses(lg,p), meanings:[]}));
+    .map(p=>({planet:p, how:"with", aspect:"", rules:s23LordsHouses(lg,p), meanings:[], readings:[]}));
   for(const a of s23AspectsOn(ctx, sg[lord])) if(a.by!==lord)
     out.push({planet:a.by, how:"aspect", aspect:aspectOrd(a.by, a.house_aspect), rules:s23LordsHouses(lg,a.by),
-      meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg, sg[a.by]))});
+      meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg, sg[a.by])), readings:mine.filter(x=>x.on.includes(a.by)).map(x=>x.text)});
   return out;
 }
 function s23Blend(x, y, sign){
@@ -6503,7 +6614,7 @@ function s23ExchangeBlend(x, y){
 }
 function s23TaughtRows(x, y, strength){
   const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange);
-  const pick={strong:["strong"], weak:["weak"], depends:["strong","weak"]}[strength];
+  const pick={strong:["strong"], weak:["weak"], mixed:["strong","weak"], depends:["strong","weak"]}[strength];
   return rows.filter(r=>r.condition==="").concat(...pick.map(c=>rows.filter(r=>r.condition===c)));
 }
 function s23BhavaBhava(ctx){
@@ -6530,8 +6641,10 @@ function s23BhavaBhava(ctx){
       dictum=s23Dictum(ctx, x);
     }
     const [classes, line]=s23Placement(lg, x, y);
+    const houseAspects=(swap!==null ? [x, swap] : [x]).flatMap(h=>s23AspectItems(ctx, h).map(a=>Object.assign({house:h}, a)));
     out.push({lord_of:x, lord, sits_in:y, sign:sg[lord], text, status, source, sign_line:s23SignLine(sg[lord]),
-      placement:classes, placement_line:line, strength, dictum, with_lord:s23WithLord(ctx, lord), exchange:swap});
+      placement:classes, placement_line:line, strength, dictum, with_lord:s23WithLord(ctx, lord), exchange:swap,
+      house_aspects:houseAspects});
   }
   return out;
 }
@@ -6545,7 +6658,8 @@ function s23Karakas(ctx, row){
     else note=`For a woman's chart the husband's karaka is ${female}.`;
   }
   return planets.filter(k=>sg[k]!==undefined).map(k=>({planet:k, house:s23HouseOf(ctx.lagna,sg[k]), sign:sg[k], rashi:RASHI[sg[k]].sanskrit,
-    dignity:planetDignity(k, sg[k]+1, ctx.degs[k]).label, combust:s23Combust(ctx,k), retro:!!ctx.retro[k], strength:s23Strength(ctx,k), note}));
+    dignity:planetDignity(k, sg[k]+1, ctx.degs[k]).label, combust:s23Combust(ctx,k), retro:!!ctx.retro[k], strength:s23Strength(ctx,k), note,
+    malefic_aspects:s23AspectsOn(ctx, sg[k]).filter(a=>S23_STRENGTH_MALEFICS.includes(a.by) && a.by!==k).map(a=>a.by)}));
 }
 function s23AspectNames(ctx, a, b){ return s23AspectSigns(a, ctx.signs[a]).filter(([,t])=>t===ctx.signs[b]).map(([h])=>aspectOrd(a,h)); }
 function s23PacLinks(ctx, a, b){
@@ -6576,11 +6690,11 @@ function s23BhavaStep(ctx, h, layer2){
   const lg=ctx.lagna, sg=ctx.signs, sign=s23HouseSign(lg,h), lagnaN=lg+1, pbr={};
   for(const p of S23_PLANETS) if(sg[p]!==undefined) pbr[p]=sg[p]+1;
   const occupants=s23Occ(lg,sg)[h].map(p=>{
-    const g=s23GrahaBhava(lagnaN, pbr, p, ctx.degs[p], ctx.waxing);
-    return {planet:p, nature:s23NatureAt(p), text:g.points.join("\n\n"), status:g.status, nature_lines:g.nature_lines.map(x=>x.text)};
+    const g=s23GrahaBhava(lagnaN, pbr, p, ctx.degs[p], ctx.waxing, ctx);
+    return {planet:p, nature:s23NatureAt(p), text:g.points.join("\n\n"), status:g.status, nature_lines:g.nature_lines.map(x=>x.text),
+      debilitated:g.dignity.flag==="debilitated"};
   });
-  const aspecting=s23AspectsOn(ctx, sign).map(a=>({by:a.by, aspect:aspectOrd(a.by,a.house_aspect),
-    meanings:s23Meanings(a.by, a.house_aspect, s23HouseOf(lg,sg[a.by]))}));
+  const aspecting=s23AspectItems(ctx, h);
   const lordP=s23HouseLord(lg,h);
   let lord=null, company=[];
   if(sg[lordP]!==undefined){
@@ -6596,8 +6710,14 @@ function s23Summary(bhavas, karakas, pac, link){
   const good=[], bad=[], benefic=p=>s23NatureClass(p)==="benefic";
   for(const b of bhavas){
     const H=ord(b.house);
-    for(const o of b.occupants) (benefic(o.planet)?good:bad).push(`${o.planet} (${s23NatureAt(o.planet)}) in the ${H}`);
-    for(const a of b.aspecting) (benefic(a.by)?good:bad).push(`${a.by} (${s23NatureAt(a.by)}) aspects the ${H}`);
+    for(const o of b.occupants){
+      if(benefic(o.planet) && o.debilitated) bad.push(`${o.planet} (benefic, debilitated) in the ${H}`);
+      else (benefic(o.planet)?good:bad).push(`${o.planet} (${s23NatureAt(o.planet)}) in the ${H}`);
+    }
+    for(const a of b.aspecting){
+      if(b.house===11) good.push([`${a.by} aspects the 11th`, s23RuledPhrase(a.rules)].filter(Boolean).join(" "));
+      else (benefic(a.by)?good:bad).push(`${a.by} (${s23NatureAt(a.by)}) aspects the ${H}`);
+    }
     const lord=b.lord;
     if(lord){
       const L=lord.planet;
@@ -6609,6 +6729,8 @@ function s23Summary(bhavas, karakas, pac, link){
     }
   }
   for(const k of karakas){
+    if([6,8,12].includes(k.house)) bad.push(`Karaka ${k.planet} is in the ${ord(k.house)}`);
+    for(const m of k.malefic_aspects) bad.push(`Karaka ${k.planet} is aspected by ${m}`);
     if(k.strength==="strong") good.push(`Karaka ${k.planet} is strong`);
     else if(k.strength==="weak") bad.push(`Karaka ${k.planet} is weak`);
   }
