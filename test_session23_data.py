@@ -381,9 +381,55 @@ class PublishScript(unittest.TestCase):
             self.assertTrue(line.startswith("%PY% "), line)
         self.assertLess(self.bat.index('set "PY=py -3"'), self.bat.index("%PY% "))
 
+    def test_stamps_the_build_date_only_when_the_page_changed(self):
+        build = self.bat.index("[2/5]")
+        diff = self.bat.index("git diff --quiet -- index.html", build)
+        stamp = self.bat.index('%PY% build_session23.py --stamp "workbook update"')
+        self.assertLess(build, diff)
+        self.assertLess(diff, stamp)
+        self.assertLess(stamp, self.bat.index("git add index.html session23_rules.json"))
+
     def test_checked_out_with_windows_line_endings(self):
         attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
         self.assertIn("*.bat   text eol=crlf", attrs)
+
+
+class BuildStamp(unittest.TestCase):
+    """The build date the page shows (TOOL_VERSION) moves whenever the page changes."""
+
+    def test_stamp_sets_the_date_and_note_and_nothing_else(self):
+        import datetime
+        page = INDEX.read_text(encoding="utf-8")
+        new = b23.stamp_page(page, datetime.date(2031, 2, 3), 'workbook "update"')
+        self.assertIn('const TOOL_VERSION = "2031-02-03 · workbook \\"update\\"";', new)
+        old_lines, new_lines = page.split("\n"), new.split("\n")
+        self.assertEqual(len(old_lines), len(new_lines))
+        changed = [a for a, b in zip(old_lines, new_lines) if a != b]
+        self.assertEqual(len(changed), 1)
+        self.assertTrue(changed[0].startswith("const TOOL_VERSION = "), changed)
+
+    def test_stamp_command_keeps_the_line_endings(self):
+        import datetime, tempfile
+        page = INDEX.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d, "index.html")
+            path.write_bytes(page.replace("\n", "\r\n").encode("utf-8"))
+            b23.stamp_file(path, datetime.date(2031, 2, 3), "test")
+            data = path.read_bytes().decode("utf-8")
+        self.assertIn('const TOOL_VERSION = "2031-02-03 · test";\r\n', data)
+        self.assertEqual(data.count("\r\n"), page.count("\n"))
+        self.assertNotIn("\r\r", data)
+
+    def test_page_stamp_is_not_older_than_the_last_commit_that_changed_the_page(self):
+        import re
+        out = subprocess.run(["git", "log", "-1", "--format=%cs", "--", "index.html"], cwd=ROOT,
+                             capture_output=True, text=True)
+        if out.returncode or not out.stdout.strip():
+            self.skipTest("no git history for index.html")
+        stamp = re.search(r'^const TOOL_VERSION = "(\d{4}-\d{2}-\d{2}) · ', INDEX.read_text(encoding="utf-8"), re.M)
+        self.assertIsNotNone(stamp)
+        self.assertGreaterEqual(stamp.group(1), out.stdout.strip(),
+                                'index.html changed after its build date: run build_session23.py --stamp "what changed"')
 
 
 class SheetValidation(unittest.TestCase):

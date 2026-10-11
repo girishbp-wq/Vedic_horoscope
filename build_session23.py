@@ -7,16 +7,20 @@
     python3 build_session23.py                  # master workbook found next to this file
     python3 build_session23.py --workbook FILE  # any workbook that has the S23_ sheets (e.g. an --export copy)
     python3 build_session23.py --check          # only check the S23_ sheets (publish.bat runs this first)
+    python3 build_session23.py --stamp "NOTE"   # set the build date the page shows to today, with a short note
 
-`publish.bat` runs this right after scripts/build_data.py, so one double-click rebuilds everything.
+`publish.bat` runs this right after scripts/build_data.py, so one double-click rebuilds everything, and
+stamps the page with today's date when the rebuilt page differs from the one on GitHub.
 The S23_ sheets are the editable source of truth (edit a text or a class rule, save, publish).
 `reference` in the JSON is a copy of the page's own tables (bhāva significations, rāśi classifications,
 dignity, aspects, daśā constants).  It is read from the master workbook with the same loaders
 scripts/build_data.py uses; where that script is not available it is read from index.html through node.
 """
+import datetime
 import importlib.util
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -541,6 +545,26 @@ def write_page_block(index_path, rules):
     return new != page
 
 
+TOOL_VERSION_LINE = re.compile(r'^const TOOL_VERSION = ".*";(?=\r?$)', re.M)     # \r: a Windows copy of the page
+
+
+def stamp_page(page, day, note):
+    """The page with its build stamp (the TOOL_VERSION line the badge shows) set to `day · note`."""
+    if len(TOOL_VERSION_LINE.findall(page)) != 1:
+        raise RuntimeError("index.html should have exactly one 'const TOOL_VERSION = \"…\";' line")
+    line = "const TOOL_VERSION = " + json.dumps(f"{day.isoformat()} · {note}", ensure_ascii=False) + ";"
+    return TOOL_VERSION_LINE.sub(lambda _: line, page)
+
+
+def stamp_file(index_path, day, note):
+    """Stamp index.html in place, keeping its line endings as they are."""
+    index_path = pathlib.Path(index_path)
+    with open(index_path, encoding="utf-8", newline="") as f:
+        page = f.read()
+    with open(index_path, "w", encoding="utf-8", newline="") as f:
+        f.write(stamp_page(page, day, note))
+
+
 def find_master(root=ROOT):
     """The master workbook, chosen the way scripts/build_data.py chooses it (v7_1 first, else the newest)."""
     root = pathlib.Path(root)
@@ -585,6 +609,14 @@ def main(argv=None):
             pass
     if "-h" in argv or "--help" in argv:
         print(__doc__)
+        return 0
+    if "--stamp" in argv:                       # set the page's build date to today; nothing else changes
+        i = argv.index("--stamp")
+        note = argv[i + 1] if i + 1 < len(argv) else ""
+        if not note.strip():
+            raise SystemExit('--stamp needs a short note, e.g. --stamp "workbook update"')
+        stamp_file(INDEX, datetime.date.today(), note.strip())
+        print(f"Build date on the page: {datetime.date.today().isoformat()} · {note.strip()}")
         return 0
     if "--check" in argv:                       # validate the S23_ sheets only; write nothing
         path = argv[argv.index("--workbook") + 1] if "--workbook" in argv else find_master()

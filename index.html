@@ -5471,8 +5471,8 @@ refreshCityTz();
 normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previous save
 normalizeCoordField("f-lon","lon");
 
-/* ---- build / version stamp (bump this line on each release) ---- */
-const TOOL_VERSION = "2026-10-09 · audit fixes: city time zones & DST, ayanāṁśa, Kuja rules";
+/* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
+const TOOL_VERSION = "2026-10-11 · Sessions 23–27: the teacher's texts, Session 26 natures, Life areas; build date set automatically";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }

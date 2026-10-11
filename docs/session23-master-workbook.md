@@ -54,6 +54,8 @@ Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `pu
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`
 (which rewrites `session23_rules.json` and the `SESSION23-DATA` block of `index.html`), commits only those two
 files and pushes. If a push failed earlier, running it again pushes the waiting commit.
+When the rebuilt page differs from the one on GitHub, the build date the page shows ("build 2026-10-11 · …")
+is set to today with the note "workbook update"; a publish with no changes leaves it as it was.
 
 `build_session23.py` checks every `S23_` cell the page relies on (planet and class names, house numbers 1–12,
 statuses, one row per graha × house and per graha pair). If something is wrong it lists each problem with its

@@ -116,6 +116,17 @@ if errorlevel 1 (
     goto :fail
 )
 
+REM The page shows its build date: when the rebuilt page differs from GitHub's, stamp it with today's date
+git diff --quiet -- index.html
+if errorlevel 1 (
+    %PY% build_session23.py --stamp "workbook update"
+    if errorlevel 1 (
+        echo.
+        echo [ERROR] Could not set the build date on the page. See message above.
+        goto :fail
+    )
+)
+
 REM Stage only the files this script produces
 echo.
 echo [3/5] Staging index.html and session23_rules.json...
