@@ -123,9 +123,11 @@ def _mild(planet, applies, text):
     return "(mild) " + text if planet == MILD_MALEFIC and applies == "malefic" else text
 
 
-def class_readings(rules, lagna, signs):
+def class_readings(rules, lagna, signs, ctx=None):
     """One entry per placed planet: {planet, house, classes, texts} from the ClassRules sheet.
-    The Sun takes the malefic rules, each marked "(mild) "."""
+    The Sun takes the malefic rules, each marked "(mild) ". A rule with When 'not weak' (the S25 Dusthana line) is
+    kept only for a planet that is not weak (spec §6.2.5)."""
+    ctx = ctx or context(lagna, signs)
     out = []
     for p in PLANET_ORDER:
         if p not in signs:
@@ -134,7 +136,8 @@ def class_readings(rules, lagna, signs):
         kind = nature_class(p)
         classes = [c for c in CLASS_ORDER if house in class_houses(rules, c, lagna)]
         texts = [_mild(p, r["applies"], r["text"]) for c in classes for r in rules["class_rules"]
-                 if r["class"] == c and r["applies"] in ("any", kind) and house not in r["exclude_houses"]]
+                 if r["class"] == c and r["applies"] in ("any", kind) and house not in r["exclude_houses"]
+                 and not (r.get("when") == "not weak" and strength(rules, ctx, p) == "weak")]
         out.append({"planet": p, "house": house, "classes": classes, "texts": texts})
     return out
 
@@ -303,15 +306,33 @@ def _meanings(rules, planet, h, from_house):
     return [m["text"] for m in aspect_meaning(rules, planet, h, from_house)]
 
 
-def strength(rules, ctx, planet):
-    """R3: 'strong' (exalted, Moolatrikona, own or friend's sign, or aspecting its own sign), 'weak' (debilitated,
-    enemy's sign or combust), 'depends' when neither — or both — hold."""
-    sign = ctx["signs"][planet]
+STRENGTH_MALEFICS = ("Sun", "Mars", "Saturn", "Rahu", "Ketu")     # the Sun counts as a mild malefic (R10)
+
+
+def strength_detail(rules, ctx, planet):
+    """Session 29 (pp.17, 29; spec D1, S1, S2): {word, reasons}.
+    weak — debilitated, in an enemy's sign, combust, or with Rahu (a sign of weakness wins over a good sign);
+    strong — exalted, Moolatrikona, own or friend's sign, and no malefic aspects it;
+    mixed — such a sign, but a malefic aspects it (each named);
+    depends — otherwise, and always for Rahu and Ketu, who own no sign."""
+    sg = ctx["signs"]
+    sign = sg[planet]
     label = dignity(rules, planet, sign, ctx["degs"].get(planet))["label"]
-    own = rules["reference"]["PLANET_OWN_HOUSES"].get(planet, [])
-    strong = label in STRONG_LABELS or any(t + 1 in own for _, t in aspect_signs(rules, planet, sign))
-    weak = label in WEAK_LABELS or combust(rules, ctx, planet)
-    return "strong" if strong and not weak else "weak" if weak and not strong else "depends"
+    if planet in ("Rahu", "Ketu"):
+        return {"word": "depends", "reasons": [label]}
+    weak = ([label] if label in WEAK_LABELS else []) + (["combust"] if combust(rules, ctx, planet) else []) \
+        + (["with Rahu"] if sg.get("Rahu") == sign else [])
+    if weak:
+        return {"word": "weak", "reasons": weak}
+    if label in STRONG_LABELS:
+        mal = [f"aspected by {a['by']}" for a in aspects_on(rules, ctx, sign) if a["by"] in STRENGTH_MALEFICS and a["by"] != planet]
+        return {"word": "mixed", "reasons": mal} if mal else {"word": "strong", "reasons": [label]}
+    return {"word": "depends", "reasons": [label]}
+
+
+def strength(rules, ctx, planet):
+    """The strength word of strength_detail(): strong, weak, mixed or depends."""
+    return strength_detail(rules, ctx, planet)["word"]
 
 
 def lords_houses(rules, lagna, planet):
@@ -559,13 +580,15 @@ def twelfth_line(rules, house):
     return next((r["text"] for r in rules["conditions"] if r["key"] == "twelfth_house"), "")
 
 
-def graha_bhava(rules, lagna, signs, planet, deg, waxing):
-    """Layer 1: the planet's cell text for its house, dignity line, digbala line and class readings."""
+def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
+    """Layer 1: the planet's cell text for its house, dignity line, digbala line and class readings.
+    `ctx` (context()) gives the whole chart; without it only this planet's degree is known."""
+    ctx = ctx or context(lagna, signs, {planet: deg} if deg is not None else {}, waxing)
     house = house_of(lagna, signs[planet])
     cell = next(x for x in rules["graha_in_bhava"] if x["planet"] == planet and x["house"] == house)
     dig = dignity(rules, planet, signs[planet], deg)
     dignity_line, dignity_status = _dignity_texts(rules, dig)
-    reading = next(r for r in class_readings(rules, lagna, signs) if r["planet"] == planet)
+    reading = next(r for r in class_readings(rules, lagna, signs, ctx) if r["planet"] == planet)
     dg = digbala(rules, planet, house)
     row = rules["digbala"].get(planet)
     if dg == "strong":
@@ -608,9 +631,12 @@ def placement(rules, lagna, lord_of, sits_in):
 
 
 def _dictum(rules, ctx, house):
-    """S27 p.11: a lord aspecting its own house fortifies that house."""
+    """S27 p.11: a lord aspecting its own house fortifies that house — unless the lord is debilitated (S28 p.13:
+    the debilitated 10th lord aspects the 10th, yet the profession suffers; spec §6.2.1, S3)."""
     lord = house_lord(rules, ctx["lagna"], house)
     target = house_sign(ctx["lagna"], house)
+    if lord in ctx["signs"] and dignity(rules, lord, ctx["signs"][lord], ctx["degs"].get(lord))["flag"] == "debilitated":
+        return ""
     if lord in ctx["signs"] and any(t == target for _, t in aspect_signs(rules, lord, ctx["signs"][lord])):
         return f"The lord aspects its own house, so the {ordinal(house)} house is strong."
     return ""
@@ -646,7 +672,7 @@ def _exchange_blend(rules, x, y):
 def _taught_rows(rules, x, y, strength_word):
     """Her rows for the lord of x in y: the general row, then the strong and/or weak row chosen by R3."""
     rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]]
-    pick = {"strong": ("strong",), "weak": ("weak",), "depends": ("strong", "weak")}[strength_word]
+    pick = {"strong": ("strong",), "weak": ("weak",), "mixed": ("strong", "weak"), "depends": ("strong", "weak")}[strength_word]
     return [r for r in rows if r["condition"] == ""] + [r for c in pick for r in rows if r["condition"] == c]
 
 
@@ -768,7 +794,7 @@ def _bhava_step(rules, ctx, h, layer2):
     sign = house_sign(lagna, h)
     occ = []
     for p in occupants(lagna, sg)[h]:
-        g = graha_bhava(rules, lagna, sg, p, ctx["degs"].get(p), ctx["waxing"])
+        g = graha_bhava(rules, lagna, sg, p, ctx["degs"].get(p), ctx["waxing"], ctx=ctx)
         occ.append({"planet": p, "nature": nature(p), "text": "\n\n".join(g["points"]), "status": g["status"],
                           "nature_lines": [x["text"] for x in g["nature_lines"]]})
     aspecting = [{"by": a["by"], "aspect": aspect_name(a["by"], a["house_aspect"]),

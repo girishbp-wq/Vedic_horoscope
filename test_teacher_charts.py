@@ -41,6 +41,10 @@ CHARTS = {
     "BOOK_SRI_CHAITANYA": _chart(TULA, {"Saturn": (VRISCHIKA, None), "Jupiter": (DHANU, None), "Mars": (MAKARA, None),
                                         "Rahu": (KUMBHA, None), "Sun": (KUMBHA, None), "Mercury": (MEENA, None),
                                         "Venus": (MESHA, None), "Moon": (SIMHA, None), "Ketu": (SIMHA, None)}),
+    # S28 pp.2-16: Chart 3, a male native, Dhanur Lagna; parentheses on her chart mark the retrograde planets
+    "S28_CHART_3": _chart(DHANU, {"Sun": (MESHA, 10), "Moon": (VRISCHIKA, 1), "Mars": (KARKATAKA, 11), "Mercury": (MEENA, 21),
+                                  "Jupiter": (MITHUNA, 8), "Venus": (VRISHABHA, 3), "Saturn": (SIMHA, 0), "Rahu": (KANYA, 10),
+                                  "Ketu": (MEENA, 10)}, retro=("Mercury", "Saturn", "Rahu", "Ketu")),
 }
 
 
@@ -209,3 +213,25 @@ class LifeAreas(unittest.TestCase):
         b = area("S27_CHART_2", 1)["bhavas"][0]
         self.assertIn("Ketu", [o["planet"] for o in b["occupants"]])
         self.assertIn("Saturn", [x["by"] for x in b["aspecting"]])
+
+
+class S28Chart3(unittest.TestCase):
+    """Her Chart 3 (S28): the site never contradicts what she concluded (spec §9.1)."""
+    NAME = "S28_CHART_3"
+
+    def c(self):
+        return ctx(self.NAME, gender="Male", waxing=False)
+
+    def test_tenth_lord_weak_and_no_strong_line(self):
+        e = next(r for r in br.bhava_bhava(RULES, self.c()) if r["lord_of"] == 10 or r["exchange"] == 10)
+        self.assertEqual((e["lord"], e["sits_in"], e["strength"], e["dictum"]), ("Mercury", 4, "weak", ""))
+        self.assertIn("other than Rahu karakatwas", e["text"])
+
+    def test_lagna_lord_dictum_kept(self):
+        e = next(r for r in br.bhava_bhava(RULES, self.c()) if r["lord_of"] == 1)
+        self.assertEqual(e["dictum"], "The lord aspects its own house, so the 1st house is strong.")
+
+    def test_mars_in_8th_has_no_good_results_line(self):
+        c = CHARTS[self.NAME]
+        g = br.graha_bhava(RULES, c["lagna"], c["signs"], "Mars", 11, False, ctx=self.c())
+        self.assertFalse([t for t in g["class_texts"] if "give good results" in t])

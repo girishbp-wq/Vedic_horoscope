@@ -150,9 +150,11 @@ class NatureAndReadings(unittest.TestCase):
     def test_sun_takes_malefic_rules_marked_mild(self):
         sixth = dict(SIGNS, Sun=9)                                    # Sun in the 6th (Makara)
         sun = next(r for r in br.class_readings(RULES, LAGNA, sixth) if r["planet"] == "Sun")
+        # the Sun in Makara is in an enemy's sign, so weak: the S25 'not weak' line is left out (spec §6.2.5)
         malefic = [r["text"] for c in sun["classes"] for r in RULES["class_rules"]
-                   if r["class"] == c and r["applies"] == "malefic" and 6 not in r["exclude_houses"]]
+                   if r["class"] == c and r["applies"] == "malefic" and 6 not in r["exclude_houses"] and r["when"] != "not weak"]
         self.assertTrue(malefic)
+        self.assertFalse([t for t in sun["texts"] if "give good results" in t])
         for t in malefic:
             self.assertIn("(mild) " + t, sun["texts"])
         anys = [t for t in sun["texts"] if not t.startswith("(mild) ")]
@@ -634,19 +636,19 @@ class Helpers(unittest.TestCase):
         c = self.ctx(dict(SIGNS, Venus=6, Sun=6), {"Venus": 3, "Sun": 6})
         self.assertTrue(br.afflicted(RULES, c, "Venus"))                                       # combust
 
-    def test_exalted_and_combust_is_depends(self):
+    def test_exalted_and_combust_is_weak(self):
+        # spec S1 (Session 29 p.29): a sign of weakness wins over a good sign
         c = self.ctx(dict(SIGNS, Mercury=5, Sun=5), {"Mercury": 10, "Sun": 12})
         self.assertEqual(br.dignity(RULES, "Mercury", 5, 10)["label"], "Exalted")
-        self.assertEqual(br.strength(RULES, c, "Mercury"), "depends")
+        self.assertEqual(br.strength_detail(RULES, c, "Mercury"), {"word": "weak", "reasons": ["combust"]})
 
     def test_own_sign_is_strong_and_debilitated_is_weak(self):
-        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Mars=0), {"Mars": 25}), "Mars"), "strong")
-        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Jupiter=9)), "Jupiter"), "weak")
+        self.assertEqual(br.strength(RULES, br.context(LAGNA, {"Mars": 0}, {"Mars": 25}), "Mars"), "strong")
+        self.assertEqual(br.strength(RULES, br.context(LAGNA, {"Jupiter": 9}), "Jupiter"), "weak")
 
-    def test_aspecting_own_house_is_strong(self):
-        # Saturn in Dhanu (Jupiter's sign, neutral) aspects Kumbha, its own sign, by its 3rd aspect
-        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Saturn=8)), "Saturn"), "strong")
-        self.assertEqual(br.strength(RULES, self.ctx(dict(SIGNS, Saturn=11)), "Saturn"), "depends")   # Meena: no own sign hit
+    def test_aspecting_own_house_no_longer_makes_strong(self):
+        # Saturn in Dhanu (Jupiter's sign, neutral) aspects Kumbha, its own sign: no longer counts as strength (D1)
+        self.assertEqual(br.strength(RULES, br.context(LAGNA, {"Saturn": 8}), "Saturn"), "depends")
 
     def test_lords_houses(self):
         self.assertEqual(br.lords_houses(RULES, LAGNA, "Mars"), [4, 9])          # Simha Lagna: Vrischika, Mesha
@@ -1003,7 +1005,7 @@ class LifeAreas(unittest.TestCase):
         self.assertEqual(a["supports"][:2], ["Jupiter (benefic) in the 4th", "The 4th lord Mars is strong"])
         self.assertIn("Saturn (malefic) aspects the 4th", a["pressure"])
         self.assertIn("The 4th lord Mars is in the 6th, a difficult placement", a["pressure"])
-        self.assertIn("Karaka Moon is strong", a["supports"])               # own sign Karkataka
+        self.assertNotIn("Karaka Moon is strong", a["supports"])            # own sign, but Mars aspects it: mixed (D1)
 
     def test_partial_chart_has_no_lord_or_karaka(self):
         a = br.life_area(RULES, br.context(LAGNA, {"Sun": 4}), 8)          # only the Sun is known
@@ -1026,8 +1028,8 @@ class ParivartanaKeepsHerText(unittest.TestCase):
         self.assertNotIn(4, [r["lord_of"] for r in rows])
 
     def test_exchange_keeps_the_strong_and_weak_lines(self):
-        # Mesha Lagna: Mars in Kanya (6th), Mercury (6th lord) in Mesha. Mars: enemy's sign but aspects Mesha -> depends
-        one = next(r for r in br.bhava_bhava(RULES, br.context(0, {"Mars": 5, "Mercury": 0})) if r["lord_of"] == 1)
+        # Karkataka Lagna: the Moon in Dhanu (6th, neutral -> depends), Jupiter (6th lord) in Karkataka
+        one = next(r for r in br.bhava_bhava(RULES, br.context(3, {"Moon": 8, "Jupiter": 3})) if r["lord_of"] == 1)
         self.assertEqual((one["exchange"], one["strength"], one["status"]), (6, "depends", "taught"))
         self.assertEqual(one["text"], "\n\n".join([self.row(1, 6)["text"], self.row(1, 6, "strong")["text"], self.row(1, 6, "weak")["text"]]))
 
@@ -1050,3 +1052,59 @@ class MildOnlyOnMaleficLines(unittest.TestCase):
         for t in texts:
             if t.startswith("(mild) "):
                 self.assertEqual(rows[t[len("(mild) "):]], "malefic")
+
+
+from test_teacher_charts import CHARTS as _CHARTS, ctx as _chart_ctx
+
+
+class StrengthS29(unittest.TestCase):
+    """D1 (S29 pp.17, 29): weak, strong, mixed, depends — with the reasons."""
+
+    def detail(self, planet, chart="S28_CHART_3"):
+        return br.strength_detail(RULES, _chart_ctx(chart), planet)
+
+    def only(self, signs, degs=None):
+        return br.context(0, signs, degs or {})
+
+    def test_debilitated_aspecting_own_house_is_weak(self):
+        self.assertEqual(self.detail("Mercury"), {"word": "weak", "reasons": ["Debilitated"]})
+
+    def test_exalted_with_rahu_is_weak(self):
+        got = br.strength_detail(RULES, self.only({"Jupiter": 3, "Rahu": 3}), "Jupiter")
+        self.assertEqual(got, {"word": "weak", "reasons": ["with Rahu"]})
+
+    def test_own_sign_aspected_by_malefic_is_mixed(self):
+        self.assertEqual(self.detail("Venus"), {"word": "mixed", "reasons": ["aspected by Saturn", "aspected by Rahu"]})
+
+    def test_sun_aspect_makes_mixed(self):
+        got = br.strength_detail(RULES, self.only({"Venus": 6, "Sun": 0}), "Venus")
+        self.assertEqual(got, {"word": "mixed", "reasons": ["aspected by Sun"]})
+
+    def test_strong_without_malefic_aspect(self):
+        self.assertEqual(self.detail("Sun"), {"word": "strong", "reasons": ["Deep Exalted"]})
+
+    def test_neutral_is_depends(self):
+        self.assertEqual(br.strength_detail(RULES, self.only({"Saturn": 8}), "Saturn"),
+                         {"word": "depends", "reasons": ["Neutral House"]})
+
+    def test_nodes_are_depends(self):
+        self.assertEqual(self.detail("Rahu"), {"word": "depends", "reasons": [br.NODE_LABEL]})
+        got = br.strength_detail(RULES, self.only({"Rahu": 1, "Ketu": 7}), "Rahu")     # Rahu in Vrishabha
+        self.assertEqual(got["word"], "depends")
+
+    def test_strength_is_the_word(self):
+        for p in br.PLANET_ORDER:
+            self.assertEqual(br.strength(RULES, _chart_ctx("S28_CHART_3"), p), self.detail(p)["word"])
+
+    def test_mixed_shows_both_rows(self):
+        # Vrishabha Lagna: lord Venus in Tula (its own sign, the 6th), Saturn in Mesha aspects Tula
+        e = next(r for r in br.bhava_bhava(RULES, br.context(1, {"Venus": 6, "Saturn": 0})) if r["lord_of"] == 1)
+        rows = {r["condition"]: r["text"] for r in RULES["bhava_lord_in"]
+                if (r["lord_of"], r["sits_in"], r["exchange"]) == (1, 6, False)}
+        self.assertEqual((e["sits_in"], e["strength"]), (6, "mixed"))
+        self.assertEqual(e["text"], "\n\n".join([rows[""], rows["strong"], rows["weak"]]))
+
+    def test_dusthana_line_kept_when_not_weak(self):
+        signs = {"Saturn": 9}                                         # Mithuna Lagna: Saturn in Makara, its own sign, the 8th
+        g = br.graha_bhava(RULES, 2, signs, "Saturn", 15, None, ctx=br.context(2, signs, {"Saturn": 15}))
+        self.assertTrue([t for t in g["class_texts"] if "give good results" in t])
