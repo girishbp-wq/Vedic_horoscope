@@ -606,8 +606,8 @@ details.section[open] > summary::after { content: "−"; }
 .s23-house-aspects { margin: 4px 0 0 16px; padding: 0; font-size: 13px; }
 .s23-chain { margin: 4px 0 10px 18px; font-size: 13.5px; }
 .s23-open { border: 0; background: none; cursor: pointer; color: var(--maroon); font-size: 13px; padding: 0 4px; }
-tr.s23-sub td { font-size: 12.5px; background: var(--parchment-2); }
-tr.s23-sub.now td { font-weight: 600; }
+tr.s23-subrow td { font-size: 12.5px; background: var(--parchment-2); }
+tr.s23-subrow.now td { font-weight: 600; }
 @media print { .s23-open { display: none; } }
 .s23-points li, .s23-extra li, .s23-class-texts li, .s23-nature-lines li, .s23-conds li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
@@ -5624,6 +5624,8 @@ const VYEARS = { Ketu:7, Venus:20, Sun:6, Moon:10, Mars:7, Rahu:18, Jupiter:16, 
 const PRED_PLANETS = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
 const _esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const _fdate = d => d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+/* Sookshma and Prāṇa last days or hours (Session 29): their dates carry the time of day */
+const _fperiod = (d, level) => level>=3 ? _fdate(d)+" "+d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}) : _fdate(d);
 /* 7.37 years -> "7 y 4 m 13 d" (12 months of 30.4375 days). */
 function fmtYMD(years){
   const days = Math.round(years * 365.25), y = Math.floor(days / 365.25);
@@ -5671,7 +5673,7 @@ function renderDashaPane(D, roles){
     h+=`Running now: <strong>${G[D.curMaha.lord]} ${D.curMaha.lord} → ${G[D.curBhukti.lord]} ${D.curBhukti.lord}</strong> `;
     h+=`(bhukti until ${_fdate(D.curBhukti.end)}).</p>`;
     h+=`<p class="s23-sub">Running now, down to Prāṇa (Session 29)</p><ul class="s23-chain" id="s23-dasha-chain">`
-      +s23DashaChain(D, now).map(c=>`<li data-level="${c.level}" data-lord="${c.lord}">${c.level}: ${G[c.lord]} ${c.lord} ${_fdate(c.start)} – ${_fdate(c.end)}</li>`).join("")+`</ul>`;
+      +s23DashaChain(D, now).map((c, i)=>`<li data-level="${c.level}" data-lord="${c.lord}">${c.level}: ${G[c.lord]} ${c.lord} ${_fperiod(c.start, i)} – ${_fperiod(c.end, i)}</li>`).join("")+`</ul>`;
   } else {
     h+=`No daśā is running today: today is outside this chart's 120-year span (${_fdate(D.spanStart)} – ${_fdate(D.spanEnd)}).</p>`;
   }
@@ -5708,13 +5710,13 @@ function renderDashaPane(D, roles){
     const tr=btn.closest("tr"), level=+tr.dataset.level;
     if(btn.getAttribute("aria-expanded")==="true"){             // close: remove every deeper row that follows this one
       let n=tr.nextElementSibling;
-      while(n && n.classList.contains("s23-sub") && +n.dataset.level>level){ const x=n.nextElementSibling; n.remove(); n=x; }
+      while(n && n.classList.contains("s23-subrow") && +n.dataset.level>level){ const x=n.nextElementSibling; n.remove(); n=x; }
       btn.setAttribute("aria-expanded","false"); btn.textContent="▸"; return;
     }
     const kids=s23SubPeriods(tr.dataset.lord, new Date(+tr.dataset.start), +tr.dataset.years), now=new Date(), name=S23_DASHA_LEVELS[level+1];
-    const rows=kids.map(k=>`<tr class="s23-sub${k.start<=now&&now<k.end?' now':''}" data-level="${level+1}" data-lord="${k.lord}" data-start="${k.start.getTime()}" data-years="${k.years}">`
+    const rows=kids.map(k=>`<tr class="s23-subrow${k.start<=now&&now<k.end?' now':''}" data-level="${level+1}" data-lord="${k.lord}" data-start="${k.start.getTime()}" data-years="${k.years}">`
       +`<td style="padding-left:${12+level*14}px">${level+1<4?`<button type="button" class="s23-open" aria-expanded="false" title="Show the next level">▸</button> `:""}${name}: ${G[k.lord]} ${k.lord}</td>`
-      +`<td>${_fdate(k.start)}</td><td>${_fdate(k.end)}</td></tr>`).join("");
+      +`<td>${_fperiod(k.start, level+1)}</td><td>${_fperiod(k.end, level+1)}</td></tr>`).join("");
     tr.insertAdjacentHTML("afterend", rows);
     btn.setAttribute("aria-expanded","true"); btn.textContent="▾";
   };
@@ -6377,11 +6379,10 @@ function s23Meanings(p, h, fromHouse){ return s23AspectMeaning(p, h, fromHouse).
 const S23_STRENGTH_MALEFICS = ["Sun","Mars","Saturn","Rahu","Ketu"];
 function s23StrengthDetail(ctx, p){
   const sg=ctx.signs, sign=sg[p], label=planetDignity(p, sign+1, ctx.degs[p]).label;
-  if(p==="Rahu"||p==="Ketu") return {word:"depends", reasons:[label]};
   const weak=[];
   if(S23_WEAK_LABELS.includes(label)) weak.push(label);
   if(s23Combust(ctx, p)) weak.push("combust");
-  if(sg.Rahu===sign) weak.push("with Rahu");
+  if(p!=="Rahu" && sg.Rahu===sign) weak.push("with Rahu");
   if(weak.length) return {word:"weak", reasons:weak};
   if(S23_STRONG_LABELS.includes(label)){
     const mal=s23AspectsOn(ctx, sign).filter(a=>S23_STRENGTH_MALEFICS.includes(a.by) && a.by!==p).map(a=>`aspected by ${a.by}`);
@@ -6656,8 +6657,8 @@ function s23BhavaBhava(ctx){
     let text, status, source, dictum;
     if(swap!==null){
       const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x)));
-      // no Parivartana text of hers: her readings for either direction still apply (each lord judged by R3)
-      const chosen=row ? [row] : s23TaughtRows(x, y, strength).concat(s23TaughtRows(y, x, s23Strength(ctx, lordOf[y])));
+      // her Parivartana text first (if any), then her readings for either direction (each lord judged by its strength)
+      const chosen=(row ? [row] : []).concat(s23TaughtRows(x, y, strength), s23TaughtRows(y, x, s23Strength(ctx, lordOf[y])));
       if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
       else [text, status, source] = [s23ExchangeBlend(x,y), "blend", ""];
       dictum=[s23Dictum(ctx,x), s23Dictum(ctx,y)].filter(Boolean).join(" ");
@@ -6758,7 +6759,7 @@ function s23Summary(bhavas, karakas, pac, link){
   for(const k of karakas){
     if([6,8,12].includes(k.house)) bad.push(`Karaka ${k.planet} is in the ${ord(k.house)}`);
     for(const m of k.malefic_aspects) bad.push(`Karaka ${k.planet} is aspected by ${m}`);
-    if(k.strength==="strong") good.push(`Karaka ${k.planet} is strong`);
+    if(k.strength==="strong" && ![6,8,12].includes(k.house)) good.push(`Karaka ${k.planet} is strong`);
     else if(k.strength==="weak") bad.push(`Karaka ${k.planet} is weak`);
   }
   for(const x of (pac||[])) good.push(`PAC link: ${x}`);
@@ -6883,9 +6884,10 @@ function s23ClassBlock(c, rows, lagnaN){
 }
 
 function s23BuildClasses(sid, lagnaN){
-  const {pbr}=s23Inputs(sid), lg=lagnaN-1;
+  const {pbr, degs, waxing}=s23Inputs(sid), lg=lagnaN-1;
   const tables=s23ClassificationTables(lagnaN, pbr), matrix=s23HouseClassMatrix(lagnaN);
-  const readings=s23ClassReadings(lagnaN, pbr), bad=s23Badhaka(lagnaN, pbr);
+  // with the degrees, as the planet cards: the Dusthana line needs the planet's strength (combustion included)
+  const readings=s23ClassReadingsAt(lg, s23Signs(pbr), s23Ctx(lagnaN, pbr, degs, waxing)), bad=s23Badhaka(lagnaN, pbr);
   let h=`<p>Śānti Madam's Session 23 groups the twelve bhāvas into <strong>ten classes</strong>. A house can belong to several (the 1st is Kendra, Trikona and Apachaya). `
     +`The tables below show, for <em>your</em> chart, each class's houses with the rāśi on that house, the planets seated in it, and its lord — with the house the lord sits in, the extra column she asks students to add. Houses are counted from your Lagna.</p>`;
   h+=s23TagLegend();

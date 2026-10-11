@@ -1217,7 +1217,11 @@ class ExcelLifeAreas(unittest.TestCase):
         # her Chart 3 (S28): health, education (a debilitated benefic in the 4th), marriage (karaka Venus in the 6th,
         # aspected by Saturn and Rahu), elder sibling (aspects on the 11th, readings on the 11th and its lord)
         charts.append(dict(tc.CHARTS["S28_CHART_3"], birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male",
-                           areas=(1, 6, 11, 14)))
+                           areas=(1, 6, 11, 14, 15)))                   # 15: the 12th lord in the 8↔12 Parivartana
+        # Vrishabha Lagna, Venus strong in Tula (the 6th) with no malefic aspect: the karaka is pressure only (§6.2.3)
+        venus6 = {"Sun": 5, "Moon": 2, "Mars": 5, "Mercury": 5, "Jupiter": 10, "Venus": 6, "Saturn": 8, "Rahu": 3, "Ketu": 9}
+        charts.append(dict(lagna=1, signs=venus6, degs=dict(degs, Venus=10.0), retro={}, birth=datetime.datetime(1990, 2, 2, 2, 0),
+                           gender=None, areas=(11,)))
         for c in charts:
             c["waxing"] = _waxing_of(c)
         base = tmp / "base.xlsx"
@@ -1269,6 +1273,7 @@ class ExcelLifeAreas(unittest.TestCase):
             if c["signs"] == tc.CHARTS["S28_CHART_3"]["signs"]:
                 checked += 1
                 lines = {6: ("pressure", "Mercury (benefic, debilitated) in the 4th"),
+                         15: ("pressure", "The 12th lord Mars is weak"),
                          11: ("pressure", "Karaka Venus is aspected by Rahu"),
                          14: ("supports", "Mars aspects the 11th (rules the 5th and 12th)"),
                          1: ("supports", "The 1st lord Jupiter aspects its own house")}
@@ -1278,7 +1283,7 @@ class ExcelLifeAreas(unittest.TestCase):
                     step = got["bhavas"][0]
                     self.assertTrue(any(x["readings"] for x in step["aspecting"]), name)
                     self.assertTrue(any(x["readings"] for x in step["with_lord"]), name)
-        self.assertEqual(checked, 4)
+        self.assertEqual(checked, 5)
 
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
@@ -1620,6 +1625,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         rows = b23.read_workbook(self.master)["class_rules"]
         mine = next(x for x in rows if (x["class"], x["applies"]) == ("Dusthana", "malefic"))
         self.assertEqual(mine["text"], "My own Dusthana line.")
+        self.assertEqual(mine["when"], "not weak")              # a column the old sheet lacked comes from the release
         self.assertIn("S23_ChartReadings", openpyxl.load_workbook(self.master).sheetnames)
 
     def test_old_bhava_lord_in_header_upgraded(self):

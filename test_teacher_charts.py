@@ -223,6 +223,17 @@ class S28Chart3(unittest.TestCase):
     def c(self):
         return ctx(self.NAME, gender="Male", waxing=False)
 
+    def test_every_lord_line_of_hers_shows(self):
+        # §9.1: her 2→9 … 10→4 lines and the 8↔12 Parivartana line all show (the 8→12 line next to the exchange text)
+        import session28_29_teacher_texts as t28
+        texts = "\n\n".join(e["text"] for e in br.bhava_bhava(RULES, self.c()))
+        for lord_of, sits_in, cond, *rest in t28.LORD_IN:
+            text = rest[-2]
+            self.assertIn(text, texts, (lord_of, sits_in, cond))
+        e = next(r for r in br.bhava_bhava(RULES, self.c()) if r["lord_of"] == 8)
+        self.assertEqual((e["exchange"], e["status"]), (12, "taught"))
+        self.assertTrue(e["text"].index("Parivartana") < e["text"].index("worries and tensions"), e["text"][:200])
+
     def test_tenth_lord_weak_and_no_strong_line(self):
         e = next(r for r in br.bhava_bhava(RULES, self.c()) if r["lord_of"] == 10 or r["exchange"] == 10)
         self.assertEqual((e["lord"], e["sits_in"], e["strength"], e["dictum"]), ("Mercury", 4, "weak", ""))

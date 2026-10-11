@@ -1568,14 +1568,28 @@ class Round1Page(unittest.TestCase):
             }, SID);
             await page.evaluate(() => renderDashaPane(buildDasha(253.6103, '1982-06-08', '12:00:00'), null));
             out.chain = await page.evaluate(() => [...document.querySelectorAll('#s23-dasha-chain li')].map(li => li.textContent));
-            const count = l => page.evaluate(l => document.querySelectorAll(`tr.s23-sub[data-level="${l}"]`).length, l);
+            const count = l => page.evaluate(l => document.querySelectorAll(`#s23-dasha-tables tr[data-level="${l}"]`).length, l);
             const click = sel => page.evaluate(sel => document.querySelector(sel).click(), sel);   // the section may be folded
             await click('tr.s23-bhukti .s23-open');
             out.level2 = await count(2);
-            await click('tr.s23-sub[data-level="2"] .s23-open');
+            await click('#s23-dasha-tables tr[data-level="2"] .s23-open');
             out.level3 = await count(3);
+            out.rows = await page.evaluate(() => {
+              const td = document.querySelector('#s23-dasha-tables tr[data-level="2"] td'), cs = getComputedStyle(td);
+              const l3 = document.querySelector('#s23-dasha-tables tr[data-level="3"]');
+              return {transform: cs.textTransform, font: cs.fontFamily, l2date: td.nextElementSibling.textContent,
+                      l3date: l3.cells[1].textContent};
+            });
             await click('tr.s23-bhukti .s23-open');
             out.closed = await count(2) + await count(3);
+            // Classes tab with degrees: Mars combust in Vrischika (the 8th from Mesha) is weak, so no Dusthana line
+            out.classes = await page.evaluate(() => {
+              renderS23Sections({Sun: 215, Moon: 100, Mars: 218, Mercury: 250, Jupiter: 10, Venus: 300, Saturn: 40,
+                                 Rahu: 160, Ketu: 340}, 1);
+              const row = document.querySelector('#s23-readings tr[data-planet="Mars"]');
+              const card = document.querySelector('#s23-predict-body .s23-gb[data-planet="Mars"] .s23-class-texts');
+              return {table: row ? row.textContent : null, card: card ? card.textContent : ""};
+            });
             await page.setViewportSize({width: 390, height: 800});
             out.width = await page.evaluate(() => document.documentElement.scrollWidth);
             return out;
@@ -1606,3 +1620,22 @@ class Round1Page(unittest.TestCase):
 
     def test_no_horizontal_scroll_390(self):
         self.assertLessEqual(self.r["width"], 390)
+
+    def test_opened_rows_are_table_rows_not_headings(self):
+        self.assertEqual(self.r["rows"]["transform"], "none")
+        self.assertNotIn("Cinzel", self.r["rows"]["font"])
+
+    def test_sookshma_and_prana_show_the_time(self):
+        clock = r"\d{1,2}:\d{2}"
+        for line in self.r["chain"][3:]:
+            self.assertRegex(line, clock)
+        for line in self.r["chain"][:3]:
+            self.assertNotRegex(line, clock)
+        self.assertRegex(self.r["rows"]["l3date"], clock)                 # a Sookshma row
+        self.assertNotRegex(self.r["rows"]["l2date"], clock)              # a Pratyantara row keeps the date
+
+    def test_classes_tab_uses_the_degrees(self):
+        line = "Malefic planets in dusthana houses"
+        self.assertIsNotNone(self.r["classes"]["table"])
+        self.assertNotIn(line, self.r["classes"]["card"])
+        self.assertNotIn(line, self.r["classes"]["table"])

@@ -1088,10 +1088,28 @@ class StrengthS29(unittest.TestCase):
         self.assertEqual(br.strength_detail(RULES, self.only({"Saturn": 8}), "Saturn"),
                          {"word": "depends", "reasons": ["Neutral House"]})
 
-    def test_nodes_are_depends(self):
-        self.assertEqual(self.detail("Rahu"), {"word": "depends", "reasons": [br.NODE_LABEL]})
-        got = br.strength_detail(RULES, self.only({"Rahu": 1, "Ketu": 7}), "Rahu")     # Rahu in Vrishabha
-        self.assertEqual(got["word"], "depends")
+    def test_nodes_follow_their_dignity(self):
+        # D1 has no exemption for the nodes: the site marks them exalted in Vrishabha / Vrischika and debilitated opposite
+        self.assertEqual(self.detail("Rahu"), {"word": "depends", "reasons": [br.NODE_LABEL]})            # Rahu in Kanya
+        exalted = self.only({"Rahu": 1, "Ketu": 7})
+        self.assertEqual(br.strength_detail(RULES, exalted, "Rahu"), {"word": "strong", "reasons": ["Exalted"]})
+        self.assertEqual(br.strength_detail(RULES, exalted, "Ketu"), {"word": "strong", "reasons": ["Exalted"]})
+        debilitated = self.only({"Rahu": 7, "Ketu": 1})
+        self.assertEqual(br.strength_detail(RULES, debilitated, "Rahu"), {"word": "weak", "reasons": ["Debilitated"]})
+        self.assertEqual(br.strength_detail(RULES, debilitated, "Ketu"), {"word": "weak", "reasons": ["Debilitated"]})
+        aspected = self.only({"Rahu": 1, "Ketu": 7, "Saturn": 11})                                      # Saturn's 3rd
+        self.assertEqual(br.strength_detail(RULES, aspected, "Rahu"), {"word": "mixed", "reasons": ["aspected by Saturn"]})
+
+    def test_rahu_is_never_with_itself(self):
+        got = br.strength_detail(RULES, self.only({"Rahu": 3, "Ketu": 9}), "Rahu")
+        self.assertEqual(got, {"word": "depends", "reasons": [br.NODE_LABEL]})
+
+    def test_strong_karaka_in_a_dusthana_is_only_pressure(self):
+        # §6.2.3: a kāraka in the 6th, 8th or 12th is pressure; *otherwise* a strong kāraka is a support
+        a = br.life_area(RULES, br.context(1, {"Venus": 6}), 11)           # Vrishabha Lagna, Venus in Tula (own, the 6th)
+        self.assertEqual(a["karakas"][0]["strength"], "strong")
+        self.assertIn("Karaka Venus is in the 6th", a["pressure"])
+        self.assertNotIn("Karaka Venus is strong", a["supports"])
 
     def test_strength_is_the_word(self):
         for p in br.PLANET_ORDER:

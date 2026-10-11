@@ -621,7 +621,7 @@ def _predict_s28_29(ws, rules):
                     ("Aspect 3 falls on sign", ASPECT_COL0 + 2), ("Malefics aspecting it", MALEFIC_COL)):
         cell = ws.cell(row=2, column=c, value=name)
         cell.fill, cell.font = HEAD_FILL, HEAD_FONT
-    # strength (S29): weak > strong > mixed > depends; Rahu and Ketu always depend on their sign's lord
+    # strength (S29): weak > strong > mixed > depends (Rahu and Ketu by their exaltation / debilitation signs)
     rahu = chart_sign(br.PLANET_ORDER.index("Rahu"))
     for k, p in enumerate(br.PLANET_ORDER):
         r = PREDICT_ROW0 + k
@@ -631,13 +631,9 @@ def _predict_s28_29(ws, rules):
         mal = "&".join(f'IF(OR({",".join(f"{t}={chart_sign(k)}" for t in targets(m))}),", aspected by {m}","")'
                        for m in br.STRENGTH_MALEFICS if m != p)
         ws.cell(row=r, column=MALEFIC_COL, value=f'=""&{mal}')
-        if p in ("Rahu", "Ketu"):
-            ws.cell(row=r, column=PREDICT_COLS["strength"], value='="depends"')
-            ws.cell(row=r, column=PREDICT_COLS["reasons"], value=f"=$F{r}")
-            continue
         weak = "OR(" + ",".join(f'$F{r}="{x}"' for x in br.WEAK_LABELS) + ")"
         strong = "OR(" + ",".join(f'$F{r}="{x}"' for x in br.STRONG_LABELS) + ")"
-        comb, with_rahu = f"${L(COMBUST_COL)}{r}", f"{rahu}={chart_sign(k)}"
+        comb, with_rahu = f"${L(COMBUST_COL)}{r}", ("FALSE" if p == "Rahu" else f"{rahu}={chart_sign(k)}")
         ws.cell(row=r, column=PREDICT_COLS["strength"],
                 value=f'=IF(OR({weak},{comb},{with_rahu}),"weak",IF({strong},IF(${L(MALEFIC_COL)}{r}<>"","mixed","strong"),"depends"))')
         ws.cell(row=r, column=PREDICT_COLS["reasons"],
@@ -989,7 +985,9 @@ def _life_area_sheet(ws, rules):
                            f'IF(AND({rw}${lr}>0,{uw}),INDEX({L_STATUS},{rw}${lr}),"")))'))
         both = lambda a_, b_: f'MID(IF({a_}<>"",CHAR(10)&CHAR(10)&{a_},"")&IF({b_}<>"",CHAR(10)&CHAR(10)&{b_},""),3,32000)'
         V, AC = f"$V${lr}", f"$AC${lr}"
-        cell(lr, 9, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_TEXT},$M${lr}),IF({V}&{AC}="",$R${lr},'
+        pre = lambda x: f'IF({x}<>"",CHAR(10)&CHAR(10)&{x},"")'
+        swap_text = (f'MID(CHAR(10)&CHAR(10)&INDEX({L_TEXT},$M${lr})&IF({hb}<{C},{pre(V)}&{pre(AC)},{pre(AC)}&{pre(V)}),3,32000)')
+        cell(lr, 9, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,{swap_text},IF({V}&{AC}="",$R${lr},'
                      f'IF({hb}<{C},{both(V, AC)},{both(AC, V)}))),IF({V}<>"",{V},$Q${lr})))'))
         cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),IF({V}&{AC}="","blend",'
                       f'IF({hb}<{C},IF({V}<>"",$AD${lr},$AE${lr}),IF({AC}<>"",$AE${lr},$AD${lr})))),IF($AD${lr}<>"",$AD${lr},"blend")))'))
@@ -1051,7 +1049,7 @@ def _life_area_sheet(ws, rules):
             cell(k0 + 1 + j, 1, "karaka line")
             cell(k0 + 1 + j, PRESSURE_COL, f'=IF(AND({B}<>"",{B}<>"{m}",{hit_by(m)}),"Karaka "&{B}&" is aspected by {m}","")')
         cell(k0 + 6, 1, "karaka line")
-        summary(k0 + 6, f'$I${r}="strong"', f'$I${r}="weak"', f'"Karaka "&{B}&" is "&$I${r}')
+        summary(k0 + 6, f'AND($I${r}="strong",$C${r}<>6,$C${r}<>8,$C${r}<>12)', f'$I${r}="weak"', f'"Karaka "&{B}&" is "&$I${r}')
 
     # ---- PAC link (Love marriage) and the karakas' combination
     pac_on = '$B$6="PAC"'
@@ -1286,6 +1284,9 @@ def upgrade_data_sheets(wb, rules, previous):
             continue
         user = _keyed(name, _sheet_rows(wb[name], len(header)))
         raw = {k: row for (k, _), row in zip(user, _sheet_rows(wb[name], len(header)))}
+        # columns the user's sheet did not have yet (e.g. ClassRules' When): an edited row takes them from the release
+        have = [c.value for c in wb[name][1]]
+        missing = [i for i, h in enumerate(header) if h not in have]
         user_norm = dict((k, r) for k, r in reversed(user))
         shipped = [dict(_keyed(name, rows[name])) for rows in shipped_rows]
         as_shipped = lambda k, u: any(x.get(k) == u for x in shipped)
@@ -1302,7 +1303,7 @@ def upgrade_data_sheets(wb, rules, previous):
                     out.append((k, values))
                     report["updated"] += 1
                 else:
-                    out.append((k, raw[k]))
+                    out.append((k, [values[i] if i in missing else v for i, v in enumerate(raw[k])]))
                     report["kept"].append((name, k))
             elif k in installed:
                 report["deleted"].append((name, k))

@@ -314,14 +314,13 @@ def strength_detail(rules, ctx, planet):
     weak — debilitated, in an enemy's sign, combust, or with Rahu (a sign of weakness wins over a good sign);
     strong — exalted, Moolatrikona, own or friend's sign, and no malefic aspects it;
     mixed — such a sign, but a malefic aspects it (each named);
-    depends — otherwise, and always for Rahu and Ketu, who own no sign."""
+    depends — otherwise. Rahu and Ketu follow their exaltation and debilitation signs; elsewhere they depend on
+    the sign's lord ("Node (no rulership)"). Rahu is never "with Rahu" itself."""
     sg = ctx["signs"]
     sign = sg[planet]
     label = dignity(rules, planet, sign, ctx["degs"].get(planet))["label"]
-    if planet in ("Rahu", "Ketu"):
-        return {"word": "depends", "reasons": [label]}
     weak = ([label] if label in WEAK_LABELS else []) + (["combust"] if combust(rules, ctx, planet) else []) \
-        + (["with Rahu"] if sg.get("Rahu") == sign else [])
+        + (["with Rahu"] if planet != "Rahu" and sg.get("Rahu") == sign else [])
     if weak:
         return {"word": "weak", "reasons": weak}
     if label in STRONG_LABELS:
@@ -834,8 +833,10 @@ def bhava_bhava(rules, ctx):
         strength_word = strength(rules, ctx, lord)
         if swap is not None:
             row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}), None)
-            # no Parivartana text of hers: her readings for either direction still apply (each lord judged by R3)
-            chosen = [row] if row else _taught_rows(rules, x, y, strength_word) + _taught_rows(rules, y, x, strength(rules, ctx, lord_of[y]))
+            # her Parivartana text first (if any), then her readings for either direction (each lord judged by its
+            # strength) — on her Chart 3 both the 8↔12 line and her 8→12 line show (spec §9.1)
+            chosen = ([row] if row else []) + _taught_rows(rules, x, y, strength_word) \
+                + _taught_rows(rules, y, x, strength(rules, ctx, lord_of[y]))
             if chosen:
                 text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
             else:
@@ -992,7 +993,7 @@ def _summary(bhavas, karakas, pac, link):
         if k["house"] in (6, 8, 12):                            # S28 p.10: the karaka in the 6th, the house of quarrels
             bad.append(f"Karaka {k['planet']} is in the {ordinal(k['house'])}")
         bad += [f"Karaka {k['planet']} is aspected by {m}" for m in k["malefic_aspects"]]
-        if k["strength"] == "strong":
+        if k["strength"] == "strong" and k["house"] not in (6, 8, 12):    # §6.2.3: otherwise a strong karaka supports
             good.append(f"Karaka {k['planet']} is strong")
         elif k["strength"] == "weak":
             bad.append(f"Karaka {k['planet']} is weak")
