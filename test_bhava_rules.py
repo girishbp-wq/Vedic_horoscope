@@ -889,7 +889,8 @@ class LayerTwo(unittest.TestCase):
 
     def test_with_and_aspecting_the_lord(self):
         e = self.entry(0, {"Venus": 9, "Jupiter": 9, "Ketu": 5, "Saturn": 4, "Mars": 2}, 7)
-        self.assertEqual(e["with_lord"][0], {"planet": "Jupiter", "how": "with", "aspect": "", "rules": [9, 12], "meanings": []})
+        self.assertEqual(e["with_lord"][0], {"planet": "Jupiter", "how": "with", "aspect": "", "rules": [9, 12], "meanings": [],
+                                            "readings": []})
         ketu = [w for w in e["with_lord"] if w["planet"] == "Ketu"]
         self.assertEqual([(w["how"], w["aspect"]) for w in ketu], [("aspect", br.aspect_name("Ketu", 5))])
         self.assertNotIn("Venus", [w["planet"] for w in e["with_lord"]])
@@ -1121,3 +1122,55 @@ class RulingHouses(unittest.TestCase):
         signs = {"Moon": 3, "Mars": 9}                                     # Moon in Karkataka; Mars in Makara aspects it
         k = br.life_area(RULES, br.context(LAGNA, signs), 8)["karakas"][0]
         self.assertEqual((k["planet"], k["malefic_aspects"]), ("Moon", ["Mars"]))
+
+
+class ChartReadings(unittest.TestCase):
+    """Her Chart 3 sentences, matched on any chart (spec §6.4)."""
+
+    def items(self, lagna, signs, degs=None):
+        return br.chart_readings(RULES, br.context(lagna, signs, degs or {}))
+
+    def find(self, got, kind, house, start):
+        return [x for x in got if x["kind"] == kind and x["house"] == house and start in x["text"]]
+
+    def test_resolve_planets(self):
+        c = br.context(8, {"Sun": 0, "Mars": 3, "Jupiter": 2, "Moon": 7})
+        self.assertEqual(br.resolve_planets(RULES, c, "Mars"), ["Mars"])
+        self.assertEqual(br.resolve_planets(RULES, c, "Venus"), [])
+        self.assertEqual(br.resolve_planets(RULES, c, "malefic"), ["Sun", "Mars"])
+        self.assertEqual(br.resolve_planets(RULES, c, "benefic"), ["Moon", "Jupiter"])
+        self.assertEqual(br.resolve_planets(RULES, c, "8th lord"), ["Moon"])          # Dhanu Lagna: 8th is Kataka
+        self.assertEqual(br.resolve_planets(RULES, c, "2nd lord"), [])                # Saturn not placed
+
+    def test_in_with_condition(self):
+        # Dhanu Lagna, Mercury and Ketu in Meena (4th): Mercury is debilitated there
+        got = self.items(8, {"Mercury": 11, "Ketu": 11, "Rahu": 5})
+        hit = self.find(got, "in", 4, "In her example chart (S28): Mercury is also posited")
+        self.assertEqual([(x["on"], x["with"]) for x in hit], [(["Mercury"], ["Ketu"])])
+        # Mercury and Ketu together in Kanya (10th for Dhanu): Mercury is exalted, not debilitated — and not the 4th
+        self.assertFalse(self.find(self.items(8, {"Mercury": 5, "Ketu": 5, "Rahu": 11}), "in", 4, "Mercury is also"))
+        # Mercury debilitated in the 4th but without Ketu
+        self.assertFalse(self.find(self.items(8, {"Mercury": 11, "Ketu": 0, "Rahu": 6}), "in", 4, "Mercury is also"))
+
+    def test_two_malefics_need_two_planets(self):
+        one = self.items(8, {"Mars": 3})                                  # only Mars aspects Makara (2nd)
+        self.assertFalse(self.find(one, "aspects", 2, "In her example chart (S28): Two malefics"))
+        c3 = br.chart_readings(RULES, _chart_ctx("S28_CHART_3"))
+        hit = self.find(c3, "aspects", 2, "In her example chart (S28): Two malefics")
+        self.assertEqual([x["on"] for x in hit], [["Mars", "Rahu"]])
+
+    def test_nth_lord_spec(self):
+        c3 = br.chart_readings(RULES, _chart_ctx("S28_CHART_3"))
+        lord8 = [x for x in c3 if x["kind"] == "aspects lord" and x["house"] == 11 and "inheritance" in x["text"]]
+        self.assertEqual([x["on"] for x in lord8], [["Moon"]])               # the 8th lord Moon aspects Venus
+        hosp = [x for x in c3 if x["kind"] == "in" and x["house"] == 12 and "hospitalised" in x["text"]]
+        self.assertEqual([x["on"] for x in hosp], [["Moon"]])
+
+    def test_aspects_planet(self):
+        c3 = br.chart_readings(RULES, _chart_ctx("S28_CHART_3"))
+        hit = [x for x in c3 if x["kind"] == "aspects planet"]
+        self.assertEqual([(x["on"], x["with"]) for x in hit], [(["Rahu"], ["Venus"])])
+
+    def test_partial_chart_no_raise(self):
+        for signs in ({}, {"Moon": 3}, {"Rahu": 0, "Ketu": 6}):
+            self.assertIsInstance(self.items(4, signs), list)

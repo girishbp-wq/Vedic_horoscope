@@ -347,11 +347,69 @@ def ruled_phrase(houses):
     return "(rules the " + (names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]) + ")"
 
 
+def resolve_planets(rules, ctx, spec):
+    """The placed planets a ChartReadings Planet/With cell names: a planet, every benefic/malefic, or 'Nth lord'."""
+    sg = ctx["signs"]
+    if spec in ("benefic", "malefic"):
+        return [p for p in PLANET_ORDER if p in sg and nature_class(p) == spec]
+    if spec.endswith(" lord"):
+        lord = house_lord(rules, ctx["lagna"], int(spec[:-7]))
+        return [lord] if lord in sg else []
+    return [spec] if spec in sg else []
+
+
+def _aspects_sign(rules, sg, p, sign):
+    return any(t == sign for _, t in aspect_signs(rules, p, sg[p]))
+
+
+def chart_readings(rules, ctx):
+    """Her Chart 3 sentences (S23_ChartReadings) that hold for this chart, in sheet order (spec §6.4):
+    [{kind, house, on, with, text, status, source}]. `on` = the planets the Planet cell matched, `with` = the planets
+    the With cell matched (a different planet each time); for a malefic+malefic row, `on` holds both."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    flag = lambda p: dignity(rules, p, sg[p], ctx["degs"].get(p))["flag"]
+    out = []
+    for r in rules.get("chart_readings", []):
+        kind = r["kind"]
+        cands = [p for p in resolve_planets(rules, ctx, r["planet"]) if not r["condition"] or flag(p) == r["condition"]]
+        partners = resolve_planets(rules, ctx, r["with"]) if r["with"] else None
+        on, with_ = [], []
+        if kind == "aspects planet":
+            target = r["with"]
+            if target in sg:
+                on, with_ = [p for p in cands if p != target and _aspects_sign(rules, sg, p, sg[target])], [target]
+        elif kind == "aspects lord":
+            lord = house_lord(rules, lagna, r["house"])
+            if lord in sg:
+                on = [p for p in cands if p != lord and _aspects_sign(rules, sg, p, sg[lord])]
+        else:
+            sign = house_sign(lagna, r["house"])
+            hits = (lambda p: sg[p] == sign) if kind == "in" else (lambda p: _aspects_sign(rules, sg, p, sign))
+            on = [p for p in cands if hits(p)]
+            if partners is not None:
+                together = (lambda p, q: sg[p] == sg[q]) if kind == "in" else (lambda p, q: hits(q))
+                pairs = [(p, q) for p in on for q in partners if q != p and together(p, q)]
+                if r["planet"] == r["with"]:                      # e.g. two malefics aspecting the 2nd
+                    on = sorted({x for pq in pairs for x in pq}, key=PLANET_ORDER.index)
+                else:
+                    on = [p for p in on if any(pp == p for pp, _ in pairs)]
+                    with_ = [q for q in partners if any(qq == q for _, qq in pairs)]
+                if not pairs:
+                    on = []
+        if on:
+            out.append({"kind": kind, "house": r["house"], "on": on, "with": with_, "text": r["text"],
+                        "status": r["status"], "source": r["source"]})
+    return out
+
+
 def _aspect_items(rules, ctx, house):
     """The planets aspecting `house`, each with its aspect, the houses it rules (S28 p.14) and her meanings."""
     lagna, sg = ctx["lagna"], ctx["signs"]
+    mine = [x for x in chart_readings(rules, ctx) if x["kind"] == "aspects" and x["house"] == house]
+    # a reading is listed once, with the first planet it names
     return [{"by": a["by"], "aspect": aspect_name(a["by"], a["house_aspect"]), "rules": lords_houses(rules, lagna, a["by"]),
-             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(lagna, sg[a["by"]])), "readings": []}
+             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(lagna, sg[a["by"]])),
+             "readings": [x["text"] for x in mine if x["on"][0] == a["by"]]}
             for a in aspects_on(rules, ctx, house_sign(lagna, house))]
 
 
@@ -620,7 +678,9 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
             "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
             "twelfth_line": twelfth_line(rules, house), "nature_lines": bhava_nature_lines(rules, planet, house),
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
-            "classes": reading["classes"], "class_texts": reading["texts"]}
+            "classes": reading["classes"], "class_texts": reading["texts"],
+            "readings": [x["text"] for x in chart_readings(rules, ctx)
+                         if (x["kind"] == "in" and planet in x["on"]) or (x["kind"] == "aspects planet" and planet in x["with"])]}
 
 
 def _short_name(nm):
@@ -659,13 +719,17 @@ def _dictum(rules, ctx, house):
 
 
 def with_lord(rules, ctx, lord):
-    """S27 p.16: planets conjoined with the lord, then planets aspecting it, each with the houses it rules."""
+    """S27 p.16: planets conjoined with the lord, then planets aspecting it, each with the houses it rules and her
+    Chart 3 sentences for a planet aspecting a lord of this planet's houses (S28 p.15)."""
     sg = ctx["signs"]
-    out = [{"planet": p, "how": "with", "aspect": "", "rules": lords_houses(rules, ctx["lagna"], p), "meanings": []}
-           for p in PLANET_ORDER if p != lord and p in sg and sg[p] == sg[lord]]
+    mine = [x for x in chart_readings(rules, ctx)
+            if x["kind"] == "aspects lord" and house_lord(rules, ctx["lagna"], x["house"]) == lord]
+    out = [{"planet": p, "how": "with", "aspect": "", "rules": lords_houses(rules, ctx["lagna"], p), "meanings": [],
+            "readings": []} for p in PLANET_ORDER if p != lord and p in sg and sg[p] == sg[lord]]
     out += [{"planet": a["by"], "how": "aspect", "aspect": aspect_name(a["by"], a["house_aspect"]),
              "rules": lords_houses(rules, ctx["lagna"], a["by"]),
-             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(ctx["lagna"], sg[a["by"]]))}
+             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(ctx["lagna"], sg[a["by"]])),
+             "readings": [x["text"] for x in mine if a["by"] in x["on"]]}
             for a in aspects_on(rules, ctx, sg[lord]) if a["by"] != lord]
     return out
 

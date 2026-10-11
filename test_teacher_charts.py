@@ -273,3 +273,31 @@ class S28Chart3LifeAreas(unittest.TestCase):
         e = next(r for r in br.bhava_bhava(RULES, ctx("S28_CHART_3")) if r["lord_of"] == 11)
         got = {(x["house"], x["by"]): x["rules"] for x in e["house_aspects"]}
         self.assertEqual(got, {(11, "Sun"): [9], (11, "Mars"): [5, 12], (11, "Jupiter"): [1, 4], (11, "Saturn"): [2, 3]})
+
+
+class S28Chart3Readings(unittest.TestCase):
+    """Her Chart 3 sentences show where the placement matches (spec §6.4, §9.1)."""
+
+    def setUp(self):
+        self.c = ctx("S28_CHART_3", gender="Male", waxing=False)
+        self.chart = CHARTS["S28_CHART_3"]
+
+    def card(self, planet):
+        return br.graha_bhava(RULES, self.chart["lagna"], self.chart["signs"], planet, self.chart["degs"].get(planet), False,
+                              ctx=self.c)
+
+    def test_her_readings_on_cards(self):
+        self.assertTrue([t for t in self.card("Rahu")["readings"] if "export, forex" in t])
+        self.assertTrue([t for t in self.card("Venus")["readings"] if "unconventional and dominating" in t])
+        self.assertFalse([t for t in self.card("Jupiter")["readings"] if "export, forex" in t])
+
+    def test_her_readings_with_aspects_and_lords(self):
+        disease = area("S28_CHART_3", 10, gender="Male", waxing=False)["bhavas"][0]          # Disease: the 6th
+        sat = next(a for a in disease["aspecting"] if a["by"] == "Saturn")
+        self.assertTrue([t for t in sat["readings"] if "chronic disease" in t])
+        e = next(r for r in br.bhava_bhava(RULES, self.c) if r["lord_of"] == 11)
+        rahu = next(w for w in e["with_lord"] if w["planet"] == "Rahu")
+        self.assertTrue([t for t in rahu["readings"] if "foreign source" in t])
+        mars2 = next(a for a in next(r for r in br.bhava_bhava(RULES, self.c) if r["lord_of"] == 2)["house_aspects"]
+                     if a["by"] == "Mars")
+        self.assertTrue([t for t in mars2["readings"] if "Two malefics" in t])
