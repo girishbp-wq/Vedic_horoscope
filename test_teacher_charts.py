@@ -235,3 +235,41 @@ class S28Chart3(unittest.TestCase):
         c = CHARTS[self.NAME]
         g = br.graha_bhava(RULES, c["lagna"], c["signs"], "Mars", 11, False, ctx=self.c())
         self.assertFalse([t for t in g["class_texts"] if "give good results" in t])
+
+
+class S28Chart3LifeAreas(unittest.TestCase):
+    """Her Chart 3 (S28) in Life areas: spec §6.2.2-4 and §6.3."""
+
+    def a(self, no):
+        return area("S28_CHART_3", no, gender="Male", waxing=False)
+
+    def test_degree_education_mercury_is_pressure(self):
+        a = self.a(6)
+        self.assertIn("Mercury (benefic, debilitated) in the 4th", a["pressure"])
+        self.assertFalse([x for x in a["supports"] if x.startswith("Mercury")])
+
+    def test_marriage_karaka_venus_pressure(self):
+        a = self.a(11)
+        for line in ("Karaka Venus is in the 6th", "Karaka Venus is aspected by Saturn", "Karaka Venus is aspected by Rahu"):
+            self.assertIn(line, a["pressure"])
+        self.assertFalse([x for x in a["supports"] if x.startswith("Karaka Venus")])
+
+    def test_elder_sibling_aspects_are_gains(self):
+        a = self.a(14)
+        for line in ("Sun aspects the 11th (rules the 9th)", "Mars aspects the 11th (rules the 5th and 12th)",
+                     "Jupiter aspects the 11th (rules the 1st and 4th)", "Saturn aspects the 11th (rules the 2nd and 3rd)"):
+            self.assertIn(line, a["supports"])
+        self.assertFalse([x for x in a["pressure"] if x.endswith("aspects the 11th")])   # the house, not its lord
+
+    def test_health_supports(self):
+        a = self.a(1)
+        self.assertIn("The 1st lord Jupiter aspects its own house", a["supports"])
+        self.assertIn("Karaka Sun is strong", a["supports"])
+
+    def test_aspects_name_the_houses_their_planet_rules(self):
+        step = self.a(14)["bhavas"][0]
+        sun = next(x for x in step["aspecting"] if x["by"] == "Sun")
+        self.assertEqual(sun["rules"], [9])
+        e = next(r for r in br.bhava_bhava(RULES, ctx("S28_CHART_3")) if r["lord_of"] == 11)
+        got = {(x["house"], x["by"]): x["rules"] for x in e["house_aspects"]}
+        self.assertEqual(got, {(11, "Sun"): [9], (11, "Mars"): [5, 12], (11, "Jupiter"): [1, 4], (11, "Saturn"): [2, 3]})

@@ -339,6 +339,22 @@ def lords_houses(rules, lagna, planet):
     return [h for h in range(1, 13) if house_lord(rules, lagna, h) == planet]
 
 
+def ruled_phrase(houses):
+    """'(rules the 9th)', '(rules the 5th and 12th)', '(rules the 1st, 4th and 7th)'; '' for a planet ruling none."""
+    if not houses:
+        return ""
+    names = [ordinal(h) for h in houses]
+    return "(rules the " + (names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]) + ")"
+
+
+def _aspect_items(rules, ctx, house):
+    """The planets aspecting `house`, each with its aspect, the houses it rules (S28 p.14) and her meanings."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    return [{"by": a["by"], "aspect": aspect_name(a["by"], a["house_aspect"]), "rules": lords_houses(rules, lagna, a["by"]),
+             "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(lagna, sg[a["by"]])), "readings": []}
+            for a in aspects_on(rules, ctx, house_sign(lagna, house))]
+
+
 def sign_line(rules, sign):
     """S27 pp.9-10: the sign's mode, element and direction; a dual sign repeats the matter, an earth sign means property."""
     r = rules["reference"]["RASHI"][sign]
@@ -709,9 +725,11 @@ def bhava_bhava(rules, ctx):
                 text, status, source = _blend(rules, lagna, x, y, sg[lord]), "blend", ""
             dictum = _dictum(rules, ctx, x)
         classes, line = placement(rules, lagna, x, y)
+        house_aspects = [dict(house=h, **a) for h in ((x, swap) if swap else (x,)) for a in _aspect_items(rules, ctx, h)]
         out.append({"lord_of": x, "lord": lord, "sits_in": y, "sign": sg[lord], "text": text, "status": status,
                     "source": source, "sign_line": sign_line(rules, sg[lord]), "placement": classes, "placement_line": line,
-                    "strength": strength_word, "dictum": dictum, "with_lord": with_lord(rules, ctx, lord), "exchange": swap})
+                    "strength": strength_word, "dictum": dictum, "with_lord": with_lord(rules, ctx, lord), "exchange": swap,
+                    "house_aspects": house_aspects})
     return out
 
 
@@ -738,7 +756,9 @@ def _karakas(rules, ctx, row):
         out.append({"planet": k, "house": house_of(ctx["lagna"], sg[k]), "sign": sg[k],
                     "rashi": rules["reference"]["RASHI"][sg[k]]["sanskrit"],
                     "dignity": dignity(rules, k, sg[k], ctx["degs"].get(k))["label"], "combust": combust(rules, ctx, k),
-                    "retro": bool(ctx["retro"].get(k)), "strength": strength(rules, ctx, k), "note": note})
+                    "retro": bool(ctx["retro"].get(k)), "strength": strength(rules, ctx, k), "note": note,
+                    "malefic_aspects": [a["by"] for a in aspects_on(rules, ctx, sg[k])
+                                        if a["by"] in STRENGTH_MALEFICS and a["by"] != k]})
     return out
 
 
@@ -796,10 +816,9 @@ def _bhava_step(rules, ctx, h, layer2):
     for p in occupants(lagna, sg)[h]:
         g = graha_bhava(rules, lagna, sg, p, ctx["degs"].get(p), ctx["waxing"], ctx=ctx)
         occ.append({"planet": p, "nature": nature(p), "text": "\n\n".join(g["points"]), "status": g["status"],
-                          "nature_lines": [x["text"] for x in g["nature_lines"]]})
-    aspecting = [{"by": a["by"], "aspect": aspect_name(a["by"], a["house_aspect"]),
-                  "meanings": _meanings(rules, a["by"], a["house_aspect"], house_of(lagna, sg[a["by"]]))}
-                 for a in aspects_on(rules, ctx, sign)]
+                    "nature_lines": [x["text"] for x in g["nature_lines"]],
+                    "debilitated": g["dignity"]["flag"] == "debilitated"})
+    aspecting = _aspect_items(rules, ctx, h)
     lord_p, lord, company = house_lord(rules, lagna, h), None, []
     if lord_p in sg:
         y = house_of(lagna, sg[lord_p])
@@ -822,9 +841,15 @@ def _summary(bhavas, karakas, pac, link):
     for b in bhavas:
         H = ordinal(b["house"])
         for o in b["occupants"]:
-            (good if benefic(o["planet"]) else bad).append(f"{o['planet']} ({nature(o['planet'])}) in the {H}")
+            if benefic(o["planet"]) and o["debilitated"]:      # S28 p.6: "though it is a benefic it is weak and debilitated"
+                bad.append(f"{o['planet']} (benefic, debilitated) in the {H}")
+            else:
+                (good if benefic(o["planet"]) else bad).append(f"{o['planet']} ({nature(o['planet'])}) in the {H}")
         for a in b["aspecting"]:
-            (good if benefic(a["by"]) else bad).append(f"{a['by']} ({nature(a['by'])}) aspects the {H}")
+            if b["house"] == 11:                                # S28 p.14: aspects on the 11th bring gains from the houses ruled
+                good.append(" ".join(x for x in (f"{a['by']} aspects the 11th", ruled_phrase(a["rules"])) if x))
+            else:
+                (good if benefic(a["by"]) else bad).append(f"{a['by']} ({nature(a['by'])}) aspects the {H}")
         lord = b["lord"]
         if lord:
             L = lord["planet"]
@@ -840,6 +865,9 @@ def _summary(bhavas, karakas, pac, link):
                 what = "is with" if w["how"] == "with" else "aspects"
                 (good if benefic(w["planet"]) else bad).append(f"{w['planet']} ({nature(w['planet'])}) {what} the {H} lord")
     for k in karakas:
+        if k["house"] in (6, 8, 12):                            # S28 p.10: the karaka in the 6th, the house of quarrels
+            bad.append(f"Karaka {k['planet']} is in the {ordinal(k['house'])}")
+        bad += [f"Karaka {k['planet']} is aspected by {m}" for m in k["malefic_aspects"]]
         if k["strength"] == "strong":
             good.append(f"Karaka {k['planet']} is strong")
         elif k["strength"] == "weak":

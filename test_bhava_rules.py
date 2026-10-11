@@ -1108,3 +1108,16 @@ class StrengthS29(unittest.TestCase):
         signs = {"Saturn": 9}                                         # Mithuna Lagna: Saturn in Makara, its own sign, the 8th
         g = br.graha_bhava(RULES, 2, signs, "Saturn", 15, None, ctx=br.context(2, signs, {"Saturn": 15}))
         self.assertTrue([t for t in g["class_texts"] if "give good results" in t])
+
+
+class RulingHouses(unittest.TestCase):
+    def test_phrase(self):
+        self.assertEqual(br.ruled_phrase([]), "")
+        self.assertEqual(br.ruled_phrase([9]), "(rules the 9th)")
+        self.assertEqual(br.ruled_phrase([5, 12]), "(rules the 5th and 12th)")
+        self.assertEqual(br.ruled_phrase([1, 4, 7]), "(rules the 1st, 4th and 7th)")
+
+    def test_karaka_items_name_malefic_aspects(self):
+        signs = {"Moon": 3, "Mars": 9}                                     # Moon in Karkataka; Mars in Makara aspects it
+        k = br.life_area(RULES, br.context(LAGNA, signs), 8)["karakas"][0]
+        self.assertEqual((k["planet"], k["malefic_aspects"]), ("Moon", ["Mars"]))
