@@ -952,6 +952,22 @@ def condition_charts():
     return out
 
 
+def round1_charts():
+    """Her Chart 3 (S28) and charts that put planets at 0 degree, in the Infant band and in the old band, for a young
+    and an older native (Sessions 28-29)."""
+    import datetime
+    import test_teacher_charts as tc
+    out = [dict(tc.CHARTS["S28_CHART_3"], birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male")]
+    degs = {"Sun": 0.0, "Moon": 0.01, "Mars": 0.5, "Mercury": 26.0, "Jupiter": 5.999, "Venus": 6.0, "Saturn": 29.999,
+            "Rahu": 26.5, "Ketu": 26.5}
+    for lagna, birth in ((3, datetime.datetime(2000, 3, 3, 3, 0)), (9, datetime.datetime(1996, 9, 9, 9, 0))):
+        signs = {"Sun": 9, "Moon": 3, "Mars": 6, "Mercury": 9, "Jupiter": 0, "Venus": 9, "Saturn": 2, "Rahu": 9, "Ketu": 3}
+        out.append({"lagna": lagna, "signs": signs, "degs": degs, "retro": {}, "birth": birth, "gender": None})
+    for c in out:
+        c["waxing"] = _waxing_of(c)
+    return out
+
+
 def dignity_boundary_charts(n=36):
     """Every planet placed at sign/degree values that straddle the exaltation, debilitation and MT boundaries."""
     import datetime
@@ -988,7 +1004,7 @@ class ExcelSession23(unittest.TestCase):
         cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
         base = tmp / "base.xlsx"
         mx.build_workbook(base)
-        cls.charts = calc_charts(24, 77) + dignity_boundary_charts() + condition_charts()
+        cls.charts = calc_charts(24, 77) + dignity_boundary_charts() + condition_charts() + round1_charts()
         src = tmp / "in"
         src.mkdir()
         paths = []
@@ -1011,6 +1027,11 @@ class ExcelSession23(unittest.TestCase):
         for i, (c, wb) in enumerate(zip(self.charts, self.books)):
             if count is None or i < count:
                 yield i, c, wb
+
+    def ctx_of(self, c):
+        d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+        return br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                          d["age"], d["maha"], d["bhukti"])
 
     def test_class_tables_equal_python(self):
         mx = self.mx
@@ -1056,9 +1077,10 @@ class ExcelSession23(unittest.TestCase):
         mx = self.mx
         for i, c, wb in self.each(24):
             ws = wb[mx.PREFIX + "Predict_Calc"]
+            ctx = self.ctx_of(c)
             for k, p in enumerate(br.PLANET_ORDER):
                 r = mx.PREDICT_ROW0 + k
-                want = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
+                want = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"], ctx=ctx)
                 got = {name: ws.cell(row=r, column=col).value for name, col in mx.PREDICT_COLS.items()}
                 self.assertEqual(got["planet"], p)
                 self.assertEqual(got["house"], want["house"], (i, p))
@@ -1090,6 +1112,38 @@ class ExcelSession23(unittest.TestCase):
                         "conditions": "\n".join(x["text"] for x in conds if x["planet"] == p),
                         "active": ", ".join(x["key"] for x in conds if x["planet"] == p and x["active"])}
                 self.assertEqual(got, want, (i, p))
+
+    def test_round1_predict_columns(self):
+        """Sessions 28-29 on S23_Predict_Calc: strength word and reasons, degree stage and age note, her Chart 3
+        sentences (the first 4; a fifth adds "(more on the page)") and the class texts filtered by When."""
+        mx = self.mx
+        words, notes, readings, filtered = set(), set(), 0, 0
+        dusthana_malefic = next(r["text"] for r in RULES["class_rules"] if r.get("when") == "not weak")
+        for i, c, wb in self.each():
+            ws = wb[mx.PREFIX + "Predict_Calc"]
+            ctx = self.ctx_of(c)
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.PREDICT_ROW0 + k
+                got = {n: ws.cell(row=r, column=mx.PREDICT_COLS[n]).value or ""
+                       for n in ("strength", "reasons", "degree_stage", "age_note", "readings", "class_texts")}
+                sd = br.strength_detail(RULES, ctx, p)
+                ds = br.degree_stage(RULES, p, c["degs"][p], ctx["age"])
+                g = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"], ctx=ctx)
+                shown = g["readings"][:4] + (["(more on the page)"] if len(g["readings"]) > 4 else [])
+                want = {"strength": sd["word"], "reasons": ", ".join(sd["reasons"]),
+                        "degree_stage": " ".join(ds["lines"]) if ds else "", "age_note": ds["age_note"] if ds else "",
+                        "readings": "\n\n".join(shown), "class_texts": "\n".join(g["class_texts"])}
+                self.assertEqual(got, want, (i, p))
+                words.add(sd["word"])
+                notes |= {x for x in ("past 32, so", "results from about 32") if x in want["age_note"]}
+                readings += bool(g["readings"])
+                house = br.house_of(c["lagna"], c["signs"][p])
+                filtered += (house in (6, 8, 12) and br.nature_class(p) == "malefic" and sd["word"] == "weak"
+                             and dusthana_malefic not in want["class_texts"])
+        self.assertEqual(words, {"strong", "weak", "mixed", "depends"})
+        self.assertEqual(notes, {"past 32, so", "results from about 32"})
+        self.assertGreater(readings, 5)
+        self.assertGreater(filtered, 0, "no weak malefic in a Dusthana: the When filter was not exercised")
 
     def test_dignity_labels_equal_python(self):
         mx = self.mx
@@ -1160,6 +1214,10 @@ class ExcelLifeAreas(unittest.TestCase):
         probes = [dict(lagna=0, signs=sg, degs=degs, retro={}, birth=datetime.datetime(1985, 7, 7, 7, 0), gender=None,
                        areas=(1, 5, 8, 10)) for sg in (swap16, swap14)]
         charts += probes
+        # her Chart 3 (S28): health, education (a debilitated benefic in the 4th), marriage (karaka Venus in the 6th,
+        # aspected by Saturn and Rahu), elder sibling (aspects on the 11th, readings on the 11th and its lord)
+        charts.append(dict(tc.CHARTS["S28_CHART_3"], birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male",
+                           areas=(1, 6, 11, 14)))
         for c in charts:
             c["waxing"] = _waxing_of(c)
         base = tmp / "base.xlsx"
@@ -1195,6 +1253,56 @@ class ExcelLifeAreas(unittest.TestCase):
                              d["age"], d["maha"], d["bhukti"])
             want = br.life_area(RULES, ctx, no)
             self.assertIsNone(first_difference(want, got), name)
+
+    def test_round1_summary(self):
+        """Sessions 28-29 in the Step 7 summary (spec §6.2.2-4): her Chart 3 lines, and every probe chart's two lists."""
+        import test_teacher_charts as tc
+        checked = 0
+        for c, no, name in self.cases:
+            wb = openpyxl.load_workbook(self.out / name, data_only=True)
+            got = self.mx.life_area_from_sheet(wb[self.mx.PREFIX + "LifeArea_Calc"])
+            d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+            ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                             d["age"], d["maha"], d["bhukti"])
+            want = br.life_area(RULES, ctx, no)
+            self.assertEqual((got["supports"], got["pressure"]), (want["supports"], want["pressure"]), name)
+            if c["signs"] == tc.CHARTS["S28_CHART_3"]["signs"]:
+                checked += 1
+                lines = {6: ("pressure", "Mercury (benefic, debilitated) in the 4th"),
+                         11: ("pressure", "Karaka Venus is aspected by Rahu"),
+                         14: ("supports", "Mars aspects the 11th (rules the 5th and 12th)"),
+                         1: ("supports", "The 1st lord Jupiter aspects its own house")}
+                side, line = lines[no]
+                self.assertIn(line, got[side], name)
+                if no == 14:
+                    step = got["bhavas"][0]
+                    self.assertTrue(any(x["readings"] for x in step["aspecting"]), name)
+                    self.assertTrue(any(x["readings"] for x in step["with_lord"]), name)
+        self.assertEqual(checked, 4)
+
+
+@unittest.skipUnless(openpyxl, "openpyxl is needed for the workbook checks")
+class ExcelFormulaLimits(unittest.TestCase):
+    """Every calculator formula runs in Excel 2007: no newer functions, at most 8,192 characters."""
+
+    def test_formula_lengths(self):
+        import re
+        import tempfile
+        import make_session23_xlsx as mx
+        newer = re.compile(r"(?<![A-Z.])(TEXTJOIN|IFS|LET|CONCAT|XLOOKUP|SWITCH|MAXIFS|MINIFS|FILTER|UNIQUE|SEQUENCE|IFNA)\(")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp, "b.xlsx")
+            mx.build_workbook(path)
+            wb = openpyxl.load_workbook(path)
+            count = 0
+            for name in mx.CALC_SHEETS:
+                for row in wb[name].iter_rows():
+                    for cell in row:
+                        if isinstance(cell.value, str) and cell.value.startswith("="):
+                            count += 1
+                            self.assertLessEqual(len(cell.value), 8192, (name, cell.coordinate))
+                            self.assertIsNone(newer.search(cell.value), (name, cell.coordinate))
+            self.assertGreater(count, 3000)
 
 
 @unittest.skipUnless(openpyxl, "openpyxl is needed for the workbook checks")
