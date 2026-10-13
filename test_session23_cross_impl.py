@@ -369,6 +369,57 @@ class JsEngine(unittest.TestCase):
             next(r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {8, 12}).update(edit)
             self.assertEqual(fingerprint(br.bhava_bhava(rules, ctx_of(chart))), got, edit)
 
+    BHAVA_JS = JS_CANON + """
+        const BV = c => {
+          const lg = c.lagna + 1, pbr = {};
+          for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
+          const ctx = ctxOf(c, lg, pbr), layer2 = s23BhavaBhava(ctx);
+          return {facts: Object.fromEntries(PL.filter(p => ctx.signs[p] !== undefined).map(p => [p, s23PlanetFacts(ctx, p)])),
+                  bhava: [1,2,3,4,5,6,7,8,9,10,11,12].map(h => s23BhavaReading(ctx, h, layer2))};
+        };"""
+
+    @staticmethod
+    def python_bhava(c):
+        ctx = ctx_of(c)
+        layer2 = br.bhava_bhava(RULES, ctx)
+        return {"facts": {p: br.planet_facts(RULES, ctx, p) for p in br.PLANET_ORDER if p in ctx["signs"]},
+                "bhava": [br.bhava_reading(RULES, ctx, h, layer2) for h in range(1, 13)]}
+
+    def assert_bhava_equal(self, charts):
+        got = run_page(self.BHAVA_JS + "return job.map(c => fp(BV(c)));", charts, self.tmp)
+        bad = [i for i, (c, g) in enumerate(zip(charts, got)) if fingerprint(self.python_bhava(c)) != g]
+        if bad:
+            full = run_page(self.BHAVA_JS + "return BV(job);", charts[bad[0]], self.tmp)
+            self.fail(f"{len(bad)} of {len(charts)} charts differ; first: chart {bad[0]}: "
+                      f"{first_difference(self.python_bhava(charts[bad[0]]), full)}")
+
+    def test_bhava_reading_equals_python_on_random_charts(self):
+        """The Prediction read bhāva by bhāva (spec 2026-10-13): page = Python on 2,000 random charts."""
+        self.assert_bhava_equal(random_charts(2000, 1968))
+
+    def test_partial_chart_bhava_equal_python(self):
+        charts = random_charts(300, 2812)
+        for i, c in enumerate(charts):
+            for p in (("Rahu", "Ketu"), ("Moon",), ("Sun", "Moon", "Rahu", "Ketu"))[i % 3]:
+                c["signs"].pop(p)
+            if i % 2:
+                c["degs"] = {}                                     # no degrees at all
+        self.assert_bhava_equal(charts)
+
+    def test_simha_and_chart_3_equal_python(self):
+        import test_bhava_rules as tb
+        import test_teacher_charts as tc
+        extra = {"gender": "Male", "age": 40.5, "maha": "Saturn", "bhukti": "Venus"}
+        simha = dict(lagna=4, signs=dict(tb.SIMHA_SIGNS), degs=dict(tb.SIMHA_DEGS), waxing=True,
+                     retro={"Rahu": True, "Ketu": True}, **extra)
+        c3 = tc.CHARTS["S28_CHART_3"]
+        chart3 = dict(lagna=c3["lagna"], signs=dict(c3["signs"]), degs=dict(c3["degs"]), waxing=False,
+                      retro=dict(c3["retro"]), **extra)
+        for c in (simha, chart3):
+            full = run_page(self.BHAVA_JS + "return BV(job);", c, self.tmp)
+            self.assertIsNone(first_difference(self.python_bhava(c), full))
+            self.assertEqual(len(full["bhava"]), 12)
+
     def test_dasha_chain_parity(self):
         import calendar
         rnd = random.Random(29)

@@ -6865,6 +6865,61 @@ function s23FiveStep(lagnaN, pbr, house){
   return {house, name:info.nm, significations:info.sig, sign, lord, lord_house: sg[lord]!==undefined ? s23HouseOf(lg,sg[lord]) : null,
     occupants:s23Occ(lg,sg)[house], aspecting, karakas:info.karaka.filter(k=>sg[k]!==undefined).map(k=>({planet:k, house:s23HouseOf(lg,sg[k])}))};
 }
+/* ---- the Prediction read bhāva by bhāva (spec 2026-10-13) — mirrors planet_facts() and bhava_reading() ---- */
+const S23_DIGBALA_NODE_TEXT = "none — a node has no directional strength";
+function s23FirstSentence(t){ const i=t.indexOf(". "); return i<0 ? t : t.slice(0, i+1); }
+function s23PbrOf(ctx){ const pbr={}; for(const p of S23_PLANETS) if(ctx.signs[p]!==undefined) pbr[p]=ctx.signs[p]+1; return pbr; }
+function s23PlanetFacts(ctx, planet){
+  const lg=ctx.lagna, sg=ctx.signs;
+  if(sg[planet]===undefined) return null;
+  const deg=ctx.degs[planet] ?? null, house=s23HouseOf(lg, sg[planet]);
+  const g=s23GrahaBhava(lg+1, s23PbrOf(ctx), planet, ctx.degs[planet], ctx.waxing, ctx);
+  const eff=S23.dignity_effect[g.dignity.label], row=S23.digbala[planet], dg=s23Digbala(planet, house);
+  const text=!row ? S23_DIGBALA_NODE_TEXT : dg ? g.digbala_line : `neither — strongest in the ${ord(row.strong)}, weakest in the ${ord(row.lost)}`;
+  return {planet, sign:sg[planet], rashi:RASHI[sg[planet]].sanskrit, deg, house, retro:!!ctx.retro[planet], nature:s23NatureAt(planet),
+    classes:s23HouseClassMatrix(lg+1)[house-1].classes, roles:s23RolesAt(lg, sg)[planet] || [], dignity:g.dignity,
+    dignity_effect: eff ? eff.text : "", dignity_status:g.dignity_status,
+    digbala: row ? (dg || "") : null, digbala_text:text, digbala_status:g.digbala_status,
+    strength:s23StrengthDetail(ctx, planet), class_texts:g.class_texts};
+}
+function s23BhavaReading(ctx, house, layer2){
+  const lg=ctx.lagna, sg=ctx.signs, pbr=s23PbrOf(ctx);
+  layer2=layer2 || s23BhavaBhava(ctx);
+  const info=BHAVA_INFO[house], sign=s23HouseSign(lg, house), bad=s23Badhaka(lg+1, pbr);
+  const classes=s23HouseClassMatrix(lg+1)[house-1].classes.map(n=>{
+    const c=S23.classes.find(x=>x.name===n);
+    const note = n==="Badhaka" ? `For a ${S23_MODE_WORD[bad.mode]} (${bad.mode}) Lagna the ${ord(house)} is the Badhaka sthāna; its lord ${bad.lord} is the Badhakādhipati.` : "";
+    return {name:n, other_names:c.other_names, meaning:s23FirstSentence(c.nature), note};
+  });
+  const gr={}; for(const x of s23GrahaRashi(lg+1, pbr, ctx.degs)) gr[x.planet]=x;
+  const conds=s23ChartConditions(ctx);
+  const occupants=s23Occ(lg, sg)[house].map(p=>{
+    const g=s23GrahaBhava(lg+1, pbr, p, ctx.degs[p], ctx.waxing, ctx), x=gr[p];
+    return {planet:p, nature:s23NatureAt(p), facts:s23PlanetFacts(ctx, p), text:g.points.join("\n\n"), status:g.status, source:g.source,
+      extra:g.extra, moon_strength:g.moon_strength, nature_lines:g.nature_lines, twelfth_line:g.twelfth_line, degree_stage:g.degree_stage,
+      conditions:conds.filter(c=>c.planet===p), readings:g.readings,
+      graha_rashi:{text:x.text, status:x.status, tatwa:x.tatwa, direction:x.direction, varna:x.varna, mode:x.mode},
+      dignity_line:g.dignity_line, dignity_status:g.dignity_status};
+  });
+  const lordP=s23HouseLord(lg, house);
+  let lord=null, company=[];
+  if(sg[lordP]!==undefined){
+    const y=s23HouseOf(lg, sg[lordP]), entry=layer2.find(e=>e.lord_of===house || e.exchange===house);
+    const other=entry.exchange ? (entry.exchange===house ? entry.lord_of : entry.exchange) : null;
+    lord={planet:lordP, facts:s23PlanetFacts(ctx, lordP), house:y, sign:sg[lordP], rashi:RASHI[sg[lordP]].sanskrit, exchange:other,
+      placement_line:s23Placement(lg, house, y)[1], text:entry.text, status:entry.status, source:entry.source, dictum:s23Dictum(ctx, house)};
+    company=s23WithLord(ctx, lordP);
+  }
+  const gg=s23GrahaGraha(lg+1, pbr, ctx.degs);
+  const karakas=s23Karakas(ctx, {karakas:info.karaka.slice(), karaka_female:""});
+  const [supports, pressure]=s23Summary([s23BhavaStep(ctx, house, layer2)], karakas, null, null);
+  return {house, sign, rashi:RASHI[sign].sanskrit, name:s23ShortName(info.nm), full_name:info.nm, significations:s23Clean(info.sig),
+    people:info.rel, body:info.body, classes, sign_line:s23SignLine(sign), supports, pressure, occupants,
+    aspecting:s23AspectItems(ctx, house), lord, conjunctions:gg.conjunctions.filter(c=>c.house===house),
+    planet_aspects:gg.aspects.filter(a=>a.house===house), lord_company:company,
+    karakas:karakas.map(k=>Object.assign({}, k, {facts:s23PlanetFacts(ctx, k.planet)})),
+    life_areas:S23.life_areas.filter(r=>r.houses.includes(house)).map(r=>({no:r.no, area:r.area}))};
+}
 /* SESSION23-ENGINE-END */
 /* SESSION23-RENDER-START — page sections for the bhāva classes and the four prediction layers (Session 23).
    Pure presentation: every number and sentence comes from the s23* engine above. */
