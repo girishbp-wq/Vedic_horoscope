@@ -1327,3 +1327,139 @@ class DignityClaimsEditedRows(unittest.TestCase):
             ctx3 = _chart_ctx("S28_CHART_3")
             e3 = next(x for x in br.bhava_bhava(rules, ctx3) if x["lord_of"] == 8)
             self.assertIn("12 th lord Mars is debilitated", e3["text"], edit)      # her chart: the 12th lord is debilitated
+
+
+# The chart of the 2026-10-13 bhāva-by-bhāva draft: Simha Lagna; Sun, Mars, Mercury in Mesha (9th); Moon, Venus,
+# Saturn, Rahu in Meena (8th); Jupiter in Simha (1st); Ketu in Kanya (2nd).
+SIMHA_SIGNS = {"Sun": 0, "Moon": 11, "Mars": 0, "Mercury": 0, "Jupiter": 4, "Venus": 11, "Saturn": 11, "Rahu": 11, "Ketu": 5}
+SIMHA_DEGS = {"Sun": 11.80, "Moon": 16.91, "Mars": 27.21, "Mercury": 12.31, "Jupiter": 2.45, "Venus": 26.86,
+              "Saturn": 24.61, "Rahu": 24.47, "Ketu": 24.47}
+
+
+def _strings(o):
+    """Every string inside a nested reading."""
+    if isinstance(o, str):
+        return [o]
+    if isinstance(o, dict):
+        return [s for v in o.values() for s in _strings(v)]
+    if isinstance(o, (list, tuple)):
+        return [s for v in o for s in _strings(v)]
+    return []
+
+
+class BhavaReading(unittest.TestCase):
+    """The Prediction read bhāva by bhāva (spec 2026-10-13-bhava-by-bhava): one house with everything that bears on it."""
+
+    def simha(self, signs=None, degs=None):
+        return br.context(4, signs or SIMHA_SIGNS, SIMHA_DEGS if degs is None else degs, True)
+
+    def test_classes_and_badhaka_note(self):
+        r9 = br.bhava_reading(RULES, self.simha(), 9)
+        self.assertEqual([c["name"] for c in r9["classes"]], ["Trikona", "Apoklima", "Badhaka"])
+        cls = {c["name"]: c for c in r9["classes"]}
+        self.assertEqual(cls["Badhaka"]["note"],
+                         "For a fixed (Sthira) Lagna the 9th is the Badhaka sthāna; its lord Mars is the Badhakādhipati.")
+        self.assertEqual(cls["Trikona"]["meaning"], "The most auspicious houses (and their lords) in the chart.")
+        self.assertEqual(cls["Trikona"]["note"], "")
+        self.assertEqual(cls["Trikona"]["other_names"], "Lakshmi Sthanas; Dharmasthanas")
+        self.assertEqual(br.first_sentence("No full stop"), "No full stop")
+        self.assertEqual(br.first_sentence("One. Two. Three."), "One.")
+
+    def test_occupants_lord_and_karaka(self):
+        r9 = br.bhava_reading(RULES, self.simha(), 9)
+        self.assertEqual([o["planet"] for o in r9["occupants"]], ["Sun", "Mars", "Mercury"])
+        self.assertEqual((r9["lord"]["planet"], r9["lord"]["house"], r9["lord"]["exchange"]), ("Mars", 9, None))
+        self.assertTrue(r9["lord"]["placement_line"].startswith("The lord sits in its own bhava"))
+        self.assertNotIn("Mars", [w["planet"] for w in r9["lord_company"]])
+        self.assertEqual([k["planet"] for k in r9["karakas"]], ["Sun", "Jupiter"])
+        self.assertEqual(r9["life_areas"], [{"no": 12, "area": "Father"}, {"no": 15, "area": "Foreign travel"}])
+        self.assertEqual([(c["a"], c["b"]) for c in r9["conjunctions"]], [("Sun", "Mars"), ("Sun", "Mercury"), ("Mars", "Mercury")])
+        self.assertEqual([bool(c["combust_note"]) for c in r9["conjunctions"]], [False, True, False])
+        self.assertEqual([(a["by"], a["to"]) for a in r9["planet_aspects"]],
+                         [("Jupiter", "Sun"), ("Jupiter", "Mars"), ("Jupiter", "Mercury")])
+        self.assertEqual(r9["supports"], ["Mercury (benefic) in the 9th", "Jupiter (benefic) aspects the 9th",
+                                          "The 9th lord Mars is strong", "Mercury (benefic) is with the 9th lord",
+                                          "Jupiter (benefic) aspects the 9th lord", "Karaka Sun is strong"])
+        self.assertEqual(r9["pressure"], ["Sun (mild malefic) in the 9th", "Mars (malefic) in the 9th",
+                                          "Sun (mild malefic) is with the 9th lord", "Karaka Jupiter is aspected by Ketu"])
+        self.assertEqual((r9["rashi"], r9["name"], r9["full_name"]), ("Mesha", "Dharma", "Dharma · Bhagya · Pitru Sthana"))
+        self.assertEqual(r9["occupants"][1]["graha_rashi"]["tatwa"], "Agni")
+
+    def test_parivartana_on_both_houses(self):
+        ctx = _chart_ctx("S28_CHART_3")
+        entry = next(e for e in br.bhava_bhava(RULES, ctx) if e["lord_of"] == 8)
+        r = {h: br.bhava_reading(RULES, ctx, h) for h in (4, 7, 8, 12)}
+        self.assertEqual((r[8]["lord"]["exchange"], r[12]["lord"]["exchange"]), (12, 8))
+        self.assertEqual((r[4]["lord"]["exchange"], r[7]["lord"]["exchange"]), (7, 4))
+        self.assertEqual(r[8]["lord"]["text"], entry["text"])
+        self.assertEqual(r[12]["lord"]["text"], entry["text"])
+        self.assertIn("12 th lord Mars is debilitated", r[12]["lord"]["text"])
+        self.assertEqual((r[8]["lord"]["planet"], r[12]["lord"]["planet"]), ("Moon", "Mars"))
+        for h in r:
+            self.assertEqual(r[h]["lord"]["dictum"], br._dictum(RULES, ctx, h), h)
+
+    def test_planet_facts(self):
+        ctx = self.simha()
+        f = {p: br.planet_facts(RULES, ctx, p) for p in br.PLANET_ORDER}
+        self.assertEqual((f["Jupiter"]["digbala"], f["Jupiter"]["digbala_text"], f["Jupiter"]["digbala_status"]),
+                         ("strong", "Jupiter gains directional strength (digbala) in the 1st house.", "standard"))
+        self.assertEqual((f["Sun"]["digbala"], f["Sun"]["digbala_text"], f["Sun"]["digbala_status"]),
+                         ("", "neither — strongest in the 10th, weakest in the 4th", None))
+        self.assertEqual((f["Rahu"]["digbala"], f["Rahu"]["digbala_text"]), (None, "none — a node has no directional strength"))
+        self.assertEqual(f["Mars"]["roles"], ["Badhakadhipati", "Badhaka occupant"])
+        self.assertEqual(f["Mars"]["classes"], ["Trikona", "Apoklima", "Badhaka"])
+        self.assertEqual(f["Sun"]["strength"], {"word": "strong", "reasons": ["Exalted"]})
+        self.assertEqual(f["Sun"]["dignity"]["label"], "Exalted")
+        self.assertEqual(f["Sun"]["dignity_effect"], RULES["dignity_effect"]["Exalted"]["text"])
+        self.assertEqual((f["Sun"]["house"], f["Sun"]["rashi"], f["Sun"]["deg"], f["Sun"]["retro"]), (9, "Mesha", 11.80, False))
+        self.assertIsNone(br.planet_facts(RULES, self.simha({p: s for p, s in SIMHA_SIGNS.items() if p != "Moon"}), "Moon"))
+        jup = br.planet_facts(RULES, _chart_ctx("S28_CHART_3"), "Jupiter")
+        self.assertEqual((jup["house"], jup["digbala"]), (7, "lost"))
+        self.assertEqual(jup["digbala_text"],
+                         "Jupiter loses directional strength (digbala) in the 7th house, opposite its strongest house, the 1st.")
+
+    def test_partial_chart(self):
+        signs = {p: s for p, s in SIMHA_SIGNS.items() if p not in ("Moon", "Rahu", "Ketu")}
+        ctx = self.simha(signs, {})
+        r = [br.bhava_reading(RULES, ctx, h) for h in range(1, 13)]
+        self.assertIsNone(r[11]["lord"])                           # the 12th lord is the Moon
+        self.assertEqual(r[11]["lord_company"], [])
+        self.assertEqual([k["planet"] for k in r[3]["karakas"]], ["Venus"])
+        self.assertIsNone(r[8]["occupants"][0]["facts"]["deg"])
+
+    def test_nothing_lost(self):
+        """Every text the By-layer view shows appears in the reading of the house it belongs to (spec §1.3)."""
+        rnd = _random.Random(1313)
+        for n in range(200):
+            pool = rnd.sample(range(12), rnd.choice([3, 5, 12]))
+            signs = {p: rnd.choice(pool) for p in br.PLANET_ORDER}
+            degs = {p: round(rnd.uniform(0, 29.99), 2) for p in br.PLANET_ORDER}
+            lagna = rnd.randrange(12)
+            ctx = br.context(lagna, signs, degs, rnd.random() < 0.5, {p: rnd.random() < 0.3 for p in br.PLANET_ORDER},
+                             rnd.choice(["Male", "Female"]), round(rnd.uniform(5, 80), 2),
+                             rnd.choice(br.PLANET_ORDER), rnd.choice(br.PLANET_ORDER))
+            layer2 = br.bhava_bhava(RULES, ctx)
+            text = {h: "\n".join(_strings(br.bhava_reading(RULES, ctx, h, layer2))) for h in range(1, 13)}
+            want = []                                              # (house, text)
+            conds = br.chart_conditions(RULES, ctx)
+            gr = {x["planet"]: x for x in br.graha_rashi(RULES, lagna, signs, degs)}
+            for p in br.PLANET_ORDER:
+                h = br.house_of(lagna, signs[p])
+                g = br.graha_bhava(RULES, lagna, signs, p, degs[p], ctx["waxing"], ctx=ctx)
+                ds = g["degree_stage"]
+                for t in (g["points"] + g["extra"] + [x["text"] for x in g["nature_lines"]] + g["class_texts"] + g["readings"]
+                          + [g["dignity_line"], g["digbala_line"], g["twelfth_line"], gr[p]["text"]]
+                          + (ds["lines"] if ds else []) + [c["text"] for c in conds if c["planet"] == p]):
+                    want.append((h, t))
+            for e in layer2:
+                for h in (e["lord_of"],) + ((e["exchange"],) if e["exchange"] else ()):
+                    want.append((h, e["text"]))
+                want.append((e["lord_of"], e["placement_line"]))
+                for w in e["with_lord"]:
+                    want += [(e["lord_of"], t) for t in w["readings"] + w["meanings"]]
+            gg = br.graha_graha(RULES, lagna, signs, degs)
+            want += [(c["house"], t) for c in gg["conjunctions"] for t in (c["text"], c["combust_note"])]
+            want += [(a["house"], a["text"]) for a in gg["aspects"]]
+            for h, t in want:
+                if t:
+                    self.assertIn(t, text[h], (n, h, t[:60]))

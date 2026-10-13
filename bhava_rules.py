@@ -1052,6 +1052,97 @@ def life_areas(rules, ctx):
     return [life_area(rules, ctx, r["no"]) for r in rules["life_areas"]]
 
 
+# ---------------------------------------------------------------- the Prediction read bhāva by bhāva (spec 2026-10-13)
+DIGBALA_NODE_TEXT = "none — a node has no directional strength"
+
+
+def first_sentence(text):
+    """A class's meaning: its Nature up to and including the first ". ", or the whole text."""
+    i = text.find(". ")
+    return text if i < 0 else text[:i + 1]
+
+
+def planet_facts(rules, ctx, planet):
+    """The facts box of a planet: its house and that house's classes, roles, dignity, digbala and strength."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    if planet not in sg:
+        return None
+    deg = ctx["degs"].get(planet)
+    house = house_of(lagna, sg[planet])
+    g = graha_bhava(rules, lagna, sg, planet, deg, ctx["waxing"], ctx=ctx)
+    eff = rules["dignity_effect"].get(g["dignity"]["label"])
+    row = rules["digbala"].get(planet)
+    dg = digbala(rules, planet, house)
+    if not row:
+        text = DIGBALA_NODE_TEXT
+    elif dg:
+        text = g["digbala_line"]
+    else:
+        text = f"neither — strongest in the {ordinal(row['strong'])}, weakest in the {ordinal(row['lost'])}"
+    return {"planet": planet, "sign": sg[planet], "rashi": rules["reference"]["RASHI"][sg[planet]]["sanskrit"], "deg": deg,
+            "house": house, "retro": bool(ctx["retro"].get(planet)), "nature": nature(planet),
+            "classes": house_class_matrix(rules, lagna)[house - 1]["classes"],
+            "roles": planet_roles(rules, lagna, sg).get(planet, []), "dignity": g["dignity"],
+            "dignity_effect": eff["text"] if eff else "", "dignity_status": g["dignity_status"],
+            "digbala": (dg or "") if row else None, "digbala_text": text, "digbala_status": g["digbala_status"],
+            "strength": strength_detail(rules, ctx, planet), "class_texts": g["class_texts"]}
+
+
+def bhava_reading(rules, ctx, house, layer2=None):
+    """One house with everything that bears on it, as Session 28 reads a chart: its classes, the four layers, its
+    karaka(s), what supports it and what presses on it, and the life areas that read it."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    layer2 = bhava_bhava(rules, ctx) if layer2 is None else layer2
+    ref = rules["reference"]
+    info = ref["BHAVA_INFO"][str(house)]
+    sign = house_sign(lagna, house)
+    names = house_class_matrix(rules, lagna)[house - 1]["classes"]
+    bad = badhaka(rules, lagna, sg)
+    by_name = {c["name"]: c for c in rules["classes"]}
+    classes = []
+    for n in names:
+        c = by_name[n]
+        note = ""
+        if n == "Badhaka":
+            note = (f"For a {MODE_WORD[bad['mode']]} ({bad['mode']}) Lagna the {ordinal(house)} is the Badhaka sthāna; "
+                    f"its lord {bad['lord']} is the Badhakādhipati.")
+        classes.append({"name": n, "other_names": c["other_names"], "meaning": first_sentence(c["nature"]), "note": note})
+    gr = {x["planet"]: x for x in graha_rashi(rules, lagna, sg, ctx["degs"])}
+    conds = chart_conditions(rules, ctx)
+    occ = []
+    for p in occupants(lagna, sg)[house]:
+        g = graha_bhava(rules, lagna, sg, p, ctx["degs"].get(p), ctx["waxing"], ctx=ctx)
+        x = gr[p]
+        occ.append({"planet": p, "nature": nature(p), "facts": planet_facts(rules, ctx, p),
+                          "text": "\n\n".join(g["points"]), "status": g["status"], "source": g["source"], "extra": g["extra"],
+                          "moon_strength": g["moon_strength"], "nature_lines": g["nature_lines"],
+                          "twelfth_line": g["twelfth_line"], "degree_stage": g["degree_stage"],
+                          "conditions": [c for c in conds if c["planet"] == p], "readings": g["readings"],
+                          "graha_rashi": {k: x[k] for k in ("text", "status", "tatwa", "direction", "varna", "mode")},
+                          "dignity_line": g["dignity_line"], "dignity_status": g["dignity_status"]})
+    lord_p, lord, company = house_lord(rules, lagna, house), None, []
+    if lord_p in sg:
+        y = house_of(lagna, sg[lord_p])
+        entry = next(e for e in layer2 if e["lord_of"] == house or e["exchange"] == house)
+        other = (entry["lord_of"] if entry["exchange"] == house else entry["exchange"]) if entry["exchange"] else None
+        lord = {"planet": lord_p, "facts": planet_facts(rules, ctx, lord_p), "house": y, "sign": sg[lord_p],
+                "rashi": ref["RASHI"][sg[lord_p]]["sanskrit"], "exchange": other,
+                "placement_line": placement(rules, lagna, house, y)[1], "text": entry["text"], "status": entry["status"],
+                "source": entry["source"], "dictum": _dictum(rules, ctx, house)}
+        company = with_lord(rules, ctx, lord_p)
+    gg = graha_graha(rules, lagna, sg, ctx["degs"])
+    karakas = _karakas(rules, ctx, {"karakas": list(info["karaka"]), "karaka_female": ""})
+    supports, pressure = _summary([_bhava_step(rules, ctx, house, layer2)], karakas, None, None)
+    return {"house": house, "sign": sign, "rashi": ref["RASHI"][sign]["sanskrit"], "name": _short_name(info["nm"]),
+            "full_name": info["nm"], "significations": _clean(info["sig"]), "people": info["rel"], "body": info["body"],
+            "classes": classes, "sign_line": sign_line(rules, sign), "supports": supports, "pressure": pressure,
+            "occupants": occ, "aspecting": _aspect_items(rules, ctx, house), "lord": lord,
+            "conjunctions": [c for c in gg["conjunctions"] if c["house"] == house],
+            "planet_aspects": [a for a in gg["aspects"] if a["house"] == house], "lord_company": company,
+            "karakas": [dict(k, facts=planet_facts(rules, ctx, k["planet"])) for k in karakas],
+            "life_areas": [{"no": r["no"], "area": r["area"]} for r in rules["life_areas"] if house in r["houses"]]}
+
+
 def graha_rashi(rules, lagna, signs, degs):
     """Layer 3: each planet in its rāśi — tatwa, direction, varna, mode — with the dignity strength line."""
     out = []
