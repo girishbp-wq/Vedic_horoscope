@@ -74,6 +74,21 @@ statuses, one row per graha × house and per graha pair). If something is wrong 
 sheet and row, for example `S23_GrahaInBhava row 50: Planet 'Saturnn' is not one of Sun, Moon, …`, and
 publishes nothing — fix those cells, save, and run `publish.bat` again.
 
+## Her sentences that state a dignity
+Six of her Session 28 sentences say a planet is exalted or debilitated. They show only when that is true in the chart
+being read (built into the page, Python and the calculator; the rows' wording can still be edited):
+
+| Row | Shows only when |
+|---|---|
+| `S23_ChartReadings`: aspects · 1st lord · House 1 ("…the bhava karaka Sun … is exalted…") | the 1st lord aspects the 1st **and** the Sun is exalted |
+| `S23_BhavaLordIn`: 9 → 5 (Condition blank) | the 9th lord is exalted |
+| `S23_BhavaLordIn`: 8 ↔ 12 (Exchange yes) | the 12th lord is debilitated |
+| `S23_BhavaLordIn`: 7 → 4, 8 → 12, 10 → 4 (Condition weak) | that lord is debilitated |
+
+Exalted includes Deep Exalted; debilitated includes Deep Debilitated. The rule finds its row by the key cells shown
+(Kind, Planet, With, House, Condition; LordOf, SitsIn, Condition, Exchange): change one of those and the rule no
+longer applies to that row.
+
 ## The sheets
 | Sheet | What it is |
 |---|---|
