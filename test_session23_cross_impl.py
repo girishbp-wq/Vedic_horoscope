@@ -325,6 +325,32 @@ class JsEngine(unittest.TestCase):
             bad += [(i, k) for k, v in mine.items() if fingerprint(v) != g[k]]
         self.assertEqual(bad, [])
 
+    def test_dignity_claims_equal_python(self):
+        """Her dignity sentences (spec 2026-10-13): the page's rules equal Python's, and the probe charts read the same."""
+        import test_bhava_rules as tb
+        import test_teacher_charts as tc
+        rules = run_page("return {reading: S23_READING_CLAIMS, lordIn: S23_LORD_IN_CLAIMS};", None, self.tmp)
+        self.assertEqual({(r["kind"], r["planet"], r["with"], r["house"], r["condition"]): (r["who"], r["flag"])
+                          for r in rules["reading"]}, br.READING_CLAIMS)
+        self.assertEqual({(r["lord_of"], r["sits_in"], r["condition"], r["exchange"]): (r["who"], r["flag"])
+                          for r in rules["lordIn"]}, br.LORD_IN_CLAIMS)
+        c3 = tc.CHARTS["S28_CHART_3"]
+        probes = [(0, tb.PROBE_M1), (0, tb.PROBE_M2), (6, tb.PROBE_T1), (8, dict(c3["signs"], Sun=1)),
+                  (8, {p: s for p, s in c3["signs"].items() if p != "Sun"}), (8, c3["signs"])]
+        charts = [{"lagna": lg, "signs": dict(sg), "degs": {p: 15.0 for p in sg}, "waxing": None} for lg, sg in probes]
+        body = JS_CANON + """return job.map(c => {
+            const lg = c.lagna + 1, pbr = {};
+            for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
+            const ctx = ctxOf(c, lg, pbr);
+            return {readings: fp(s23ChartReadings(ctx)), bhava_bhava: fp(s23BhavaBhava(ctx)), life_areas: fp(s23LifeAreas(ctx))};
+        });"""
+        got = run_page(body, charts, self.tmp)
+        for i, (c, g) in enumerate(zip(charts, got)):
+            ctx = ctx_of(c)
+            mine = {"readings": br.chart_readings(RULES, ctx), "bhava_bhava": br.bhava_bhava(RULES, ctx),
+                    "life_areas": br.life_areas(RULES, ctx)}
+            self.assertEqual([k for k, v in mine.items() if fingerprint(v) != g[k]], [], i)
+
     def test_dasha_chain_parity(self):
         import calendar
         rnd = random.Random(29)

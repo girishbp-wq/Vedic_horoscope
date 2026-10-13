@@ -6405,10 +6405,33 @@ function s23ResolvePlanets(ctx, spec){
   return sg[spec]!==undefined ? [spec] : [];
 }
 function s23AspectsSign(sg, p, sign){ return s23AspectSigns(p, sg[p]).some(([,t])=>t===sign); }
+/* Her sentences that state a planet's dignity show only when it holds (spec 2026-10-13) — twins of READING_CLAIMS,
+   LORD_IN_CLAIMS and claim_holds() in bhava_rules.py. who = a planet, "Nth lord", or "lord" (the row's LordOf lord). */
+const S23_READING_CLAIMS = [{kind:"aspects", planet:"1st lord", with:"", house:1, condition:"", who:"Sun", flag:"exalted"}];
+const S23_LORD_IN_CLAIMS = [
+  {lord_of:9, sits_in:5, condition:"", exchange:false, who:"lord", flag:"exalted"},
+  {lord_of:8, sits_in:12, condition:"", exchange:true, who:"12th lord", flag:"debilitated"},
+  {lord_of:7, sits_in:4, condition:"weak", exchange:false, who:"lord", flag:"debilitated"},
+  {lord_of:8, sits_in:12, condition:"weak", exchange:false, who:"lord", flag:"debilitated"},
+  {lord_of:10, sits_in:4, condition:"weak", exchange:false, who:"lord", flag:"debilitated"}];
+function s23ClaimHolds(ctx, claim, lordOf){
+  if(!claim) return true;
+  let who=claim.who;
+  if(who==="lord") who=s23HouseLord(ctx.lagna, lordOf);
+  else if(who.endsWith(" lord")) who=s23HouseLord(ctx.lagna, parseInt(who, 10));
+  return ctx.signs[who]!==undefined && planetDignity(who, ctx.signs[who]+1, ctx.degs[who]).flag===claim.flag;
+}
+function s23ReadingClaim(r){
+  return S23_READING_CLAIMS.find(c=>c.kind===r.kind && c.planet===r.planet && c.with===r.with && c.house===r.house && c.condition===r.condition);
+}
+function s23LordInClaim(r){
+  return S23_LORD_IN_CLAIMS.find(c=>c.lord_of===r.lord_of && c.sits_in===r.sits_in && c.condition===r.condition && c.exchange===!!r.exchange);
+}
 function s23ChartReadings(ctx){
   const lg=ctx.lagna, sg=ctx.signs, out=[];
   const flag=p=>planetDignity(p, sg[p]+1, ctx.degs[p]).flag;
   for(const r of (S23.chart_readings||[])){
+    if(!s23ClaimHolds(ctx, s23ReadingClaim(r))) continue;
     const kind=r.kind;
     const cands=s23ResolvePlanets(ctx, r.planet).filter(p=>!r.condition || flag(p)===r.condition);
     const partners=r.with ? s23ResolvePlanets(ctx, r.with) : null;
@@ -6640,8 +6663,8 @@ function s23ExchangeBlend(x, y){
   return `Parivartana: the lords of the ${ord(x)} and ${ord(y)} houses have exchanged signs. Blend the two houses — `
     +`${ord(x)} house: ${s23Clean(BHAVA_INFO[x].sig)}. ${ord(y)} house: ${s23Clean(BHAVA_INFO[y].sig)}.`;
 }
-function s23TaughtRows(x, y, strength){
-  const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange);
+function s23TaughtRows(ctx, x, y, strength){
+  const rows=S23.bhava_lord_in.filter(r=>r.lord_of===x && r.sits_in===y && !r.exchange && s23ClaimHolds(ctx, s23LordInClaim(r), x));
   const pick={strong:["strong"], weak:["weak"], mixed:["strong","weak"], depends:["strong","weak"]}[strength];
   return rows.filter(r=>r.condition==="").concat(...pick.map(c=>rows.filter(r=>r.condition===c)));
 }
@@ -6656,14 +6679,15 @@ function s23BhavaBhava(ctx){
     const strength=s23Strength(ctx, lord);
     let text, status, source, dictum;
     if(swap!==null){
-      const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x)));
+      const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x))
+        && s23ClaimHolds(ctx, s23LordInClaim(r), r.lord_of));
       // her Parivartana text first (if any), then her readings for either direction (each lord judged by its strength)
-      const chosen=(row ? [row] : []).concat(s23TaughtRows(x, y, strength), s23TaughtRows(y, x, s23Strength(ctx, lordOf[y])));
+      const chosen=(row ? [row] : []).concat(s23TaughtRows(ctx, x, y, strength), s23TaughtRows(ctx, y, x, s23Strength(ctx, lordOf[y])));
       if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
       else [text, status, source] = [s23ExchangeBlend(x,y), "blend", ""];
       dictum=[s23Dictum(ctx,x), s23Dictum(ctx,y)].filter(Boolean).join(" ");
     } else {
-      const chosen=s23TaughtRows(x, y, strength);
+      const chosen=s23TaughtRows(ctx, x, y, strength);
       if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];
       else [text, status, source] = [s23Blend(x, y, sg[lord]), "blend", ""];
       dictum=s23Dictum(ctx, x);
