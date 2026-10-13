@@ -361,6 +361,29 @@ def _aspects_sign(rules, sg, p, sign):
     return any(t == sign for _, t in aspect_signs(rules, p, sg[p]))
 
 
+# Her sentences that state a planet's dignity show only when it holds (spec 2026-10-13, built into the code by the
+# user's choice). Keyed by her row's key cells; who = a planet, "Nth lord", or "lord" (the lord of the row's LordOf).
+READING_CLAIMS = {("aspects", "1st lord", "", 1, ""): ("Sun", "exalted")}               # S28 p.2: "Sun … is exalted"
+LORD_IN_CLAIMS = {(9, 5, "", False): ("lord", "exalted"),                               # S28 p.12
+                  (8, 12, "", True): ("12th lord", "debilitated"),                      # S28 p.16, the Parivartana
+                  (7, 4, "weak", False): ("lord", "debilitated"),                       # S28 pp.9-10
+                  (8, 12, "weak", False): ("lord", "debilitated"),                      # S28 p.11
+                  (10, 4, "weak", False): ("lord", "debilitated")}                      # S28 p.13
+
+
+def claim_holds(rules, ctx, claim, lord_of=None):
+    """True when `claim` = (who, flag) holds for the chart (or there is none). A planet not placed fails."""
+    if claim is None:
+        return True
+    who, flag = claim
+    if who == "lord":
+        who = house_lord(rules, ctx["lagna"], lord_of)
+    elif who.endswith(" lord"):
+        who = house_lord(rules, ctx["lagna"], int(who[:-7]))
+    sg = ctx["signs"]
+    return who in sg and dignity(rules, who, sg[who], ctx["degs"].get(who))["flag"] == flag
+
+
 def chart_readings(rules, ctx):
     """Her Chart 3 sentences (S23_ChartReadings) that hold for this chart, in sheet order (spec §6.4):
     [{kind, house, on, with, text, status, source}]. `on` = the planets the Planet cell matched, `with` = the planets
@@ -369,6 +392,8 @@ def chart_readings(rules, ctx):
     flag = lambda p: dignity(rules, p, sg[p], ctx["degs"].get(p))["flag"]
     out = []
     for r in rules.get("chart_readings", []):
+        if not claim_holds(rules, ctx, READING_CLAIMS.get((r["kind"], r["planet"], r["with"], r["house"], r["condition"]))):
+            continue
         kind = r["kind"]
         cands = [p for p in resolve_planets(rules, ctx, r["planet"]) if not r["condition"] or flag(p) == r["condition"]]
         partners = resolve_planets(rules, ctx, r["with"]) if r["with"] else None
@@ -808,9 +833,11 @@ def _exchange_blend(rules, x, y):
             f"houses — {ordinal(x)} house: {_clean(info[str(x)]['sig'])}. {ordinal(y)} house: {_clean(info[str(y)]['sig'])}.")
 
 
-def _taught_rows(rules, x, y, strength_word):
-    """Her rows for the lord of x in y: the general row, then the strong and/or weak row chosen by R3."""
-    rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]]
+def _taught_rows(rules, ctx, x, y, strength_word):
+    """Her rows for the lord of x in y: the general row, then the strong and/or weak row chosen by its strength —
+    each only if the dignity it states holds (LORD_IN_CLAIMS)."""
+    rows = [r for r in rules["bhava_lord_in"] if (r["lord_of"], r["sits_in"]) == (x, y) and not r["exchange"]
+            and claim_holds(rules, ctx, LORD_IN_CLAIMS.get((x, y, r["condition"], False)), x)]
     pick = {"strong": ("strong",), "weak": ("weak",), "mixed": ("strong", "weak"), "depends": ("strong", "weak")}[strength_word]
     return [r for r in rows if r["condition"] == ""] + [r for c in pick for r in rows if r["condition"] == c]
 
@@ -832,18 +859,20 @@ def bhava_bhava(rules, ctx):
             continue                                          # shown with the smaller house of the pair
         strength_word = strength(rules, ctx, lord)
         if swap is not None:
-            row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}), None)
+            row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}
+                        and claim_holds(rules, ctx, LORD_IN_CLAIMS.get((r["lord_of"], r["sits_in"], r["condition"], True)),
+                                        r["lord_of"])), None)
             # her Parivartana text first (if any), then her readings for either direction (each lord judged by its
             # strength) — on her Chart 3 both the 8↔12 line and her 8→12 line show (spec §9.1)
-            chosen = ([row] if row else []) + _taught_rows(rules, x, y, strength_word) \
-                + _taught_rows(rules, y, x, strength(rules, ctx, lord_of[y]))
+            chosen = ([row] if row else []) + _taught_rows(rules, ctx, x, y, strength_word) \
+                + _taught_rows(rules, ctx, y, x, strength(rules, ctx, lord_of[y]))
             if chosen:
                 text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
             else:
                 text, status, source = _exchange_blend(rules, x, y), "blend", ""
             dictum = " ".join(d for d in (_dictum(rules, ctx, x), _dictum(rules, ctx, y)) if d)
         else:
-            chosen = _taught_rows(rules, x, y, strength_word)
+            chosen = _taught_rows(rules, ctx, x, y, strength_word)
             if chosen:
                 text, status, source = "\n\n".join(r["text"] for r in chosen), chosen[0]["status"], chosen[0]["source"]
             else:

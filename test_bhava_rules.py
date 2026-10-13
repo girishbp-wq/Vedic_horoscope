@@ -1255,3 +1255,59 @@ class DeeperDasha(unittest.TestCase):
         v = br.vimshottari(RULES, moon, birth, birth)
         for now in (v["span_start"] - _dt.timedelta(days=1), v["span_end"] + _dt.timedelta(days=1)):
             self.assertEqual(br.dasha_chain(RULES, br.vimshottari(RULES, moon, birth, now), now), [])
+
+
+# ---------------------------------------------------------------- her dignity sentences (spec 2026-10-13)
+PROBE_M1 = {"Sun": 9, "Moon": 8, "Mars": 11, "Mercury": 9, "Jupiter": 4, "Venus": 3, "Saturn": 3, "Rahu": 11, "Ketu": 5}
+PROBE_M2 = {"Sun": 9, "Moon": 6, "Mars": 11, "Mercury": 9, "Jupiter": 7, "Venus": 1, "Saturn": 2, "Rahu": 2, "Ketu": 8}
+PROBE_T1 = {"Sun": 9, "Moon": 3, "Mars": 0, "Mercury": 1, "Jupiter": 2, "Venus": 5, "Saturn": 10, "Rahu": 2, "Ketu": 8}
+
+
+class DignityClaims(unittest.TestCase):
+    """Her sentences that state a dignity show only when it holds (spec 2026-10-13 §2-3)."""
+
+    @staticmethod
+    def bb(lagna, signs):
+        ctx = br.context(lagna, signs, {p: 15.0 for p in signs})
+        return {e["lord_of"]: e for e in br.bhava_bhava(RULES, ctx)}
+
+    @staticmethod
+    def chart3(**moved):
+        c = _CHARTS["S28_CHART_3"]
+        signs = {p: s for p, s in dict(c["signs"], **moved).items() if s is not None}
+        return br.context(c["lagna"], signs, {p: d for p, d in c["degs"].items() if p in signs}, retro=c["retro"])
+
+    def test_lord_lines_need_their_dignity(self):
+        e = self.bb(0, PROBE_M1)                                   # Mesha Lagna
+        for lord_of, text in ((7, "7 th lord Mercury is debilitated"), (8, "8th Lord Moon is debilitated"),
+                              (9, "9 th lord Sun is exalted"), (10, "10 th lord Mercury is debilitated")):
+            self.assertNotIn(text, e[lord_of]["text"], lord_of)
+        self.assertEqual((e[9]["sits_in"], e[9]["status"]), (5, "blend"))     # the 9th lord sits in the 5th, not exalted
+
+    def test_parivartana_text_needs_the_12th_lord_debilitated(self):
+        e = self.bb(0, PROBE_M2)[8]                                # 12th lord Jupiter in Vrischika: a friend's sign
+        self.assertEqual((e["exchange"], e["status"]), (12, "blend"))
+        self.assertTrue(e["text"].startswith("Parivartana: the lords of the 8th and 12th"), e["text"][:80])
+        e = self.bb(6, PROBE_T1)[8]                                # Tula: 8th lord Venus debilitated, 12th lord Mercury not
+        self.assertEqual(e["exchange"], 12)
+        self.assertNotIn("12 th lord Mars is debilitated", e["text"])
+        self.assertIn("8th Lord Moon is debilitated", e["text"])
+
+    def test_sun_claim_on_the_lagna_lord_reading(self):
+        sun = lambda ctx: [x for x in br.chart_readings(RULES, ctx) if "bhava karaka Sun" in x["text"]]
+        self.assertEqual(len(sun(self.chart3())), 1)
+        self.assertEqual(sun(self.chart3(Sun=1)), [])             # the Sun in Vrishabha: not exalted
+        self.assertTrue(any("Jupiter a benefic is aspecting" in x["text"] for x in br.chart_readings(RULES, self.chart3(Sun=1))))
+
+    def test_missing_planet_fails_the_rule(self):
+        ctx = self.chart3(Sun=None)
+        self.assertFalse(br.claim_holds(RULES, ctx, ("Sun", "exalted")))
+        self.assertFalse([x for x in br.chart_readings(RULES, ctx) if "bhava karaka Sun" in x["text"]])
+
+    def test_deep_exalted_counts(self):
+        ctx = self.chart3()
+        self.assertEqual(br.dignity(RULES, "Sun", ctx["signs"]["Sun"], ctx["degs"]["Sun"])["label"], "Deep Exalted")
+        self.assertTrue(br.claim_holds(RULES, ctx, ("Sun", "exalted")))
+        self.assertTrue(br.claim_holds(RULES, ctx, ("12th lord", "debilitated")))
+        self.assertTrue(br.claim_holds(RULES, ctx, ("lord", "debilitated"), 8))      # the 8th lord Moon
+        self.assertTrue(br.claim_holds(RULES, ctx, None))
