@@ -61,6 +61,12 @@ release's new text — compare it with `session23_rules.json` and copy across wh
    sheets (strength, degree stage, her readings, the daśā down to Prāṇa). Rows you edited are kept and listed.
 4. Open the workbook in Excel, save once, close it, and run `publish.bat` — it should report no changes.
 
+## Bhāva by bhāva — one-time update
+1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
+2. Run `python make_session23_xlsx.py --install`. No data sheet changes; it rebuilds the calculator sheets and adds
+   `S23_Bhava_Calc`.
+3. Open the workbook in Excel, save once, close it, and run `publish.bat` — it should report no changes.
+
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`
@@ -90,6 +96,30 @@ Exalted includes Deep Exalted; debilitated includes Deep Debilitated. The rule f
 longer applies to that row. The Parivartana row is the exception: like the row itself, its rule is found by the two
 houses (8 and 12, either order) with Exchange = yes, whatever its Condition.
 
+## Bhāva by bhāva
+The page's Prediction section opens on **By bhāva**, read the way Session 28 reads her Chart 3: a table of the
+planets (rāśi, degree, house, dignity, digbala, strength), a row of the twelve houses to jump to, and one panel per
+house — its classes and what each means (with the Badhaka sthāna and its lord), what it signifies, what supports it
+and what presses on it, then **Layer 1 · Graha + Bhāva** (the planets in it and the planets aspecting it),
+**Layer 2 · Bhāva + Bhāva** (its lord and where the lord sits), **Layer 3 · Graha + Rāśi** (its sign and each
+planet in that sign), **Layer 4 · Graha + Graha** (planets meeting there, aspects onto them, the lord's company), its
+kāraka(s) and the life areas that read it. Every planet carries a box with its house classes, roles, dignity,
+digbala and strength. **By layer** shows the four layers for every planet, as before. Nothing in the texts changed;
+they are the same rows, arranged by house.
+
+`S23_Bhava_Calc` does the same for the house picked in **B2** (1–12):
+- rows 3–16: the house's rāśi, names, significations, people, body, sign line, kārakas, Supports, Pressure and
+  classes;
+- the class table: each class of the house with its other names, its meaning (the first sentence of its `Nature`
+  on `S23_Classes`) and, for the Badhaka house, the Badhaka note;
+- the planet table: for every planet its house and that house's classes, roles, dignity and what it means, digbala,
+  strength and why, class rules, the Graha + Rāśi text and its Layer 1 texts (from `S23_Predict_Calc`);
+- the house block (Layers 1–2 and the lord's company, built the same way as on `S23_LifeArea_Calc`), the kārakas,
+  the conjunctions and the aspects onto the planets in the house (Layer 4), and the life areas that read it.
+
+Like the other calculator sheets it shows the first 4 of her sentences ("(more on the page)" after them), the dignity
+without its small note and no source references; the page shows everything.
+
 ## The sheets
 | Sheet | What it is |
 |---|---|
@@ -106,13 +136,14 @@ houses (8 and 12, either order) with Exchange = yes, whatever its Condition.
 | `S23_Remedies` | the teacher's remedies and tips of the day |
 | `S23_ChartReadings` | Session 28: her Chart 3 sentences. `Kind` is `in` (Planet in House, With in the same sign), `aspects` (Planet aspects House, With too), `aspects lord` (Planet aspects the lord of House) or `aspects planet` (Planet aspects the planet in With; House blank). Planet / With: a planet, `benefic`, `malefic` or `Nth lord` (`8th lord`); `Condition` blank, `exalted` or `debilitated` |
 | `S23_DegreeStages` | Session 28: the degree bands (From up to, not including, To), her sentence for each, `Applies` = `any` or `malefic` (Mars, Saturn, Rāhu, Ketu), `AfterAge` = the age from which the planet gives its results |
-| `S23_Chart` + `S23_*_Calc` + `S23_Ref_Calc` | the live calculator: set the Lagna, signs, degrees, Gender and Retrograde on `S23_Chart`; pick an area of life in B2 of `S23_LifeArea_Calc`. `S23_Predict_Calc` shows each planet's strength (strong / weak / mixed / depends, and why), degree stage and the first 4 of her Chart 3 sentences that hold (the page shows them all); `S23_Dasha_Calc` the running Pratyantara, Sookshma and Prāṇa |
+| `S23_Chart` + `S23_*_Calc` + `S23_Ref_Calc` | the live calculator: set the Lagna, signs, degrees, Gender and Retrograde on `S23_Chart`; pick an area of life in B2 of `S23_LifeArea_Calc`, or a house in B2 of `S23_Bhava_Calc`. `S23_Predict_Calc` shows each planet's strength (strong / weak / mixed / depends, and why), degree stage and the first 4 of her Chart 3 sentences that hold (the page shows them all); `S23_Dasha_Calc` the running Pratyantara, Sookshma and Prāṇa |
 
 ## Python
 `bhava_rules.py` reads `session23_rules.json` (generated by the publish step). Its main functions are `classification_tables`, `badhaka`,
 `planet_roles`, `graha_bhava`, `bhava_bhava`, `graha_rashi`, `graha_graha`, `vimshottari`, `watch_periods`, and for
 Sessions 24-27 `context`, `chart_conditions`, `aspect_meaning`, `life_area` and `life_areas`, and for Sessions 28-29
-`strength_detail`, `chart_readings`, `degree_stage`, `sub_periods` and `dasha_chain`.
+`strength_detail`, `chart_readings`, `degree_stage`, `sub_periods` and `dasha_chain`, and for the bhāva-by-bhāva
+view `planet_facts` and `bhava_reading`.
 
 ## A standalone copy
 `python make_session23_xlsx.py --export Session23_Rules.xlsx` writes a separate workbook with the same sheets
