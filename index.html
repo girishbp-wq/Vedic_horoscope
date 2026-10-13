@@ -507,9 +507,9 @@ details.section[open] > summary::after { content: "−"; }
 .south-cell .sc-planet .sc-deg { color: var(--muted); font-size: 0.82em; font-weight: 500; margin-left: 1px; }
 /* Predictive & Remedies report tabs */
 .report-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
-.rtab, .s23-area-btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 13px; border: 1px solid var(--line); border-radius: 16px; background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s; }
-.rtab:hover, .s23-area-btn:hover { border-color: var(--saffron); }
-.rtab.active, .s23-area-btn.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
+.rtab, .s23-area-btn, .s23-view-btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 13px; border: 1px solid var(--line); border-radius: 16px; background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s; }
+.rtab:hover, .s23-area-btn:hover, .s23-view-btn:hover { border-color: var(--saffron); }
+.rtab.active, .s23-area-btn.active, .s23-view-btn.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
 .rtable { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
 .rtable th, .rtable td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
 .rtable th { background: var(--parchment); font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--maroon); }
@@ -626,6 +626,65 @@ tr.s23-subrow.now td { font-weight: 600; }
 #s23-watch tr.favourable td { background: #f4faea; }
 #s23-watch tr.caution td { background: #fffaf3; }
 .maha-head .s23-role { margin-left: 4px; }
+/* Prediction read bhāva by bhāva (spec 2026-10-13): two views, a planet table, a sticky row of the twelve houses, one panel per house. */
+.s23-view-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 14px; }
+.s23-bv-planets td, .s23-bv-planets th { white-space: nowrap; }
+.s23-bv-jump { position: sticky; top: var(--s23-bv-top, 0px); z-index: 40; background: var(--parchment); display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; padding: 6px 0; margin: 12px 0; border-bottom: 1px solid var(--line); }
+.s23-bv-jump a { text-decoration: none; color: var(--ink); text-align: center; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--parchment-2); padding: 3px 0; display: grid; line-height: 1.15; min-width: 0; }
+.s23-bv-jump a:hover, .s23-bv-jump a:focus-visible { border-color: var(--saffron); outline: none; }
+.s23-bv-jump b { font-family: 'Cinzel', serif; color: var(--maroon); font-size: 14px; }
+.s23-bv-jump small { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s23-bv-house { border: 1px solid var(--line); border-radius: 10px; background: #fffdf7; padding: 12px 16px; margin: 0 0 16px;
+  scroll-margin-top: calc(var(--s23-bv-top, 0px) + 72px); }
+.s23-bv-hhead { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; }
+.s23-bv-hnum { grid-row: span 2; font-family: 'Cinzel', serif; font-size: 30px; color: var(--saffron); line-height: 1; min-width: 1.3em; text-align: center; }
+.s23-bv-htitle { min-width: 0; }
+.s23-bv-htitle h4 { margin: 0; font-family: 'Cinzel', serif; font-size: 17px; color: var(--maroon); }
+.s23-bv-htitle h4 small { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 15px; color: var(--muted); }
+.s23-bv-htitle p { margin: 0; }
+.s23-bv-chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px; }
+.s23-bv-cls { font-size: 11.5px; border: 1px solid var(--saffron); color: #9a4f12; border-radius: 999px; padding: 0 8px; white-space: nowrap; margin: 0 2px; }
+.s23-bv-classes { margin: 8px 0; padding-left: 18px; font-size: 13.5px; }
+.s23-bv-classes li { margin: 2px 0; }
+.s23-bv-meta { color: var(--muted); font-size: 13px; }
+.s23-bv-sig, .s23-bv-areas { font-size: 13.5px; margin: 6px 0; }
+.s23-bv-lbl { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.s23-bv-sup, .s23-bv-pre { border-radius: 8px; padding: 2px 12px 6px; }
+.s23-bv-sup { background: #eef6ea; } .s23-bv-pre { background: #f9ebe8; }
+.s23-bv-supports, .s23-bv-pressure { margin: 2px 0; padding-left: 18px; font-size: 13.5px; }
+.s23-bv-layer, .s23-bv-karaka { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; min-width: 0; }
+.s23-bv-layer h5, .s23-bv-karaka h5 { margin: 4px 0 2px; font-family: 'Cinzel', serif; font-size: 13.5px; color: var(--maroon); }
+.s23-bv-hint { margin: 0 0 4px; font-size: 12.5px; color: var(--muted); font-style: italic; }
+.s23-bv-planet { border-top: 1px dashed var(--line); padding: 6px 0; min-width: 0; overflow-wrap: anywhere; }
+.s23-bv-ph { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 14px; }
+.s23-bv-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 10px; margin: 6px 0; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--parchment-2); font-size: 13px; }
+.s23-bv-facts dt { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.s23-bv-facts dd { margin: 0; min-width: 0; }
+.s23-bv-note, .s23-bv-text p { font-size: 13.5px; margin: 4px 0; }
+.s23-bv-side { margin: 4px 0; padding-left: 18px; font-size: 13px; }
+.s23-bv-side li { margin: 3px 0; }
+.s23-bv-pairs { padding-left: 18px; margin: 4px 0 8px; font-size: 13.5px; }
+.s23-bv-pairs li { margin: 6px 0; }
+.s23-bv-rest summary { cursor: pointer; color: var(--maroon); font-size: 12.5px; }
+.s23-bv-none { color: var(--muted); font-style: italic; font-size: 13px; }
+.s23-bv-top { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--maroon); }
+@media (max-width: 560px) {
+  .s23-bv-planets thead { display: none; }
+  .s23-bv-planets, .s23-bv-planets tbody { display: block; }
+  .s23-bv-planets tr { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .s23-bv-planets td { border: 0; padding: 1px 0; white-space: normal; }
+  .s23-bv-planets td::before { content: attr(data-label) " "; font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .s23-bv-jump { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .s23-bv-facts { grid-template-columns: minmax(0, 1fr); }
+  .s23-bv-house { padding: 10px; }
+}
+@media print {
+  .s23-view-btns, .s23-bv-jump, .s23-bv-top { display: none !important; }
+  .s23-bv-planet, .s23-bv-facts { break-inside: avoid; page-break-inside: avoid; }
+}
 /* On paper nothing can scroll: fit every Session 23 table to the A4 page (English sign names only). */
 @media print {
   #report .s23-scroll { overflow: visible; border: 0; }
@@ -5560,13 +5619,13 @@ document.getElementById("btn-print").addEventListener("click", () => window.prin
 
 /* Expand every section for the PDF, then restore state afterwards */
 window.addEventListener("beforeprint", () => {
-  document.querySelectorAll("details.section").forEach(d => {
+  document.querySelectorAll("details.section, details.s23-bv-rest").forEach(d => {
     d.dataset._wasOpen = d.open ? "1" : "0";
     d.open = true;
   });
 });
 window.addEventListener("afterprint", () => {
-  document.querySelectorAll("details.section").forEach(d => {
+  document.querySelectorAll("details.section, details.s23-bv-rest").forEach(d => {
     if (d.dataset._wasOpen === "0") d.open = false;
     delete d.dataset._wasOpen;
   });
@@ -7046,11 +7105,20 @@ function s23ReadingList(texts, cls, head){
   return (head?`<p class="s23-sub">${head}</p>`:"")+`<ul class="${cls}">${texts.map(t=>`<li>${s23Para(t)} ${s23Tag("taught")}</li>`).join("")}</ul>`;
 }
 function s23BuildPredictions(sid, lagnaN, extra){
+  const {pbr, degs, waxing}=s23Inputs(sid), ctx=s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra));
+  let h=`<p>Session 23 shows that a prediction is built in <strong>layers</strong>, each one a blend of karakatwas — <em>"there is no magic in this; it is the knowledge of the karakatwas and logically blending them."</em> `
+    +`Below, the four layers are worked for your chart: graha + bhāva, bhāva + bhāva, graha + rāśi and graha + graha (conjunctions and aspects). Aspects link to the <em>Graha Drishti</em> section. `
+    +`<strong>By bhāva</strong> reads them house by house, as Session 28 does; <strong>By layer</strong> shows each layer for every planet.</p>`;
+  h+=s23TagLegend();
+  h+=`<div class="s23-view-btns">`+[["bhava","By bhāva"],["layer","By layer"]].map(([v,t])=>`<button type="button" class="s23-view-btn${s23ViewShown===v?" active":""}" data-view="${v}">${t}</button>`).join("")+`</div>`;
+  h+=`<div class="s23-view-pane" id="s23-view-bhava"${s23ViewShown==="bhava"?"":` style="display:none"`}>${s23BuildBhavaView(ctx)}</div>`;
+  h+=`<div class="s23-view-pane" id="s23-view-layer"${s23ViewShown==="layer"?"":` style="display:none"`}>${s23BuildLayerView(sid, lagnaN, extra)}</div>`;
+  return h;
+}
+function s23BuildLayerView(sid, lagnaN, extra){
   const {pbr, degs, waxing}=s23Inputs(sid), lg=lagnaN-1;
   const ctx=s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra)), conds=s23ChartConditions(ctx);
-  let h=`<p>Session 23 shows that a prediction is built in <strong>layers</strong>, each one a blend of karakatwas — <em>"there is no magic in this; it is the knowledge of the karakatwas and logically blending them."</em> `
-    +`Below, the four layers are worked for your chart: graha + bhāva, bhāva + bhāva, graha + rāśi and graha + graha (conjunctions and aspects). Aspects link to the <em>Graha Drishti</em> section.</p>`;
-  h+=s23TagLegend();
+  let h="";
   // layer 1
   h+=`<h4 class="pane-h">1 · Graha + Bhāva — each planet in its house</h4><div class="s23-cards">`;
   for(const p of S23_PLANETS){
@@ -7135,6 +7203,136 @@ function renderS23Sections(sid, lagnaN, extra){
   if(life){ const {pbr, degs, waxing}=s23Inputs(sid); renderS23LifeAreas(life, s23Ctx(lagnaN, pbr, degs, waxing, s23Opts(extra))); }
   c.innerHTML=s23BuildClasses(sid, lagnaN);
   p.innerHTML=s23BuildPredictions(sid, lagnaN, extra);
+  s23WirePredictions(p);
+}
+
+/* ---- Prediction: By bhāva (default) or By layer (spec 2026-10-13-bhava-by-bhava) ---- */
+let s23ViewShown = "bhava";
+const S23_BV_LAYERS = ["Graha + Bhāva","Bhāva + Bhāva","Graha + Rāśi","Graha + Graha"];
+const S23_BV_ROLE = {Badhakadhipati:"Badhakādhipati"};
+function s23BvDeg(d){ if(d==null) return ""; const t=Math.round(d*60); return `${Math.floor(t/60)}°${String(t%60).padStart(2,"0")}′`; }
+function s23BvChips(names){ return names.map(n=>`<span class="s23-bv-cls">${n}</span>`).join(""); }
+function s23BvList(items, cls){ return `<ul class="${cls}">${items.length ? items.map(x=>`<li>${_esc(x)}</li>`).join("") : `<li class="s23-bv-none">—</li>`}</ul>`; }
+function s23BvRest(text){
+  const parts=text.split("\n\n").filter(x=>x.trim());
+  if(!parts.length) return "";
+  return `<p>${s23Para(parts[0])}</p>`+(parts.length>1 ? `<details class="s23-bv-rest"><summary>Read the rest</summary>${parts.slice(1).map(x=>`<p>${s23Para(x)}</p>`).join("")}</details>` : "");
+}
+function s23BvHead(f, extra){
+  return `<div class="s23-bv-ph">${GLYPH9[f.planet]} <strong>${f.planet}</strong>${f.retro?" ℞":""} <span class="s23-bv-meta">${f.nature} · ${f.rashi}${f.deg==null?"":" "+s23BvDeg(f.deg)}</span>${extra||""}</div>`;
+}
+function s23BvFacts(f, full){
+  const roles=f.roles.length ? f.roles.map(r=>S23_BV_ROLE[r]||r).join(", ") : "—";
+  const deep=f.dignity.label.startsWith("Deep") ? " flag-deep" : "";
+  return `<dl class="s23-bv-facts">`
+    +`<dt>House</dt><dd>${ord(f.house)} ${s23BvChips(f.classes)}</dd>`
+    +`<dt>Roles</dt><dd>${_esc(roles)}</dd>`
+    +`<dt>Dignity</dt><dd><span class="section-flag flag-${f.dignity.flag}${deep}">${_esc(f.dignity.label)}</span>`
+      +(f.dignity.note?` <span class="s23-bv-meta">${_esc(f.dignity.note)}</span>`:"")
+      +(full && f.dignity_effect?`<br>${_esc(f.dignity_effect)} ${s23Tag(f.dignity_status)}`:"")+`</dd>`
+    +`<dt>Digbala</dt><dd><span class="s23-chip ${f.digbala||""}">${{strong:"gains", lost:"loses"}[f.digbala]||"—"}</span> ${_esc(f.digbala_text)}${f.digbala_status?" "+s23Tag(f.digbala_status):""}</dd>`
+    +`<dt>Strength</dt><dd>${s23StrengthChip(f.strength)}</dd>`
+    +(full && f.class_texts.length ? `<dt>Class rules</dt><dd><ul class="s23-bv-side">${f.class_texts.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul></dd>` : "")
+    +`</dl>`;
+}
+function s23BvOccupant(o){
+  const side=o.nature_lines.map(x=>`${_esc(x.text)} ${s23Tag(x.status)}${s23Src(x.source)}`);
+  if(o.twelfth_line) side.push(`${_esc(o.twelfth_line)} ${s23Tag("taught")}`);
+  const ds=o.degree_stage;
+  if(ds) side.push(`<strong>${_esc(ds.stage)}</strong> — ${ds.lines.map(_esc).join(" ")}${ds.age_note?` <em>${_esc(ds.age_note)}</em>`:""}${s23Src("S28 p.17")}`);
+  for(const c of o.conditions) side.push(`${s23Para(c.text)} ${s23Tag(c.status)}${s23Src(c.source)}${c.active===true?` <span class="s23-chip active">active now</span>`:""}`);
+  return `<div class="s23-bv-planet" data-planet="${o.planet}" data-role="occupant">${s23BvHead(o.facts, " "+s23Tag(o.status))}${s23BvFacts(o.facts, true)}`
+    +(o.moon_strength?`<p class="s23-bv-note">${_esc(o.moon_strength)}</p>`:"")
+    +`<div class="s23-bv-text">${s23BvRest(o.text)}${s23Src(o.source)}</div>`
+    +(o.extra.length?`<p class="s23-sub">From the recording</p><ul class="s23-bv-side">${o.extra.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`:"")
+    +(side.length?`<ul class="s23-bv-side">${side.map(x=>`<li>${x}</li>`).join("")}</ul>`:"")
+    +s23ReadingList(o.readings, "s23-readings", "Her example chart (Session 28)")+`</div>`;
+}
+function s23BvAspect(a){
+  return `<div class="s23-bv-planet" data-planet="${a.by}" data-role="aspect"><div class="s23-bv-ph">${GLYPH9[a.by]} <strong>${a.by}</strong> `
+    +`<span class="s23-bv-meta">${s23NatureAt(a.by)} · ${a.aspect} aspect${a.rules.length?" · "+s23RuledPhrase(a.rules):""}</span></div>`
+    +`${s23MeaningList(a.meanings)}${s23ReadingList(a.readings, "s23-readings")}</div>`;
+}
+function s23BvLayer(n, hint, inner){
+  return `<div class="s23-bv-layer" data-layer="${n}"><h5>Layer ${n} · ${S23_BV_LAYERS[n-1]}</h5><p class="s23-bv-hint">${hint}</p>${inner}</div>`;
+}
+function s23BvHouse(b){
+  const H=ord(b.house), L=b.lord;
+  let h=`<section class="s23-bv-house" id="s23-bv-h${b.house}" data-house="${b.house}">`
+    +`<header class="s23-bv-hhead"><span class="s23-bv-hnum">${b.house}</span><div class="s23-bv-htitle"><h4>${_esc(b.name)} <small>· ${b.rashi}</small></h4>`
+    +`<p class="s23-bv-meta">${_esc(b.full_name)}</p></div><div class="s23-bv-chips">${s23BvChips(b.classes.map(c=>c.name))}</div></header>`
+    +`<ul class="s23-bv-classes">${b.classes.map(c=>`<li data-class="${c.name}"><strong>${c.name}</strong>${c.other_names?` <span class="s23-bv-meta">(${_esc(c.other_names)})</span>`:""}: ${_esc(c.meaning)}${c.note?" "+_esc(c.note):""}</li>`).join("")}</ul>`
+    +`<p class="s23-bv-sig"><span class="s23-bv-lbl">Signifies</span> ${_esc(b.significations)}. <span class="s23-bv-lbl">People</span> ${_esc(b.people)}. <span class="s23-bv-lbl">Body</span> ${_esc(b.body)}.</p>`
+    +`<div class="s23-sumgrid"><div class="s23-bv-sup"><p class="s23-sub">Supports</p>${s23BvList(b.supports, "s23-bv-supports")}</div>`
+    +`<div class="s23-bv-pre"><p class="s23-sub">Pressure</p>${s23BvList(b.pressure, "s23-bv-pressure")}</div></div>`;
+  h+=s23BvLayer(1, "The planets in this house, and the planets whose aspect falls on it.",
+    `<p class="s23-sub">In the house</p>`+(b.occupants.map(s23BvOccupant).join("") || `<p class="s23-bv-none">No planet sits here.</p>`)
+    +`<p class="s23-sub">Aspecting the house</p>`+(b.aspecting.map(s23BvAspect).join("") || `<p class="s23-bv-none">No aspect falls on this house.</p>`));
+  h+=s23BvLayer(2, L ? `This house's lord, ${L.planet}, and the house it sits in.` : "This house's lord and the house it sits in.",
+    L ? `<div class="s23-bv-planet" data-planet="${L.planet}" data-role="lord">${s23BvHead(L.facts)}${s23BvFacts(L.facts, false)}`
+      +`<p class="s23-bv-note">The ${H} lord sits in the ${ord(L.house)} (${L.rashi}).${L.exchange?` <span class="s23-chip s23-exchange">Parivartana with the ${ord(L.exchange)}</span>`:""} ${_esc(L.placement_line)}</p>`
+      +`<div class="s23-bv-text">${s23Tag(L.status)}${s23Src(L.source)}${s23BvRest(L.text)}</div>`
+      +(L.dictum?`<p class="s23-dictum"><strong>${_esc(L.dictum)}</strong></p>`:"")+`</div>`
+      : `<p class="s23-bv-none">Its lord's sign is not known.</p>`);
+  h+=s23BvLayer(3, `The sign on this house, ${b.rashi}, and each planet placed in it.`,
+    `<p class="s23-bv-note">${_esc(b.sign_line)}</p>`+b.occupants.map(o=>{ const g=o.graha_rashi;
+      return `<div class="s23-bv-planet" data-planet="${o.planet}" data-role="rashi"><div class="s23-bv-ph">${GLYPH9[o.planet]} <strong>${o.planet}</strong> ${s23Tag(g.status)} `
+        +`<span class="s23-bv-meta">${g.tatwa} tatwa · ${g.direction} · ${g.varna} · ${g.mode}</span></div><p>${s23Para(g.text)}</p>`
+        +(o.dignity_line?`<p><span class="s23-bv-lbl">Dignity</span> ${_esc(o.dignity_line)} ${s23Tag(o.dignity_status)}</p>`:"")+`</div>`; }).join(""));
+  let l4="";
+  if(b.conjunctions.length) l4+=`<p class="s23-sub">Planets meeting here</p><ul class="s23-bv-pairs">${b.conjunctions.map(c=>`<li data-a="${c.a}" data-b="${c.b}">`
+    +`<strong>${GLYPH9[c.a]} ${c.a} + ${GLYPH9[c.b]} ${c.b}</strong> ${s23Tag(c.status)}<br>${_esc(c.text)}`
+    +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+`</li>`).join("")}</ul>`;
+  if(b.planet_aspects.length) l4+=`<p class="s23-sub">Aspects onto the planets here</p><ul class="s23-bv-pairs">${b.planet_aspects.map(a=>`<li data-by="${a.by}" data-to="${a.to}">`
+    +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}<br>${_esc(a.text)}${s23MeaningList(a.meanings)}</li>`).join("")}</ul>`;
+  if(L && b.lord_company.length) l4+=`<p class="s23-sub">With or aspecting the lord, ${L.planet}</p><ul class="s23-bv-pairs">${b.lord_company.map(w=>`<li class="s23-bv-planet" data-planet="${w.planet}" data-role="company">`
+    +`${GLYPH9[w.planet]} <strong>${w.planet}</strong> ${w.how==="with"?"is with the lord":`aspects the lord (${w.aspect} aspect)`}${w.rules.length?" · "+s23RuledPhrase(w.rules):""}`
+    +`${s23MeaningList(w.meanings)}${s23ReadingList(w.readings, "s23-readings")}</li>`).join("")}</ul>`;
+  h+=s23BvLayer(4, "Planets meeting in this house, planets aspecting the planets here, and the planets with or aspecting its lord.",
+    l4 || `<p class="s23-bv-none">No planet meets or aspects another here.</p>`);
+  h+=`<div class="s23-bv-karaka"><h5>Kāraka · the house's significator</h5>`+(b.karakas.map(k=>`<div class="s23-bv-planet" data-planet="${k.planet}" data-role="karaka">${s23BvHead(k.facts)}`
+    +`<p class="s23-bv-note">In the ${ord(k.house)} (${k.rashi}).${k.malefic_aspects.length?` Aspected by ${k.malefic_aspects.join(", ")}.`:""}</p>${s23BvFacts(k.facts, false)}</div>`).join("")
+    || `<p class="s23-bv-none">Not placed in this chart.</p>`)+`</div>`;
+  if(b.life_areas.length) h+=`<p class="s23-bv-areas"><span class="s23-bv-lbl">Life areas that read this house</span> `
+    +b.life_areas.map(a=>`<a href="#s23-area-${a.no}" class="s23-bv-area" data-area="${a.no}">${_esc(a.area)}</a>`).join(" · ")+`</p>`;
+  return h+`<a class="s23-bv-top" href="#s23-bv-jump">↑ Houses</a></section>`;
+}
+function s23BuildBhavaView(ctx){
+  const layer2=s23BhavaBhava(ctx), houses=[1,2,3,4,5,6,7,8,9,10,11,12].map(h=>s23BhavaReading(ctx, h, layer2));
+  const rows=S23_PLANETS.filter(p=>ctx.signs[p]!==undefined).map(p=>{ const f=s23PlanetFacts(ctx, p);
+    return `<tr data-planet="${p}"><td data-label="Planet">${GLYPH9[p]} ${p}${f.retro?" ℞":""}</td><td data-label="Rāśi">${f.rashi}</td>`
+      +`<td data-label="Degree">${s23BvDeg(f.deg)||"—"}</td><td data-label="House">${f.house}</td><td data-label="Dignity">${_esc(f.dignity.label)}</td>`
+      +`<td data-label="Digbala">${{strong:"gains", lost:"loses"}[f.digbala]||"—"}</td><td data-label="Strength">${f.strength.word}</td></tr>`; }).join("");
+  return `<p class="s23-sub">The planets at a glance</p><table class="rtable s23-bv-planets"><thead><tr><th>Planet</th><th>Rāśi</th><th>Degree</th><th>House</th>`
+    +`<th>Dignity</th><th>Digbala</th><th>Strength</th></tr></thead><tbody>${rows}</tbody></table>`
+    +`<nav class="s23-bv-jump" id="s23-bv-jump" aria-label="Houses">${houses.map(b=>`<a href="#s23-bv-h${b.house}"><b>${b.house}</b><small>${b.rashi}</small></a>`).join("")}</nav>`
+    +houses.map(s23BvHouse).join("");
+}
+function s23WirePredictions(el){
+  const nav=document.getElementById("reportNav");
+  el.style.setProperty("--s23-bv-top", ((nav && nav.offsetHeight ? nav.offsetHeight : 0)+8)+"px");
+  el.onclick=e=>{
+    const v=e.target.closest(".s23-view-btn");
+    if(v){
+      s23ViewShown=v.dataset.view;
+      el.querySelectorAll(".s23-view-btn").forEach(b=>b.classList.toggle("active", b===v));
+      el.querySelectorAll(".s23-view-pane").forEach(p=>p.style.display=(p.id==="s23-view-"+s23ViewShown)?"":"none");
+      return;
+    }
+    const j=e.target.closest(".s23-bv-jump a, a.s23-bv-top");
+    if(j){ e.preventDefault(); const t=document.getElementById(j.getAttribute("href").slice(1)); if(t) t.scrollIntoView({block:"start"}); return; }
+    const a=e.target.closest("a.s23-bv-area");
+    if(a){
+      e.preventDefault();
+      const life=document.getElementById("s23-life-body"), btn=life && life.querySelector(`.s23-area-btn[data-area="${a.dataset.area}"]`);
+      if(!btn) return;
+      const sec=life.closest("details.section"), tab=sec && document.querySelector(`#reportNav button[data-grp="${sec.dataset.grp}"]`);
+      if(tab) tab.click();
+      if(sec) sec.open=true;
+      btn.click();
+      const pane=document.getElementById("s23-area-"+a.dataset.area); if(pane) pane.scrollIntoView({block:"start"});
+    }
+  };
 }
 
 /* ---- Life areas section (Session 27): one button per Ready Reckoner area, the 7 steps for the chosen one ---- */

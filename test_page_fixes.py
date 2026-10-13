@@ -1639,3 +1639,139 @@ class Round1Page(unittest.TestCase):
         self.assertIsNotNone(self.r["classes"]["table"])
         self.assertNotIn(line, self.r["classes"]["card"])
         self.assertNotIn(line, self.r["classes"]["table"])
+
+
+# The chart of the 2026-10-13 bhāva-by-bhāva draft (Simha Lagna), as sidereal longitudes.
+SIMHA_SID = {"Sun": 11.80, "Moon": 346.91, "Mars": 27.21, "Mercury": 12.31, "Jupiter": 122.45, "Venus": 356.86,
+             "Saturn": 354.61, "Rahu": 354.47, "Ketu": 174.47}
+
+
+@needs_browser
+class BhavaView(unittest.TestCase):
+    """The Prediction read bhāva by bhāva (spec 2026-10-13): the default view, its panels, links, phone and print."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            const render = () => page.evaluate(sid => renderS23Sections(sid, 5, {retro: {Rahu: true, Ketu: true}}), SID);
+            await render();
+            const out = {};
+            out.view = await page.evaluate(() => ({bhava: getComputedStyle(document.getElementById('s23-view-bhava')).display,
+              layer: getComputedStyle(document.getElementById('s23-view-layer')).display,
+              active: [...document.querySelectorAll('.s23-view-btn.active')].map(b => b.dataset.view)}));
+            out.panels = await page.evaluate(() => [...document.querySelectorAll('#s23-view-bhava section.s23-bv-house')].map(s => ({
+              house: +s.dataset.house, layers: [...s.querySelectorAll('.s23-bv-layer > h5')].map(h => h.textContent),
+              karaka: !!s.querySelector('.s23-bv-karaka')})));
+            out.ninth = await page.evaluate(() => {
+              const s = document.getElementById('s23-bv-h9'), t = el => el.textContent;
+              const dts = x => [...x.querySelectorAll('dl.s23-bv-facts dt')].map(t);
+              const role = r => [...s.querySelectorAll(`.s23-bv-planet[data-role="${r}"]`)];
+              return {classes: [...s.querySelectorAll('.s23-bv-classes li')].map(li => li.dataset.class),
+                      badhaka: t(s.querySelector('.s23-bv-classes li[data-class="Badhaka"]')),
+                      occupants: role('occupant').map(x => x.dataset.planet), occupantDts: role('occupant').map(dts),
+                      lord: role('lord').map(x => ({planet: x.dataset.planet, dts: dts(x)})),
+                      areas: [...s.querySelectorAll('a.s23-bv-area')].map(a => +a.dataset.area)};
+            });
+            out.jupiter = await page.evaluate(() => {
+              const x = document.querySelector('#s23-bv-h1 .s23-bv-planet[data-role="occupant"][data-planet="Jupiter"]');
+              return [...x.querySelectorAll('dt')].find(d => d.textContent === 'Digbala').nextElementSibling.textContent;
+            });
+            await page.click('#s23-bv-jump a[href="#s23-bv-h7"]');
+            out.jump = await page.evaluate(() => ({bar: document.getElementById('s23-bv-jump').getBoundingClientRect().top,
+              nav: document.getElementById('reportNav').getBoundingClientRect().bottom,
+              panel: document.getElementById('s23-bv-h7').getBoundingClientRect().top}));
+            await page.click('#s23-bv-h9 a.s23-bv-area[data-area="12"]');
+            out.area = await page.evaluate(() => {
+              const life = document.getElementById('s23-life-body').closest('details.section');
+              return {pane: getComputedStyle(document.getElementById('s23-area-12')).display, shown: s23AreaShown,
+                      open: life.open, section: getComputedStyle(life).display};
+            });
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            await page.click('.s23-view-btn[data-view="layer"]');
+            out.layer = await page.evaluate(() => ({pane: getComputedStyle(document.getElementById('s23-view-layer')).display,
+              bhava: getComputedStyle(document.getElementById('s23-view-bhava')).display,
+              cards: [...document.querySelectorAll('#s23-view-layer .s23-gb')].filter(c => c.offsetParent !== null).length}));
+            await render();
+            out.persist = await page.evaluate(() => [getComputedStyle(document.getElementById('s23-view-layer')).display,
+              getComputedStyle(document.getElementById('s23-view-bhava')).display]);
+            await page.click('.s23-view-btn[data-view="bhava"]');
+            out.back = await page.evaluate(() => [getComputedStyle(document.getElementById('s23-view-bhava')).display, s23ViewShown]);
+            await page.emulateMedia({media: 'print'});
+            out.print = await page.evaluate(() => [getComputedStyle(document.querySelector('.s23-view-btns')).display,
+              getComputedStyle(document.getElementById('s23-bv-jump')).display]);
+            await page.emulateMedia({media: 'screen'});
+            out.rest = await page.evaluate(() => {
+              const open = () => [...document.querySelectorAll('details.s23-bv-rest')].filter(d => d.open).length;
+              const n = document.querySelectorAll('details.s23-bv-rest').length, before = open();
+              window.dispatchEvent(new Event('beforeprint'));
+              const during = open();
+              window.dispatchEvent(new Event('afterprint'));
+              return {n, before, during, after: open()};
+            });
+            await page.setViewportSize({width: 375, height: 800});
+            out.phone = await page.evaluate(() => ({sw: document.documentElement.scrollWidth, vw: window.innerWidth}));
+            out.crowded = await page.evaluate(() => {
+              const sid = {}; for (const p of S23_PLANETS) sid[p] = 100 + S23_PLANETS.indexOf(p) * 0.1;
+              renderS23Sections(sid, 4);                    // Lagna Karka: every planet in the 1st house
+              return {conj: document.querySelectorAll('#s23-bv-h1 .s23-bv-pairs li[data-a]').length,
+                      sw: document.documentElement.scrollWidth, vw: window.innerWidth};
+            });
+            return out;
+        """.replace("SID", json.dumps(SIMHA_SID)))
+
+    def test_by_bhava_is_the_default(self):
+        self.assertEqual(self.r["view"], {"bhava": "block", "layer": "none", "active": ["bhava"]})
+
+    def test_twelve_panels_with_four_layers(self):
+        layers = ["Layer 1 · Graha + Bhāva", "Layer 2 · Bhāva + Bhāva", "Layer 3 · Graha + Rāśi", "Layer 4 · Graha + Graha"]
+        self.assertEqual([p["house"] for p in self.r["panels"]], list(range(1, 13)))
+        for p in self.r["panels"]:
+            self.assertEqual(p["layers"], layers, p["house"])
+            self.assertTrue(p["karaka"], p["house"])
+
+    def test_ninth_house_panel(self):
+        n = self.r["ninth"]
+        self.assertEqual(n["classes"], ["Trikona", "Apoklima", "Badhaka"])
+        self.assertIn("its lord Mars is the Badhakādhipati", n["badhaka"])
+        self.assertEqual(n["occupants"], ["Sun", "Mars", "Mercury"])
+        for dts in n["occupantDts"]:
+            self.assertEqual(dts[:5], ["House", "Roles", "Dignity", "Digbala", "Strength"])
+        self.assertEqual([x["planet"] for x in n["lord"]], ["Mars"])
+        self.assertNotIn("Class rules", n["lord"][0]["dts"])
+        self.assertEqual(n["areas"], [12, 15])
+
+    def test_first_house_digbala(self):
+        self.assertIn("gains directional strength (digbala) in the 1st house", self.r["jupiter"])
+
+    def test_jump_bar_stays_in_view(self):
+        j = self.r["jump"]
+        self.assertGreaterEqual(j["bar"], j["nav"] - 1, j)
+        self.assertLess(j["bar"], 300, j)
+        self.assertGreater(j["panel"], j["bar"], j)                 # the panel is not hidden under the bar
+        self.assertLess(j["panel"], 500, j)
+
+    def test_area_link_opens_life_area(self):
+        self.assertEqual(self.r["area"], {"pane": "block", "shown": 12, "open": True, "section": "block"})
+
+    def test_view_persists_across_charts(self):
+        self.assertEqual(self.r["layer"], {"pane": "block", "bhava": "none", "cards": 9})
+        self.assertEqual(self.r["persist"], ["block", "none"])
+        self.assertEqual(self.r["back"], ["block", "bhava"])
+
+    def test_print(self):
+        self.assertEqual(self.r["print"], ["none", "none"])
+        rest = self.r["rest"]
+        self.assertGreater(rest["n"], 0)
+        self.assertEqual((rest["before"], rest["during"], rest["after"]), (0, rest["n"], 0))
+
+    def test_phone_width(self):
+        self.assertLessEqual(self.r["phone"]["sw"], self.r["phone"]["vw"] + 1)
+
+    def test_crowded_house(self):
+        c = self.r["crowded"]
+        self.assertEqual(c["conj"], 36)
+        self.assertLessEqual(c["sw"], c["vw"] + 1)

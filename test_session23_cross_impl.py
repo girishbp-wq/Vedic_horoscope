@@ -548,6 +548,7 @@ const EXTRACT = () => {
     await page.click('#btn-generate');
     await page.waitForSelector('#report.show');
     await page.click('#reportNav button:has-text("Bhāvas")');
+    await page.click('.s23-view-btn[data-view="layer"]');      // these checks read the By-layer view (spec 2026-10-13-bhava-by-bhava)
     const d = await page.evaluate(EXTRACT);
     d.nav = await page.evaluate(() => {
       const grp = [...document.querySelectorAll('#reportNav button')].map(b => b.textContent);
@@ -744,7 +745,7 @@ class BrowserSession23(unittest.TestCase):
 
     def test_crowded_chart_still_renders(self):
         c = self.out["crowded"]
-        self.assertEqual(c["tables"], 15)                      # matrix, ten classes, readings, five-step, bhava+bhava, graha+rashi
+        self.assertEqual(c["tables"], 16)                      # matrix, ten classes, readings, five-step, bhava+bhava, graha+rashi, planets
         self.assertEqual(c["cards"], 9)
         self.assertEqual(c["conj"], 36)                      # nine planets in one sign: every pair is a conjunction
         self.assertEqual(c["kendraPlanets"], br.PLANET_ORDER)  # Lagna 4 is Karka, so all nine sit in the 1st, a Kendra
