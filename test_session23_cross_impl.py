@@ -1428,6 +1428,95 @@ class ExcelLifeAreas(unittest.TestCase):
         self.assertEqual(seen, 7)
 
 
+@unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel checks")
+class ExcelBhava(unittest.TestCase):
+    """S23_Bhava_Calc, recalculated by LibreOffice, shows what bhava_rules.bhava_reading reads for the house in B2
+    (spec 2026-10-13-bhava-by-bhava §5; what the sheet shows: make_session23_xlsx.bhava_sheet_view)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        import test_bhava_rules as tb
+        import test_teacher_charts as tc
+        cls.mx = mx
+        cls.tmp_dir = tempfile.TemporaryDirectory()
+        tmp = pathlib.Path(cls.tmp_dir.name)
+        cls.now = datetime.datetime(2026, 10, 8, 12, 0, 0)
+        every = tuple(range(1, 13))
+        degs = {p: 12.0 for p in br.PLANET_ORDER}
+        swap16 = {"Sun": 10, "Moon": 7, "Mars": 5, "Mercury": 0, "Jupiter": 8, "Venus": 11, "Saturn": 2, "Rahu": 1, "Ketu": 7}
+        swap14 = {"Sun": 10, "Moon": 0, "Mars": 3, "Mercury": 11, "Jupiter": 8, "Venus": 9, "Saturn": 2, "Rahu": 4, "Ketu": 10}
+        charts = [dict(lagna=4, signs=dict(tb.SIMHA_SIGNS), degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
+                       birth=datetime.datetime(1968, 4, 25, 8, 57), gender=None, houses=every, name="simha"),
+                  dict(tc.CHARTS["S28_CHART_3"], birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male", houses=every, name="chart3")]
+        charts += [dict(c, gender=g, houses=every) for c, g in zip(calc_charts(2, 919), ("Female", None))]
+        charts += [dict(lagna=0, signs=sg, degs=degs, retro={}, birth=datetime.datetime(1985, 7, 7, 7, 0), gender=None,
+                        houses=(1, 4, 6)) for sg in (swap16, swap14)]
+        charts.append(dict(lagna=0, signs=dict(tb.PROBE_M2), degs=degs, retro={}, birth=datetime.datetime(1991, 3, 3, 3, 0),
+                           gender=None, houses=(8, 12)))
+        for c in charts:
+            c["waxing"] = _waxing_of(c)
+        base = tmp / "base.xlsx"
+        mx.build_workbook(base)
+        src, cls.out = tmp / "in", tmp / "out"
+        src.mkdir()
+        cls.out.mkdir()
+        paths, cls.cases = [], []
+        for i, c in enumerate(charts):
+            for h in c["houses"]:
+                wb = openpyxl.load_workbook(base)
+                mx.set_inputs(wb, c, cls.now)
+                wb[mx.PREFIX + "Bhava_Calc"][mx.BHAVA_CELL] = h
+                f = src / f"c{i}_h{h:02d}.xlsx"
+                wb.save(f)
+                paths.append(f)
+                cls.cases.append((c, h, f.name))
+        _lo_recalc(paths, cls.out)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+
+    def read(self, name):
+        wb = openpyxl.load_workbook(self.out / name, data_only=True)
+        return self.mx.bhava_from_sheet(wb[self.mx.PREFIX + "Bhava_Calc"])
+
+    def want(self, c, h):
+        d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+        ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                         d["age"], d["maha"], d["bhukti"])
+        return self.mx.bhava_sheet_view(br.bhava_reading(RULES, ctx, h))
+
+    def test_every_house_equals_python(self):
+        for c, h, name in self.cases:
+            self.assertIsNone(first_difference(self.want(c, h), self.read(name)), name)
+
+    def test_the_ninth_house_of_simha(self):
+        name = next(n for c, h, n in self.cases if c.get("name") == "simha" and h == 9)
+        got = self.read(name)
+        self.assertEqual([c["name"] for c in got["classes"]], ["Trikona", "Apoklima", "Badhaka"])
+        self.assertEqual(got["classes"][2]["note"],
+                         "For a fixed (Sthira) Lagna the 9th is the Badhaka sthāna; its lord Mars is the Badhakādhipati.")
+        self.assertEqual([o["planet"] for o in got["occupants"]], ["Sun", "Mars", "Mercury"])
+        self.assertEqual((got["lord"]["planet"], got["lord"]["exchange"]), ("Mars", None))
+        self.assertEqual([k["planet"] for k in got["karakas"]], ["Sun", "Jupiter"])
+        self.assertEqual([(x["a"], x["b"]) for x in got["conjunctions"]], [("Sun", "Mars"), ("Sun", "Mercury"), ("Mars", "Mercury")])
+        self.assertTrue(got["conjunctions"][1]["combust_note"].startswith("Mercury is within 5° of the Sun (combust)"))
+        self.assertEqual([(x["by"], x["to"]) for x in got["planet_aspects"]],
+                         [("Jupiter", "Sun"), ("Jupiter", "Mars"), ("Jupiter", "Mercury")])
+        self.assertEqual(got["life_areas"], [{"no": 12, "area": "Father"}, {"no": 15, "area": "Foreign travel"}])
+        jup = got["karakas"][1]["facts"]
+        self.assertEqual((jup["digbala"], jup["digbala_text"]), ("strong", "Jupiter gains directional strength (digbala) in the 1st house."))
+
+    def test_parivartana_shows_on_both_houses(self):
+        got = {h: self.read(n) for c, h, n in self.cases if c.get("name") == "chart3" and h in (4, 7, 8, 12)}
+        self.assertEqual({h: g["lord"]["exchange"] for h, g in got.items()}, {4: 7, 7: 4, 8: 12, 12: 8})
+        self.assertEqual(got[8]["lord"]["text"], got[12]["lord"]["text"])
+        self.assertIn("12 th lord Mars is debilitated", got[12]["lord"]["text"])
+
+
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")
 class ExcelDasha(unittest.TestCase):
     """S23_Dasha_Calc, recalculated by LibreOffice: the running Pratyantara, Sookshma and Prana and the nine

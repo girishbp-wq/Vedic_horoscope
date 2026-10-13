@@ -25,6 +25,9 @@ Calculator sheets (all formulas — change the signs on S23_Chart and everything
                     and the first 4 of her Chart 3 sentences that hold (S23_ChartReadings; the page shows them all)
   S23_LifeArea_Calc Session 27's 7 steps for the area of life picked in B2 (Ready Reckoner), with the Session 28
                     summary rules, the houses each aspecting planet rules and her readings on the house and its lord
+  S23_Bhava_Calc    the Prediction read bhāva by bhāva for the house picked in B2: its classes and their meanings, the
+                    four layers (Graha + Bhāva, Bhāva + Bhāva, Graha + Rāśi, Graha + Graha), the dignity, digbala and
+                    strength of every planet, its kārakas, supports and pressure, and the life areas that read it
   S23_Ref_Calc      lookup tables copied from the page (rāśi table, dignity degrees and grid, daśā constants)
 
 The text rows are looked up in the S23_ data sheets (GrahaInBhava, ClassRules, DignityEffect, Digbala, ChartReadings,
@@ -50,7 +53,7 @@ import bhava_rules as br
 ROOT = pathlib.Path(__file__).resolve().parent
 PREFIX = b23.PREFIX
 JSON_PATH = ROOT / "session23_rules.json"
-CALC_NAMES = ["Chart", "Classes_Calc", "Roles_Calc", "Dasha_Calc", "Predict_Calc", "LifeArea_Calc", "Ref_Calc"]
+CALC_NAMES = ["Chart", "Classes_Calc", "Roles_Calc", "Dasha_Calc", "Predict_Calc", "LifeArea_Calc", "Bhava_Calc", "Ref_Calc"]
 CALC_SHEETS = [PREFIX + n for n in CALC_NAMES]
 
 # ---- layout contract (used by the tests) -------------------------------------------------------
@@ -177,7 +180,22 @@ def _ref_sheet(ws, rules):
         b = ref["BHAVA_INFO"][str(h)]
         for j, v in enumerate([h, br._short_name(b["nm"]), br._clean(b["sig"]), b["rel"], b["body"]]):
             ws.cell(row=2 + h, column=REF_BHAVA_COL0 + j, value=v)
-    for c in range(1, 46):
+    _head(ws, 2, ["Full name", "Karakas"], col0=REF_FULLNAME_COL)
+    for h in range(1, 13):
+        b = ref["BHAVA_INFO"][str(h)]
+        ws.cell(row=2 + h, column=REF_FULLNAME_COL, value=b["nm"])
+        ws.cell(row=2 + h, column=REF_KARAKA_COL, value=", ".join(b["karaka"]))
+    _head(ws, 2, ["Tatwa", "Direction", "Varna", "Traits"], col0=REF_RASHI_COL0)
+    for i, r in enumerate(ref["RASHI"]):
+        for j, v in enumerate([r["tatwa"], r["direction"], r["varna"], ", ".join(r["traits"])]):
+            ws.cell(row=3 + i, column=REF_RASHI_COL0 + j, value=v)
+    _head(ws, 2, ["Qualities", "Signifies", "Combustion effect"], col0=REF_PLANET_COL0)
+    for k, p in enumerate(br.PLANET_ORDER):
+        kk = ref["KARAKATWAS"][p]
+        for j, v in enumerate([kk["qualities"], kk["signifies"], ref["PLANET_PROFILE"][p].get("Combustion Effect", "")]):
+            ws.cell(row=3 + k, column=REF_PLANET_COL0 + j, value=v)
+
+    for c in range(1, REF_PLANET_COL0 + 3):
         ws.column_dimensions[L(c)].width = 14
 
 
@@ -762,6 +780,28 @@ H_ROWS, H_MEAN = 50, 59                                      # per slot: rows (s
 H_DEFAULT = 68
 H_R1, H_R2, H_PHRASE = 69, 70, 71                            # the houses a planet rules and "(rules the 5th and 12th)"
 
+# Bhava_Calc (the Prediction read bhāva by bhāva for the house picked in B2); bhava_from_sheet() reads it back and
+# bhava_sheet_view() says what of bhava_rules.bhava_reading it shows.
+BHAVA_CELL = "B2"
+REF_FULLNAME_COL, REF_KARAKA_COL = 46, 47     # Ref_Calc: per house (rows 3-14) the full name and its karakas
+REF_RASHI_COL0 = 49                           # Ref_Calc: per sign (rows 3-14) tatwa, direction, varna, traits
+REF_PLANET_COL0 = 54                          # Ref_Calc: per planet (rows 3-11) qualities, signifies, combustion effect
+BV_CLASS_ROW0 = 19                            # Bhava_Calc: the ten classes (header row 18)
+BV_FACT_ROW0 = 32                             # Bhava_Calc: one row per planet (header row 31)
+BV_FACT_COLS = dict(planet=1, house=2, classes=3, roles=4, dignity=5, dignity_effect=6, digbala=7, digbala_text=8,
+                    strength=9, reasons=10, class_texts=11, gr_text=12, gr_status=13, tatwa=14, direction=15, varna=16,
+                    mode=17, text=18, status=19, extra=20, moon_strength=21, nature_lines=22, twelfth_line=23,
+                    degree_stage=24, age_note=25, conditions=26, active=27, readings=28, dignity_line=29, gr_row=30)
+BV_BLOCK_ROW0 = 44                            # Bhava_Calc: the house block (header row 43)
+BV_KARAKA_ROW0 = BV_BLOCK_ROW0 + BLOCK_ROWS + 1
+BV_KLINE_ROW0 = BV_KARAKA_ROW0 + 3
+BV_CONJ_ROW0 = BV_KLINE_ROW0 + 2 * KLINE_ROWS + 2                        # 36 pairs (header row above)
+BV_PAIRS = [(a, b) for i, a in enumerate(br.PLANET_ORDER) for b in br.PLANET_ORDER[i + 1:]]
+BV_PASP_ROW0 = BV_CONJ_ROW0 + len(BV_PAIRS) + 2                         # each aspect slot onto each other planet
+BV_AREA_ROWS = 59                                                        # S23_LifeAreas rows 2-60
+DIGBALA_NEITHER = "neither — strongest in the "
+
+
 
 # The Life-areas house block, shared by S23_LifeArea_Calc and S23_Bhava_Calc (both keep the helper table at HELP_ROW0,
 # columns H_*); formerly closures of _life_area_sheet, moved unchanged.
@@ -1253,9 +1293,279 @@ def life_area_from_sheet(ws):
             "karakas": karakas, "pac": pac, "planet_link": plink, "supports": supports, "pressure": pressure}
 
 
+def _bv_pasp_rows(rules):
+    """(planet, slot, house count, target planet) for every aspect slot onto every other planet, in graha_graha's order."""
+    sa = rules["reference"]["SPECIAL_ASPECTS"]
+    return [(p, sl, h, q) for p in br.PLANET_ORDER for sl, h in enumerate(sa[p]) for q in br.PLANET_ORDER if q != p]
+
+
+def _bv_rows(rules):
+    """Row numbers that depend on the aspect table's length: the life areas and the running counts."""
+    area0 = BV_PASP_ROW0 + len(_bv_pasp_rows(rules)) + 2
+    return area0, area0 + BV_AREA_ROWS + 3
+
+
+def _bhava_sheet(ws, rules):
+    """The Prediction read bhāva by bhāva for the house picked in B2 — equal to bhava_sheet_view(bhava_rules.bhava_reading)
+    (see bhava_from_sheet): its classes, the four layers, the facts of every planet, its karakas, supports and pressure,
+    and the life areas that read it."""
+    ref = rules["reference"]
+    assert max(len(ref["BHAVA_INFO"][str(h)]["karaka"]) for h in range(1, 13)) <= 2, "the sheet has room for two karakas"
+    ws["A1"] = "Bhāva by bhāva — pick the house in B2; its classes, the four layers, kārakas and life areas follow"
+    ws["A1"].font = Font(bold=True, color="6B1D2B", size=13)
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+    hb = f"${BHAVA_CELL[0]}${BHAVA_CELL[1:]}"
+    area0, lr0 = _bv_rows(rules)
+    ref_col = lambda c, row: f"INDEX(S23_Ref_Calc!${L(c)}$3:${L(c)}$14,{row})"
+    planet_ref = lambda j, k: f"S23_Ref_Calc!${L(REF_PLANET_COL0 + j)}${3 + k}"
+
+    # ---- the house
+    sup = lambda col: "=MID(" + "&".join(f'IF(${L(col)}${x}<>"",CHAR(10)&${L(col)}${x},"")'
+                                          for x in range(BV_BLOCK_ROW0, BV_KLINE_ROW0 + 2 * KLINE_ROWS)) + ",2,32000)"
+    top = [(2, "House (pick 1-12)", None), (3, "Sign # (0-11)", f"=MOD(S23_Chart!$D$3+{hb}-1,12)"),
+           (4, "Rāśi", f"=INDEX({LA_NAMES},$B$3+1)"), (5, "Name", f"={_bh(1, hb)}"), (6, "Full name", f"={ref_col(REF_FULLNAME_COL, hb)}"),
+           (7, "Significations", f"={_bh(2, hb)}"), (8, "People", f"={_bh(3, hb)}"), (9, "Body", f"={_bh(4, hb)}"),
+           (10, "Sign line", f"={ref_col(REF_SIGNLINE_COL, '$B$3+1')}"), (11, "Kārakas", f'={ref_col(REF_KARAKA_COL, hb)}&""'),
+           (12, "Kāraka 1", '=TRIM(LEFT($B$11,FIND(",",$B$11&",")-1))'),
+           (13, "Kāraka 2", '=IFERROR(TRIM(MID($B$11,FIND(",",$B$11)+1,99)),"")'),
+           (14, "Supports", sup(SUPPORT_COL)), (15, "Pressure", sup(PRESSURE_COL)),
+           (16, "Classes", f'=INDEX(S23_Classes_Calc!$M${MATRIX_ROW0 + 1}:$M${MATRIX_ROW0 + 12},{hb})&""')]
+    for r, label, f in top:
+        cell(r, 1, label)
+        if f:
+            cell(r, 2, f).alignment = WRAP
+    ws[BHAVA_CELL] = 1
+    ws[BHAVA_CELL].fill = INPUT_FILL
+    dv = DataValidation(type="list", formula1='"' + ",".join(str(h) for h in range(1, 13)) + '"', allow_blank=False)
+    ws.add_data_validation(dv)
+    dv.add(BHAVA_CELL)
+
+    # ---- its classes, each with its meaning (the first sentence of its Nature) and the Badhaka note
+    _head(ws, BV_CLASS_ROW0 - 1, ["In this house?", "Class", "Other names", "Meaning", "Note"])
+    cls = lambda col, r: f'INDEX(S23_Classes!${col}$1:${col}$60,MATCH($B{r},S23_Classes!$B$1:$B$60,0))&""'
+    mode, lord = f"S23_Classes_Calc!$B${BADHAKA_ROW}", f"S23_Classes_Calc!$E${BADHAKA_ROW}"
+    word = '"dual"'
+    for m_, w_ in reversed(list(br.MODE_WORD.items())[:-1]):
+        word = f'IF({mode}="{m_}","{w_}",{word})'
+    for i, name in enumerate(br.CLASS_ORDER):
+        r = BV_CLASS_ROW0 + i
+        cell(r, 1, f"=INDEX({LA_MATRIX},{hb},{i + 1})=1")
+        cell(r, 2, name)
+        cell(r, 3, f'=IFERROR({cls("E", r)},"")')
+        cell(r, 4, f'=IFERROR(IFERROR(LEFT({cls("F", r)},FIND(". ",{cls("F", r)})),{cls("F", r)}),"")')
+        cell(r, 5, (f'=IF($B{r}="Badhaka","For a "&{word}&" ("&{mode}&") Lagna the "&{_ord(hb)}&" is the Badhaka sthāna; '
+                    f'its lord "&{lord}&" is the Badhakādhipati.","")'))
+
+    # ---- the facts and the per-planet texts of every planet (Predict_Calc, Roles_Calc, GrahaRashi)
+    fc = BV_FACT_COLS
+    _head(ws, BV_FACT_ROW0 - 1, [k.replace("_", " ").capitalize() for k in fc])
+    for k, p in enumerate(br.PLANET_ORDER):
+        r, pr, cr = BV_FACT_ROW0 + k, PREDICT_ROW0 + k, PLANET_ROW0 + k
+        pc = lambda name: f"S23_Predict_Calc!${L(PREDICT_COLS[name])}${pr}"
+        strong, lost = f"S23_Predict_Calc!$M${pr}", f"S23_Predict_Calc!$N${pr}"
+        sign = f"S23_Chart!$D${cr}"
+        cell(r, fc["planet"], p)
+        cell(r, fc["house"], f"=S23_Chart!$E${cr}")
+        cell(r, fc["classes"], f'={pc("classes")}&""')
+        cell(r, fc["roles"], f'=S23_Roles_Calc!$H${ROLES_ROW0 + k}&""')
+        cell(r, fc["dignity"], f'={pc("dignity")}&""')
+        cell(r, fc["dignity_effect"], f'=IFERROR(INDEX(S23_DignityEffect!$C$2:$C$10,MATCH(${L(fc["dignity"])}{r},S23_DignityEffect!$A$2:$A$10,0))&"","")')
+        cell(r, fc["digbala"], f'=IF({strong}=0,"",IF($B{r}={strong},"strong",IF($B{r}={lost},"lost","")))')
+        cell(r, fc["digbala_text"], (f'=IF({pc("digbala_line")}<>"",{pc("digbala_line")},IF({strong}=0,"{br.DIGBALA_NODE_TEXT}",'
+                                     f'"{DIGBALA_NEITHER}"&{_ord(strong)}&", weakest in the "&{_ord(lost)}))'))
+        for name in ("strength", "reasons", "class_texts", "moon_strength", "nature_lines", "twelfth_line", "degree_stage",
+                     "age_note", "conditions", "active", "readings", "dignity_line"):
+            cell(r, fc[name], f'={pc(name)}&""')
+        for name, col in (("text", "C"), ("extra", "D"), ("status", "E")):          # straight from her row: a blank stays ""
+            cell(r, fc[name], f'=INDEX(S23_GrahaInBhava!${col}$1:${col}$300,S23_Predict_Calc!$L${pr})&""')
+        gr = (f"SUMPRODUCT((S23_GrahaRashi!$A$2:$A$300=$A{r})*(S23_GrahaRashi!$B$2:$B$300={sign}+1)"
+              f"*ROW(S23_GrahaRashi!$A$2:$A$300))")
+        cell(r, fc["gr_row"], f"={gr}")
+        g = f"${L(fc['gr_row'])}{r}"
+        rashi_ref = lambda j: ref_col(REF_RASHI_COL0 + j, f"{sign}+1")
+        for j, name in enumerate(("tatwa", "direction", "varna")):
+            cell(r, fc[name], f"={rashi_ref(j)}")
+        cell(r, fc["mode"], f"={ref_col(5, f'{sign}+1')}")
+        cell(r, fc["gr_text"], (f'=IF({g}>0,INDEX(S23_GrahaRashi!$C$1:$C$300,{g}),$A{r}&" in "&{ref_col(2, f"{sign}+1")}'
+                                f'&" ("&{ref_col(3, f"{sign}+1")}&"): "&$N{r}&" tatwa, "&$O{r}&" direction, "&$P{r}&" varna, "'
+                                f'&$Q{r}&" rāśi. The rāśi\'s traits: "&{rashi_ref(3)}&". "&${L(fc["dignity_line"])}{r})'))
+        cell(r, fc["gr_status"], f'=IF({g}>0,INDEX(S23_GrahaRashi!$D$1:$D$300,{g}),"blend")')
+    for c, w in ((fc["text"], 50), (fc["gr_text"], 50), (fc["class_texts"], 40)):
+        ws.column_dimensions[L(c)].width = w
+
+    # ---- the house block (Session 27 steps 1-5), the karakas (step 6) and her readings
+    _helper_table(ws, rules)
+    _reading_counts(ws, rules, lr0, [BV_BLOCK_ROW0], "Running counts of her readings (S23_ChartReadings) for this house")
+    _block_header(ws, BV_BLOCK_ROW0 - 1)
+    _house_block(ws, rules, 0, BV_BLOCK_ROW0, hb, lr0)
+    _karaka_rows(ws, rules, BV_KARAKA_ROW0, BV_KLINE_ROW0, ("$B$12", "$B$13"), '""')
+
+    # ---- Layer 4: planets meeting in this house, and aspects onto the planets here
+    deg = lambda q: f"S23_Chart!$C${PLANET_ROW0 + br.PLANET_ORDER.index(q)}"
+    sg = lambda q: f"S23_Chart!$D${PLANET_ROW0 + br.PLANET_ORDER.index(q)}"
+    pair_row = lambda a, b: (f"SUMPRODUCT((S23_GrahaPair!$A$2:$A$300=\"{a}\")*(S23_GrahaPair!$B$2:$B$300=\"{b}\")"
+                             f"*ROW(S23_GrahaPair!$A$2:$A$300))")
+    orb = ref["COMBUST_ORB"]
+    _head(ws, BV_CONJ_ROW0 - 1, ["A", "B", "Here?", "Conjunction", "Status", "Combust note", "Row in GrahaPair"])
+    for i, (a, b) in enumerate(BV_PAIRS):
+        r = BV_CONJ_ROW0 + i
+        cell(r, 1, a)
+        cell(r, 2, b)
+        cell(r, 3, f"=AND({sg(a)}=$B$3,{sg(b)}=$B$3)")
+        cell(r, 7, f"={pair_row(a, b)}")
+        cell(r, 4, f'=INDEX(S23_GrahaPair!$C$1:$C$300,$G{r})&""')
+        cell(r, 5, f'=INDEX(S23_GrahaPair!$E$1:$E$300,$G{r})&""')
+        if a == "Sun" and b in ref["COMBUST_PLANETS"]:
+            cell(r, 6, (f'=IF(ABS({deg(a)}-{deg(b)})<={orb},"{b} is within {orb}° of the Sun (combust): "'
+                        f'&{planet_ref(2, br.PLANET_ORDER.index(b))}&".","")'))
+        else:
+            cell(r, 6, '=""')
+    _head(ws, BV_PASP_ROW0 - 1, ["By", "To", "Here?", "Text", "Status", "Row in GrahaPair"])
+    for i, (p, sl, h, q) in enumerate(_bv_pasp_rows(rules)):
+        r = BV_PASP_ROW0 + i
+        k = br.PLANET_ORDER.index(p)
+        a, b = sorted((p, q), key=br.PLANET_ORDER.index)
+        cell(r, 1, p)
+        cell(r, 2, q)
+        cell(r, 3, f"=AND(${L(H_TARGET + sl)}${HELP_ROW0 + k}={sg(q)},{sg(q)}=$B$3)")
+        cell(r, 6, f"={pair_row(a, b)}")
+        asp = f"INDEX(S23_GrahaPair!$D$1:$D$300,$F{r})"
+        cell(r, 4, (f'="{p}\'s {br.aspect_name(p, h)} aspect falls on {q}: {p}\'s qualities ("&{planet_ref(0, k)}'
+                    f'&") colour what {q} signifies ("&{planet_ref(1, br.PLANET_ORDER.index(q))}&")."'
+                    f'&IF(TRIM({asp})<>""," "&{asp},"")'))
+        cell(r, 5, f'=IF(TRIM({asp})<>"",INDEX(S23_GrahaPair!$E$1:$E$300,$F{r})&"","blend")')
+
+    # ---- the life areas that read this house
+    _head(ws, area0 - 1, ["No", "Area", "Reads this house?"])
+    for m in range(BV_AREA_ROWS):
+        r, src = area0 + m, 2 + m
+        cell(r, 1, f'=IF(S23_LifeAreas!$B${src}="","",S23_LifeAreas!$A${src})')
+        cell(r, 2, f'=S23_LifeAreas!$B${src}&""')
+        cell(r, 3, f'=AND($B{r}<>"",ISNUMBER(SEARCH(","&{hb}&",",","&SUBSTITUTE(S23_LifeAreas!$C${src}," ","")&",")))')
+    ws.column_dimensions["A"].width = 18
+    ws.column_dimensions["B"].width = 60
+    for c in range(3, 19):
+        ws.column_dimensions[L(c)].width = 18
+    for c in (SUPPORT_COL, PRESSURE_COL):
+        ws.column_dimensions[L(c)].width = 40
+
+
+def bhava_from_sheet(ws):
+    """Read a recalculated S23_Bhava_Calc back into the shape bhava_sheet_view(bhava_rules.bhava_reading(...)) returns."""
+    v = lambda r, c: ws.cell(row=r, column=c).value
+    txt = lambda r, c: "" if v(r, c) is None else str(v(r, c))
+    num = lambda r, c: int(round(float(v(r, c))))
+    yes = lambda r, c: bool(v(r, c)) and v(r, c) not in ("FALSE", 0)
+    rules_list = lambda s: [int(x) for x in s.split(",") if x.strip()]
+    split = lambda s: [x for x in s.split(", ") if x]
+    means = lambda r, c0: [txt(r, c0 + j) for j in range(3) if txt(r, c0 + j)]
+    shown = lambda r, c0: [txt(r, c0 + j) for j in range(READINGS_SHOWN + 1) if txt(r, c0 + j)]
+    fc = BV_FACT_COLS
+    rows = {txt(BV_FACT_ROW0 + k, 1): BV_FACT_ROW0 + k for k in range(9)}
+    f = lambda p, name: txt(rows[p], fc[name])
+
+    def facts(p):
+        r = rows[p]
+        return {"house": num(r, fc["house"]), "classes": split(f(p, "classes")), "roles": split(f(p, "roles")),
+                "dignity": f(p, "dignity"), "dignity_effect": f(p, "dignity_effect"), "digbala": f(p, "digbala"),
+                "digbala_text": f(p, "digbala_text"), "strength": f(p, "strength"), "reasons": split(f(p, "reasons")),
+                "class_texts": f(p, "class_texts")}
+
+    b0 = BV_BLOCK_ROW0
+    r = b0 + 1
+    occ = []
+    for _ in range(9):
+        if yes(r, 3):
+            p = txt(r, 2)
+            occ.append({"planet": p, "nature": txt(r, 4), "facts": facts(p), "text": f(p, "text"), "status": f(p, "status"),
+                        "extra": f(p, "extra"), "moon_strength": f(p, "moon_strength"), "nature_lines": f(p, "nature_lines"),
+                        "twelfth_line": f(p, "twelfth_line"), "degree_stage": f(p, "degree_stage"), "age_note": f(p, "age_note"),
+                        "conditions": f(p, "conditions"), "active": f(p, "active"), "readings": f(p, "readings"),
+                        "graha_rashi": {"text": f(p, "gr_text"), "status": f(p, "gr_status"), "tatwa": f(p, "tatwa"),
+                                        "direction": f(p, "direction"), "varna": f(p, "varna"), "mode": f(p, "mode")},
+                        "dignity_line": f(p, "dignity_line")})
+        r += 1
+    asp = []
+    for _ in range(27):
+        if yes(r, 3):
+            asp.append({"by": txt(r, 2), "aspect": txt(r, 4), "rules": rules_list(txt(r, 8)), "meanings": means(r, 5),
+                        "readings": shown(r, 9)})
+        r += 1
+    lord = None
+    if txt(r, 2):
+        lord = {"planet": txt(r, 2), "facts": facts(txt(r, 2)), "house": num(r, 3), "sign": num(r, 4), "rashi": txt(r, 5),
+                "exchange": num(r, 3) if yes(r, 12) else None, "placement_line": txt(r, 6), "text": txt(r, 9),
+                "status": txt(r, 10), "dictum": txt(r, 11)}
+    r += 2
+    company = []
+    for _ in range(9):
+        if yes(r, 3):
+            company.append({"planet": txt(r, 2), "how": "with", "aspect": "", "rules": rules_list(txt(r, 4)), "meanings": [],
+                            "readings": []})
+        r += 1
+    for _ in range(27):
+        if yes(r, 3):
+            company.append({"planet": txt(r, 2), "how": "aspect", "aspect": txt(r, 4), "rules": rules_list(txt(r, 5)),
+                            "meanings": means(r, 6), "readings": shown(r, 9)})
+        r += 1
+    karakas = []
+    for i in range(2):
+        r = BV_KARAKA_ROW0 + i
+        if txt(r, 2):
+            karakas.append({"planet": txt(r, 2), "house": num(r, 3), "sign": num(r, 4), "rashi": txt(r, 5), "dignity": txt(r, 6),
+                            "combust": yes(r, 7), "retro": yes(r, 8), "strength": txt(r, 9), "note": txt(r, 10),
+                            "malefic_aspects": [x for x in txt(r, 11).split(", ") if x], "facts": facts(txt(r, 2))})
+    supports = [txt(x, SUPPORT_COL) for x in range(b0, BV_KLINE_ROW0 + 2 * KLINE_ROWS) if txt(x, SUPPORT_COL)]
+    pressure = [txt(x, PRESSURE_COL) for x in range(b0, BV_KLINE_ROW0 + 2 * KLINE_ROWS) if txt(x, PRESSURE_COL)]
+    conj = [{"a": txt(r, 1), "b": txt(r, 2), "text": txt(r, 4), "status": txt(r, 5), "combust_note": txt(r, 6)}
+            for r in range(BV_CONJ_ROW0, BV_CONJ_ROW0 + len(BV_PAIRS)) if yes(r, 3)]
+    pasp, r = [], BV_PASP_ROW0
+    while txt(r, 1):
+        if yes(r, 3):
+            pasp.append({"by": txt(r, 1), "to": txt(r, 2), "text": txt(r, 4), "status": txt(r, 5)})
+        r += 1
+    area0 = r + 2
+    areas = [{"no": num(x, 1), "area": txt(x, 2)} for x in range(area0, area0 + BV_AREA_ROWS) if yes(x, 3)]
+    classes = [{"name": txt(x, 2), "other_names": txt(x, 3), "meaning": txt(x, 4), "note": txt(x, 5)}
+               for x in range(BV_CLASS_ROW0, BV_CLASS_ROW0 + len(br.CLASS_ORDER)) if yes(x, 1)]
+    return {"house": num(2, 2), "sign": num(3, 2), "rashi": txt(4, 2), "name": txt(5, 2), "full_name": txt(6, 2),
+            "significations": txt(7, 2), "people": txt(8, 2), "body": txt(9, 2), "classes": classes, "sign_line": txt(10, 2),
+            "supports": supports, "pressure": pressure, "occupants": occ, "aspecting": asp, "lord": lord,
+            "conjunctions": conj, "planet_aspects": pasp, "lord_company": company, "karakas": karakas, "life_areas": areas}
+
+
+def bhava_sheet_view(reading):
+    """What S23_Bhava_Calc shows of bhava_rules.bhava_reading: texts joined as on S23_Predict_Calc, the first
+    READINGS_SHOWN of her sentences, the dignity label without its note, no source references (plan decision P3)."""
+    shown = lambda xs: xs[:READINGS_SHOWN] + ([MORE_ON_PAGE] if len(xs) > READINGS_SHOWN else [])
+
+    def facts(f):
+        return {"house": f["house"], "classes": f["classes"], "roles": f["roles"], "dignity": f["dignity"]["label"],
+                "dignity_effect": f["dignity_effect"], "digbala": f["digbala"] or "", "digbala_text": f["digbala_text"],
+                "strength": f["strength"]["word"], "reasons": f["strength"]["reasons"], "class_texts": "\n".join(f["class_texts"])}
+
+    def occupant(o):
+        ds, act = o["degree_stage"], [c["key"] for c in o["conditions"] if c["active"]]
+        return {"planet": o["planet"], "nature": o["nature"], "facts": facts(o["facts"]), "text": o["text"], "status": o["status"],
+                "extra": "\n".join(o["extra"]), "moon_strength": o["moon_strength"],
+                "nature_lines": "\n".join(x["text"] for x in o["nature_lines"]), "twelfth_line": o["twelfth_line"],
+                "degree_stage": " ".join(ds["lines"]) if ds else "", "age_note": ds["age_note"] if ds else "",
+                "conditions": "\n".join(c["text"] for c in o["conditions"]), "active": ", ".join(act),
+                "readings": "\n\n".join(shown(o["readings"])), "graha_rashi": o["graha_rashi"], "dignity_line": o["dignity_line"]}
+
+    lord = reading["lord"]
+    return dict(reading, occupants=[occupant(o) for o in reading["occupants"]],
+                aspecting=[dict(a, readings=shown(a["readings"])) for a in reading["aspecting"]],
+                lord=None if lord is None else {**{k: v for k, v in lord.items() if k != "source"}, "facts": facts(lord["facts"])},
+                conjunctions=[{k: c[k] for k in ("a", "b", "text", "status", "combust_note")} for c in reading["conjunctions"]],
+                planet_aspects=[{k: a[k] for k in ("by", "to", "text", "status")} for a in reading["planet_aspects"]],
+                lord_company=[dict(w, readings=shown(w["readings"])) for w in reading["lord_company"]],
+                karakas=[dict(k, facts=facts(k["facts"])) for k in reading["karakas"]])
+
+
 # ---- assembly --------------------------------------------------------------------------------------
 def build_calc_sheets(wb, rules):
-    """(Re)create the six calculator sheets at the end of `wb`; the data sheets and everything else stay as they are."""
+    """(Re)create the calculator sheets at the end of `wb`; the data sheets and everything else stay as they are."""
     for name in CALC_SHEETS:
         if name in wb.sheetnames:
             del wb[name]
@@ -1266,6 +1576,7 @@ def build_calc_sheets(wb, rules):
     _dasha_sheet(sheets["Dasha_Calc"])
     _predict_sheet(sheets["Predict_Calc"], rules)
     _life_area_sheet(sheets["LifeArea_Calc"], rules)
+    _bhava_sheet(sheets["Bhava_Calc"], rules)
     _ref_sheet(sheets["Ref_Calc"], rules)
     for ws in sheets.values():
         ws.sheet_properties.tabColor = "2E7D78"

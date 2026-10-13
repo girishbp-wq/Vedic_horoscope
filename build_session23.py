@@ -82,7 +82,7 @@ README_LINES = [
     "Status column: taught = the teacher's own content (slides / recording);  curated = drafted by blending her karakatwas, not yet taught;  blend = generated from templates;  standard = a standard rule the teacher has not stated yet.",
     "Houses are comma lists (1, 4, 7, 10). Points: one paragraph per blank-line-separated block; Extra: one line each.",
     "Keep the S23_ClassRules rows grouped in the order of the ten classes (Kendra … Trishadaya): the Excel calculator joins their texts in sheet order.",
-    "S23_Chart, S23_Classes_Calc, S23_Roles_Calc, S23_Dasha_Calc, S23_Predict_Calc, S23_LifeArea_Calc and S23_Ref_Calc are the live calculator (formulas) — set the signs on S23_Chart; pick an area of life in B2 of S23_LifeArea_Calc.",
+    "S23_Chart, S23_Classes_Calc, S23_Roles_Calc, S23_Dasha_Calc, S23_Predict_Calc, S23_LifeArea_Calc, S23_Bhava_Calc and S23_Ref_Calc are the live calculator (formulas) — set the signs on S23_Chart; pick an area of life in B2 of S23_LifeArea_Calc, or a house in B2 of S23_Bhava_Calc.",
     "When a later session teaches a graha, replace its 'curated' rows and set Status to taught.",
     "Sessions 23 (2024 deck) to 27: S23_BhavaNature (benefic/malefic in each house), S23_AspectMeaning, S23_LifeAreas "
     "(Ready Reckoner), S23_Conditions (sentences that hold only for some charts; Key is one of a fixed list) and S23_Remedies. "
