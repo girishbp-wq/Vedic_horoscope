@@ -351,6 +351,24 @@ class JsEngine(unittest.TestCase):
                     "life_areas": br.life_areas(RULES, ctx)}
             self.assertEqual([k for k, v in mine.items() if fingerprint(v) != g[k]], [], i)
 
+    def test_edited_parivartana_row_equal_python(self):
+        """The Parivartana rule follows the house pair, whatever the row's Condition or order — page = Python."""
+        import copy
+        import test_bhava_rules as tb
+        chart = {"lagna": 0, "signs": dict(tb.PROBE_M2), "degs": {p: 15.0 for p in tb.PROBE_M2}, "waxing": None}
+        for edit in ({"condition": "weak"}, {"lord_of": 12, "sits_in": 8}):
+            body = JS_CANON + """const row = S23.bhava_lord_in.find(r => r.exchange && [8, 12].includes(r.lord_of) && [8, 12].includes(r.sits_in));
+                Object.assign(row, EDIT);
+                return job.map(c => {
+                  const lg = c.lagna + 1, pbr = {};
+                  for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
+                  return fp(s23BhavaBhava(ctxOf(c, lg, pbr)));
+                });""".replace("EDIT", json.dumps(edit))
+            got = run_page(body, [chart], self.tmp)[0]
+            rules = copy.deepcopy(RULES)
+            next(r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {8, 12}).update(edit)
+            self.assertEqual(fingerprint(br.bhava_bhava(rules, ctx_of(chart))), got, edit)
+
     def test_dasha_chain_parity(self):
         import calendar
         rnd = random.Random(29)
@@ -1255,6 +1273,9 @@ class ExcelLifeAreas(unittest.TestCase):
                                gender=None, areas=areas, claims=True))
         charts.append(dict(tc.CHARTS["S28_CHART_3"], signs=dict(tc.CHARTS["S28_CHART_3"]["signs"], Sun=1),
                            birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male", areas=(1,), claims=True))
+        # the Parivartana row edited in the workbook (Condition weak): its rule still follows the house pair
+        charts.append(dict(lagna=0, signs=tb.PROBE_M2, degs=degs, retro={}, birth=datetime.datetime(1991, 3, 3, 3, 0),
+                           gender=None, areas=(15,), claims=True, edit={"condition": "weak"}))
         for c in charts:
             c["waxing"] = _waxing_of(c)
         base = tmp / "base.xlsx"
@@ -1271,6 +1292,11 @@ class ExcelLifeAreas(unittest.TestCase):
                 wb = openpyxl.load_workbook(base)
                 mx.set_inputs(wb, c, cls.now)
                 wb[mx.PREFIX + "LifeArea_Calc"][mx.AREA_CELL] = area
+                if c.get("edit"):
+                    ws = wb[mx.PREFIX + "BhavaLordIn"]
+                    r = next(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=7).value == "yes"
+                             and {ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value} == {8, 12})
+                    ws.cell(row=r, column=6, value=c["edit"]["condition"])
                 f = src / f"c{i}_a{no:02d}.xlsx"
                 wb.save(f)
                 paths.append(f)
@@ -1283,6 +1309,8 @@ class ExcelLifeAreas(unittest.TestCase):
 
     def test_every_area_equals_python(self):
         for c, no, name in self.cases:
+            if c.get("edit"):
+                continue
             wb = openpyxl.load_workbook(self.out / name, data_only=True)
             got = self.mx.life_area_from_sheet(wb[self.mx.PREFIX + "LifeArea_Calc"])
             d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
@@ -1296,6 +1324,8 @@ class ExcelLifeAreas(unittest.TestCase):
         import test_teacher_charts as tc
         checked = 0
         for c, no, name in self.cases:
+            if c.get("edit"):
+                continue
             wb = openpyxl.load_workbook(self.out / name, data_only=True)
             got = self.mx.life_area_from_sheet(wb[self.mx.PREFIX + "LifeArea_Calc"])
             d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
@@ -1330,11 +1360,20 @@ class ExcelLifeAreas(unittest.TestCase):
             if c.get("claims"):
                 seen += 1
                 self.assertEqual([x for x in hidden if x in blob], [], name)
+                rules = RULES
+                if c.get("edit"):
+                    import copy
+                    rules = copy.deepcopy(RULES)
+                    next(r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {8, 12}).update(c["edit"])
+                d = br.dasha_now(rules, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+                ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                                 d["age"], d["maha"], d["bhukti"])
+                self.assertIsNone(first_difference(br.life_area(rules, ctx, no), got), name)
                 if c["lagna"] == 6:                                  # Tula: her 8th lord line stays
                     self.assertIn("8th Lord Moon is debilitated", blob, name)
             elif c["signs"].get("Sun") == 0 and no == 1:             # her Chart 3: the Sun Deep Exalted at 10° Mesha
                 self.assertIn("bhava karaka Sun", blob, name)
-        self.assertEqual(seen, 6)
+        self.assertEqual(seen, 7)
 
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")

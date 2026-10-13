@@ -87,7 +87,8 @@ being read (built into the page, Python and the calculator; the rows' wording ca
 
 Exalted includes Deep Exalted; debilitated includes Deep Debilitated. The rule finds its row by the key cells shown
 (Kind, Planet, With, House, Condition; LordOf, SitsIn, Condition, Exchange): change one of those and the rule no
-longer applies to that row.
+longer applies to that row. The Parivartana row is the exception: like the row itself, its rule is found by the two
+houses (8 and 12, either order) with Exchange = yes, whatever its Condition.
 
 ## The sheets
 | Sheet | What it is |

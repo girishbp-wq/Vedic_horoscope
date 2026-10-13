@@ -365,7 +365,8 @@ def _aspects_sign(rules, sg, p, sign):
 # user's choice). Keyed by her row's key cells; who = a planet, "Nth lord", or "lord" (the lord of the row's LordOf).
 READING_CLAIMS = {("aspects", "1st lord", "", 1, ""): ("Sun", "exalted")}               # S28 p.2: "Sun … is exalted"
 LORD_IN_CLAIMS = {(9, 5, "", False): ("lord", "exalted"),                               # S28 p.12
-                  (8, 12, "", True): ("12th lord", "debilitated"),                      # S28 p.16, the Parivartana
+                  (8, 12, "", True): ("12th lord", "debilitated"),                      # S28 p.16, the Parivartana:
+                  # keyed (smaller house, larger house, "", True) — it follows the house pair, whatever its Condition
                   (7, 4, "weak", False): ("lord", "debilitated"),                       # S28 pp.9-10
                   (8, 12, "weak", False): ("lord", "debilitated"),                      # S28 p.11
                   (10, 4, "weak", False): ("lord", "debilitated")}                      # S28 p.13
@@ -859,9 +860,9 @@ def bhava_bhava(rules, ctx):
             continue                                          # shown with the smaller house of the pair
         strength_word = strength(rules, ctx, lord)
         if swap is not None:
+            # a Parivartana row is found by its two houses (either order, any Condition), and so is its rule
             row = next((r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {x, y}
-                        and claim_holds(rules, ctx, LORD_IN_CLAIMS.get((r["lord_of"], r["sits_in"], r["condition"], True)),
-                                        r["lord_of"])), None)
+                        and claim_holds(rules, ctx, LORD_IN_CLAIMS.get((min(x, y), max(x, y), "", True)), min(x, y))), None)
             # her Parivartana text first (if any), then her readings for either direction (each lord judged by its
             # strength) — on her Chart 3 both the 8↔12 line and her 8→12 line show (spec §9.1)
             chosen = ([row] if row else []) + _taught_rows(rules, ctx, x, y, strength_word) \

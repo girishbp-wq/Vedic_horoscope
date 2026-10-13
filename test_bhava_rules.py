@@ -1311,3 +1311,19 @@ class DignityClaims(unittest.TestCase):
         self.assertTrue(br.claim_holds(RULES, ctx, ("12th lord", "debilitated")))
         self.assertTrue(br.claim_holds(RULES, ctx, ("lord", "debilitated"), 8))      # the 8th lord Moon
         self.assertTrue(br.claim_holds(RULES, ctx, None))
+
+
+class DignityClaimsEditedRows(unittest.TestCase):
+    """The Parivartana rule follows the two houses and Exchange = yes, whatever the row's Condition or order (review fix)."""
+
+    def test_parivartana_rule_survives_an_edited_row(self):
+        import copy
+        for edit in ({"condition": "weak"}, {"lord_of": 12, "sits_in": 8}):
+            rules = copy.deepcopy(RULES)
+            row = next(r for r in rules["bhava_lord_in"] if r["exchange"] and {r["lord_of"], r["sits_in"]} == {8, 12})
+            row.update(edit)
+            e = next(x for x in br.bhava_bhava(rules, br.context(0, PROBE_M2, {p: 15.0 for p in PROBE_M2})) if x["lord_of"] == 8)
+            self.assertNotIn("12 th lord Mars is debilitated", e["text"], edit)
+            ctx3 = _chart_ctx("S28_CHART_3")
+            e3 = next(x for x in br.bhava_bhava(rules, ctx3) if x["lord_of"] == 8)
+            self.assertIn("12 th lord Mars is debilitated", e3["text"], edit)      # her chart: the 12th lord is debilitated

@@ -6679,8 +6679,11 @@ function s23BhavaBhava(ctx){
     const strength=s23Strength(ctx, lord);
     let text, status, source, dictum;
     if(swap!==null){
+      // a Parivartana row is found by its two houses (either order, any Condition), and so is its rule
+      const lo=Math.min(x,y), hi=Math.max(x,y);
+      const exClaim=S23_LORD_IN_CLAIMS.find(c=>c.exchange && c.lord_of===lo && c.sits_in===hi && c.condition==="");
       const row=S23.bhava_lord_in.find(r=>r.exchange && ((r.lord_of===x&&r.sits_in===y)||(r.lord_of===y&&r.sits_in===x))
-        && s23ClaimHolds(ctx, s23LordInClaim(r), r.lord_of));
+        && s23ClaimHolds(ctx, exClaim, lo));
       // her Parivartana text first (if any), then her readings for either direction (each lord judged by its strength)
       const chosen=(row ? [row] : []).concat(s23TaughtRows(ctx, x, y, strength), s23TaughtRows(ctx, y, x, s23Strength(ctx, lordOf[y])));
       if(chosen.length) [text, status, source] = [chosen.map(r=>r.text).join("\n\n"), chosen[0].status, chosen[0].source];

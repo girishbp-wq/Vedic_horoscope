@@ -41,7 +41,8 @@ No Session 23–27 row states a dignity outside its own conditions (checked: `bh
   by its lord's strength and its own rule); with none, the existing exchange blend.
 - Status and source come from the first line shown, as now.
 - The rule follows the row's key cells. Editing her wording keeps the rule; changing a key cell (for example the
-  Condition) means the rule no longer finds that row. The guide says so.
+  Condition) means the rule no longer finds that row. The guide says so. The Parivartana row's rule follows the two
+  houses (either order) and Exchange = yes, whatever its Condition — as the row itself is found (final review).
 - Her Chart 3 (§9.1 of the Round 1 spec) is unchanged: all six claims are true there.
 
 ## 4. Where
