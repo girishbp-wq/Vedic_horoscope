@@ -1248,6 +1248,13 @@ class ExcelLifeAreas(unittest.TestCase):
         venus6 = {"Sun": 5, "Moon": 2, "Mars": 5, "Mercury": 5, "Jupiter": 10, "Venus": 6, "Saturn": 8, "Rahu": 3, "Ketu": 9}
         charts.append(dict(lagna=1, signs=venus6, degs=dict(degs, Venus=10.0), retro={}, birth=datetime.datetime(1990, 2, 2, 2, 0),
                            gender=None, areas=(11,)))
+        # her dignity sentences (spec 2026-10-13): placements that match while the dignity she states does not
+        import test_bhava_rules as tb
+        for lagna, sg, areas in ((0, tb.PROBE_M1, (11, 12, 13)), (0, tb.PROBE_M2, (15,)), (6, tb.PROBE_T1, (15,))):
+            charts.append(dict(lagna=lagna, signs=sg, degs=degs, retro={}, birth=datetime.datetime(1991, 3, 3, 3, 0),
+                               gender=None, areas=areas, claims=True))
+        charts.append(dict(tc.CHARTS["S28_CHART_3"], signs=dict(tc.CHARTS["S28_CHART_3"]["signs"], Sun=1),
+                           birth=datetime.datetime(1985, 6, 15, 10, 0), gender="Male", areas=(1,), claims=True))
         for c in charts:
             c["waxing"] = _waxing_of(c)
         base = tmp / "base.xlsx"
@@ -1310,6 +1317,24 @@ class ExcelLifeAreas(unittest.TestCase):
                     self.assertTrue(any(x["readings"] for x in step["aspecting"]), name)
                     self.assertTrue(any(x["readings"] for x in step["with_lord"]), name)
         self.assertEqual(checked, 5)
+
+
+    def test_dignity_claims_in_excel(self):
+        """Her sentences that state a dignity show in Excel only when it holds, as in Python (spec 2026-10-13)."""
+        hidden = ("7 th lord Mercury is debilitated", "9 th lord Sun is exalted", "10 th lord Mercury is debilitated",
+                  "12 th lord Mars is debilitated", "bhava karaka Sun")
+        seen = 0
+        for c, no, name in self.cases:
+            got = self.mx.life_area_from_sheet(openpyxl.load_workbook(self.out / name, data_only=True)[self.mx.PREFIX + "LifeArea_Calc"])
+            blob = json.dumps(got, ensure_ascii=False)
+            if c.get("claims"):
+                seen += 1
+                self.assertEqual([x for x in hidden if x in blob], [], name)
+                if c["lagna"] == 6:                                  # Tula: her 8th lord line stays
+                    self.assertIn("8th Lord Moon is debilitated", blob, name)
+            elif c["signs"].get("Sun") == 0 and no == 1:             # her Chart 3: the Sun Deep Exalted at 10° Mesha
+                self.assertIn("bhava karaka Sun", blob, name)
+        self.assertEqual(seen, 6)
 
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel check")

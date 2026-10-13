@@ -86,6 +86,8 @@ MORE_ON_PAGE = "(more on the page)"
 # Predict_Calc chart-reading block columns: the row's cells, then 9 columns per planet for each step
 CR_TARGET, CR_PSPEC, CR_WSPEC, CR_LORD = 6, 7, 8, 9
 CR_HIT, CR_A, CR_P, CR_NA, CR_NP, CR_ON, CR_NON, CR_WITH, CR_FIRST, CR_CUM = 10, 19, 28, 37, 38, 39, 48, 49, 58, 59
+CR_CLAIM = 68                                # TRUE unless the row is one of her dignity sentences whose dignity fails
+DIGNITY_LABELS = {"exalted": ("Exalted", "Deep Exalted"), "debilitated": ("Debilitated", "Deep Debilitated")}
 # LifeArea_Calc (Session 27's 7 steps for the area chosen in B2); life_area_from_sheet() reads it back.
 AREA_CELL = "B2"
 REF_SIGNLINE_COL, REF_BHAVA_COL0 = 39, 41    # Ref_Calc: sign line per sign; house, short name, significations, people, body
@@ -664,6 +666,11 @@ def _predict_s28_29(ws, rules):
     _chart_readings_block(ws, rules)
 
 
+def _flag_is(label, flag):
+    """Excel test: the dignity label `label` (an expression) has dignity flag `flag` (bhava_rules.dignity)."""
+    return "OR(" + ",".join(f'{label}="{x}"' for x in DIGNITY_LABELS[flag]) + ")"
+
+
 def _chart_readings_block(ws, rules):
     """bhava_rules.chart_readings in formulas: one row per S23_ChartReadings row — which planets it names (`on`) and
     which partners (`with`), and per planet a running count of the readings its Layer-1 card shows."""
@@ -681,6 +688,12 @@ def _chart_readings_block(ws, rules):
     _head(ws, CR_ROW0 - 1, ["# a", "# p"], col0=CR_NA)
     _head(ws, CR_ROW0 - 1, ["# on"], col0=CR_NON)
     _head(ws, CR_ROW0 - 1, ["First planet"], col0=CR_FIRST)
+    _head(ws, CR_ROW0 - 1, ["Her dignity holds?"], col0=CR_CLAIM)
+    pnames, plabels = f"$A${PREDICT_ROW0}:$A${PREDICT_ROW0 + 8}", f"$F${PREDICT_ROW0}:$F${PREDICT_ROW0 + 8}"
+
+    def who_label(who):
+        name = f'INDEX({lords},{int(who[:-7])})' if who.endswith(" lord") else f'"{who}"'
+        return f"INDEX({plabels},MATCH({name},{pnames},0))"
     spec = lambda c, r: (f'=IF(RIGHT(${c}{r},5)=" lord",IFERROR(INDEX({lords},VALUE(LEFT(${c}{r},LEN(${c}{r})-7))),""),${c}{r})')
     for m in range(n):
         r, d = CR_ROW0 + m, 2 + m
@@ -693,6 +706,11 @@ def _chart_readings_block(ws, rules):
                                                 f'{sign_of(f"${L(CR_LORD)}{r}")},MOD(S23_Chart!$D$3+$D{r}-1,12))),-1)'))
         ws.cell(row=r, column=CR_PSPEC, value=spec("B", r))
         ws.cell(row=r, column=CR_WSPEC, value=spec("C", r))
+        claim = "TRUE"                       # her dignity sentences (bhava_rules.READING_CLAIMS), matched by the row's cells
+        for (k_, pl_, w_, h_, c_), (who, flag) in reversed(list(br.READING_CLAIMS.items())):
+            match = f'AND({kind}="{k_}",$B{r}="{pl_}",$C{r}="{w_}",$D{r}={h_},$E{r}="{c_}")'
+            claim = f"IF({match},IFERROR({_flag_is(who_label(who), flag)},FALSE),{claim})"
+        ws.cell(row=r, column=CR_CLAIM, value=f"={claim}")
         T = f"${L(CR_TARGET)}{r}"
         pair = f'AND($C{r}<>"",OR({kind}="in",{kind}="aspects"))'
         na, np_, non = f"${L(CR_NA)}{r}", f"${L(CR_NP)}{r}", f"${L(CR_NON)}{r}"
@@ -706,7 +724,8 @@ def _chart_readings_block(ws, rules):
             hit, lab = f"{L(CR_HIT + k)}{r}", f"$F${pr}"
             cond = (f'OR($E{r}="",AND($E{r}="exalted",OR({lab}="Exalted",{lab}="Deep Exalted")),'
                     f'AND($E{r}="debilitated",OR({lab}="Debilitated",{lab}="Deep Debilitated")))')
-            ws.cell(row=r, column=CR_A + k, value=f'=IF(AND(OR(${L(CR_PSPEC)}{r}="{x}",${L(CR_PSPEC)}{r}="{cls}"),{cond},{hit}),1,0)')
+            ws.cell(row=r, column=CR_A + k, value=(f'=IF(AND(${L(CR_CLAIM)}{r},OR(${L(CR_PSPEC)}{r}="{x}",${L(CR_PSPEC)}{r}="{cls}"),'
+                                                   f'{cond},{hit}),1,0)'))
             ws.cell(row=r, column=CR_P + k, value=f'=IF(AND({pair},OR(${L(CR_WSPEC)}{r}="{x}",${L(CR_WSPEC)}{r}="{cls}"),{hit}),1,0)')
             a, pp = f"{L(CR_A + k)}{r}", f"{L(CR_P + k)}{r}"
             ws.cell(row=r, column=CR_ON + k, value=(
@@ -857,6 +876,18 @@ def _life_area_sheet(ws, rules):
     cell(HELP_ROW0, H_DEFAULT, f'=IF({dflt}>0,INDEX({AM_TEXT},{dflt}),"")')
     cell(HELP_ROW0 - 1, H_DEFAULT, "Default aspect meaning")
 
+    # her dignity sentences (bhava_rules.LORD_IN_CLAIMS): TRUE unless the row keyed (x, y, cond, exchange) states a
+    # dignity that fails; "lord" = the lord of the row's LordOf house (x, or the smaller house of a Parivartana)
+    def gate(x, y, cond, exchange):
+        out = "TRUE"
+        for (lo, si, c_, ex), (who, flag) in reversed(list(br.LORD_IN_CLAIMS.items())):
+            if c_ != cond or ex != exchange:
+                continue
+            name = (f"INDEX({lords},{lo})" if who == "lord" else
+                    f"INDEX({lords},{int(who[:-7])})" if who.endswith(" lord") else f'"{who}"')
+            out = f"IF(AND({x}={lo},{y}={si}),IFERROR({_flag_is(hf(H_DIG, name), flag)},FALSE),{out})"
+        return out
+
     # ---- one block per house of the area
     def summary(r, cond_good, cond_bad, text):
         cell(r, SUPPORT_COL, f'=IF({cond_good},{text},"")')
@@ -958,9 +989,11 @@ def _life_area_sheet(ws, rules):
         lord_y = f"INDEX({lords},{C})"
         cell(lr, 12, f'=IF({B}="",FALSE,AND({C}<>{hb},{hf(H_HOUSE, lord_y)}={hb},{lord_y}<>{B}))')
         lo_, hi_ = f"MIN({hb},{C})", f"MAX({hb},{C})"
-        cell(lr, 13, f'=IF({B}="",0,SUMPRODUCT(({LX}="yes")*((({LO}={lo_})*({SI}={hi_}))+(({LO}={hi_})*({SI}={lo_})))*ROW({LO})))')
-        for col, cond in ((14, '""'), (15, '"strong"'), (16, '"weak"')):
-            cell(lr, col, f'=IF({B}="",0,SUMPRODUCT(({LO}={hb})*({SI}={C})*({LC}={cond})*({LX}<>"yes")*ROW({LO})))')
+        cell(lr, 13, (f'=IF({B}="",0,IF({gate(lo_, hi_, "", True)},SUMPRODUCT(({LX}="yes")*((({LO}={lo_})*({SI}={hi_}))'
+                      f'+(({LO}={hi_})*({SI}={lo_})))*ROW({LO})),0))'))
+        for col, cond in ((14, ""), (15, "strong"), (16, "weak")):
+            cell(lr, col, (f'=IF({B}="",0,IF({gate(hb, C, cond, False)},SUMPRODUCT(({LO}={hb})*({SI}={C})*({LC}="{cond}")'
+                           f'*({LX}<>"yes")*ROW({LO})),0))'))
         st = f"$H${lr}"
         use_s, use_w = f'OR({st}="strong",{st}="mixed",{st}="depends")', f'OR({st}="weak",{st}="mixed",{st}="depends")'
         cell(lr, 22, (f'=MID(IF($N${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$N${lr}),"")'
@@ -972,8 +1005,9 @@ def _life_area_sheet(ws, rules):
         cell(lr, 18, (f'=IF({B}="","","Parivartana: the lords of the "&{_ord(lo_)}&" and "&{_ord(hi_)}&" houses have exchanged signs. '
                       f'Blend the two houses — "&{_ord(lo_)}&" house: "&{bh(2, lo_)}&". "&{_ord(hi_)}&" house: "&{bh(2, hi_)}&".")'))
         # the other direction of a Parivartana (lord of the sits-in house back in this house), its lord judged by R3
-        for col, cond in ((25, '""'), (26, '"strong"'), (27, '"weak"')):
-            cell(lr, col, f'=IF({B}="",0,SUMPRODUCT(({LO}={C})*({SI}={hb})*({LC}={cond})*({LX}<>"yes")*ROW({LO})))')
+        for col, cond in ((25, ""), (26, "strong"), (27, "weak")):
+            cell(lr, col, (f'=IF({B}="",0,IF({gate(C, hb, cond, False)},SUMPRODUCT(({LO}={C})*({SI}={hb})*({LC}="{cond}")'
+                           f'*({LX}<>"yes")*ROW({LO})),0))'))
         cell(lr, 28, f'=IF({B}="","",{hf(H_STRENGTH, lord_y)})')
         st2 = f"$AB${lr}"
         use_s2, use_w2 = f'OR({st2}="strong",{st2}="mixed",{st2}="depends")', f'OR({st2}="weak",{st2}="mixed",{st2}="depends")'
