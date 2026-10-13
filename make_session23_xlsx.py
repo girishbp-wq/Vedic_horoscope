@@ -763,64 +763,81 @@ H_DEFAULT = 68
 H_R1, H_R2, H_PHRASE = 69, 70, 71                            # the houses a planet rules and "(rules the 5th and 12th)"
 
 
-def _life_area_sheet(ws, rules):
-    """Session 27's 7-step method for the area chosen in B2 — equal to bhava_rules.life_area (see life_area_from_sheet)."""
-    ref = rules["reference"]
-    n_rules = len(rules["class_rules"])
-    ws["A1"] = "Life areas (Session 27) — pick the area in B2; the 7 steps follow for the chart on S23_Chart"
-    ws["A1"].font = Font(bold=True, color="6B1D2B", size=13)
-    hr = lambda c: f"${L(c)}${HELP_ROW0}:${L(c)}${HELP_ROW0 + 8}"
-    hf = lambda c, x: f"INDEX({hr(c)},MATCH({x},{hr(H_NAME)},0))"              # helper field of the planet named by x
-    names = "S23_Ref_Calc!$B$3:$B$14"
-    lords = f"S23_Classes_Calc!$C${HOUSELORD_ROW0}:$C${HOUSELORD_ROW0 + 11}"
-    sign_of_house = lambda h: f"MOD(S23_Chart!$D$3+{h}-1,12)"
-    bh = lambda j, h: f"INDEX(S23_Ref_Calc!${L(REF_BHAVA_COL0 + j)}$3:${L(REF_BHAVA_COL0 + j)}$14,{h})"   # 1 name, 2 sig, 3 people, 4 body
-    gender = f"S23_Chart!{GENDER_CELL}"
-    LA = lambda c: f"S23_LifeAreas!${c}$1:${c}$60"
-    AM_P, AM_A, AM_F, AM_T = (f"S23_AspectMeaning!${c}$2:${c}$300" for c in "ABCD")
-    AM_TEXT = "S23_AspectMeaning!$D$1:$D$300"
-    CK, CP, CH, CT = (f"S23_Conditions!${c}$2:${c}$300" for c in "ABCD")
-    C_TEXT = "S23_Conditions!$D$1:$D$300"
-    LO, SI, LT, LS, LC, LX = (f"S23_BhavaLordIn!${c}$2:${c}$300" for c in "ABCDFG")
-    L_TEXT, L_STATUS = "S23_BhavaLordIn!$C$1:$C$300", "S23_BhavaLordIn!$D$1:$D$300"
-    matrix = f"S23_Classes_Calc!$C${MATRIX_ROW0 + 1}:$L${MATRIX_ROW0 + 12}"
-    ci = {c: br.CLASS_ORDER.index(c) + 1 for c in ("Kendra", "Trikona", "Dusthana", "Badhaka")}
+# The Life-areas house block, shared by S23_LifeArea_Calc and S23_Bhava_Calc (both keep the helper table at HELP_ROW0,
+# columns H_*); formerly closures of _life_area_sheet, moved unchanged.
+LA_NAMES = "S23_Ref_Calc!$B$3:$B$14"
+LA_LORDS = f"S23_Classes_Calc!$C${HOUSELORD_ROW0}:$C${HOUSELORD_ROW0 + 11}"
+LA_MATRIX = f"S23_Classes_Calc!$C${MATRIX_ROW0 + 1}:$L${MATRIX_ROW0 + 12}"
+AM_P, AM_A, AM_F, AM_T = (f"S23_AspectMeaning!${c}$2:${c}$300" for c in "ABCD")
+AM_TEXT = "S23_AspectMeaning!$D$1:$D$300"
+LO, SI, LT, LS, LC, LX = (f"S23_BhavaLordIn!${c}$2:${c}$300" for c in "ABCDFG")
+L_TEXT, L_STATUS = "S23_BhavaLordIn!$C$1:$C$300", "S23_BhavaLordIn!$D$1:$D$300"
+LA_CLASS_INDEX = {c: br.CLASS_ORDER.index(c) + 1 for c in ("Kendra", "Trikona", "Dusthana", "Badhaka")}
+READING_COUNTS_TITLE = "Running counts of her readings (S23_ChartReadings) for each house of the area"
+
+
+def _hr(c):
+    return f"${L(c)}${HELP_ROW0}:${L(c)}${HELP_ROW0 + 8}"
+
+
+def _hf(c, x):
+    """Helper field c of the planet named by x."""
+    return f"INDEX({_hr(c)},MATCH({x},{_hr(H_NAME)},0))"
+
+
+def _sign_of_house(h):
+    return f"MOD(S23_Chart!$D$3+{h}-1,12)"
+
+
+def _bh(j, h):
+    """Ref_Calc house table: 1 name, 2 significations, 3 people, 4 body."""
+    return f"INDEX(S23_Ref_Calc!${L(REF_BHAVA_COL0 + j)}$3:${L(REF_BHAVA_COL0 + j)}$14,{h})"
+
+
+def _lr_col(blk, kind, k):
+    """Running-count column of block blk; kind 0: aspects the house, 1: aspects its lord."""
+    return 2 + blk * 18 + kind * 9 + k
+
+
+def _cr(c, m):
+    return f"S23_Predict_Calc!${L(c)}${CR_ROW0 + m}"
+
+
+# her dignity sentences (bhava_rules.LORD_IN_CLAIMS): TRUE unless the row keyed (x, y, cond, exchange) states a
+# dignity that fails; "lord" = the lord of the row's LordOf house (x, or the smaller house of a Parivartana)
+def _lord_in_gate(x, y, cond, exchange):
+    out = "TRUE"
+    for (lo, si, c_, ex), (who, flag) in reversed(list(br.LORD_IN_CLAIMS.items())):
+        if c_ != cond or ex != exchange:
+            continue
+        name = (f"INDEX({LA_LORDS},{lo})" if who == "lord" else
+                f"INDEX({LA_LORDS},{int(who[:-7])})" if who.endswith(" lord") else f'"{who}"')
+        out = f"IF(AND({x}={lo},{y}={si}),IFERROR({_flag_is(_hf(H_DIG, name), flag)},FALSE),{out})"
+    return out
+
+
+
+def _summary_cells(ws, r, cond_good, cond_bad, text):
+    ws.cell(row=r, column=SUPPORT_COL, value=f'=IF({cond_good},{text},"")')
+    ws.cell(row=r, column=PRESSURE_COL, value=f'=IF({cond_bad},{text},"")')
+
+
+def _readings_cells(ws, rules, r, c0, c, lr_row0):
+    """Her first readings for one aspect row, from the running counts in column c (READINGS_SHOWN, then MORE_ON_PAGE)."""
+    n_cr = len(rules.get("chart_readings", []))
+    cell = lambda r_, c_, v: ws.cell(row=r_, column=c_, value=v)
+    rng = f"${L(c)}${lr_row0}:${L(c)}${lr_row0 + max(n_cr, 1) - 1}"
+    for j in range(READINGS_SHOWN):
+        cell(r, c0 + j, (f'=IF(AND($C{r},{n_cr}>0),IFERROR(INDEX(S23_ChartReadings!$F$2:$F${n_cr + 1},'
+                         f'MATCH({j + 1},{rng},0)),""),"")'))
+    cell(r, c0 + READINGS_SHOWN, f'=IF(AND($C{r},N(${L(c)}${lr_row0 + max(n_cr, 1) - 1})>{READINGS_SHOWN}),"{MORE_ON_PAGE}","")')
+
+
+def _helper_table(ws, rules):
+    """The per-planet helper table (rows HELP_ROW0…, columns H_*) and the default aspect meaning."""
     cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
-
-    # ---- the area
-    top = [(2, "Area of life (pick)", None), (3, "Row in S23_LifeAreas", f'=MATCH({AREA_CELL},{LA("B")},0)'),
-           (4, "No", f"=INDEX({LA('A')},$B$3)"), (5, "Houses", f'=INDEX({LA("C")},$B$3)&""'),
-           (6, "Link", f'=INDEX({LA("F")},$B$3)&""'), (7, "Source", f'=INDEX({LA("G")},$B$3)&""'),
-           (8, "House 1", '=VALUE(TRIM(LEFT($B$5,FIND(",",$B$5&",")-1)))'),
-           (9, "House 2", '=IFERROR(VALUE(TRIM(MID($B$5,FIND(",",$B$5)+1,9))),"")'),
-           (10, "Karakas (Ready Reckoner)", f'=INDEX({LA("D")},$B$3)&""'), (11, "Karaka for a woman's chart", f'=INDEX({LA("E")},$B$3)&""'),
-           (12, "Karaka 1", f'=IF(AND($B$11<>"",{gender}="Female"),$B$11,TRIM(LEFT($B$10,FIND(",",$B$10&",")-1)))'),
-           (13, "Karaka 2", f'=IF(AND($B$11<>"",{gender}="Female"),"",IFERROR(TRIM(MID($B$10,FIND(",",$B$10)+1,99)),""))')]
-    for r, label, f in top:
-        cell(r, 1, label)
-        if f:
-            cell(r, 2, f)
-    ws[AREA_CELL] = rules["life_areas"][7]["area"]
-    ws[AREA_CELL].fill = INPUT_FILL
-    dv = DataValidation(type="list", formula1=f"=S23_LifeAreas!$B$2:$B${1 + len(rules['life_areas'])}", allow_blank=False)
-    ws.add_data_validation(dv)
-    dv.add(AREA_CELL)
-    best = lambda key, planet, house: [f"SUMPRODUCT(({CK}={key})*({CP}={pl})*({CH}={hh})*ROW({CK}))"
-                                       for pl, hh in ((planet, house), ('""', house), (planet, '""'), ('""', '""'))]
-    jh = best('"jupiter_husband"', '"Jupiter"', '""')
-    vm = best('"venus_meets_wife"', "$B$12", hf(H_HOUSE, "$B$12"))
-    pick = lambda b: f"IF({b[0]}>0,{b[0]},IF({b[1]}>0,{b[1]},IF({b[2]}>0,{b[2]},{b[3]})))"
-    cell(14, 1, "Karaka note")
-    cell(14, 2, (f'=IF($B$11="","",IF({gender}="Female",IF({jh[2]}>0,INDEX({C_TEXT},{jh[2]}),IF({jh[3]}>0,INDEX({C_TEXT},{jh[3]}),"")),'
-                 f'IF({gender}="Male",IF({pick(vm)}>0,INDEX({C_TEXT},{pick(vm)}),""),'
-                 f'"For a woman\'s chart the husband\'s karaka is "&$B$11&".")))'))
-    for r, label, col in ((15, "Supports", SUPPORT_COL), (16, "Pressure", PRESSURE_COL)):
-        cell(r, 1, label)
-        parts = "&".join(f'IF(${L(col)}${x}<>"",CHAR(10)&${L(col)}${x},"")' for x in range(BLOCK_ROW0, LINK_ROW0 + 3))
-        cell(r, 2, f"=MID({parts},2,32000)").alignment = WRAP
-    ws.column_dimensions["A"].width = 24
-    ws.column_dimensions["B"].width = 60
-
+    ref = rules["reference"]
+    hf, lords, names, bh, matrix, sign_of_house = _hf, LA_LORDS, LA_NAMES, _bh, LA_MATRIX, _sign_of_house
     # ---- helper table: one row per planet
     _head(ws, HELP_ROW0 - 1, ["Graha", "Sign #", "House", "Nature", "Benefic / malefic", "Dignity", "Combust?", "Retro?",
                               "Aspect 1", "Aspect 2", "Aspect 3", "Falls on 1", "Falls on 2", "Falls on 3", "Name 1", "Name 2",
@@ -876,43 +893,21 @@ def _life_area_sheet(ws, rules):
     cell(HELP_ROW0, H_DEFAULT, f'=IF({dflt}>0,INDEX({AM_TEXT},{dflt}),"")')
     cell(HELP_ROW0 - 1, H_DEFAULT, "Default aspect meaning")
 
-    # her dignity sentences (bhava_rules.LORD_IN_CLAIMS): TRUE unless the row keyed (x, y, cond, exchange) states a
-    # dignity that fails; "lord" = the lord of the row's LordOf house (x, or the smaller house of a Parivartana)
-    def gate(x, y, cond, exchange):
-        out = "TRUE"
-        for (lo, si, c_, ex), (who, flag) in reversed(list(br.LORD_IN_CLAIMS.items())):
-            if c_ != cond or ex != exchange:
-                continue
-            name = (f"INDEX({lords},{lo})" if who == "lord" else
-                    f"INDEX({lords},{int(who[:-7])})" if who.endswith(" lord") else f'"{who}"')
-            out = f"IF(AND({x}={lo},{y}={si}),IFERROR({_flag_is(hf(H_DIG, name), flag)},FALSE),{out})"
-        return out
 
-    # ---- one block per house of the area
-    def summary(r, cond_good, cond_bad, text):
-        cell(r, SUPPORT_COL, f'=IF({cond_good},{text},"")')
-        cell(r, PRESSURE_COL, f'=IF({cond_bad},{text},"")')
-
-    # her readings (S23_ChartReadings) per house: running counts, one column per block, kind and planet (LR table below)
+def _reading_counts(ws, rules, lr_row0, block_rows, title=READING_COUNTS_TITLE):
+    """Running counts of her readings (S23_ChartReadings), one 18-column group per block start row in block_rows."""
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+    ref = rules["reference"]
+    hf, lords, names, bh, matrix, sign_of_house = _hf, LA_LORDS, LA_NAMES, _bh, LA_MATRIX, _sign_of_house
     n_cr = len(rules.get("chart_readings", []))
-    lr_col = lambda blk, kind, k: 2 + blk * 18 + kind * 9 + k             # kind 0: aspects the house, 1: aspects its lord
-    cr = lambda c, m: f"S23_Predict_Calc!${L(c)}${CR_ROW0 + m}"
-
-    def readings(r, c0, c):
-        rng = f"${L(c)}${LR_ROW0}:${L(c)}${LR_ROW0 + max(n_cr, 1) - 1}"
-        for j in range(READINGS_SHOWN):
-            cell(r, c0 + j, (f'=IF(AND($C{r},{n_cr}>0),IFERROR(INDEX(S23_ChartReadings!$F$2:$F${n_cr + 1},'
-                             f'MATCH({j + 1},{rng},0)),""),"")'))
-        cell(r, c0 + READINGS_SHOWN, f'=IF(AND($C{r},N(${L(c)}${LR_ROW0 + max(n_cr, 1) - 1})>{READINGS_SHOWN}),"{MORE_ON_PAGE}","")')
-
-    cell(LR_ROW0 - 2, 1, "Running counts of her readings (S23_ChartReadings) for each house of the area").font = Font(bold=True, color="6B1D2B")
-    _head(ws, LR_ROW0 - 1, ["Reading row"] + [f"{('aspects the house', 'aspects its lord')[kind]} {blk + 1}: {p}"
-                                              for blk in range(2) for kind in range(2) for p in br.PLANET_ORDER])
+    cr, lr_col = _cr, _lr_col
+    cell(lr_row0 - 2, 1, title).font = Font(bold=True, color="6B1D2B")
+    _head(ws, lr_row0 - 1, ["Reading row"] + [f"{('aspects the house', 'aspects its lord')[kind]} {blk + 1}: {p}"
+                                              for blk in range(len(block_rows)) for kind in range(2) for p in br.PLANET_ORDER])
     for m in range(n_cr):
-        r = LR_ROW0 + m
+        r = lr_row0 + m
         cell(r, 1, m + 2)
-        for blk in range(2):
-            b0 = BLOCK_ROW0 + blk * BLOCK_ROWS
+        for blk, b0 in enumerate(block_rows):
             hb, lord_cell = f"$B${b0}", f"$B${b0 + 1 + 9 + 27}"
             for k, p in enumerate(br.PLANET_ORDER):
                 hits = (f'AND({hb}<>"",{cr(1, m)}="aspects",{cr(4, m)}={hb},{cr(CR_FIRST, m)}="{p}")',
@@ -922,145 +917,164 @@ def _life_area_sheet(ws, rules):
                     prev = f"{L(c)}{r - 1}+" if m else ""
                     cell(r, c, f"={prev}IF({hits[kind]},1,0)")
 
-    _head(ws, BLOCK_ROW0 - 1, ["Step", "Planet / house", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+
+def _block_header(ws, row):
+    _head(ws, row, ["Step", "Planet / house", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                                "Supports", "Pressure"])
-    for blk, hcell in enumerate(("$B$8", "$B$9")):
-        b0 = BLOCK_ROW0 + blk * BLOCK_ROWS
-        hb, sb = f"$B${b0}", f"$C${b0}"
-        H = _ord(hb)
-        cell(b0, 1, "bhava")
-        cell(b0, 2, f'=IF({hcell}="","",{hcell})')
-        cell(b0, 3, f'=IF($B${b0}="","",{sign_of_house(hb)})')
-        cell(b0, 4, f'=IF($B${b0}="","",INDEX({names},$C${b0}+1))')
-        cell(b0, 5, f'=IF($B${b0}="","",INDEX(S23_Ref_Calc!${L(REF_SIGNLINE_COL)}$3:${L(REF_SIGNLINE_COL)}$14,$C${b0}+1))')
-        r = b0 + 1
-        for k, p in enumerate(br.PLANET_ORDER):                                     # 2 · planets in the house
-            hrow, pr = HELP_ROW0 + k, PREDICT_ROW0 + k
-            cell(r, 1, "occupant")
+
+
+def _house_block(ws, rules, blk, b0, house_cell, lr_row0):
+    """One 75-row block for the house in house_cell: the bhava, occupants, aspects, lord, Parivartana, company, and the
+    Supports / Pressure columns (Session 27 steps 1-5)."""
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+    ref = rules["reference"]
+    hf, lords, names, bh, matrix, sign_of_house = _hf, LA_LORDS, LA_NAMES, _bh, LA_MATRIX, _sign_of_house
+    n_rules = len(rules["class_rules"])
+    ci, gate, lr_col = LA_CLASS_INDEX, _lord_in_gate, _lr_col
+    summary = lambda r, g, b, t: _summary_cells(ws, r, g, b, t)
+    readings = lambda r, c0, c: _readings_cells(ws, rules, r, c0, c, lr_row0)
+    hcell = house_cell
+    hb, sb = f"$B${b0}", f"$C${b0}"
+    H = _ord(hb)
+    cell(b0, 1, "bhava")
+    cell(b0, 2, f'=IF({hcell}="","",{hcell})')
+    cell(b0, 3, f'=IF($B${b0}="","",{sign_of_house(hb)})')
+    cell(b0, 4, f'=IF($B${b0}="","",INDEX({names},$C${b0}+1))')
+    cell(b0, 5, f'=IF($B${b0}="","",INDEX(S23_Ref_Calc!${L(REF_SIGNLINE_COL)}$3:${L(REF_SIGNLINE_COL)}$14,$C${b0}+1))')
+    r = b0 + 1
+    for k, p in enumerate(br.PLANET_ORDER):                                     # 2 · planets in the house
+        hrow, pr = HELP_ROW0 + k, PREDICT_ROW0 + k
+        cell(r, 1, "occupant")
+        cell(r, 2, p)
+        cell(r, 3, f'=AND({hb}<>"",${L(H_HOUSE)}${hrow}={hb})')
+        cell(r, 4, f"=${L(H_NATURE)}${hrow}")
+        cell(r, 5, f"=S23_Predict_Calc!$E${pr}")
+        cell(r, 6, f"=S23_Predict_Calc!$D${pr}")
+        cell(r, 7, f"=S23_Predict_Calc!$P${pr}")
+        cell(r, 8, f'=OR(S23_Predict_Calc!$F${pr}="Debilitated",S23_Predict_Calc!$F${pr}="Deep Debilitated")')
+        ben = f'${L(H_CLASS)}${hrow}="benefic"'
+        txt = f'IF(AND({ben},$H{r}),$B{r}&" (benefic, debilitated) in the "&{H},$B{r}&" ("&$D{r}&") in the "&{H})'
+        summary(r, f'AND($C{r},{ben},NOT($H{r}))', f'AND($C{r},OR(NOT({ben}),$H{r}))', txt)
+        r += 1
+    for k, p in enumerate(br.PLANET_ORDER):                                     # 3 · planets aspecting it
+        hrow = HELP_ROW0 + k
+        for sl in range(3):
+            cell(r, 1, "aspect")
             cell(r, 2, p)
-            cell(r, 3, f'=AND({hb}<>"",${L(H_HOUSE)}${hrow}={hb})')
-            cell(r, 4, f"=${L(H_NATURE)}${hrow}")
-            cell(r, 5, f"=S23_Predict_Calc!$E${pr}")
-            cell(r, 6, f"=S23_Predict_Calc!$D${pr}")
-            cell(r, 7, f"=S23_Predict_Calc!$P${pr}")
-            cell(r, 8, f'=OR(S23_Predict_Calc!$F${pr}="Debilitated",S23_Predict_Calc!$F${pr}="Deep Debilitated")')
-            ben = f'${L(H_CLASS)}${hrow}="benefic"'
-            txt = f'IF(AND({ben},$H{r}),$B{r}&" (benefic, debilitated) in the "&{H},$B{r}&" ("&$D{r}&") in the "&{H})'
-            summary(r, f'AND($C{r},{ben},NOT($H{r}))', f'AND($C{r},OR(NOT({ben}),$H{r}))', txt)
+            cell(r, 3, f'=AND({hb}<>"",${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}={sb})')
+            cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
+            for j in range(3):
+                cell(r, 5 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
+            cell(r, 8, f'=${L(H_RULES)}${hrow}&""')
+            readings(r, 9, lr_col(blk, 0, k))
+            phrase = f"${L(H_PHRASE)}${hrow}"
+            txt = (f'IF({hb}=11,$B{r}&" aspects the 11th"&IF({phrase}<>""," "&{phrase},""),'
+                   f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H})')
+            summary(r, f'AND($C{r},OR({hb}=11,${L(H_CLASS)}${hrow}="benefic"))',
+                    f'AND($C{r},{hb}<>11,${L(H_CLASS)}${hrow}="malefic")', txt)
             r += 1
-        for k, p in enumerate(br.PLANET_ORDER):                                     # 3 · planets aspecting it
-            hrow = HELP_ROW0 + k
-            for sl in range(3):
-                cell(r, 1, "aspect")
-                cell(r, 2, p)
-                cell(r, 3, f'=AND({hb}<>"",${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}={sb})')
-                cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
-                for j in range(3):
-                    cell(r, 5 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
-                cell(r, 8, f'=${L(H_RULES)}${hrow}&""')
-                readings(r, 9, lr_col(blk, 0, k))
-                phrase = f"${L(H_PHRASE)}${hrow}"
-                txt = (f'IF({hb}=11,$B{r}&" aspects the 11th"&IF({phrase}<>""," "&{phrase},""),'
-                       f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H})')
-                summary(r, f'AND($C{r},OR({hb}=11,${L(H_CLASS)}${hrow}="benefic"))',
-                        f'AND($C{r},{hb}<>11,${L(H_CLASS)}${hrow}="malefic")', txt)
-                r += 1
-        lr = r                                                                      # 4 · the lord
-        B, C = f"$B${lr}", f"$C${lr}"
-        cell(lr, 1, "lord")
-        cell(lr, 2, f'=IF({hb}="","",INDEX({lords},{hb}))')
-        cell(lr, 3, f'=IF({B}="","",{hf(H_HOUSE, B)})')
-        cell(lr, 4, f'=IF({B}="","",{hf(H_SIGN, B)})')
-        cell(lr, 5, f'=IF({B}="","",INDEX({names},$D${lr}+1))')
-        cls = "&".join(f'IF(INDEX({matrix},{C},{ci[c]})=1," and {c}","")' for c in ("Kendra", "Trikona", "Dusthana", "Badhaka"))
-        cell(lr, 23, f'=IF({B}="","",MID({cls},6,99))')
-        cell(lr, 32, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Kendra"]})=1)')        # the sits-in house is a Kendra?
-        cell(lr, 33, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Trikona"]})=1)')       # … a Trikona?
-        kt = "&".join(f'IF(AND(OR(AND(S23_ClassRules!$A${2 + m}="Kendra",$AF${lr}),AND(S23_ClassRules!$A${2 + m}="Trikona",$AG${lr})),'
-                      f'S23_ClassRules!$B${2 + m}="any",NOT(ISNUMBER(SEARCH(", "&{C}&",",", "&S23_ClassRules!$C${2 + m}&",")))),'
-                      f'" "&S23_ClassRules!$D${2 + m},"")'
-                      for m in range(n_rules))
-        cell(lr, 24, f'=IF({B}="","",{kt})')
-        cell(lr, 6, (f'=IF({B}="","",IF({C}={hb},"The lord sits in its own bhava, so the matters of this house are protected and strengthened.",'
-                     f'"Placed in the "&{_ord(C)}&" house"&IF($W${lr}<>"",", a "&$W${lr}&" bhava","")&"."'
-                     f'&$X${lr}&IF(OR({C}=6,{C}=8,{C}=12)," A difficult placement.","")))'))
-        cell(lr, 7, f'=IF({B}="","",{hf(H_DIG, B)})')
-        cell(lr, 8, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
-        lord_y = f"INDEX({lords},{C})"
-        cell(lr, 12, f'=IF({B}="",FALSE,AND({C}<>{hb},{hf(H_HOUSE, lord_y)}={hb},{lord_y}<>{B}))')
-        lo_, hi_ = f"MIN({hb},{C})", f"MAX({hb},{C})"
-        cell(lr, 13, (f'=IF({B}="",0,IF({gate(lo_, hi_, "", True)},SUMPRODUCT(({LX}="yes")*((({LO}={lo_})*({SI}={hi_}))'
-                      f'+(({LO}={hi_})*({SI}={lo_})))*ROW({LO})),0))'))
-        for col, cond in ((14, ""), (15, "strong"), (16, "weak")):
-            cell(lr, col, (f'=IF({B}="",0,IF({gate(hb, C, cond, False)},SUMPRODUCT(({LO}={hb})*({SI}={C})*({LC}="{cond}")'
-                           f'*({LX}<>"yes")*ROW({LO})),0))'))
-        st = f"$H${lr}"
-        use_s, use_w = f'OR({st}="strong",{st}="mixed",{st}="depends")', f'OR({st}="weak",{st}="mixed",{st}="depends")'
-        cell(lr, 22, (f'=MID(IF($N${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$N${lr}),"")'
-                      f'&IF(AND($O${lr}>0,{use_s}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$O${lr}),"")'
-                      f'&IF(AND($P${lr}>0,{use_w}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$P${lr}),""),3,32000)'))
-        cell(lr, 17, (f'=IF({B}="","","The lord of the "&{H}&" house ("&{bh(1, hb)}&") is placed in the "&{_ord(C)}&" house ("&{bh(1, C)}'
-                      f'&"), in "&$E${lr}&". Blend their karakatwas — "&{H}&" house: "&{bh(2, hb)}&". "&{_ord(C)}&" house: "&{bh(2, C)}'
-                      f'&". People: "&{bh(3, hb)}&" with "&{bh(3, C)}&". Body: "&{bh(4, hb)}&" with "&{bh(4, C)}&".")'))
-        cell(lr, 18, (f'=IF({B}="","","Parivartana: the lords of the "&{_ord(lo_)}&" and "&{_ord(hi_)}&" houses have exchanged signs. '
-                      f'Blend the two houses — "&{_ord(lo_)}&" house: "&{bh(2, lo_)}&". "&{_ord(hi_)}&" house: "&{bh(2, hi_)}&".")'))
-        # the other direction of a Parivartana (lord of the sits-in house back in this house), its lord judged by R3
-        for col, cond in ((25, ""), (26, "strong"), (27, "weak")):
-            cell(lr, col, (f'=IF({B}="",0,IF({gate(C, hb, cond, False)},SUMPRODUCT(({LO}={C})*({SI}={hb})*({LC}="{cond}")'
-                           f'*({LX}<>"yes")*ROW({LO})),0))'))
-        cell(lr, 28, f'=IF({B}="","",{hf(H_STRENGTH, lord_y)})')
-        st2 = f"$AB${lr}"
-        use_s2, use_w2 = f'OR({st2}="strong",{st2}="mixed",{st2}="depends")', f'OR({st2}="weak",{st2}="mixed",{st2}="depends")'
-        cell(lr, 29, (f'=MID(IF($Y${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Y${lr}),"")'
-                      f'&IF(AND($Z${lr}>0,{use_s2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Z${lr}),"")'
-                      f'&IF(AND($AA${lr}>0,{use_w2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$AA${lr}),""),3,32000)'))
-        for col, (rc, rs, rw, us, uw) in ((30, ("$N", "$O", "$P", use_s, use_w)), (31, ("$Y", "$Z", "$AA", use_s2, use_w2))):
-            cell(lr, col, (f'=IF({rc}${lr}>0,INDEX({L_STATUS},{rc}${lr}),IF(AND({rs}${lr}>0,{us}),INDEX({L_STATUS},{rs}${lr}),'
-                           f'IF(AND({rw}${lr}>0,{uw}),INDEX({L_STATUS},{rw}${lr}),"")))'))
-        both = lambda a_, b_: f'MID(IF({a_}<>"",CHAR(10)&CHAR(10)&{a_},"")&IF({b_}<>"",CHAR(10)&CHAR(10)&{b_},""),3,32000)'
-        V, AC = f"$V${lr}", f"$AC${lr}"
-        pre = lambda x: f'IF({x}<>"",CHAR(10)&CHAR(10)&{x},"")'
-        swap_text = (f'MID(CHAR(10)&CHAR(10)&INDEX({L_TEXT},$M${lr})&IF({hb}<{C},{pre(V)}&{pre(AC)},{pre(AC)}&{pre(V)}),3,32000)')
-        cell(lr, 9, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,{swap_text},IF({V}&{AC}="",$R${lr},'
-                     f'IF({hb}<{C},{both(V, AC)},{both(AC, V)}))),IF({V}<>"",{V},$Q${lr})))'))
-        cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),IF({V}&{AC}="","blend",'
-                      f'IF({hb}<{C},IF({V}<>"",$AD${lr},$AE${lr}),IF({AC}<>"",$AE${lr},$AD${lr})))),IF($AD${lr}<>"",$AD${lr},"blend")))'))
-        hits = ",".join(f'{hf(H_TARGET + sl, B)}={sb}' for sl in range(3))
-        cell(lr, 11, (f'=IF({B}="","",IF(AND(OR({hits}),$G${lr}<>"Debilitated",$G${lr}<>"Deep Debilitated"),'
-                      f'"The lord aspects its own house, so the "&{H}&" house is strong.",""))'))
-        summary(lr, f'$H${lr}="strong"', f'$H${lr}="weak"', f'"The "&{H}&" lord "&{B}&" is "&$H${lr}')
-        cell(lr + 1, 1, "lord (2)")
-        cell(lr + 1, SUPPORT_COL, f'=IF(AND({B}<>"",$K${lr}<>""),"The "&{H}&" lord "&{B}&" aspects its own house","")')
-        cell(lr + 1, PRESSURE_COL, f'=IF(AND({B}<>"",OR({C}=6,{C}=8,{C}=12)),"The "&{H}&" lord "&{B}&" is in the "&{_ord(C)}&", a difficult placement","")')
-        r = lr + 2
-        for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · with the lord
-            hrow = HELP_ROW0 + k
-            cell(r, 1, "with")
+    lr = r                                                                      # 4 · the lord
+    B, C = f"$B${lr}", f"$C${lr}"
+    cell(lr, 1, "lord")
+    cell(lr, 2, f'=IF({hb}="","",INDEX({lords},{hb}))')
+    cell(lr, 3, f'=IF({B}="","",{hf(H_HOUSE, B)})')
+    cell(lr, 4, f'=IF({B}="","",{hf(H_SIGN, B)})')
+    cell(lr, 5, f'=IF({B}="","",INDEX({names},$D${lr}+1))')
+    cls = "&".join(f'IF(INDEX({matrix},{C},{ci[c]})=1," and {c}","")' for c in ("Kendra", "Trikona", "Dusthana", "Badhaka"))
+    cell(lr, 23, f'=IF({B}="","",MID({cls},6,99))')
+    cell(lr, 32, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Kendra"]})=1)')        # the sits-in house is a Kendra?
+    cell(lr, 33, f'=IF({B}="",FALSE,INDEX({matrix},{C},{ci["Trikona"]})=1)')       # … a Trikona?
+    kt = "&".join(f'IF(AND(OR(AND(S23_ClassRules!$A${2 + m}="Kendra",$AF${lr}),AND(S23_ClassRules!$A${2 + m}="Trikona",$AG${lr})),'
+                  f'S23_ClassRules!$B${2 + m}="any",NOT(ISNUMBER(SEARCH(", "&{C}&",",", "&S23_ClassRules!$C${2 + m}&",")))),'
+                  f'" "&S23_ClassRules!$D${2 + m},"")'
+                  for m in range(n_rules))
+    cell(lr, 24, f'=IF({B}="","",{kt})')
+    cell(lr, 6, (f'=IF({B}="","",IF({C}={hb},"The lord sits in its own bhava, so the matters of this house are protected and strengthened.",'
+                 f'"Placed in the "&{_ord(C)}&" house"&IF($W${lr}<>"",", a "&$W${lr}&" bhava","")&"."'
+                 f'&$X${lr}&IF(OR({C}=6,{C}=8,{C}=12)," A difficult placement.","")))'))
+    cell(lr, 7, f'=IF({B}="","",{hf(H_DIG, B)})')
+    cell(lr, 8, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
+    lord_y = f"INDEX({lords},{C})"
+    cell(lr, 12, f'=IF({B}="",FALSE,AND({C}<>{hb},{hf(H_HOUSE, lord_y)}={hb},{lord_y}<>{B}))')
+    lo_, hi_ = f"MIN({hb},{C})", f"MAX({hb},{C})"
+    cell(lr, 13, (f'=IF({B}="",0,IF({gate(lo_, hi_, "", True)},SUMPRODUCT(({LX}="yes")*((({LO}={lo_})*({SI}={hi_}))'
+                  f'+(({LO}={hi_})*({SI}={lo_})))*ROW({LO})),0))'))
+    for col, cond in ((14, ""), (15, "strong"), (16, "weak")):
+        cell(lr, col, (f'=IF({B}="",0,IF({gate(hb, C, cond, False)},SUMPRODUCT(({LO}={hb})*({SI}={C})*({LC}="{cond}")'
+                       f'*({LX}<>"yes")*ROW({LO})),0))'))
+    st = f"$H${lr}"
+    use_s, use_w = f'OR({st}="strong",{st}="mixed",{st}="depends")', f'OR({st}="weak",{st}="mixed",{st}="depends")'
+    cell(lr, 22, (f'=MID(IF($N${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$N${lr}),"")'
+                  f'&IF(AND($O${lr}>0,{use_s}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$O${lr}),"")'
+                  f'&IF(AND($P${lr}>0,{use_w}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$P${lr}),""),3,32000)'))
+    cell(lr, 17, (f'=IF({B}="","","The lord of the "&{H}&" house ("&{bh(1, hb)}&") is placed in the "&{_ord(C)}&" house ("&{bh(1, C)}'
+                  f'&"), in "&$E${lr}&". Blend their karakatwas — "&{H}&" house: "&{bh(2, hb)}&". "&{_ord(C)}&" house: "&{bh(2, C)}'
+                  f'&". People: "&{bh(3, hb)}&" with "&{bh(3, C)}&". Body: "&{bh(4, hb)}&" with "&{bh(4, C)}&".")'))
+    cell(lr, 18, (f'=IF({B}="","","Parivartana: the lords of the "&{_ord(lo_)}&" and "&{_ord(hi_)}&" houses have exchanged signs. '
+                  f'Blend the two houses — "&{_ord(lo_)}&" house: "&{bh(2, lo_)}&". "&{_ord(hi_)}&" house: "&{bh(2, hi_)}&".")'))
+    # the other direction of a Parivartana (lord of the sits-in house back in this house), its lord judged by R3
+    for col, cond in ((25, ""), (26, "strong"), (27, "weak")):
+        cell(lr, col, (f'=IF({B}="",0,IF({gate(C, hb, cond, False)},SUMPRODUCT(({LO}={C})*({SI}={hb})*({LC}="{cond}")'
+                       f'*({LX}<>"yes")*ROW({LO})),0))'))
+    cell(lr, 28, f'=IF({B}="","",{hf(H_STRENGTH, lord_y)})')
+    st2 = f"$AB${lr}"
+    use_s2, use_w2 = f'OR({st2}="strong",{st2}="mixed",{st2}="depends")', f'OR({st2}="weak",{st2}="mixed",{st2}="depends")'
+    cell(lr, 29, (f'=MID(IF($Y${lr}>0,CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Y${lr}),"")'
+                  f'&IF(AND($Z${lr}>0,{use_s2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$Z${lr}),"")'
+                  f'&IF(AND($AA${lr}>0,{use_w2}),CHAR(10)&CHAR(10)&INDEX({L_TEXT},$AA${lr}),""),3,32000)'))
+    for col, (rc, rs, rw, us, uw) in ((30, ("$N", "$O", "$P", use_s, use_w)), (31, ("$Y", "$Z", "$AA", use_s2, use_w2))):
+        cell(lr, col, (f'=IF({rc}${lr}>0,INDEX({L_STATUS},{rc}${lr}),IF(AND({rs}${lr}>0,{us}),INDEX({L_STATUS},{rs}${lr}),'
+                       f'IF(AND({rw}${lr}>0,{uw}),INDEX({L_STATUS},{rw}${lr}),"")))'))
+    both = lambda a_, b_: f'MID(IF({a_}<>"",CHAR(10)&CHAR(10)&{a_},"")&IF({b_}<>"",CHAR(10)&CHAR(10)&{b_},""),3,32000)'
+    V, AC = f"$V${lr}", f"$AC${lr}"
+    pre = lambda x: f'IF({x}<>"",CHAR(10)&CHAR(10)&{x},"")'
+    swap_text = (f'MID(CHAR(10)&CHAR(10)&INDEX({L_TEXT},$M${lr})&IF({hb}<{C},{pre(V)}&{pre(AC)},{pre(AC)}&{pre(V)}),3,32000)')
+    cell(lr, 9, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,{swap_text},IF({V}&{AC}="",$R${lr},'
+                 f'IF({hb}<{C},{both(V, AC)},{both(AC, V)}))),IF({V}<>"",{V},$Q${lr})))'))
+    cell(lr, 10, (f'=IF({B}="","",IF($L${lr},IF($M${lr}>0,INDEX({L_STATUS},$M${lr}),IF({V}&{AC}="","blend",'
+                  f'IF({hb}<{C},IF({V}<>"",$AD${lr},$AE${lr}),IF({AC}<>"",$AE${lr},$AD${lr})))),IF($AD${lr}<>"",$AD${lr},"blend")))'))
+    hits = ",".join(f'{hf(H_TARGET + sl, B)}={sb}' for sl in range(3))
+    cell(lr, 11, (f'=IF({B}="","",IF(AND(OR({hits}),$G${lr}<>"Debilitated",$G${lr}<>"Deep Debilitated"),'
+                  f'"The lord aspects its own house, so the "&{H}&" house is strong.",""))'))
+    summary(lr, f'$H${lr}="strong"', f'$H${lr}="weak"', f'"The "&{H}&" lord "&{B}&" is "&$H${lr}')
+    cell(lr + 1, 1, "lord (2)")
+    cell(lr + 1, SUPPORT_COL, f'=IF(AND({B}<>"",$K${lr}<>""),"The "&{H}&" lord "&{B}&" aspects its own house","")')
+    cell(lr + 1, PRESSURE_COL, f'=IF(AND({B}<>"",OR({C}=6,{C}=8,{C}=12)),"The "&{H}&" lord "&{B}&" is in the "&{_ord(C)}&", a difficult placement","")')
+    r = lr + 2
+    for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · with the lord
+        hrow = HELP_ROW0 + k
+        cell(r, 1, "with")
+        cell(r, 2, p)
+        cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_SIGN)}${hrow}=$D${lr})')
+        cell(r, 4, f'=${L(H_RULES)}${hrow}&""')
+        txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") is with the "&{H}&" lord"'
+        summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
+        r += 1
+    for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · aspecting the lord
+        hrow = HELP_ROW0 + k
+        for sl in range(3):
+            cell(r, 1, "with-aspect")
             cell(r, 2, p)
-            cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_SIGN)}${hrow}=$D${lr})')
-            cell(r, 4, f'=${L(H_RULES)}${hrow}&""')
-            txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") is with the "&{H}&" lord"'
+            cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}=$D${lr})')
+            cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
+            cell(r, 5, f'=${L(H_RULES)}${hrow}&""')
+            for j in range(3):
+                cell(r, 6 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
+            readings(r, 9, lr_col(blk, 1, k))
+            txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H}&" lord"'
             summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
             r += 1
-        for k, p in enumerate(br.PLANET_ORDER):                                     # 5 · aspecting the lord
-            hrow = HELP_ROW0 + k
-            for sl in range(3):
-                cell(r, 1, "with-aspect")
-                cell(r, 2, p)
-                cell(r, 3, f'=AND({B}<>"",$B{r}<>{B},${L(H_TARGET + sl)}${hrow}<>"",${L(H_TARGET + sl)}${hrow}=$D${lr})')
-                cell(r, 4, f'=${L(H_ANAME + sl)}${hrow}&""')
-                cell(r, 5, f'=${L(H_RULES)}${hrow}&""')
-                for j in range(3):
-                    cell(r, 6 + j, f"=${L(H_MEAN + 3 * sl + j)}${hrow}")
-                readings(r, 9, lr_col(blk, 1, k))
-                txt = f'$B{r}&" ("&${L(H_NATURE)}${hrow}&") aspects the "&{H}&" lord"'
-                summary(r, f'AND($C{r},${L(H_CLASS)}${hrow}="benefic")', f'AND($C{r},${L(H_CLASS)}${hrow}="malefic")', txt)
-                r += 1
-        assert r == b0 + BLOCK_ROWS, (r, b0)
+    assert r == b0 + BLOCK_ROWS, (r, b0)
 
-    # ---- 6 · karakas
-    for i, kc in enumerate(("$B$12", "$B$13")):
-        r = KARAKA_ROW0 + i
+
+def _karaka_rows(ws, rules, row0, kline_row0, karaka_cells, note_cell):
+    """The karaka rows (Session 27 step 6) and their summary lines; note_cell is the karaka note (an expression)."""
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+    ref = rules["reference"]
+    hf, lords, names, bh, matrix, sign_of_house = _hf, LA_LORDS, LA_NAMES, _bh, LA_MATRIX, _sign_of_house
+    summary = lambda r, g, b, t: _summary_cells(ws, r, g, b, t)
+    for i, kc in enumerate(karaka_cells):
+        r = row0 + i
         B = f"$B${r}"
         cell(r, 1, "karaka")
         cell(r, 2, f'=IF({kc}="","",{kc})')
@@ -1071,12 +1085,12 @@ def _life_area_sheet(ws, rules):
         cell(r, 7, f'=IF({B}="","",{hf(H_COMB, B)})')
         cell(r, 8, f'=IF({B}="","",{hf(H_RETRO, B)})')
         cell(r, 9, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
-        cell(r, 10, f'=IF({B}="","",$B$14)')
+        cell(r, 10, f'=IF({B}="","",{note_cell})')
         hit_by = lambda m: "OR(" + ",".join(f"${L(H_TARGET + sl)}${HELP_ROW0 + br.PLANET_ORDER.index(m)}=$D${r}"
                                            for sl in range(len(ref["SPECIAL_ASPECTS"][m]))) + ")"
         cell(r, 11, '=IF({B}="","",MID({x},3,99))'.format(B=B, x="&".join(
             f'IF(AND({B}<>"{m}",{hit_by(m)}),", {m}","")' for m in br.STRENGTH_MALEFICS)))
-        k0 = KLINE_ROW0 + i * KLINE_ROWS
+        k0 = kline_row0 + i * KLINE_ROWS
         cell(k0, 1, "karaka line")
         cell(k0, PRESSURE_COL, f'=IF(AND({B}<>"",OR($C${r}=6,$C${r}=8,$C${r}=12)),"Karaka "&{B}&" is in the "&{_ord(f"$C${r}")},"")')
         for j, m in enumerate(br.STRENGTH_MALEFICS):
@@ -1084,6 +1098,59 @@ def _life_area_sheet(ws, rules):
             cell(k0 + 1 + j, PRESSURE_COL, f'=IF(AND({B}<>"",{B}<>"{m}",{hit_by(m)}),"Karaka "&{B}&" is aspected by {m}","")')
         cell(k0 + 6, 1, "karaka line")
         summary(k0 + 6, f'AND($I${r}="strong",$C${r}<>6,$C${r}<>8,$C${r}<>12)', f'$I${r}="weak"', f'"Karaka "&{B}&" is "&$I${r}')
+
+
+def _life_area_sheet(ws, rules):
+    """Session 27's 7-step method for the area chosen in B2 — equal to bhava_rules.life_area (see life_area_from_sheet)."""
+    ws["A1"] = "Life areas (Session 27) — pick the area in B2; the 7 steps follow for the chart on S23_Chart"
+    ws["A1"].font = Font(bold=True, color="6B1D2B", size=13)
+    hf, lords, sign_of_house = _hf, LA_LORDS, _sign_of_house
+    gender = f"S23_Chart!{GENDER_CELL}"
+    LA = lambda c: f"S23_LifeAreas!${c}$1:${c}$60"
+    CK, CP, CH, CT = (f"S23_Conditions!${c}$2:${c}$300" for c in "ABCD")
+    C_TEXT = "S23_Conditions!$D$1:$D$300"
+    cell = lambda r, c, v: ws.cell(row=r, column=c, value=v)
+
+    # ---- the area
+    top = [(2, "Area of life (pick)", None), (3, "Row in S23_LifeAreas", f'=MATCH({AREA_CELL},{LA("B")},0)'),
+           (4, "No", f"=INDEX({LA('A')},$B$3)"), (5, "Houses", f'=INDEX({LA("C")},$B$3)&""'),
+           (6, "Link", f'=INDEX({LA("F")},$B$3)&""'), (7, "Source", f'=INDEX({LA("G")},$B$3)&""'),
+           (8, "House 1", '=VALUE(TRIM(LEFT($B$5,FIND(",",$B$5&",")-1)))'),
+           (9, "House 2", '=IFERROR(VALUE(TRIM(MID($B$5,FIND(",",$B$5)+1,9))),"")'),
+           (10, "Karakas (Ready Reckoner)", f'=INDEX({LA("D")},$B$3)&""'), (11, "Karaka for a woman's chart", f'=INDEX({LA("E")},$B$3)&""'),
+           (12, "Karaka 1", f'=IF(AND($B$11<>"",{gender}="Female"),$B$11,TRIM(LEFT($B$10,FIND(",",$B$10&",")-1)))'),
+           (13, "Karaka 2", f'=IF(AND($B$11<>"",{gender}="Female"),"",IFERROR(TRIM(MID($B$10,FIND(",",$B$10)+1,99)),""))')]
+    for r, label, f in top:
+        cell(r, 1, label)
+        if f:
+            cell(r, 2, f)
+    ws[AREA_CELL] = rules["life_areas"][7]["area"]
+    ws[AREA_CELL].fill = INPUT_FILL
+    dv = DataValidation(type="list", formula1=f"=S23_LifeAreas!$B$2:$B${1 + len(rules['life_areas'])}", allow_blank=False)
+    ws.add_data_validation(dv)
+    dv.add(AREA_CELL)
+    best = lambda key, planet, house: [f"SUMPRODUCT(({CK}={key})*({CP}={pl})*({CH}={hh})*ROW({CK}))"
+                                       for pl, hh in ((planet, house), ('""', house), (planet, '""'), ('""', '""'))]
+    jh = best('"jupiter_husband"', '"Jupiter"', '""')
+    vm = best('"venus_meets_wife"', "$B$12", hf(H_HOUSE, "$B$12"))
+    pick = lambda b: f"IF({b[0]}>0,{b[0]},IF({b[1]}>0,{b[1]},IF({b[2]}>0,{b[2]},{b[3]})))"
+    cell(14, 1, "Karaka note")
+    cell(14, 2, (f'=IF($B$11="","",IF({gender}="Female",IF({jh[2]}>0,INDEX({C_TEXT},{jh[2]}),IF({jh[3]}>0,INDEX({C_TEXT},{jh[3]}),"")),'
+                 f'IF({gender}="Male",IF({pick(vm)}>0,INDEX({C_TEXT},{pick(vm)}),""),'
+                 f'"For a woman\'s chart the husband\'s karaka is "&$B$11&".")))'))
+    for r, label, col in ((15, "Supports", SUPPORT_COL), (16, "Pressure", PRESSURE_COL)):
+        cell(r, 1, label)
+        parts = "&".join(f'IF(${L(col)}${x}<>"",CHAR(10)&${L(col)}${x},"")' for x in range(BLOCK_ROW0, LINK_ROW0 + 3))
+        cell(r, 2, f"=MID({parts},2,32000)").alignment = WRAP
+    ws.column_dimensions["A"].width = 24
+    ws.column_dimensions["B"].width = 60
+
+    _helper_table(ws, rules)
+    _reading_counts(ws, rules, LR_ROW0, [BLOCK_ROW0 + blk * BLOCK_ROWS for blk in range(2)])
+    _block_header(ws, BLOCK_ROW0 - 1)
+    for blk, hcell in enumerate(("$B$8", "$B$9")):
+        _house_block(ws, rules, blk, BLOCK_ROW0 + blk * BLOCK_ROWS, hcell, LR_ROW0)
+    _karaka_rows(ws, rules, KARAKA_ROW0, KLINE_ROW0, ("$B$12", "$B$13"), "$B$14")
 
     # ---- PAC link (Love marriage) and the karakas' combination
     pac_on = '$B$6="PAC"'
