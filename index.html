@@ -144,6 +144,7 @@ body {
   padding: 28px 30px;
   position: relative;
   overflow: hidden;
+  overflow: clip;            /* clips like hidden, but lets the Prediction's row of houses stick */
 }
 .panel::before {
   content:""; position: absolute; inset: 0; pointer-events: none;
@@ -286,6 +287,7 @@ details.section {
   background: linear-gradient(180deg, #fffbe9 0%, #fbf2dc 100%);
   box-shadow: 0 6px 18px rgba(16,9,38,.06);
   overflow: hidden;
+  overflow: clip;            /* clips like hidden, but lets the Prediction's row of houses stick */
 }
 details.section[open] { box-shadow: var(--shadow); }
 details.section > summary {
@@ -629,7 +631,7 @@ tr.s23-subrow.now td { font-weight: 600; }
 /* Prediction read bhāva by bhāva (spec 2026-10-13): two views, a planet table, a sticky row of the twelve houses, one panel per house. */
 .s23-view-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 14px; }
 .s23-bv-planets td, .s23-bv-planets th { white-space: nowrap; }
-.s23-bv-jump { position: sticky; top: var(--s23-bv-top, 0px); z-index: 40; background: var(--parchment); display: grid;
+.s23-bv-jump { position: sticky; top: 0; z-index: 40; background: var(--parchment); display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; padding: 6px 0; margin: 12px 0; border-bottom: 1px solid var(--line); }
 .s23-bv-jump a { text-decoration: none; color: var(--ink); text-align: center; border: 1px solid var(--line); border-radius: 6px;
   background: var(--parchment-2); padding: 3px 0; display: grid; line-height: 1.15; min-width: 0; }
@@ -637,7 +639,7 @@ tr.s23-subrow.now td { font-weight: 600; }
 .s23-bv-jump b { font-family: 'Cinzel', serif; color: var(--maroon); font-size: 14px; }
 .s23-bv-jump small { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .s23-bv-house { border: 1px solid var(--line); border-radius: 10px; background: #fffdf7; padding: 12px 16px; margin: 0 0 16px;
-  scroll-margin-top: calc(var(--s23-bv-top, 0px) + 72px); }
+  scroll-margin-top: 64px; }
 .s23-bv-hhead { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; }
 .s23-bv-hnum { grid-row: span 2; font-family: 'Cinzel', serif; font-size: 30px; color: var(--saffron); line-height: 1; min-width: 1.3em; text-align: center; }
 .s23-bv-htitle { min-width: 0; }
@@ -679,7 +681,7 @@ tr.s23-subrow.now td { font-weight: 600; }
   .s23-bv-planets td::before { content: attr(data-label) " "; font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   .s23-bv-jump { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .s23-bv-facts { grid-template-columns: minmax(0, 1fr); }
-  .s23-bv-house { padding: 10px; }
+  .s23-bv-house { padding: 10px; scroll-margin-top: 104px; }
 }
 @media print {
   .s23-view-btns, .s23-bv-jump, .s23-bv-top { display: none !important; }
@@ -1008,7 +1010,8 @@ tr.s23-subrow.now td { font-weight: 600; }
 }
 
 /* ===== Mobile-friendliness (phones & small tablets) ===== */
-html, body { overflow-x: hidden; }               /* never let the page scroll sideways */
+html { overflow-x: hidden; }                     /* never let the page scroll sideways */
+body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body must not become a scroller, or no sticky bar sticks */
 * { -webkit-tap-highlight-color: rgba(107,29,43,.18); }
 
 @media (max-width: 680px) {
@@ -1057,7 +1060,7 @@ html, body { overflow-x: hidden; }               /* never let the page scroll si
 #report .panel{ background:var(--parchment); }
 #summary-strip .s-card{ border:1px solid var(--line); border-radius:14px; background:linear-gradient(160deg,#fffaf0,var(--parchment-2)); box-shadow:0 3px 12px rgba(107,29,43,.10); }
 #summary-strip .s-card .val{ color:var(--maroon); }
-#reportNav{ position:sticky; top:8px; z-index:45; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
+#reportNav{ position:relative; z-index:45; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
   background:rgba(255,247,228,.92); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:14px;
   padding:8px; margin:16px 0 20px; box-shadow:0 4px 16px rgba(0,0,0,.08); }
 #reportNav button{ font-family:'Cinzel',serif; font-size:12px; letter-spacing:.07em; text-transform:uppercase;
@@ -7284,7 +7287,9 @@ function s23BvHouse(b){
     +`<strong>${GLYPH9[c.a]} ${c.a} + ${GLYPH9[c.b]} ${c.b}</strong> ${s23Tag(c.status)}<br>${_esc(c.text)}`
     +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+`</li>`).join("")}</ul>`;
   if(b.planet_aspects.length) l4+=`<p class="s23-sub">Aspects onto the planets here</p><ul class="s23-bv-pairs">${b.planet_aspects.map(a=>`<li data-by="${a.by}" data-to="${a.to}">`
-    +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}<br>${_esc(a.text)}${s23MeaningList(a.meanings)}</li>`).join("")}</ul>`;
+    +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}`
+    +(a.jupiter_flag?` <span class="section-flag flag-exalted flag-deep s23-jup">Aspect &gt; placement</span>`:"")
+    +`<br>${_esc(a.text)}${s23MeaningList(a.meanings)}</li>`).join("")}</ul>`;
   if(L && b.lord_company.length) l4+=`<p class="s23-sub">With or aspecting the lord, ${L.planet}</p><ul class="s23-bv-pairs">${b.lord_company.map(w=>`<li class="s23-bv-planet" data-planet="${w.planet}" data-role="company">`
     +`${GLYPH9[w.planet]} <strong>${w.planet}</strong> ${w.how==="with"?"is with the lord":`aspects the lord (${w.aspect} aspect)`}${w.rules.length?" · "+s23RuledPhrase(w.rules):""}`
     +`${s23MeaningList(w.meanings)}${s23ReadingList(w.readings, "s23-readings")}</li>`).join("")}</ul>`;
@@ -7295,7 +7300,7 @@ function s23BvHouse(b){
     || `<p class="s23-bv-none">Not placed in this chart.</p>`)+`</div>`;
   if(b.life_areas.length) h+=`<p class="s23-bv-areas"><span class="s23-bv-lbl">Life areas that read this house</span> `
     +b.life_areas.map(a=>`<a href="#s23-area-${a.no}" class="s23-bv-area" data-area="${a.no}">${_esc(a.area)}</a>`).join(" · ")+`</p>`;
-  return h+`<a class="s23-bv-top" href="#s23-bv-jump">↑ Houses</a></section>`;
+  return h+`<a class="s23-bv-top" href="#s23-view-bhava">↑ Houses</a></section>`;
 }
 function s23BuildBhavaView(ctx){
   const layer2=s23BhavaBhava(ctx), houses=[1,2,3,4,5,6,7,8,9,10,11,12].map(h=>s23BhavaReading(ctx, h, layer2));
@@ -7309,8 +7314,6 @@ function s23BuildBhavaView(ctx){
     +houses.map(s23BvHouse).join("");
 }
 function s23WirePredictions(el){
-  const nav=document.getElementById("reportNav");
-  el.style.setProperty("--s23-bv-top", ((nav && nav.offsetHeight ? nav.offsetHeight : 0)+8)+"px");
   el.onclick=e=>{
     const v=e.target.closest(".s23-view-btn");
     if(v){

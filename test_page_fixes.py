@@ -1680,10 +1680,18 @@ class BhavaView(unittest.TestCase):
               const x = document.querySelector('#s23-bv-h1 .s23-bv-planet[data-role="occupant"][data-planet="Jupiter"]');
               return [...x.querySelectorAll('dt')].find(d => d.textContent === 'Digbala').nextElementSibling.textContent;
             });
+            out.jup = await page.evaluate(() => [document.querySelectorAll('#s23-view-layer #s23-asp .s23-jup').length,
+                                                 document.querySelectorAll('#s23-view-bhava .s23-bv-pairs .s23-jup').length]);
             await page.click('#s23-bv-jump a[href="#s23-bv-h7"]');
-            out.jump = await page.evaluate(() => ({bar: document.getElementById('s23-bv-jump').getBoundingClientRect().top,
-              nav: document.getElementById('reportNav').getBoundingClientRect().bottom,
-              panel: document.getElementById('s23-bv-h7').getBoundingClientRect().top}));
+            out.jump = await page.evaluate(() => {
+              const bar = document.getElementById('s23-bv-jump').getBoundingClientRect();
+              const hit = document.elementFromPoint(bar.left + bar.width / 2, bar.top + bar.height / 2);
+              return {top: bar.top, bottom: bar.bottom, onTop: !!(hit && hit.closest('#s23-bv-jump')), scrolled: window.scrollY,
+                      panel: document.getElementById('s23-bv-h7').getBoundingClientRect().top};
+            });
+            await page.click('#s23-bv-h7 a.s23-bv-top');
+            out.up = await page.evaluate(() => ({pane: document.getElementById('s23-view-bhava').getBoundingClientRect().top,
+                                                 scrolled: window.scrollY}));
             await page.click('#s23-bv-h9 a.s23-bv-area[data-area="12"]');
             out.area = await page.evaluate(() => {
               const life = document.getElementById('s23-life-body').closest('details.section');
@@ -1748,11 +1756,20 @@ class BhavaView(unittest.TestCase):
         self.assertIn("gains directional strength (digbala) in the 1st house", self.r["jupiter"])
 
     def test_jump_bar_stays_in_view(self):
+        """Final review: the bar must really stick (its clipping ancestors once kept it from sticking)."""
         j = self.r["jump"]
-        self.assertGreaterEqual(j["bar"], j["nav"] - 1, j)
-        self.assertLess(j["bar"], 300, j)
-        self.assertGreater(j["panel"], j["bar"], j)                 # the panel is not hidden under the bar
-        self.assertLess(j["panel"], 500, j)
+        self.assertGreater(j["scrolled"], 1000, j)                  # the page scrolled down to the 7th house
+        self.assertTrue(-1 <= j["top"] <= 1, j)                     # the bar is held at the top of the window
+        self.assertTrue(j["onTop"], j)                              # and nothing covers it
+        self.assertGreaterEqual(j["panel"], j["bottom"] - 1, j)     # the 7th house is not hidden under it
+        self.assertLess(j["panel"], j["bottom"] + 120, j)
+        u = self.r["up"]
+        self.assertLess(u["scrolled"], j["scrolled"] - 1000, u)     # "↑ Houses" goes back up to the planet table
+        self.assertTrue(-1 <= u["pane"] <= 60, u)
+
+    def test_jupiter_aspect_flag(self):
+        """Final review: By bhāva shows "Aspect > placement" on each of Jupiter's aspects, as By layer does."""
+        self.assertEqual(self.r["jup"], [3, 3])                     # Jupiter aspects the Sun, Mars and Mercury
 
     def test_area_link_opens_life_area(self):
         self.assertEqual(self.r["area"], {"pane": "block", "shown": 12, "open": True, "section": "block"})
