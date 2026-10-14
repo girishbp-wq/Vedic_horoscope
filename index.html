@@ -727,7 +727,7 @@ tr.s23-subrow.now td { font-weight: 600; }
 .dasha-bar-legend em { color: var(--maroon); font-style: normal; font-weight: 600; }
 .maha-block { border: 1px solid var(--line); border-radius: 8px; margin: 10px 0; overflow: hidden; }
 .maha-block.cur { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-.maha-head { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 15px; }
+.maha-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 7px 12px; background: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 15px; }
 .maha-block.cur .maha-head { background: #fff4d6; }
 .maha-head .maha-span { margin-left: auto; font-size: 12px; color: var(--muted); }
 .dasha-table { margin: 0; border: 0; }
@@ -761,14 +761,18 @@ tr.s23-subrow.now td { font-weight: 600; }
 }
 
 /* South-Indian 4x4 grid chart */
+#chartSouth { width: 460px; max-width: 100%; container-type: inline-size; }   /* the chart sizes its cells and text from this width */
 .south-chart {
   width: 460px;
   max-width: 100%;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Four equal columns that may shrink below their text (a phone is narrower than the chart's labels). */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   /* Rows grow to their content so a rāśi with 4+ planets is never clipped.
-     minmax keeps the chart near-square when signs are uncrowded. */
+     minmax keeps the chart near-square when signs are uncrowded (on a phone: a row as tall as a column is wide). */
   grid-template-rows: repeat(4, minmax(108px, auto));
+  grid-template-rows: repeat(4, minmax(min(108px, 25cqw), auto));
   border: 2px solid var(--maroon);
   background: #fffaea;
 }
@@ -780,7 +784,9 @@ tr.s23-subrow.now td { font-weight: 600; }
   flex-direction: column;
   font-family: 'Cinzel', serif;
   min-height: 0;
+  min-width: 0;
   overflow: visible;
+  overflow-wrap: anywhere;   /* a sign name never pushes past its cell */
 }
 .south-cell.center {
   border: none;
@@ -826,6 +832,7 @@ tr.s23-subrow.now td { font-weight: 600; }
   justify-content: center;
   gap: 2px 5px;
   font-size: 11.5px;
+  font-size: clamp(9px, 2.6cqw, 11.5px);
   font-weight: 600;
   color: var(--ink);
   padding: 3px 0;
@@ -841,6 +848,19 @@ tr.s23-subrow.now td { font-weight: 600; }
   color: var(--gold);
   font-weight: 700;
   letter-spacing: 0.06em;
+}
+/* A narrow chart (a phone): tighter cells, smaller sign names, no English name (the glyph and the Sanskrit name stay) */
+@container (max-width: 380px) {
+  .south-cell { padding: 3px 3px 11px; }
+  .south-cell .sc-rashi { font-size: 7.5px; letter-spacing: 0.02em; }
+  .south-cell .sc-glyph { display: block; }          /* the glyph on its own line: the name gets the cell's width */
+  .south-cell .sc-rashi-en { display: none; }
+  .south-cell .sc-house-num, .south-cell.lagna-cell .sc-asc { font-size: 8px; }
+  .south-cell.center .om-glyph { font-size: 28px; }
+}
+@container (max-width: 240px) {                       /* the smallest phones (320 px wide) */
+  .south-cell { padding: 2px 2px 11px; }
+  .south-cell .sc-rashi { font-size: 6.5px; letter-spacing: 0; }
 }
 .south-cell.lagna-cell {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.16) 0%, rgba(245, 158, 11, 0.04) 100%);
@@ -1026,8 +1046,14 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
   .field.wide { grid-column: auto; }
   .lat-lon-row.show { grid-template-columns: 1fr; }
   .summary-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .kv-grid { grid-template-columns: 1fr; }
-  details.section > summary { padding: 12px 14px; }
+  .kv-grid { grid-template-columns: minmax(0, 1fr); }
+  .kv { flex-wrap: wrap; gap: 2px 16px; }
+  .kv .k { white-space: normal; }
+  .kv .v { margin-left: auto; }
+  details.section > summary { padding: 12px 14px; flex-wrap: wrap; row-gap: 4px; }
+  details.section > summary::after { order: 1; }                 /* number, title and + on the first line … */
+  .section-title { min-width: 0; flex: 1 1 0; }
+  .section-sub { order: 2; flex-basis: 100%; margin-left: 0; }   /* … the subtitle across the line below */
   .section-num { margin-right: 8px; }
   .section-title { font-size: 15px; }
   .section-sub { font-size: 11px; }
@@ -1041,7 +1067,9 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
 
   /* Charts fill the width, centred */
   .dual-chart-wrap { grid-template-columns: 1fr !important; justify-items: center; gap: 16px; }
-  .chart-svg, .south-chart { width: 100% !important; max-width: 340px; }
+  .chart-svg { width: 100% !important; max-width: 340px; }
+  .chart-panel { padding: 12px 4px 14px; justify-self: stretch; }   /* the panel fills the column … */
+  #chartSouth, .south-chart { width: 100%; }                         /* … and the chart fills the panel */
   .chart-legend { min-width: 0; }
 
   /* Bigger tap targets; let control rows wrap */
@@ -1058,7 +1086,7 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
   .summary-strip { grid-template-columns: 1fr; }
   .title { font-size: 28px; }
   .s-card .glyph { font-size: 26px; }
-  .chart-svg, .south-chart { max-width: 300px; }
+  .chart-svg { max-width: 300px; }
 }
 
 /* ===== UX refinement — report tab-nav, hero cards, card elevation (2026-09) ===== */
@@ -3885,7 +3913,7 @@ function renderSouthIndianChart(lagnaRashiNum, planetsByRashi, planetsWithDignit
     const planets = planetsByRashiList[rashiNum];
 
     html += `<div class="south-cell ${isLagna ? "lagna-cell" : ""}">`;
-    html += `<div class="sc-rashi">${r.glyph}&nbsp;${r.sanskrit}</div>`;
+    html += `<div class="sc-rashi"><span class="sc-glyph">${r.glyph}</span> <span class="sc-name">${r.sanskrit}</span></div>`;
     html += `<div class="sc-rashi-en">${r.english}</div>`;
     html += `<div class="sc-planets">`;
     for (const p of planets) {
@@ -5547,7 +5575,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-10-14 · Birth form fits a phone screen";
+const TOOL_VERSION = "2026-10-14 · Phone: chart, form and lists fit the screen";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }

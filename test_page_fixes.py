@@ -1833,3 +1833,76 @@ class PhoneForm(unittest.TestCase):
         for w, modes in self.r.items():
             for mode, got in modes.items():
                 self.assertTrue(got["timeButtonOnScreen"], (w, mode))
+
+
+@needs_browser
+class PhoneReport(unittest.TestCase):
+    """On a phone nothing in the report is cut off at the right edge (outside a box that scrolls sideways), and the
+    South-Indian chart fits: four equal columns, square cells (the right-hand column — Gemini to Virgo — was cut off)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await page.click('#btn-manual');
+            await setBirth('1968-04-25', '14:27:00');
+            await page.fill('#f-lat', '13.55'); await page.press('#f-lat', 'Tab');
+            await page.fill('#f-lon', '76.01'); await page.press('#f-lon', 'Tab');
+            await page.fill('#f-tz', '5.5');
+            await generate();
+            const out = {};
+            for (const w of [320, 390]) {
+              await page.setViewportSize({width: w, height: 800});
+              out[w] = {cut: {}, chart: null};
+              const groups = await page.evaluate(() => [...document.querySelectorAll('#reportNav button')].map(b => b.textContent));
+              for (const g of groups) {
+                await page.evaluate(g => [...document.querySelectorAll('#reportNav button')].find(b => b.textContent === g).click(), g);
+                out[w].cut[g] = await page.evaluate(() => {
+                  const vw = document.documentElement.clientWidth, found = [];
+                  for (const el of document.querySelectorAll('#report *')) {
+                    if (!el.offsetParent) continue;
+                    const r = el.getBoundingClientRect();
+                    if (!r.width) continue;
+                    let right = vw, scroller = false;
+                    for (let a = el.parentElement; a && a.id !== 'report'; a = a.parentElement) {
+                      const o = getComputedStyle(a).overflowX;
+                      if (o === 'auto' || o === 'scroll') { scroller = true; break; }
+                      if (o === 'hidden' || o === 'clip') right = Math.min(right, a.getBoundingClientRect().right);
+                    }
+                    if (!scroller && r.right > right + 1)
+                      found.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} ${Math.round(r.right)} > ${Math.round(right)}`);
+                  }
+                  return found.slice(0, 5);
+                });
+              }
+              await page.evaluate(() => [...document.querySelectorAll('#reportNav button')].find(b => b.textContent === 'Charts').click());
+              await page.evaluate(() => { const t = [...document.querySelectorAll('.chart-tab')].find(b => /south/i.test(b.textContent)); if (t) t.click(); });
+              out[w].chart = await page.evaluate(() => {
+                const c = document.querySelector('#chartSouth .south-chart'), cr = c.getBoundingClientRect();
+                const cells = [...c.querySelectorAll('.south-cell:not(.center)')].map(x => x.getBoundingClientRect());
+                const panel = c.closest('.chart-panel').getBoundingClientRect();
+                const all = [...c.querySelectorAll('.south-cell:not(.center)')];
+                const crowdedTops = new Set(all.filter(x => x.querySelectorAll('.sc-planet').length > 2).map(x => Math.round(x.getBoundingClientRect().top)));
+                return {left: cr.left, right: cr.right, panelLeft: panel.left, panelRight: panel.right, vw: document.documentElement.clientWidth,
+                        widths: cells.map(r => Math.round(r.width)), heights: cells.map(r => Math.round(r.height)),
+                        uncrowded: cells.map(r => !crowdedTops.has(Math.round(r.top))),
+                        brokenNames: [...c.querySelectorAll('.sc-name')].filter(n => n.getClientRects().length > 1).map(n => n.textContent)};
+              });
+            }
+            return out;
+        """)
+
+    def test_nothing_is_cut_off_on_a_phone(self):
+        for w, got in self.r.items():
+            for group, cut in got["cut"].items():
+                self.assertEqual(cut, [], (w, group))
+
+    def test_south_indian_chart_fits_with_square_cells(self):
+        for w, got in self.r.items():
+            c = got["chart"]
+            self.assertGreaterEqual(c["left"], c["panelLeft"] - 1, (w, c))
+            self.assertLessEqual(c["right"], min(c["panelRight"], c["vw"]) + 1, (w, c))
+            self.assertLessEqual(max(c["widths"]) - min(c["widths"]), 2, (w, c["widths"]))      # four equal columns
+            for wd, ht, free in zip(c["widths"], c["heights"], c["uncrowded"]):
+                if free:                                     # a row holding a sign with 3+ planets grows so all show
+                    self.assertLessEqual(abs(ht - wd), max(4, wd * 0.15), (w, wd, ht))             # square when uncrowded
+            self.assertEqual(c["brokenNames"], [], w)        # a sign's name is never split across two lines
