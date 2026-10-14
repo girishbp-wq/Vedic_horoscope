@@ -1792,3 +1792,44 @@ class BhavaView(unittest.TestCase):
         c = self.r["crowded"]
         self.assertEqual(c["conj"], 36)
         self.assertLessEqual(c["sw"], c["vw"] + 1)
+
+
+@needs_browser
+class PhoneForm(unittest.TestCase):
+    """On a phone every field of the birth form fits the screen, with the city search and with manual lat/lon. The
+    time field ran off the right edge (the Name and Place fields' span 2 kept a second column), so its picker button
+    could not be tapped; with manual lat/lon the form grew to 771 px."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            const check = () => page.evaluate(() => {
+              const vw = document.documentElement.clientWidth;
+              const off = [...document.querySelectorAll('#inputPanel input, #inputPanel select')].filter(e => e.offsetParent)
+                .map(e => [e.id, e.getBoundingClientRect()]).filter(([, r]) => r.left < 0 || r.right > vw)
+                .map(([id, r]) => `${id} ${Math.round(r.left)}..${Math.round(r.right)}`);
+              const tob = document.getElementById('f-tob');
+              tob.scrollIntoView({block: 'center'});
+              const t = tob.getBoundingClientRect(), hit = document.elementFromPoint(t.right - 6, t.top + t.height / 2);
+              return {off, timeButtonOnScreen: !!hit && hit.id === 'f-tob'};
+            });
+            const out = {};
+            for (const w of [320, 390, 412]) {
+              await page.setViewportSize({width: w, height: 800});
+              out[w] = {city: await check()};
+              await page.click('#btn-manual');                       // manual lat/lon on …
+              out[w].manual = await check();
+              await page.click('#btn-manual');                       // … and off again
+            }
+            return out;
+        """)
+
+    def test_every_form_field_fits_a_phone_screen(self):
+        for w, modes in self.r.items():
+            for mode, got in modes.items():
+                self.assertEqual(got["off"], [], (w, mode))
+
+    def test_the_time_field_can_be_tapped_at_its_picker_end(self):
+        for w, modes in self.r.items():
+            for mode, got in modes.items():
+                self.assertTrue(got["timeButtonOnScreen"], (w, mode))

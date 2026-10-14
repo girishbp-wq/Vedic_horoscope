@@ -154,7 +154,9 @@ body {
 }
 .input-wrap { margin: -52px auto 28px; position: relative; z-index: 3; }
 .input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 18px; position: relative; }
-.field { display: flex; flex-direction: column; gap: 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field.wide { grid-column: span 2; }
+.field > input, .field > select { width: 100%; }
 .field label {
   font-family: 'Cinzel', serif;
   font-size: 10.5px;
@@ -164,6 +166,7 @@ body {
   font-weight: 600;
 }
 .field input, .field select {
+  min-width: 0;              /* a box may shrink to its column (the time box is 222 px wide on its own) */
   font: inherit;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 18px;
@@ -1020,6 +1023,8 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
   .hero { padding: 38px 14px 54px; }
   .panel { padding: 18px 14px; border-radius: 12px; }
   .input-grid { grid-template-columns: 1fr; gap: 12px; }
+  .field.wide { grid-column: auto; }
+  .lat-lon-row.show { grid-template-columns: 1fr; }
   .summary-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
   .kv-grid { grid-template-columns: 1fr; }
   details.section > summary { padding: 12px 14px; }
@@ -1159,7 +1164,7 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
   <!-- INPUT PANEL -->
   <section class="panel input-wrap" id="inputPanel">
     <div class="input-grid">
-      <div class="field" style="grid-column: span 2;">
+      <div class="field wide">
         <label for="f-name">Name</label>
         <input id="f-name" type="text" placeholder="e.g. Aarav Sharma" autocomplete="off" />
       </div>
@@ -1173,13 +1178,13 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
         <input id="f-tob" type="time" step="1" />
         <span class="hint">Enter the exact clock time. <strong>Just after midnight = 12:10 AM</strong> (not PM) — on a 24-hour clock that is 00:10. Noon is 12:10 PM. e.g. 09:45 = 9:45 AM, 21:30 = 9:30 PM.</span>
       </div>
-      <div class="field places-wrap" style="grid-column: span 2;">
+      <div class="field wide places-wrap">
         <label for="f-place">Place of Birth</label>
         <input id="f-place" type="text" placeholder="e.g. Mumbai, Maharashtra, India" autocomplete="off" />
         <div id="suggestions" class="suggestions"></div>
         <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
       </div>
-      <div class="field" style="grid-column: span 2;">
+      <div class="field wide">
         <label for="f-tz">Birth timezone (UTC offset, hours)</label>
         <input id="f-tz" type="number" step="any" placeholder="e.g. 5.5 (India) · 0 (UK winter/GMT) · 1 (UK summer/BST)" />
         <span class="hint" id="tz-hint"><strong>Set automatically from the city and the birth date and time</strong> — daylight saving (e.g. British Summer Time) and India's 1942–45 war time (+6:30) are applied for you. Typing a value here overrides it for this city; picking another city switches back to automatic. With manual lat/lon, enter the offset yourself.</span>
@@ -1203,7 +1208,7 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
         <span class="hint">Lahiri is the Government-of-India standard.</span>
       </div>
 
-      <div class="field" style="grid-column: span 2;">
+      <div class="field wide">
         <label for="f-curcity">Current location — for Muhūrta timings</label>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <select id="f-curcity" style="flex:1 1 200px; min-width:180px;"></select>
@@ -5542,7 +5547,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-10-14 · Prediction read bhāva by bhāva";
+const TOOL_VERSION = "2026-10-14 · Birth form fits a phone screen";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
