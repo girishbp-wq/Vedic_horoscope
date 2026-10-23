@@ -2084,7 +2084,8 @@ class PlanetPositions(unittest.TestCase):
 
 
 # The Swiss Ephemeris with its JPL-based files (DE431): 60 moments 1800-2200 UT at random places, sidereal
-# Lahiri and KP-New, apparent and true (geometric) positions, the Lagna, and delta T. Made by pyswisseph 2.10.
+# Lahiri and KP-New, apparent and true (geometric) positions, the Lagna, and delta T; and 30 Lahiri Lagnas 1900-2040 at
+# latitudes 64-66.4°, the 30 of 400 most sensitive to the obliquity ("high_lat"). Made by pyswisseph 2.10.
 SWE_ORACLE = json.loads((HERE / "swe_oracle.json").read_text())
 
 # Kusuma, 22 Feb 1975 16:30 IST, Nanjangud 12°7'4" N 76°41'2" E, as the Lahiri website the user compared shows her:
@@ -2120,7 +2121,8 @@ class SwissOracle(unittest.TestCase):
                 return o;
               });
               const c = computeChart(k.jd, 'lahiri', 'true').sidereal;
-              return {rows, kusuma: Object.assign({Lagna: computeLagna(k.jd, k.lat, k.lon, 'lahiri')}, c)};
+              const highLat = g.high_lat.map(row => computeLagna(row.jd, row.lat, row.lon, 'lahiri'));
+              return {rows, highLat, kusuma: Object.assign({Lagna: computeLagna(k.jd, k.lat, k.lon, 'lahiri')}, c)};
             }, opts.a);
         """, a={"g": SWE_ORACLE, "k": KUSUMA_SITE})
 
@@ -2158,6 +2160,12 @@ class SwissOracle(unittest.TestCase):
                 worst[inside] = max(worst[inside], self.arcsec(got[m]["asc"], row[m]["asc"]))
         self.assertLessEqual(worst[True], 0.2, worst)
         self.assertLessEqual(worst[False], 4, worst)
+
+    def test_lagna_near_the_polar_circle(self):
+        # 64-66.4° north or south, 1900-2040: the obliquity must be the one the Swiss Ephemeris uses (IAU 2006), as an
+        # error in it grows towards the polar circle.
+        worst = max(self.arcsec(got, row["asc"]) for row, got in zip(SWE_ORACLE["high_lat"], self.r["highLat"]))
+        self.assertLessEqual(worst, 0.5, worst)
 
     def test_delta_t_within_a_second(self):
         worst = max(abs(got["dt"] - row["dt"]) for row, got in zip(SWE_ORACLE["rows"], self.r["rows"]))

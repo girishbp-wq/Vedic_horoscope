@@ -1238,8 +1238,8 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
       <div class="field">
         <label for="f-positions">Planet positions</label>
         <select id="f-positions">
-          <option value="apparent" selected>Apparent — as seen (Swiss Ephemeris)</option>
-          <option value="true">True — geometric</option>
+          <option value="apparent" selected>Apparent (Swiss Ephemeris)</option>
+          <option value="true">True (geometric)</option>
         </select>
         <span class="hint">Most software uses apparent positions. Some Indian websites give true ones, up to 40″ apart; pick True to compare with them.</span>
       </div>
@@ -2963,7 +2963,8 @@ function cityNow(city){
    Computes tropical longitudes, applies Lahiri ayanamsa to yield
    sidereal positions, then Lagna from local sidereal time.
    Accuracy against the Swiss Ephemeris (DE431), 1800–2200: Sun and
-   planets (VSOP87) ~1", Moon (ELP/MPP02) 0.15", Lagna 0.05" (1850–2050).
+   planets (VSOP87) ~1", Moon (ELP/MPP02) 0.15"; Lagna (1850–2050)
+   0.01", 0.25" near the polar circle.
    ============================================================ */
 const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
@@ -2982,9 +2983,9 @@ function julianDay(y, m, d, ut) {
        + d + B - 1524.5 + ut / 24;
 }
 
-/* Mean obliquity of ecliptic */
+/* Mean obliquity of the ecliptic (degrees), IAU 2006, as the Swiss Ephemeris has it */
 function obliquity(T) {
-  return 23.43929111 - 0.0130041667*T - 1.6667e-7*T*T + 5.0278e-7*T*T*T;
+  return (84381.406 + T * (-46.836769 + T * (-0.0001831 + T * (0.0020034 + T * (-0.000000576 - 0.0000000434 * T))))) / 3600;
 }
 
 /* Greenwich Mean Sidereal Time (degrees), IAU 2006: the Earth rotation angle plus the accumulated precession in right
