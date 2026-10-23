@@ -173,6 +173,8 @@ def write_readme_sheet(wb):
 
 # What the page's engine looks rows up by — a value outside these lists would break the live page.
 PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+# S23_Remedies topics: a planet, "Kuja" (added for Kuja doṣa, class of 22 Oct 2026) or "Tip" (a tip of the day)
+REMEDY_TOPICS = PLANETS + ["Kuja", "Tip"]
 CLASS_NAMES = ["Kendra", "Trikona", "Panapara", "Apoklima", "Upachaya", "Apachaya", "Maraka", "Dusthana",
                "Badhaka", "Trishadaya"]
 STATUSES = ["taught", "curated", "blend", "standard"]
@@ -417,7 +419,7 @@ def read_workbook(path_or_wb):
                                       source=_s(r[5])))
     out["remedies"] = []
     for sh, i, r in rd.rows("Remedies"):
-        out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], PLANETS + ["Tip"]), text=rd.text(sh, i, "Text", r[1]),
+        out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], REMEDY_TOPICS), text=rd.text(sh, i, "Text", r[1]),
                                     source=_s(r[2])))
     out["chart_readings"] = []
     for sh, i, r in rd.rows("ChartReadings"):

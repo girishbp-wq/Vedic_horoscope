@@ -179,3 +179,36 @@ class S28_29Texts(unittest.TestCase):
             self.assertNotIn("[", text)
             self.assertNotIn(" ,", text)
             self.assertNotIn(" .", text)
+
+
+class S24ClassTexts(unittest.TestCase):
+    """The class of 22 Oct 2026: the Moon and Mars in the 12 bhāvas (recording points), her remedies."""
+
+    @classmethod
+    def setUpClass(cls):
+        import session24_class_texts as t
+        cls.t = t
+
+    def test_points_for_moon_and_mars_in_every_house(self):
+        self.assertEqual(sorted(self.t.GRAHA_IN_BHAVA_EXTRA),
+                         sorted((p, h) for p in ("Moon", "Mars") for h in range(1, 13)))
+        for key, points in self.t.GRAHA_IN_BHAVA_EXTRA.items():
+            self.assertTrue(1 <= len(points) <= 8, key)
+            for x in points:
+                self.assertEqual(x, x.strip(), key)
+                self.assertTrue(x and x[0].isupper() and x.endswith((".", ")")), (key, x))
+                self.assertNotIn("\n", x, key)
+
+    def test_remedy_rows(self):
+        topics = [r[0] for r in self.t.REMEDIES]
+        self.assertEqual((topics.count("Moon"), topics.count("Mars"), topics.count("Kuja")), (3, 7, 2))
+        self.assertEqual(len(topics), 12)
+        self.assertEqual({r[2] for r in self.t.REMEDIES}, {"Class 22 Oct 2026"})
+        self.assertTrue(any("Hanuman Chālīsā" in r[1] for r in self.t.REMEDIES if r[0] == "Mars"))
+        self.assertTrue(any("toor dāl" in r[1] for r in self.t.REMEDIES if r[0] == "Kuja"))
+
+    def test_no_editorial_marks_left(self):
+        texts = [x for v in self.t.GRAHA_IN_BHAVA_EXTRA.values() for x in v] + [r[1] for r in self.t.REMEDIES]
+        for text in texts:
+            for mark in ("[", "TODO", " ,", " .", "  "):
+                self.assertNotIn(mark, text, text)

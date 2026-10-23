@@ -1741,6 +1741,37 @@ class MasterWorkbookInstall(unittest.TestCase):
         self.assertEqual((again["updated"], again["added"], again["kept"], again["new_sheets"]), (0, 0, [], []))
         self.assertEqual(b23.read_workbook(self.master), want)
 
+    def install_s28_29_release(self):
+        """The master as the Sessions 28-29 release left it (every data sheet, no Session 24 class rows)."""
+        import apply_teacher_slides as a
+        import build_session23 as b23
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, a.apply_s28_29(a.apply(prev)))
+        wb.save(self.master)
+
+    def test_upgrade_from_s28_29_release_brings_the_class_rows(self):
+        import build_session23 as b23
+        import session24_class_texts as t
+        self.install_s28_29_release()
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_GrahaInBhava"]
+        moon1 = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value) == ("Moon", 1))
+        ws.cell(row=moon1, column=4, value="My own note from the class.")
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["kept"], [("S23_GrahaInBhava", ("Moon", 1))])
+        self.assertEqual((up["updated"], up["added"], up["deleted"]), (23, 12, []))
+        got = b23.read_workbook(self.master)
+        want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
+        self.assertEqual(got["remedies"], want["remedies"])
+        for row in got["graha_in_bhava"]:
+            key = (row["planet"], row["house"])
+            if key == ("Moon", 1):
+                self.assertEqual(row["extra"], ["My own note from the class."])
+            elif key in t.GRAHA_IN_BHAVA_EXTRA:
+                self.assertEqual(row["extra"], t.GRAHA_IN_BHAVA_EXTRA[key], key)
+
     def test_edited_row_is_kept_and_listed(self):
         import build_session23 as b23
         self.install_previous_release()

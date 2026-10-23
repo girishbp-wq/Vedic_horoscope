@@ -1614,10 +1614,12 @@ PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 
 
 def shipped_versions():
-    """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply)."""
-    import apply_teacher_slides
+    """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply), then
+    Sessions 28-29 (apply_s28_29)."""
+    import apply_teacher_slides as a
     first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
-    return [first, apply_teacher_slides.apply(first)]
+    s23_27 = a.apply(first)
+    return [first, s23_27, a.apply_s28_29(s23_27)]
 
 
 def _norm_cell(v):

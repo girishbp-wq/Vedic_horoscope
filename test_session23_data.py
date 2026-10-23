@@ -137,11 +137,13 @@ class CuratedContent(unittest.TestCase):
 
     def test_every_graha_bhava_row_is_taught(self):
         import session23_teacher_slides as ts
+        import session24_class_texts as t24
         for x in rules()["graha_in_bhava"]:
             self.assertEqual(x["status"], "taught", (x["planet"], x["house"]))
             if x["planet"] != "Sun":
                 src, text = ts.GRAHA_IN_BHAVA[(x["planet"], x["house"])]
-                self.assertEqual(("\n\n".join(x["points"]), x["source"], x["extra"]), (text, src, []), (x["planet"], x["house"]))
+                extra = t24.GRAHA_IN_BHAVA_EXTRA.get((x["planet"], x["house"]), [])     # the Moon's and Mars's class points
+                self.assertEqual(("\n\n".join(x["points"]), x["source"], x["extra"]), (text, src, extra), (x["planet"], x["house"]))
 
     def test_no_two_rows_share_text(self):
         # taught Sun slides legitimately repeat lines ("Every planet has something good and something bad")
@@ -219,7 +221,9 @@ class TeacherRows(unittest.TestCase):
                                            for n, a, h, k, kf, l, s in ts.LIFE_AREAS])
         self.assertEqual(r["conditions"], [dict(key=k, planet=p, house=h, text=t, status="taught", source=s)
                                            for k, p, h, t, s in ts.CONDITIONS])
-        self.assertEqual(r["remedies"][:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
+        import session24_class_texts as t24
+        before_class = [x for x in r["remedies"] if x["source"] != t24.SOURCE]   # the class of 22 Oct 2026 adds rows among them
+        self.assertEqual(before_class[:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
 
     def test_lord_in_and_graha_rashi_rows_follow_the_shipped_ones(self):
         import session23_teacher_slides as ts
@@ -232,20 +236,37 @@ class TeacherRows(unittest.TestCase):
                                                 for p, n, t, s in ts.GRAHA_RASHI])
         self.assertEqual((r["bhava_lord_in"][0]["condition"], r["bhava_lord_in"][0]["exchange"]), ("", False))
 
-    def test_json_is_previous_plus_both_rounds(self):
+    def test_json_is_previous_plus_every_round(self):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        both = apply_teacher_slides.apply_all(prev)
+        self.assertEqual(both, apply_teacher_slides.apply_s24_class(apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))))
         # the reference tables come from the master workbook's own sheets, not from the slides
         drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
-        self.assertEqual(drop(apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))), drop(rules()))
+        self.assertEqual(drop(both), drop(rules()))
         # key order too: the workbook build and this script must write the same file, so publish sees no change
-        both = apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))
         built = b23.read_workbook(self.__class__._exported())
         for k, rows in built.items():
             if isinstance(rows, list):
                 self.assertEqual([list(r) for r in rows], [list(r) for r in both[k]], k)
         self.assertEqual(prev["meta"]["version"], 1)
         self.assertEqual(rules()["meta"], b23.META)
+
+    def test_s24_class_rows_present(self):
+        import session24_class_texts as t
+        r = rules()
+        for row in r["graha_in_bhava"]:
+            key = (row["planet"], row["house"])
+            if key in t.GRAHA_IN_BHAVA_EXTRA:
+                self.assertEqual(row["extra"], t.GRAHA_IN_BHAVA_EXTRA[key], key)
+            elif row["planet"] == "Sun":
+                self.assertTrue(row["extra"], key)                             # the Session 23 class points stay
+        topics = [x["topic"] for x in r["remedies"]]
+        new = [dict(topic=a, text=b, source=c) for a, b, c in t.REMEDIES]
+        moon_end = max(i for i, x in enumerate(topics) if x == "Moon")
+        self.assertEqual(r["remedies"][moon_end - 2:moon_end + 1], new[:3])      # her Q&A rows close the Moon's list
+        self.assertEqual(r["remedies"][moon_end + 1:moon_end + 10], new[3:])     # then Mars and Kuja, before Mercury
+        self.assertEqual(topics[moon_end + 10], "Mercury")
 
     def test_round1_rows_present(self):
         import session28_29_teacher_texts as t
