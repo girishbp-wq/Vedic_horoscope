@@ -721,6 +721,49 @@ class LayerOne(unittest.TestCase):
         self.assertTrue(self.gb("Jupiter", 10)["source"].startswith("S24 p."))
 
 
+class MarsRemedies(unittest.TestCase):
+    """The class of 22 Oct 2026: her Mars remedy for Mars in the 2nd, 7th, 8th or 12th; the Kuja rows for the 7th."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mars = [r["text"] for r in RULES["remedies"] if r["topic"] == "Mars"]
+        cls.kuja = [r["text"] for r in RULES["remedies"] if r["topic"] == "Kuja"]
+
+    def gb(self, planet, house, rules=RULES):
+        sign = (LAGNA + house - 1) % 12
+        g = br.graha_bhava(rules, LAGNA, dict(SIGNS, **{planet: sign}), planet, None, True)
+        self.assertEqual(g["house"], house)
+        return g
+
+    def test_the_rows_are_in_the_rules(self):
+        self.assertEqual((len(self.mars), len(self.kuja)), (7, 2))
+        self.assertEqual(br.MARS_REMEDY_HOUSES, (2, 7, 8, 12))
+
+    def test_mars_in_the_8th_2nd_and_12th(self):
+        for h in (2, 8, 12):
+            self.assertEqual(self.gb("Mars", h)["remedies"], self.mars, h)
+
+    def test_mars_in_the_7th_adds_the_kuja_rows(self):
+        self.assertEqual(self.gb("Mars", 7)["remedies"], self.mars + self.kuja)
+
+    def test_other_houses_and_other_planets_have_none(self):
+        for h in (1, 3, 4, 5, 6, 9, 10, 11):                 # the 4th is a Kuja position, but she gave no remedy for it
+            self.assertEqual(self.gb("Mars", h)["remedies"], [], h)
+        self.assertEqual(self.gb("Moon", 8)["remedies"], [])  # "if Moon is there, it is okay"
+        self.assertEqual(self.gb("Saturn", 7)["remedies"], [])
+
+    def test_a_row_added_on_the_sheet_shows_too(self):
+        rules = dict(RULES, remedies=RULES["remedies"] + [dict(topic="Mars", text="My own Mars remedy.", source="me")])
+        self.assertEqual(self.gb("Mars", 8, rules)["remedies"][-1], "My own Mars remedy.")
+        self.assertEqual(br.planet_remedies(rules, "Mars", 8)[-1], "My own Mars remedy.")
+
+    def test_the_bhava_reading_carries_them(self):
+        signs = dict(SIGNS, Mars=(LAGNA + 7) % 12)            # Mars in the 8th
+        ctx = br.context(LAGNA, signs, {}, True)
+        occ = next(o for o in br.bhava_reading(RULES, ctx, 8)["occupants"] if o["planet"] == "Mars")
+        self.assertEqual(occ["remedies"], self.mars)
+
+
 class Conditions(unittest.TestCase):
     """Conditional sentences (spec §6.6): which hold for a chart, with the right row and the 'active now' flag."""
 

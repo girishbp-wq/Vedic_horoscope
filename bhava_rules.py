@@ -738,6 +738,19 @@ def twelfth_line(rules, house):
     return next((r["text"] for r in rules["conditions"] if r["key"] == "twelfth_house"), "")
 
 
+MARS_REMEDY_HOUSES = (2, 7, 8, 12)     # class of 22 Oct 2026: the 8th "irrespective of the planet with Mars"; the 2nd and
+#                                        12th "the same remedies"; the 7th is Kuja doṣa (and takes the "Kuja" rows too)
+
+
+def planet_remedies(rules, planet, house):
+    """Her remedies for this planet in this house (S23_Remedies): the "Mars" rows for Mars in the 2nd, 7th, 8th or
+    12th, then the "Kuja" rows for Mars in the 7th; [] otherwise ("otherwise it is not required")."""
+    if planet != "Mars" or house not in MARS_REMEDY_HOUSES:
+        return []
+    topics = ("Mars", "Kuja") if house == 7 else ("Mars",)
+    return [r["text"] for t in topics for r in rules["remedies"] if r["topic"] == t]
+
+
 def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
     """Layer 1: the planet's cell text for its house, dignity line, digbala line and class readings.
     `ctx` (context()) gives the whole chart; without it only this planet's degree is known."""
@@ -761,6 +774,7 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
             "status": cell["status"], "source": cell["source"], "points": cell["points"],
             "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
             "twelfth_line": twelfth_line(rules, house), "nature_lines": bhava_nature_lines(rules, planet, house),
+            "remedies": planet_remedies(rules, planet, house),
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
             "classes": reading["classes"], "class_texts": reading["texts"],
             "degree_stage": degree_stage(rules, planet, deg, ctx["age"]),
@@ -1118,6 +1132,7 @@ def bhava_reading(rules, ctx, house, layer2=None):
                           "moon_strength": g["moon_strength"], "nature_lines": g["nature_lines"],
                           "twelfth_line": g["twelfth_line"], "degree_stage": g["degree_stage"],
                           "conditions": [c for c in conds if c["planet"] == p], "readings": g["readings"],
+                          "remedies": g["remedies"],
                           "graha_rashi": {k: x[k] for k in ("text", "status", "tatwa", "direction", "varna", "mode")},
                           "dignity_line": g["dignity_line"], "dignity_status": g["dignity_status"]})
     lord_p, lord, company = house_lord(rules, lagna, house), None, []
