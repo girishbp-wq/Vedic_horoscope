@@ -2207,3 +2207,48 @@ class PositionsSetting(unittest.TestCase):
         r = run_page("return await page.$eval('#f-positions', s => s.value);",
                      storage={"dob": "1975-02-22", "tob": "16:30", "positions": "true"})
         self.assertEqual(r, "true")
+
+
+# True Astrology Pro 5.8.7.1 (KP), as the user's screenshots show it: Kusuma's chart, and its transit chart for
+# 23 Oct 2026 18:23:49 IST at Nanjangud (slow grahas only: the transit's exact second is not certain).
+TRUE_ASTROLOGY = {
+    "natal": {"jd": 2442465.9583333335, "Sun": "10 09 46 25", "Moon": "02 19 21 48", "Mars": "08 29 59 51",
+              "Mercury": "09 16 41 13", "Jupiter": "11 00 46 17", "Venus": "11 05 23 53", "Saturn": "02 18 53 02",
+              "Rahu": "07 12 23 39", "Lagna": "03 11 50 20"},
+    "transit": {"jd": 2461337.0373726850, "Mars": "03 20 06 24", "Jupiter": "03 29 04 18", "Venus": "06 06 59 09",
+                "Saturn": "11 15 42 41", "Rahu": "10 02 22 42"},
+}
+
+
+@needs_browser
+class TrueAstrologyKP(unittest.TestCase):
+    """The "KP (True Astrology Pro)" ayanamsa reproduces that program to the arc-second: its ayanamsa and its Lagna
+    (geocentric latitude, true equinox)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            return await page.evaluate((a) => {
+              const out = {};
+              for (const k of ['natal', 'transit']) {
+                out[k] = computeChart(a[k].jd, 'kp-ta', 'apparent').sidereal;
+                out[k].Lagna = computeLagna(a[k].jd, a.lat, a.lon, 'kp-ta');
+              }
+              out.option = [...document.querySelectorAll('#f-ayanamsa option')].find(o => o.value === 'kp-ta')?.textContent;
+              return out;
+            }, opts.a);
+        """, a=dict(TRUE_ASTROLOGY, lat=KUSUMA_SITE["lat"], lon=KUSUMA_SITE["lon"]))
+
+    def check(self, which):
+        for k, want in TRUE_ASTROLOGY[which].items():
+            if k != "jd":
+                self.assertLessEqual(SwissOracle.arcsec(self.r[which][k], _sign_dms(want)), 1, (which, k))
+
+    def test_kusuma_matches_true_astrology(self):
+        self.check("natal")
+
+    def test_transit_matches_true_astrology_51_years_later(self):
+        self.check("transit")
+
+    def test_the_form_offers_it(self):
+        self.assertIn("True Astrology", self.r["option"])
