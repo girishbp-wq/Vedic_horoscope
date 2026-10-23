@@ -94,8 +94,8 @@ README_LINES = [
     "Applies any or malefic; AfterAge the age from which an early-degree planet gives its results). In S23_ClassRules, "
     "When 'not weak' shows a rule only for a planet that is not weak.",
     "Class of 22 Oct 2026: the Moon's and Mars's Extra cells on S23_GrahaInBhava hold her class points. In S23_Remedies, "
-    "Topic is a planet, Kuja or Tip; the Mars rows show for Mars in the 2nd, 7th, 8th or 12th house and the Kuja rows "
-    "for Mars in the 7th (S23_Predict_Calc, Remedies column).",
+    "Topic is a planet, Kuja or Tip; the Mars rows show for Mars in the 2nd, 7th, 8th or 12th house (S23_Predict_Calc, "
+    "Remedies column); the Kuja rows show on the page's Kuja Dosha section when the dosha is present and not cancelled.",
 ]
 
 

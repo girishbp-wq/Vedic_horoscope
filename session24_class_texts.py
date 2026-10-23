@@ -6,7 +6,9 @@ were; they show on the page as "From the recording". Her examples from real char
 
 The remedies: she gave the Mars remedy for Mars in the 8th ("irrespective of the planet with Mars"), said the 2nd and
 the 12th take the same, and gave the Kuja rows for Kuja doṣa (Mars in the 7th); "otherwise it is not required".
-bhava_rules.MARS_REMEDY_HOUSES carries that rule. The three Moon rows are her answer for an emotional mind.
+bhava_rules.MARS_REMEDY_HOUSES carries that rule for the "Mars" rows; the "Kuja" rows show only in the page's Kuja Doṣa
+section, when the doṣa is present and not cancelled (the user's ruling of 23 Oct 2026). The three Moon rows are her
+answer for an emotional mind.
 
 apply_teacher_slides.apply_s24_class() turns these into the S23_ rows of session23_rules.json.
 """
@@ -160,7 +162,7 @@ GRAHA_IN_BHAVA_EXTRA = {
 }
 
 # (topic, text, source) — S23_Remedies. Moon: her answer for an emotional mind; Mars: for Mars in the 2nd, 7th, 8th or
-# 12th; Kuja: added for Kuja doṣa (Mars in the 7th).
+# 12th; Kuja: added for Kuja doṣa (shown in the Kuja Doṣa section when the doṣa is present and not cancelled).
 REMEDIES = [
     ("Moon", "For an emotional mind: write down whatever you feel in a book.", SOURCE),
     ("Moon", "For an emotional mind: meditate, even for five minutes.", SOURCE),

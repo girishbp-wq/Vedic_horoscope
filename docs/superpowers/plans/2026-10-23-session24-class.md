@@ -46,6 +46,11 @@ class transcript of 22 Oct 2026. Its decisions are restated below as D1–D6.
 - **D6 — upgrade path.** `shipped_versions()` also lists the Sessions 28–29 release, so rows shipped then count as
   untouched; the guide gets a "Session 24 class — one-time update" (pull, `--install`, save, publish).
 
+**Ruling after the final review (user, 23 Oct 2026):** the `Kuja` rows show only in the Kuja Doṣa section, when the
+doṣa is present and not cancelled; the Mars card (all three engines) shows the `Mars` rows for the 2nd, 7th, 8th and
+12th, never the `Kuja` rows — so the card never lists a Kuja remedy for a doṣa the section has cancelled. This
+replaces "plus the `Kuja` rows' texts when the house is the 7th" in D3.
+
 ## Review Focus
 
 1. A user who edited the Moon in the 1st on `S23_GrahaInBhava`: `--install` keeps the edit and lists it; the other

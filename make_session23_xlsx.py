@@ -629,29 +629,27 @@ def _predict_s24_27(ws, rules):
 
 def _predict_s24_class(ws):
     """The class of 22 Oct 2026 on S23_Predict_Calc: her remedies for Mars in the 2nd, 7th, 8th or 12th (the S23_Remedies
-    rows of topic Mars, then of topic Kuja for the 7th) — twin of bhava_rules.planet_remedies. A helper block below
-    the sheet's other blocks runs through the S23_Remedies rows, one slot each, joining each topic's texts in order."""
+    rows of topic Mars) — twin of bhava_rules.planet_remedies. A helper block below the sheet's other blocks runs
+    through the S23_Remedies rows, one slot each, joining the Mars rows' texts in order."""
     col = PREDICT_COLS["remedies"]
     c = ws.cell(row=2, column=col, value="Remedies (class 22 Oct 2026)")
     c.fill, c.font = HEAD_FILL, HEAD_FONT
     r0 = ws.max_row + 3
     ws.cell(row=r0 - 2, column=1, value="Remedy rows (S23_Remedies), each topic's texts joined in order").font = Font(bold=True, color="6B1D2B")
-    _head(ws, r0 - 1, ["Topic", "Text", "Mars rows so far", "Kuja rows so far"])
+    _head(ws, r0 - 1, ["Topic", "Text", "Mars rows so far"])
     for m in range(REM_SLOTS):
         r, b = r0 + m, 2 + m
         # INDEX into a fixed range, not $A$b: rows the user inserts on S23_Remedies are picked up in place, and after a
         # deletion (the range shrinks) the slots past its end read "" instead of #REF!
         ws.cell(row=r, column=1, value=f'=IFERROR(INDEX(S23_Remedies!$A$1:$A$300,{b})&"","")')
         ws.cell(row=r, column=2, value=f'=IFERROR(INDEX(S23_Remedies!$B$1:$B$300,{b})&"","")')
-        for j, topic in ((3, "Mars"), (4, "Kuja")):
-            prev = f"{L(j)}{r - 1}&" if m else ""
-            ws.cell(row=r, column=j, value=f'={prev}IF($A{r}="{topic}",CHAR(10)&$B{r},"")')
+        prev = f"C{r - 1}&" if m else ""
+        ws.cell(row=r, column=3, value=f'={prev}IF($A{r}="Mars",CHAR(10)&$B{r},"")')
     last = r0 + REM_SLOTS - 1
     houses = ",".join(f"$B{{r}}={h}" for h in br.MARS_REMEDY_HOUSES)
     for k in range(len(br.PLANET_ORDER)):
         r = PREDICT_ROW0 + k
-        ws.cell(row=r, column=col, value=(f'=IF(AND($A{r}="Mars",OR({houses.format(r=r)})),'
-                                          f'MID($C${last}&IF($B{r}=7,$D${last},""),2,32000),"")'))
+        ws.cell(row=r, column=col, value=f'=IF(AND($A{r}="Mars",OR({houses.format(r=r)})),MID($C${last},2,32000),"")')
     ws.column_dimensions[L(col)].width = 50
 
 

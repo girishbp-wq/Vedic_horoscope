@@ -739,16 +739,16 @@ def twelfth_line(rules, house):
 
 
 MARS_REMEDY_HOUSES = (2, 7, 8, 12)     # class of 22 Oct 2026: the 8th "irrespective of the planet with Mars"; the 2nd and
-#                                        12th "the same remedies"; the 7th is Kuja doṣa (and takes the "Kuja" rows too)
+#                                        12th "the same remedies"; the 7th, Kuja doṣa
 
 
 def planet_remedies(rules, planet, house):
-    """Her remedies for this planet in this house (S23_Remedies): the "Mars" rows for Mars in the 2nd, 7th, 8th or
-    12th, then the "Kuja" rows for Mars in the 7th; [] otherwise ("otherwise it is not required")."""
+    """Her remedies for this planet in this house (S23_Remedies): the "Mars" rows for Mars in the 2nd, 7th, 8th or 12th;
+    [] otherwise ("otherwise it is not required"). The "Kuja" rows are not here: they show in the page's Kuja Doṣa
+    section, which knows whether the doṣa is cancelled (user's ruling, 23 Oct 2026)."""
     if planet != "Mars" or house not in MARS_REMEDY_HOUSES:
         return []
-    topics = ("Mars", "Kuja") if house == 7 else ("Mars",)
-    return [r["text"] for t in topics for r in rules["remedies"] if r["topic"] == t]
+    return [r["text"] for r in rules["remedies"] if r["topic"] == "Mars"]
 
 
 def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):

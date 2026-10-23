@@ -722,7 +722,7 @@ class LayerOne(unittest.TestCase):
 
 
 class MarsRemedies(unittest.TestCase):
-    """The class of 22 Oct 2026: her Mars remedy for Mars in the 2nd, 7th, 8th or 12th; the Kuja rows for the 7th."""
+    """The class of 22 Oct 2026: her Mars remedy for Mars in the 2nd, 7th, 8th or 12th (the Kuja rows: Kuja section only)."""
 
     @classmethod
     def setUpClass(cls):
@@ -743,8 +743,10 @@ class MarsRemedies(unittest.TestCase):
         for h in (2, 8, 12):
             self.assertEqual(self.gb("Mars", h)["remedies"], self.mars, h)
 
-    def test_mars_in_the_7th_adds_the_kuja_rows(self):
-        self.assertEqual(self.gb("Mars", 7)["remedies"], self.mars + self.kuja)
+    def test_mars_in_the_7th_has_the_mars_rows_only(self):
+        # the "For Kuja doṣa" rows belong to the Kuja Doṣa section, which knows whether the doṣa is cancelled
+        # (user's ruling, 23 Oct 2026); the card goes by Mars's position alone
+        self.assertEqual(self.gb("Mars", 7)["remedies"], self.mars)
 
     def test_other_houses_and_other_planets_have_none(self):
         for h in (1, 3, 4, 5, 6, 9, 10, 11):                 # the 4th is a Kuja position, but she gave no remedy for it

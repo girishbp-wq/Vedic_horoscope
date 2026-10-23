@@ -1909,8 +1909,8 @@ class PhoneReport(unittest.TestCase):
 
 
 class Session24Remedies(unittest.TestCase):
-    """The class of 22 Oct 2026: her Mars remedies on the Mars card (2nd, 7th, 8th, 12th), in the graha remedies list
-    and in the Kuja Doṣa section when the doṣa is present and not cancelled."""
+    """The class of 22 Oct 2026: her Mars remedies on the Mars card (2nd, 7th, 8th, 12th), in the graha remedies list,
+    and with the Kuja rows in the Kuja Doṣa section when the doṣa is present and not cancelled."""
 
     @classmethod
     def setUpClass(cls):
@@ -1984,9 +1984,9 @@ class Session24Remedies(unittest.TestCase):
         self.assertIn("22 Oct 2026", self.r["eighth"]["head"])
         self.assertEqual(self.r["eighth"]["bv"], len(self.mars))
 
-    def test_mars_in_the_7th_adds_the_kuja_rows(self):
-        self.assertEqual([t.strip() for t in self.r["seventh"]["card"]], self.mars + self.kuja)
-        self.assertEqual(self.r["seventh"]["bv"], len(self.mars) + len(self.kuja))
+    def test_mars_in_the_7th_shows_the_mars_rows_only(self):
+        self.assertEqual([t.strip() for t in self.r["seventh"]["card"]], self.mars)      # Kuja rows: Kuja section only
+        self.assertEqual(self.r["seventh"]["bv"], len(self.mars))
 
     def test_mars_in_the_9th_has_none(self):
         self.assertEqual((self.r["ninth"]["card"], self.r["ninth"]["bv"]), ([], 0))
@@ -1998,6 +1998,7 @@ class Session24Remedies(unittest.TestCase):
         for got, want in zip(items, self.mars + self.kuja):
             self.assertTrue(got.startswith(want) and got.rstrip().endswith("Class 22 Oct 2026"), got)
         self.assertIn("2nd, 7th, 8th or 12th", self.r["ref"]["when"])
+        self.assertIn("Kuja Doṣa section", self.r["ref"]["when"])
 
     def test_kuja_section_lists_them_only_when_present_and_not_cancelled(self):
         self.assertEqual((self.r["kujaPresent"], self.r["kujaNone"], self.r["kujaCancelled"]),

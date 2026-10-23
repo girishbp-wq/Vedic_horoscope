@@ -5018,7 +5018,7 @@ function renderGrahaReference() {
   // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-25 (S23.remedies, from the S23_Remedies sheet)
   const s23Rem = p => S23.remedies.filter(r=>r.topic===p);
   const remedyWhen = {Moon: "for a debilitated or an afflicted Moon",
-    Mars: "for Mars in the 2nd, 7th, 8th or 12th house; the last two for Kuja doṣa (her class, 22 Oct 2026)"};
+    Mars: "for Mars in the 2nd, 7th, 8th or 12th house; the “For Kuja doṣa” rows when the Kuja Doṣa section finds the doṣa present and not cancelled (her class, 22 Oct 2026)"};
   for (const p of ["Moon","Mars","Mercury","Jupiter","Venus","Saturn"]) {
     const old = GRAHA_REMEDIES[p] || [], taught = p==="Mars" ? s23Rem("Mars").concat(s23Rem("Kuja")) : s23Rem(p);
     if (!old.length && !taught.length) continue;
@@ -6705,12 +6705,12 @@ function s23TwelfthLine(house){
   const r=S23.conditions.find(x=>x.key==="twelfth_house");
   return r ? r.text : "";
 }
-/* Her Mars remedy (class of 22 Oct 2026) — twin of bhava_rules.MARS_REMEDY_HOUSES / planet_remedies(). */
+/* Her Mars remedy (class of 22 Oct 2026) — twin of bhava_rules.MARS_REMEDY_HOUSES / planet_remedies(). The "Kuja" rows
+   show only in the Kuja Doṣa section, which knows whether the doṣa is cancelled. */
 const S23_MARS_REMEDY_HOUSES=[2,7,8,12];
 function s23PlanetRemedies(planet, house){
   if(planet!=="Mars" || !S23_MARS_REMEDY_HOUSES.includes(house)) return [];
-  const topics = house===7 ? ["Mars","Kuja"] : ["Mars"];
-  return topics.flatMap(t=>S23.remedies.filter(r=>r.topic===t).map(r=>r.text));
+  return S23.remedies.filter(r=>r.topic==="Mars").map(r=>r.text);
 }
 function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
   ctx=ctx||s23Ctx(lagnaN, pbr, deg!=null ? {[planet]:deg} : {}, moonWaxing);

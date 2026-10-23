@@ -1192,7 +1192,7 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(got["class_texts"] or "", "\n".join(want["class_texts"]), (i, p))
 
     def test_remedies_column_equals_python(self):
-        """Her Mars remedies (class of 22 Oct 2026) on S23_Predict_Calc, in sheet order, Kuja rows for the 7th."""
+        """Her Mars remedies (class of 22 Oct 2026) on S23_Predict_Calc, in sheet order, for Mars in the 2nd/7th/8th/12th."""
         mx = self.mx
         seen = set()
         for i, c, wb in self.each():
@@ -1203,8 +1203,8 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(ws.cell(row=r, column=mx.PREDICT_COLS["remedies"]).value or "", "\n".join(g["remedies"]), (i, p))
                 if g["remedies"]:
                     seen.add(g["house"])
-        self.assertIn(7, seen)                                   # the Kuja rows were exercised …
-        self.assertTrue(seen & {2, 8, 12}, seen)                 # … and the Mars rows alone
+        self.assertIn(7, seen)                                   # the 7th (no Kuja rows on the card) …
+        self.assertTrue(seen & {2, 8, 12}, seen)                 # … and the other houses were exercised
 
     def test_new_layer_one_lines_equal_python(self):
         mx = self.mx
