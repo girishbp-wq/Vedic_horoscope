@@ -67,7 +67,8 @@ def block(folder, nl="\n"):
 
 def write(index_text, new_block):
     if START in index_text:
-        i, j = index_text.index(START), index_text.index(END) + len(END)
+        i = index_text.index(START)
+        j = index_text.index(END, i) + len(END)
         return index_text[:i] + new_block + index_text[j:]
     k = index_text.index(ANCHOR) + len(ANCHOR)       # first run: right after the workbook's ephemeris block
     nl = "\r\n" if "\r\n" in index_text else "\n"

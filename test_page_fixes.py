@@ -2081,3 +2081,121 @@ class PlanetPositions(unittest.TestCase):
 
     def test_saturn_sign_search_stays_quick(self):
         self.assertLess(self.r["stayMs"], 3000)
+
+
+# The Swiss Ephemeris with its JPL-based files (DE431): 60 moments 1800-2200 UT at random places, sidereal
+# Lahiri and KP-New, apparent and true (geometric) positions, the Lagna, and delta T. Made by pyswisseph 2.10.
+SWE_ORACLE = json.loads((HERE / "swe_oracle.json").read_text())
+
+# Kusuma, 22 Feb 1975 16:30 IST, Nanjangud 12°7'4" N 76°41'2" E, as the Lahiri website the user compared shows her:
+# it gives true (geometric) positions, which the Swiss Ephemeris matches to within 2.5".
+KUSUMA_SITE = {"jd": 2442465.9583333335, "lat": 12 + 7 / 60 + 4 / 3600, "lon": 76 + 41 / 60 + 2 / 3600,
+               "Sun": "10 09 41 21", "Moon": "02 19 16 22", "Mars": "08 29 54 59", "Mercury": "09 16 35 51",
+               "Jupiter": "11 00 41 21", "Venus": "11 05 19 07", "Saturn": "02 18 47 31", "Rahu": "07 12 18 15",
+               "Lagna": "03 11 46 14"}
+
+
+def _sign_dms(s):
+    sign, d, m, sec = map(int, s.split())
+    return sign * 30 + d + m / 60 + sec / 3600
+
+
+@needs_browser
+class SwissOracle(unittest.TestCase):
+    """The Moon, the Lagna, delta T and both kinds of position agree with the Swiss Ephemeris, so a chart reads the
+    same, to the arc-second, as in careful software."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            return await page.evaluate((a) => {
+              const g = a.g, k = a.k;
+              const rows = g.rows.map(row => {
+                const o = {dt: deltaTSeconds(row.jd)};
+                for (const m of ['lahiri', 'kp']) {
+                  const app = computeChart(row.jd, m, 'apparent').sidereal, tru = computeChart(row.jd, m, 'true').sidereal;
+                  o[m] = {app: g.bodies.map(b => app[b]), true: g.bodies.map(b => tru[b]),
+                          asc: computeLagna(row.jd, row.lat, row.lon, m)};
+                }
+                return o;
+              });
+              const c = computeChart(k.jd, 'lahiri', 'true').sidereal;
+              return {rows, kusuma: Object.assign({Lagna: computeLagna(k.jd, k.lat, k.lon, 'lahiri')}, c)};
+            }, opts.a);
+        """, a={"g": SWE_ORACLE, "k": KUSUMA_SITE})
+
+    @staticmethod
+    def arcsec(a, b):
+        return abs(((a - b + 180) % 360) - 180) * 3600
+
+    def worst(self, kind, bodies):
+        out = {}
+        for row, got in zip(SWE_ORACLE["rows"], self.r["rows"]):
+            for mode in ("lahiri", "kp"):
+                for b, x, y in zip(SWE_ORACLE["bodies"], got[mode][kind], row[mode][kind]):
+                    if b in bodies:
+                        out[b] = round(max(out.get(b, 0), self.arcsec(x, y)), 2)
+        return out
+
+    def test_moon_within_half_an_arcsecond(self):
+        worst = self.worst("app", {"Moon"})
+        self.assertLessEqual(worst["Moon"], 0.5, worst)
+
+    def test_sun_and_planets_within_2_arcseconds_1800_to_2200(self):
+        worst = self.worst("app", set(SWE_ORACLE["bodies"]) - {"Moon"})
+        self.assertTrue(all(v <= 2 for v in worst.values()), worst)
+
+    def test_true_positions_within_2_arcseconds(self):
+        worst = self.worst("true", set(SWE_ORACLE["bodies"]))
+        self.assertTrue(all(v <= 2 for v in worst.values()), worst)
+
+    def test_lagna_within_a_fifth_of_an_arcsecond_1850_to_2050(self):
+        # Outside 1850-2050 the Swiss Ephemeris turns to a long-term sidereal-time model of its own, up to 3" away.
+        worst = {True: 0, False: 0}
+        for row, got in zip(SWE_ORACLE["rows"], self.r["rows"]):
+            inside = 1850 <= 2000 + (row["jd"] - 2451545) / 365.25 <= 2050
+            for m in ("lahiri", "kp"):
+                worst[inside] = max(worst[inside], self.arcsec(got[m]["asc"], row[m]["asc"]))
+        self.assertLessEqual(worst[True], 0.2, worst)
+        self.assertLessEqual(worst[False], 4, worst)
+
+    def test_delta_t_within_a_second(self):
+        worst = max(abs(got["dt"] - row["dt"]) for row, got in zip(SWE_ORACLE["rows"], self.r["rows"]))
+        self.assertLessEqual(worst, 1, worst)
+
+    def test_kusuma_true_positions_match_the_lahiri_website(self):
+        for k, want in KUSUMA_SITE.items():
+            if k in ("jd", "lat", "lon"):
+                continue
+            self.assertLessEqual(self.arcsec(self.r["kusuma"][k], _sign_dms(want)), 3, k)
+
+
+@needs_browser
+class PositionsSetting(unittest.TestCase):
+    """The form's Positions choice: apparent by default, true (geometric) when picked; it is remembered and shown."""
+
+    def test_default_choice_and_report_tag(self):
+        r = run_page("""
+            await setBirth('1975-02-22', '16:30');
+            await pickCity('Bengaluru');
+            const out = {initial: await page.$eval('#f-positions', s => s.value)};
+            await generate();
+            out.appTag = await page.$eval('#r-aytag', e => e.textContent);
+            out.appMoon = await page.evaluate(() => currentChart.chart.sidereal.Moon);
+            await page.selectOption('#f-positions', 'true');
+            await generate();
+            out.trueTag = await page.$eval('#r-aytag', e => e.textContent);
+            out.trueMoon = await page.evaluate(() => currentChart.chart.sidereal.Moon);
+            out.saved = await page.evaluate(() => JSON.parse(localStorage.getItem('vh_form_v1')).positions);
+            return out;
+        """)
+        self.assertEqual(r["initial"], "apparent")
+        self.assertNotIn("True", r["appTag"])
+        self.assertIn("True positions", r["trueTag"])
+        self.assertNotEqual(r["appMoon"], r["trueMoon"])
+        self.assertEqual(r["saved"], "true")
+
+    def test_saved_choice_is_restored(self):
+        r = run_page("return await page.$eval('#f-positions', s => s.value);",
+                     storage={"dob": "1975-02-22", "tob": "16:30", "positions": "true"})
+        self.assertEqual(r, "true")
