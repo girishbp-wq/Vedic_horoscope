@@ -4340,8 +4340,12 @@ function renderKujaSection(planetsByRashi, lagnaRashiNum, dob, sidereal) {
     verdict = "⚠ Kuja Dosha present and not cancelled by rules 1–4." + reducedTail
             + " At marriage matching, check rule 5 (a Mangalik partner cancels it).";
   }
-  document.getElementById("kuja-verdict").innerHTML = `<p><strong>Final Verdict:</strong> ${verdict}</p>
-    <p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
+  // her Mars remedy and the Kuja rows (class of 22 Oct 2026), when the doṣa is present and nothing cancels it
+  const kujaRemedies = (anyPresent && !cancel.anyCancelled)
+    ? ["Mars","Kuja"].flatMap(t=>S23.remedies.filter(r=>r.topic===t).map(r=>r.text)) : [];
+  document.getElementById("kuja-verdict").innerHTML = `<p><strong>Final Verdict:</strong> ${verdict}</p>`
+    + (kujaRemedies.length ? `<p class="s23-sub">${S23_REMEDY_HEAD}</p><ul id="kuja-remedies" class="s23-remedies">${kujaRemedies.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>` : "")
+    + `<p style="font-size:13px; color:var(--muted);">Note: This is an automated screening based on house positions and dignity. Final marriage compatibility should be assessed by a qualified astrologer considering all factors including nakshatra matching, ashtakoota, and Saturn's role.</p>`;
 }
 
 /* ============================================================
@@ -5013,14 +5017,16 @@ function renderGrahaReference() {
   html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Remedies to Strengthen a Graha</h4>`;
   // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-25 (S23.remedies, from the S23_Remedies sheet)
   const s23Rem = p => S23.remedies.filter(r=>r.topic===p);
-  for (const p of ["Moon","Mercury","Jupiter","Venus","Saturn"]) {
-    const old = GRAHA_REMEDIES[p] || [], taught = s23Rem(p);
+  const remedyWhen = {Moon: "for a debilitated or an afflicted Moon",
+    Mars: "for Mars in the 2nd, 7th, 8th or 12th house; the last two for Kuja doṣa (her class, 22 Oct 2026)"};
+  for (const p of ["Moon","Mars","Mercury","Jupiter","Venus","Saturn"]) {
+    const old = GRAHA_REMEDIES[p] || [], taught = p==="Mars" ? s23Rem("Mars").concat(s23Rem("Kuja")) : s23Rem(p);
     if (!old.length && !taught.length) continue;
-    html += `<p style="margin:10px 0 4px;"><strong>${p}</strong>${p==="Moon"?` <span class="dig-note">for a debilitated or an afflicted Moon</span>`:""}</p>
+    html += `<p style="margin:10px 0 4px;"><strong>${p}</strong>${remedyWhen[p]?` <span class="dig-note">${remedyWhen[p]}</span>`:""}</p>
       <ul>${old.map(r=>`<li>${r}</li>`).join("")}${taught.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
     if (p==="Saturn") html += `<p class="dig-note">${SATURN_GREATEST_REMEDY}</p>`;
   }
-  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn; other grahas will be added as their session slides are supplied.</p>`;
+  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn, and in class for Mars; other grahas will be added as they are taught.</p>`;
   const tips = s23Rem("Tip");
   if (tips.length) html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Tips of the day</h4>`
     +`<ul class="s23-tips">${tips.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
@@ -6699,6 +6705,13 @@ function s23TwelfthLine(house){
   const r=S23.conditions.find(x=>x.key==="twelfth_house");
   return r ? r.text : "";
 }
+/* Her Mars remedy (class of 22 Oct 2026) — twin of bhava_rules.MARS_REMEDY_HOUSES / planet_remedies(). */
+const S23_MARS_REMEDY_HOUSES=[2,7,8,12];
+function s23PlanetRemedies(planet, house){
+  if(planet!=="Mars" || !S23_MARS_REMEDY_HOUSES.includes(house)) return [];
+  const topics = house===7 ? ["Mars","Kuja"] : ["Mars"];
+  return topics.flatMap(t=>S23.remedies.filter(r=>r.topic===t).map(r=>r.text));
+}
 function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
   ctx=ctx||s23Ctx(lagnaN, pbr, deg!=null ? {[planet]:deg} : {}, moonWaxing);
   const lg=lagnaN-1, sg=s23Signs(pbr), house=s23HouseOf(lg,sg[planet]);
@@ -6713,7 +6726,7 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
   return {planet, house, nature:s23NatureAt(planet), moon_strength: planet==="Moon" ? s23MoonStrength(moonWaxing) : "",
     status:cell.status, source:cell.source, points:cell.points, extra:cell.extra,
     dignity:{label:dig.label, flag:dig.flag, bala:dig.bala, note:dig.note}, dignity_line:dignityLine, dignity_status:dignityStatus,
-    twelfth_line:s23TwelfthLine(house), nature_lines:s23BhavaNatureLines(planet, house),
+    twelfth_line:s23TwelfthLine(house), nature_lines:s23BhavaNatureLines(planet, house), remedies:s23PlanetRemedies(planet, house),
     digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts,
     degree_stage:s23DegreeStage(planet, deg, ctx.age),
     readings:s23ChartReadings(ctx).filter(x=>(x.kind==="in" && x.on.includes(planet)) || (x.kind==="aspects planet" && x.with.includes(planet))).map(x=>x.text)};
@@ -6992,7 +7005,7 @@ function s23BhavaReading(ctx, house, layer2){
     const g=s23GrahaBhava(lg+1, pbr, p, ctx.degs[p], ctx.waxing, ctx), x=gr[p];
     return {planet:p, nature:s23NatureAt(p), facts:s23PlanetFacts(ctx, p), text:g.points.join("\n\n"), status:g.status, source:g.source,
       extra:g.extra, moon_strength:g.moon_strength, nature_lines:g.nature_lines, twelfth_line:g.twelfth_line, degree_stage:g.degree_stage,
-      conditions:conds.filter(c=>c.planet===p), readings:g.readings,
+      conditions:conds.filter(c=>c.planet===p), readings:g.readings, remedies:g.remedies,
       graha_rashi:{text:x.text, status:x.status, tatwa:x.tatwa, direction:x.direction, varna:x.varna, mode:x.mode},
       dignity_line:g.dignity_line, dignity_status:g.dignity_status};
   });
@@ -7036,6 +7049,10 @@ function s23Inputs(sid){
 function s23RashiCell(sign){ const r=RASHI[sign]; return `<span class="s23-skt">${r.sanskrit}</span><span class="s23-abbr">${r.english.slice(0,3)}</span>`; }
 function s23Planets(list){ return list.length ? list.map(p=>`<span class="s23-pl" data-p="${p}">${GLYPH9[p]} ${p}</span>`).join(", ") : "—"; }
 function s23Para(t){ return _esc(t).replace(/\n/g,"<br>"); }
+const S23_REMEDY_HEAD="Remedies (her class, 22 Oct 2026)";
+function s23RemedyList(rs){
+  return rs.length ? `<p class="s23-sub s23-remedies-head">${S23_REMEDY_HEAD}</p><ul class="s23-remedies">${rs.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>` : "";
+}
 function s23TagLegend(){
   return `<p class="s23-legend">Tags: ${["taught","curated","blend","standard"].map(k=>`${s23Tag(k)} ${_esc(S23_TAG_TITLES[k])}`).join(" · ")}. All readings are indicative — tendencies to weigh with the whole chart, not certainties.</p>`;
 }
@@ -7178,6 +7195,7 @@ function s23BuildLayerView(sid, lagnaN, extra){
       +(g.nature_lines.length?`<p class="s23-sub">A ${g.nature} in this house (Session 26)</p><ul class="s23-nature-lines">${g.nature_lines.map(x=>`<li>${_esc(x.text)} ${s23Tag(x.status)}${s23Src(x.source)}</li>`).join("")}</ul>`:"")
       +(g.class_texts.length?`<p class="s23-sub">From the bhāva classes</p><ul class="s23-class-texts">${g.class_texts.map(t=>`<li>${_esc(t)}</li>`).join("")}</ul>`:"")
       +s23Conditions(conds.filter(c=>c.planet===p))
+      +s23RemedyList(g.remedies)
       +s23ReadingList(g.readings, "s23-readings", "Her example chart (Session 28)")
       +`</div>`;
   }
@@ -7282,6 +7300,7 @@ function s23BvOccupant(o){
     +`<div class="s23-bv-text">${s23BvRest(o.text)}${s23Src(o.source)}</div>`
     +(o.extra.length?`<p class="s23-sub">From the recording</p><ul class="s23-bv-side">${o.extra.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`:"")
     +(side.length?`<ul class="s23-bv-side">${side.map(x=>`<li>${x}</li>`).join("")}</ul>`:"")
+    +s23RemedyList(o.remedies)
     +s23ReadingList(o.readings, "s23-readings", "Her example chart (Session 28)")+`</div>`;
 }
 function s23BvAspect(a){

@@ -1906,3 +1906,78 @@ class PhoneReport(unittest.TestCase):
                 if free:                                     # a row holding a sign with 3+ planets grows so all show
                     self.assertLessEqual(abs(ht - wd), max(4, wd * 0.15), (w, wd, ht))             # square when uncrowded
             self.assertEqual(c["brokenNames"], [], w)        # a sign's name is never split across two lines
+
+
+class Session24Remedies(unittest.TestCase):
+    """The class of 22 Oct 2026: her Mars remedies on the Mars card (2nd, 7th, 8th, 12th), in the graha remedies list
+    and in the Kuja Doṣa section when the doṣa is present and not cancelled."""
+
+    @classmethod
+    def setUpClass(cls):
+        base = {"Sun": 10, "Moon": 100, "Mercury": 20, "Jupiter": 130, "Venus": 50, "Saturn": 200, "Rahu": 250, "Ketu": 70}
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            const base = %s, out = {};
+            const marsIn = async lon => {
+              await page.evaluate(sid => renderS23Sections(sid, 5, {retro: {Rahu: true, Ketu: true}}), Object.assign({}, base, {Mars: lon}));
+              return page.evaluate(() => ({
+                card: [...document.querySelectorAll('#s23-view-layer .s23-gb[data-planet="Mars"] ul.s23-remedies li')].map(li => li.textContent),
+                head: (document.querySelector('#s23-view-layer .s23-gb[data-planet="Mars"] .s23-remedies-head') || {}).textContent || "",
+                bv: [...document.querySelectorAll('#s23-view-bhava .s23-bv-planet[data-role="occupant"][data-planet="Mars"] ul.s23-remedies li')].length}));
+            };
+            out.eighth = await marsIn(340);      // Meena = the 8th from Simha
+            out.seventh = await marsIn(310);     // Kumbha = the 7th
+            out.ninth = await marsIn(10);        // Mesha = the 9th
+            await page.evaluate(() => renderGrahaReference());
+            out.ref = await page.evaluate(() => {
+              const box = document.getElementById('akshara-body');
+              const head = [...box.querySelectorAll('p strong')].find(s => s.textContent === 'Mars');
+              const ul = head && head.closest('p').nextElementSibling;
+              return {found: !!head, items: ul ? [...ul.querySelectorAll('li')].map(li => li.textContent) : [],
+                      when: head ? head.closest('p').textContent : ""};
+            });
+            const kuja = (byRashi, lagna) => page.evaluate(([b, l]) => {
+              renderKujaSection(b, l, '1990-01-01', {Mars: (b.Mars - 1) * 30 + 10, Moon: 15});
+              return [...document.querySelectorAll('#kuja-remedies li')].length;
+            }, [byRashi, lagna]);
+            out.kujaPresent = await kuja({Mars: 7, Venus: 3, Moon: 1, Saturn: 2}, 1);    // 7th from Mesha, nothing cancels
+            out.kujaNone = await kuja({Mars: 10, Venus: 1, Moon: 1, Saturn: 2}, 1);      // the 10th from every reference
+            out.kujaCancelled = await kuja({Mars: 11, Venus: 3, Moon: 1, Saturn: 2}, 5);  // Simha Lagna cancels (rule 3)
+            await page.setViewportSize({width: 375, height: 800});
+            await marsIn(340);
+            out.phone = await page.evaluate(() => document.documentElement.scrollWidth);
+            return out;
+        """ % json.dumps(base))
+        import bhava_rules as br
+        rules = br.load_rules()
+        cls.mars = [x["text"] for x in rules["remedies"] if x["topic"] == "Mars"]
+        cls.kuja = [x["text"] for x in rules["remedies"] if x["topic"] == "Kuja"]
+
+    def test_mars_card_in_the_8th_lists_her_remedies(self):
+        self.assertEqual([t.strip() for t in self.r["eighth"]["card"]], self.mars)
+        self.assertIn("22 Oct 2026", self.r["eighth"]["head"])
+        self.assertEqual(self.r["eighth"]["bv"], len(self.mars))
+
+    def test_mars_in_the_7th_adds_the_kuja_rows(self):
+        self.assertEqual([t.strip() for t in self.r["seventh"]["card"]], self.mars + self.kuja)
+        self.assertEqual(self.r["seventh"]["bv"], len(self.mars) + len(self.kuja))
+
+    def test_mars_in_the_9th_has_none(self):
+        self.assertEqual((self.r["ninth"]["card"], self.r["ninth"]["bv"]), ([], 0))
+
+    def test_graha_remedies_list_has_mars(self):
+        self.assertTrue(self.r["ref"]["found"])
+        items = self.r["ref"]["items"]                          # each row with its source, as for the other planets
+        self.assertEqual(len(items), len(self.mars) + len(self.kuja))
+        for got, want in zip(items, self.mars + self.kuja):
+            self.assertTrue(got.startswith(want) and got.rstrip().endswith("Class 22 Oct 2026"), got)
+        self.assertIn("2nd, 7th, 8th or 12th", self.r["ref"]["when"])
+
+    def test_kuja_section_lists_them_only_when_present_and_not_cancelled(self):
+        self.assertEqual((self.r["kujaPresent"], self.r["kujaNone"], self.r["kujaCancelled"]),
+                         (len(self.mars) + len(self.kuja), 0, 0))
+
+    def test_phone_has_no_sideways_scroll(self):
+        self.assertLessEqual(self.r["phone"], 375)
