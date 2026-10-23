@@ -1947,6 +1947,30 @@ class Session24Remedies(unittest.TestCase):
             out.kujaCancelled = await kuja({Mars: 11, Venus: 3, Moon: 1, Saturn: 2}, 5);  // Simha Lagna cancels (rule 3)
             await page.setViewportSize({width: 375, height: 800});
             await marsIn(340);
+            const cut = sel => page.evaluate(sel => {          // as PhoneReport: nothing cut off at a clipping box's edge
+              const vw = document.documentElement.clientWidth, found = [];
+              for (const el of document.querySelectorAll(sel + ' *')) {
+                if (!el.offsetParent) continue;
+                const r = el.getBoundingClientRect();
+                if (!r.width) continue;
+                let right = vw, scroller = false;
+                for (let a = el.parentElement; a && a.id !== 'report'; a = a.parentElement) {
+                  const o = getComputedStyle(a).overflowX;
+                  if (o === 'auto' || o === 'scroll') { scroller = true; break; }
+                  if (o === 'hidden' || o === 'clip') right = Math.min(right, a.getBoundingClientRect().right);
+                }
+                if (!scroller && r.right > right + 1)
+                  found.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} ${Math.round(r.right)} > ${Math.round(right)}`);
+              }
+              return found.slice(0, 5);
+            }, sel);
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            await page.click('.s23-view-btn[data-view="layer"]');
+            out.phoneLayer = {cut: await cut('#s23-view-layer'),
+                              shown: await page.evaluate(() => document.querySelectorAll('#s23-view-layer .s23-gb[data-planet="Mars"] ul.s23-remedies li').length > 0
+                                && document.querySelector('#s23-view-layer .s23-gb[data-planet="Mars"]').offsetParent !== null)};
+            await page.click('.s23-view-btn[data-view="bhava"]');
+            out.phoneBhava = await cut('#s23-view-bhava');
             out.phone = await page.evaluate(() => document.documentElement.scrollWidth);
             return out;
         """ % json.dumps(base))
@@ -1979,5 +2003,7 @@ class Session24Remedies(unittest.TestCase):
         self.assertEqual((self.r["kujaPresent"], self.r["kujaNone"], self.r["kujaCancelled"]),
                          (len(self.mars) + len(self.kuja), 0, 0))
 
-    def test_phone_has_no_sideways_scroll(self):
+    def test_phone_has_no_sideways_scroll_and_nothing_is_cut_off(self):
         self.assertLessEqual(self.r["phone"], 375)
+        self.assertTrue(self.r["phoneLayer"]["shown"])                  # the Mars card with its remedies is on screen
+        self.assertEqual((self.r["phoneLayer"]["cut"], self.r["phoneBhava"]), ([], []))

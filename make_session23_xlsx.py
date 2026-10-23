@@ -78,7 +78,7 @@ PREDICT_COLS = dict(planet=1, house=2, nature=3, status=4, points=5, dignity=6, 
                     moon_strength=15, nature_lines=16, twelfth_line=17, conditions=18, active=19,
                     strength=23, reasons=24, degree_stage=25, age_note=26, readings=27, remedies=32)
 COMBUST_COL, AFFLICTED_COL, MILD_COL = 20, 21, 22   # Predict_Calc helper columns
-REM_SLOTS = 80                               # Predict_Calc: S23_Remedies rows 2-81 feed the Remedies column
+REM_SLOTS = 299                              # Predict_Calc: S23_Remedies rows 2-300 feed the Remedies column
 ASPECT_COL0, MALEFIC_COL = 28, 31            # Predict_Calc helpers: signs the planet's aspects fall on (3); malefics aspecting it
 FLAG_ROW0 = 16                               # Predict_Calc: class-rule flags, one row per planet (header row 15)
 NATURE_FLAG_ROW0 = 28                        # Predict_Calc: Session 26 line flags, one row per planet (header row 27)
@@ -639,8 +639,10 @@ def _predict_s24_class(ws):
     _head(ws, r0 - 1, ["Topic", "Text", "Mars rows so far", "Kuja rows so far"])
     for m in range(REM_SLOTS):
         r, b = r0 + m, 2 + m
-        ws.cell(row=r, column=1, value=f"=S23_Remedies!$A${b}&\"\"")
-        ws.cell(row=r, column=2, value=f"=S23_Remedies!$B${b}&\"\"")
+        # INDEX into a fixed range, not $A$b: rows the user inserts on S23_Remedies are picked up in place, and after a
+        # deletion (the range shrinks) the slots past its end read "" instead of #REF!
+        ws.cell(row=r, column=1, value=f'=IFERROR(INDEX(S23_Remedies!$A$1:$A$300,{b})&"","")')
+        ws.cell(row=r, column=2, value=f'=IFERROR(INDEX(S23_Remedies!$B$1:$B$300,{b})&"","")')
         for j, topic in ((3, "Mars"), (4, "Kuja")):
             prev = f"{L(j)}{r - 1}&" if m else ""
             ws.cell(row=r, column=j, value=f'={prev}IF($A{r}="{topic}",CHAR(10)&$B{r},"")')
@@ -1688,7 +1690,9 @@ def _keyed(sheet, rows):
         elif short == "ChartReadings":
             k = (r[0], r[1], r[2], r[3], r[4])
         else:                                                    # ClassRules, BhavaNature, Remedies, DegreeStages
-            base = {"ClassRules": (0, 1), "BhavaNature": (0, 1, 2), "Remedies": (0,), "DegreeStages": (2, 3)}[short]
+            # Remedies: (Topic, Text) — a release may add rows to a topic the user has added rows to as well, and a
+            # remedy has no other natural key; an edited text then reads as the user's own row (kept)
+            base = {"ClassRules": (0, 1), "BhavaNature": (0, 1, 2), "Remedies": (0, 1), "DegreeStages": (2, 3)}[short]
             base = tuple(r[i] for i in base)                     # DegreeStages: (Stage, Applies)
             n = seen.get(base, 0)
             seen[base] = n + 1

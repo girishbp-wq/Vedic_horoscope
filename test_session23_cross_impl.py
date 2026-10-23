@@ -12,6 +12,7 @@ import random
 import re
 import shutil
 import subprocess
+import sys
 import unittest
 
 import bhava_rules as br
@@ -1458,6 +1459,8 @@ class ExcelUserRemedyRow(unittest.TestCase):
             mx.build_workbook(base)
             wb = openpyxl.load_workbook(base)
             ws = wb[mx.PREFIX + "Remedies"]
+            for n in range(80):                                            # a long list: the row lands past row 100
+                ws.append(["Tip", f"Tip {n}.", "me"])
             ws.append(["Mars", "My own Mars remedy.", "me"])
             signs = dict(tb.SIMHA_SIGNS, Mars=11)                          # Meena = the 8th from Simha
             c = dict(lagna=4, signs=signs, degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
@@ -1475,6 +1478,81 @@ class ExcelUserRemedyRow(unittest.TestCase):
             self.assertEqual(got[mx.PREFIX + "Predict_Calc"].cell(row=r, column=mx.PREDICT_COLS["remedies"]).value, "\n".join(mars))
             occ = next(o for o in mx.bhava_from_sheet(got[mx.PREFIX + "Bhava_Calc"])["occupants"] if o["planet"] == "Mars")
             self.assertEqual(occ["remedies"], "\n".join(mars))
+
+
+_UNO_EDIT = r"""
+import json, socket, subprocess, sys, tempfile, time
+import uno
+from com.sun.star.beans import PropertyValue
+src, plan = sys.argv[1], json.loads(sys.argv[2])
+prof = tempfile.mkdtemp()
+s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
+office = subprocess.Popen([sys.argv[3], "-env:UserInstallation=file://" + prof, "--headless", "--invisible", "--norestore",
+                           "--accept=socket,host=127.0.0.1,port=%d;urp;" % port], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+try:
+    local = uno.getComponentContext()
+    resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
+    for _ in range(90):
+        try:
+            ctx = resolver.resolve("uno:socket,host=127.0.0.1,port=%d;urp;StarOffice.ComponentContext" % port)
+            break
+        except Exception:
+            time.sleep(1)
+    desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+    hidden = PropertyValue(); hidden.Name, hidden.Value = "Hidden", True
+    out = []
+    for edit in plan["edits"]:
+        doc = desktop.loadComponentFromURL(uno.systemPathToFileUrl(src), "_blank", 0, (hidden,))
+        rem = doc.Sheets.getByName("S23_Remedies")
+        if edit["op"] == "insert":
+            rem.Rows.insertByIndex(edit["row"] - 1, 1)
+            for j, v in enumerate(edit["values"]):
+                rem.getCellByPosition(j, edit["row"] - 1).setString(v)
+        else:
+            rem.Rows.removeByIndex(edit["row"] - 1, 1)
+        doc.calculateAll()
+        out.append(doc.Sheets.getByName("S23_Predict_Calc").getCellByPosition(plan["col"] - 1, plan["row"] - 1).getString())
+        doc.close(True)
+    print(json.dumps(out))
+finally:
+    office.terminate()
+"""
+
+
+class ExcelRemedySheetEdits(unittest.TestCase):
+    """Inserting or deleting rows on S23_Remedies the way a user does in Excel (references shift) keeps the
+    Remedies column equal to the page: an inserted Mars row is picked up, a deleted Tip or Moon row changes nothing."""
+
+    def test_insert_and_delete_rows(self):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        import test_bhava_rules as tb
+        try:
+            import uno  # noqa: F401
+        except ImportError:
+            self.skipTest("LibreOffice's Python bridge (uno) is not available")
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d, "w.xlsx")
+            mx.build_workbook(path)
+            wb = openpyxl.load_workbook(path)
+            c = dict(lagna=4, signs=dict(tb.SIMHA_SIGNS, Mars=11), degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
+                     birth=datetime.datetime(1968, 4, 25, 8, 57), gender=None, waxing=True)      # Mars in Meena, the 8th
+            mx.set_inputs(wb, c, datetime.datetime(2026, 10, 8, 12, 0, 0))
+            wb.save(path)
+            topics = [r["topic"] for r in RULES["remedies"]]
+            mars = [r["text"] for r in RULES["remedies"] if r["topic"] == "Mars"]
+            second_mars = 2 + topics.index("Mars") + 1                       # the sheet row of the second Mars row
+            plan = {"row": mx.PREDICT_ROW0 + br.PLANET_ORDER.index("Mars"), "col": mx.PREDICT_COLS["remedies"],
+                    "edits": [{"op": "insert", "row": second_mars, "values": ["Mars", "My inserted Mars remedy.", "me"]},
+                              {"op": "delete", "row": 2 + len(topics) - 1},                    # the last Tip
+                              {"op": "delete", "row": 2}]}                                     # the first Moon row
+            done = subprocess.run([sys.executable, "-c", _UNO_EDIT, str(path), json.dumps(plan), SOFFICE],
+                                  capture_output=True, text=True, timeout=600)
+            self.assertEqual(done.returncode, 0, done.stderr[-2000:])
+            inserted, no_tip, no_moon = json.loads(done.stdout.strip().splitlines()[-1])
+            self.assertEqual(inserted, "\n".join(mars[:1] + ["My inserted Mars remedy."] + mars[1:]))
+            self.assertEqual((no_tip, no_moon), ("\n".join(mars), "\n".join(mars)))
 
 
 class ExcelBhava(unittest.TestCase):
@@ -1819,6 +1897,31 @@ class MasterWorkbookInstall(unittest.TestCase):
                 self.assertEqual(row["extra"], ["My own note from the class."])
             elif key in t.GRAHA_IN_BHAVA_EXTRA:
                 self.assertEqual(row["extra"], t.GRAHA_IN_BHAVA_EXTRA[key], key)
+
+    def test_user_remedy_rows_do_not_hide_her_new_rows(self):
+        # her rows join existing topics (the Moon) and a topic the user may already use (Mars): a row the user added
+        # must not take the place of one of hers
+        import build_session23 as b23
+        self.install_s28_29_release()
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_Remedies"]
+        last_moon = max(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=1).value == "Moon")
+        ws.insert_rows(last_moon + 1)
+        for j, v in enumerate(["Moon", "My own Moon remedy.", "me"], 1):
+            ws.cell(row=last_moon + 1, column=j, value=v)
+        ws.append(["Mars", "My own Mars remedy.", "me"])
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((up["updated"], up["added"]), (24, 12))
+        self.assertEqual(sorted(k[1] for sheet, k in up["kept"] if sheet == "S23_Remedies"),
+                         ["My own Mars remedy.", "My own Moon remedy."])
+        got = [(r["topic"], r["text"]) for r in b23.read_workbook(self.master)["remedies"]]
+        hers = [(r["topic"], r["text"]) for r in RULES["remedies"]]
+        self.assertEqual([x for x in got if x not in (("Moon", "My own Moon remedy."), ("Mars", "My own Mars remedy."))], hers)
+        self.assertEqual(got.index(("Moon", "My own Moon remedy.")), 8)          # still right after the Moon rows it followed
+        self.assertEqual(got[-1], ("Mars", "My own Mars remedy."))
+        again = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((again["updated"], again["added"]), (0, 0))
 
     def test_edited_row_is_kept_and_listed(self):
         import build_session23 as b23
