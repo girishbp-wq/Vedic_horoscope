@@ -1190,6 +1190,21 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(got["classes"] or "", ", ".join(want["classes"]), (i, p))
                 self.assertEqual(got["class_texts"] or "", "\n".join(want["class_texts"]), (i, p))
 
+    def test_remedies_column_equals_python(self):
+        """Her Mars remedies (class of 22 Oct 2026) on S23_Predict_Calc, in sheet order, Kuja rows for the 7th."""
+        mx = self.mx
+        seen = set()
+        for i, c, wb in self.each():
+            ws = wb[mx.PREFIX + "Predict_Calc"]
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.PREDICT_ROW0 + k
+                g = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
+                self.assertEqual(ws.cell(row=r, column=mx.PREDICT_COLS["remedies"]).value or "", "\n".join(g["remedies"]), (i, p))
+                if g["remedies"]:
+                    seen.add(g["house"])
+        self.assertIn(7, seen)                                   # the Kuja rows were exercised …
+        self.assertTrue(seen & {2, 8, 12}, seen)                 # … and the Mars rows alone
+
     def test_new_layer_one_lines_equal_python(self):
         mx = self.mx
         new = ("moon_strength", "nature_lines", "twelfth_line", "conditions", "active")
@@ -1429,6 +1444,39 @@ class ExcelLifeAreas(unittest.TestCase):
 
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel checks")
+class ExcelUserRemedyRow(unittest.TestCase):
+    """A Mars remedy row the user adds on S23_Remedies reaches S23_Predict_Calc and S23_Bhava_Calc, as on the page."""
+
+    def test_added_row_shows_for_mars_in_the_8th(self):
+        import datetime
+        import tempfile
+        import make_session23_xlsx as mx
+        import test_bhava_rules as tb
+        with tempfile.TemporaryDirectory() as d:
+            tmp = pathlib.Path(d)
+            base = tmp / "base.xlsx"
+            mx.build_workbook(base)
+            wb = openpyxl.load_workbook(base)
+            ws = wb[mx.PREFIX + "Remedies"]
+            ws.append(["Mars", "My own Mars remedy.", "me"])
+            signs = dict(tb.SIMHA_SIGNS, Mars=11)                          # Meena = the 8th from Simha
+            c = dict(lagna=4, signs=signs, degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
+                     birth=datetime.datetime(1968, 4, 25, 8, 57), gender=None, waxing=True)
+            mx.set_inputs(wb, c, datetime.datetime(2026, 10, 8, 12, 0, 0))
+            wb[mx.PREFIX + "Bhava_Calc"][mx.BHAVA_CELL] = 8
+            src, out = tmp / "in", tmp / "out"
+            src.mkdir()
+            out.mkdir()
+            wb.save(src / "c.xlsx")
+            _lo_recalc([src / "c.xlsx"], out)
+            got = openpyxl.load_workbook(out / "c.xlsx", data_only=True)
+            mars = [x["text"] for x in RULES["remedies"] if x["topic"] == "Mars"] + ["My own Mars remedy."]
+            r = mx.PREDICT_ROW0 + br.PLANET_ORDER.index("Mars")
+            self.assertEqual(got[mx.PREFIX + "Predict_Calc"].cell(row=r, column=mx.PREDICT_COLS["remedies"]).value, "\n".join(mars))
+            occ = next(o for o in mx.bhava_from_sheet(got[mx.PREFIX + "Bhava_Calc"])["occupants"] if o["planet"] == "Mars")
+            self.assertEqual(occ["remedies"], "\n".join(mars))
+
+
 class ExcelBhava(unittest.TestCase):
     """S23_Bhava_Calc, recalculated by LibreOffice, shows what bhava_rules.bhava_reading reads for the house in B2
     (spec 2026-10-13-bhava-by-bhava §5; what the sheet shows: make_session23_xlsx.bhava_sheet_view)."""
