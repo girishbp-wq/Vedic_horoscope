@@ -641,7 +641,7 @@ def _predict_s24_class(ws):
         r, b = r0 + m, 2 + m
         # INDEX into a fixed range, not $A$b: rows the user inserts on S23_Remedies are picked up in place, and after a
         # deletion (the range shrinks) the slots past its end read "" instead of #REF!
-        ws.cell(row=r, column=1, value=f'=IFERROR(INDEX(S23_Remedies!$A$1:$A$300,{b})&"","")')
+        ws.cell(row=r, column=1, value=f'=IFERROR(TRIM(INDEX(S23_Remedies!$A$1:$A$300,{b})&""),"")')   # as Python strips
         ws.cell(row=r, column=2, value=f'=IFERROR(INDEX(S23_Remedies!$B$1:$B$300,{b})&"","")')
         prev = f"C{r - 1}&" if m else ""
         ws.cell(row=r, column=3, value=f'={prev}IF($A{r}="Mars",CHAR(10)&$B{r},"")')
@@ -1582,7 +1582,7 @@ def bhava_sheet_view(reading):
                 "degree_stage": " ".join(ds["lines"]) if ds else "", "age_note": ds["age_note"] if ds else "",
                 "conditions": "\n".join(c["text"] for c in o["conditions"]), "active": ", ".join(act),
                 "readings": "\n\n".join(shown(o["readings"])), "graha_rashi": o["graha_rashi"], "dignity_line": o["dignity_line"],
-                "remedies": "\n".join(o["remedies"])}
+                "remedies": "\n".join(x["text"] for x in o["remedies"])}
 
     lord = reading["lord"]
     return dict(reading, occupants=[occupant(o) for o in reading["occupants"]],

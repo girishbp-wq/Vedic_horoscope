@@ -1200,7 +1200,8 @@ class ExcelSession23(unittest.TestCase):
             for k, p in enumerate(br.PLANET_ORDER):
                 r = mx.PREDICT_ROW0 + k
                 g = br.graha_bhava(RULES, c["lagna"], c["signs"], p, c["degs"][p], c["waxing"])
-                self.assertEqual(ws.cell(row=r, column=mx.PREDICT_COLS["remedies"]).value or "", "\n".join(g["remedies"]), (i, p))
+                self.assertEqual(ws.cell(row=r, column=mx.PREDICT_COLS["remedies"]).value or "",
+                                 "\n".join(x["text"] for x in g["remedies"]), (i, p))
                 if g["remedies"]:
                     seen.add(g["house"])
         self.assertIn(7, seen)                                   # the 7th (no Kuja rows on the card) …
@@ -1461,7 +1462,7 @@ class ExcelUserRemedyRow(unittest.TestCase):
             ws = wb[mx.PREFIX + "Remedies"]
             for n in range(80):                                            # a long list: the row lands past row 100
                 ws.append(["Tip", f"Tip {n}.", "me"])
-            ws.append(["Mars", "My own Mars remedy.", "me"])
+            ws.append(["Mars ", "My own Mars remedy.", "me"])              # a stray space, as Python's reader tolerates
             signs = dict(tb.SIMHA_SIGNS, Mars=11)                          # Meena = the 8th from Simha
             c = dict(lagna=4, signs=signs, degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
                      birth=datetime.datetime(1968, 4, 25, 8, 57), gender=None, waxing=True)

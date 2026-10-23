@@ -726,8 +726,8 @@ class MarsRemedies(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.mars = [r["text"] for r in RULES["remedies"] if r["topic"] == "Mars"]
-        cls.kuja = [r["text"] for r in RULES["remedies"] if r["topic"] == "Kuja"]
+        cls.mars = [{"text": r["text"], "source": r["source"]} for r in RULES["remedies"] if r["topic"] == "Mars"]
+        cls.kuja = [{"text": r["text"], "source": r["source"]} for r in RULES["remedies"] if r["topic"] == "Kuja"]
 
     def gb(self, planet, house, rules=RULES):
         sign = (LAGNA + house - 1) % 12
@@ -756,8 +756,9 @@ class MarsRemedies(unittest.TestCase):
 
     def test_a_row_added_on_the_sheet_shows_too(self):
         rules = dict(RULES, remedies=RULES["remedies"] + [dict(topic="Mars", text="My own Mars remedy.", source="me")])
-        self.assertEqual(self.gb("Mars", 8, rules)["remedies"][-1], "My own Mars remedy.")
-        self.assertEqual(br.planet_remedies(rules, "Mars", 8)[-1], "My own Mars remedy.")
+        mine = {"text": "My own Mars remedy.", "source": "me"}             # each row keeps its own source
+        self.assertEqual(self.gb("Mars", 8, rules)["remedies"][-1], mine)
+        self.assertEqual(br.planet_remedies(rules, "Mars", 8)[-1], mine)
 
     def test_the_bhava_reading_carries_them(self):
         signs = dict(SIGNS, Mars=(LAGNA + 7) % 12)            # Mars in the 8th

@@ -79,8 +79,9 @@ release's new text — compare it with `session23_rules.json` and copy across wh
 Her `Mars` remedies show for Mars in the 2nd, 7th, 8th or 12th house from the Lagna: on the Mars card (both views of
 the Prediction), on `S23_Predict_Calc` and `S23_Bhava_Calc`, and in "Remedies to strengthen a graha". The two `Kuja`
 rows ("For Kuja doṣa: …") show, with the `Mars` rows, only in the page's Kuja Doṣa section, and only when the doṣa is
-present and not cancelled — so the card never lists a Kuja remedy for a doṣa the section has cancelled. A row you add
-on `S23_Remedies` with topic `Mars` shows in all of these; one with topic `Kuja` in the Kuja Doṣa section.
+present and not cancelled — so the card never lists a Kuja remedy for a doṣa the section has cancelled ("Remedies to
+strengthen a graha" lists them under their own name, Kuja doṣa). Every row shows its source. A row you add on
+`S23_Remedies` with topic `Mars` shows in all of these, one with topic `Kuja` with the Kuja rows, each with your source.
 
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
