@@ -58,7 +58,8 @@ PRELUDE = r"""
 const pickCity = async (name) => {
   await page.fill('#f-place', '');
   await page.type('#f-place', name);
-  await page.waitForSelector('#suggestions.show');
+  await page.waitForFunction(n => [...document.querySelectorAll('#suggestions div[data-idx]')]
+    .some(x => x.firstChild.textContent.trim() === n), name);       // built-in at once; online after a moment
   await page.evaluate(n => {
     const d = [...document.querySelectorAll('#suggestions div[data-idx]')].find(x => x.firstChild.textContent.trim() === n);
     d.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
@@ -71,6 +72,31 @@ const setBirth = async (dob, tob) => {
 const generate = async () => {
   await page.click('#btn-generate');
   await page.waitForSelector('#report.show');
+};
+// The current-location box: type a place and pick it from the suggestions, as for the birth place.
+const pickCurCity = async (name) => {
+  await page.fill('#f-curcity', '');
+  await page.type('#f-curcity', name);
+  await page.waitForFunction(n => [...document.querySelectorAll('#cur-suggestions div[data-idx]')]
+    .some(x => x.firstChild.textContent.trim() === n), name);       // built-in at once; online after a moment
+  await page.evaluate(n => {
+    const d = [...document.querySelectorAll('#cur-suggestions div[data-idx]')].find(x => x.firstChild.textContent.trim() === n);
+    d.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
+  }, name);
+};
+// A stand-in for the online place search (Open-Meteo's GeoNames search): answers each query with the given places
+// whose name starts with it, after an optional delay per query.
+const mockGeo = async (places, delays = {}) => {
+  const asked = [];
+  await page.route('https://geocoding-api.open-meteo.com/**', async route => {
+    const u = new URL(route.request().url()), q = (u.searchParams.get('name') || '').toLowerCase();
+    asked.push(Object.fromEntries(u.searchParams));
+    if (delays[q]) await new Promise(r => setTimeout(r, delays[q]));
+    const results = places.filter(p => p.name.toLowerCase().startsWith(q));
+    await route.fulfill({status: 200, contentType: 'application/json', headers: {'access-control-allow-origin': '*'},
+                         body: JSON.stringify(results.length ? {results, generationtime_ms: 0.4} : {generationtime_ms: 0.4})});
+  });
+  return asked;
 };
 """
 
@@ -191,7 +217,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_sunrise_in_city_time_on_a_device_elsewhere(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             await page.fill('#f-curdate', '2026-03-21');
             await page.dispatchEvent('#f-curdate', 'change');
             await setBirth('1990-05-15', '06:30');
@@ -216,7 +242,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_rahu_kaal_follows_long_summer_days(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'London — UK'});
+            await pickCurCity('London');
             await page.fill('#f-curdate', '2026-06-22');
             await page.dispatchEvent('#f-curdate', 'change');
             return await page.evaluate(() => { renderRahukaalPane(); const p = document.getElementById('pane-rahukaal');
@@ -232,7 +258,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_before_sunrise_highlights_previous_night(self):
         body = """
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             await page.fill('#f-curdate', opts.date);
             await page.dispatchEvent('#f-curdate', 'change');
             return await page.evaluate(() => {
@@ -702,7 +728,8 @@ PRELUDE = r"""
 const pickCity = async (name) => {
   await page.fill('#f-place', '');
   await page.type('#f-place', name);
-  await page.waitForSelector('#suggestions.show');
+  await page.waitForFunction(n => [...document.querySelectorAll('#suggestions div[data-idx]')]
+    .some(x => x.firstChild.textContent.trim() === n), name);       // built-in at once; online after a moment
   await page.evaluate(n => {
     const d = [...document.querySelectorAll('#suggestions div[data-idx]')].find(x => x.firstChild.textContent.trim() === n);
     d.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
@@ -715,6 +742,31 @@ const setBirth = async (dob, tob) => {
 const generate = async () => {
   await page.click('#btn-generate');
   await page.waitForSelector('#report.show');
+};
+// The current-location box: type a place and pick it from the suggestions, as for the birth place.
+const pickCurCity = async (name) => {
+  await page.fill('#f-curcity', '');
+  await page.type('#f-curcity', name);
+  await page.waitForFunction(n => [...document.querySelectorAll('#cur-suggestions div[data-idx]')]
+    .some(x => x.firstChild.textContent.trim() === n), name);       // built-in at once; online after a moment
+  await page.evaluate(n => {
+    const d = [...document.querySelectorAll('#cur-suggestions div[data-idx]')].find(x => x.firstChild.textContent.trim() === n);
+    d.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
+  }, name);
+};
+// A stand-in for the online place search (Open-Meteo's GeoNames search): answers each query with the given places
+// whose name starts with it, after an optional delay per query.
+const mockGeo = async (places, delays = {}) => {
+  const asked = [];
+  await page.route('https://geocoding-api.open-meteo.com/**', async route => {
+    const u = new URL(route.request().url()), q = (u.searchParams.get('name') || '').toLowerCase();
+    asked.push(Object.fromEntries(u.searchParams));
+    if (delays[q]) await new Promise(r => setTimeout(r, delays[q]));
+    const results = places.filter(p => p.name.toLowerCase().startsWith(q));
+    await route.fulfill({status: 200, contentType: 'application/json', headers: {'access-control-allow-origin': '*'},
+                         body: JSON.stringify(results.length ? {results, generationtime_ms: 0.4} : {generationtime_ms: 0.4})});
+  });
+  return asked;
 };
 """
 
@@ -835,7 +887,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_sunrise_in_city_time_on_a_device_elsewhere(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             await page.fill('#f-curdate', '2026-03-21');
             await page.dispatchEvent('#f-curdate', 'change');
             await setBirth('1990-05-15', '06:30');
@@ -860,7 +912,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_rahu_kaal_follows_long_summer_days(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'London — UK'});
+            await pickCurCity('London');
             await page.fill('#f-curdate', '2026-06-22');
             await page.dispatchEvent('#f-curdate', 'change');
             return await page.evaluate(() => { renderRahukaalPane(); const p = document.getElementById('pane-rahukaal');
@@ -876,7 +928,7 @@ class MuhurtaUsesCityClock(unittest.TestCase):
 
     def test_before_sunrise_highlights_previous_night(self):
         body = """
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             await page.fill('#f-curdate', opts.date);
             await page.dispatchEvent('#f-curdate', 'change');
             return await page.evaluate(() => {
@@ -1410,11 +1462,11 @@ class CurrentLocationDay(unittest.TestCase):
               now: [...document.querySelectorAll('#choghadiya-body tr.now')].map(tr => tr.textContent)}));
             const out = {};
             out.bengaluru = await read();                                    // 03:00 IST: before sunrise
-            await page.selectOption('#f-curcity', {label: 'London — UK'});  // 22:30 BST on the 9th
+            await pickCurCity('London');  // 22:30 BST on the 9th
             out.london = await read();
             await page.fill('#f-curdate', '2026-10-08');
             await page.dispatchEvent('#f-curdate', 'change');
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             out.kept = await read();
             return out;
         """, clock="2026-10-10T03:00:00+05:30", timezoneId="Asia/Kolkata")
@@ -1438,7 +1490,7 @@ class CurrentLocationDay(unittest.TestCase):
 
     def test_night_with_a_clock_change_is_split_evenly(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'London — UK'});
+            await pickCurCity('London');
             const rows = async (date) => { await page.fill('#f-curdate', date); await page.dispatchEvent('#f-curdate', 'change');
               return page.evaluate(() => { const b = document.getElementById('choghadiya-body');
                 const t = b.querySelectorAll('table'); return {
@@ -1492,11 +1544,11 @@ class CurrentLocationDay(unittest.TestCase):
               now: [...document.querySelectorAll('#choghadiya-body tr.now')].map(tr => tr.textContent)}));
             const out = {};
             out.bengaluru = await read();                                    // 03:00 IST: before sunrise
-            await page.selectOption('#f-curcity', {label: 'London — UK'});  // 22:30 BST on the 9th
+            await pickCurCity('London');  // 22:30 BST on the 9th
             out.london = await read();
             await page.fill('#f-curdate', '2026-10-08');
             await page.dispatchEvent('#f-curdate', 'change');
-            await page.selectOption('#f-curcity', {label: 'Bengaluru — Karnataka, India'});
+            await pickCurCity('Bengaluru');
             out.kept = await read();
             return out;
         """, clock="2026-10-10T03:00:00+05:30", timezoneId="Asia/Kolkata")
@@ -1520,7 +1572,7 @@ class CurrentLocationDay(unittest.TestCase):
 
     def test_night_with_a_clock_change_is_split_evenly(self):
         r = run_page("""
-            await page.selectOption('#f-curcity', {label: 'London — UK'});
+            await pickCurCity('London');
             const rows = async (date) => { await page.fill('#f-curdate', date); await page.dispatchEvent('#f-curdate', 'change');
               return page.evaluate(() => { const b = document.getElementById('choghadiya-body');
                 const t = b.querySelectorAll('table'); return {
@@ -2252,3 +2304,165 @@ class TrueAstrologyKP(unittest.TestCase):
 
     def test_the_form_offers_it(self):
         self.assertIn("True Astrology", self.r["option"])
+
+
+# Places as Open-Meteo's GeoNames search returns them (the fields the page reads).
+def _geo(name, lat, lon, tz, admin1, country, admin2="", pop=0):
+    return {"id": abs(hash(name + admin1)) % 10 ** 7, "name": name, "latitude": lat, "longitude": lon, "timezone": tz,
+            "admin1": admin1, "admin2": admin2, "country": country, "population": pop, "feature_code": "PPL"}
+
+
+GEO_PLACES = [
+    _geo("Hunsur", 12.30359, 76.29275, "Asia/Kolkata", "Karnataka", "India", "Mysuru", 50865),
+    _geo("Gundlupet", 11.80999, 76.69033, "Asia/Kolkata", "Karnataka", "India", "Chamarajanagar", 29608),
+    _geo("Nanjangud", 12.11764, 76.68397, "Asia/Kolkata", "Karnataka", "India", "Mysuru", 50598),
+    _geo("Springfield", 39.80172, -89.64371, "America/Chicago", "Illinois", "United States", "Sangamon", 116250),
+    _geo("Springfield", 42.10148, -72.58981, "America/New_York", "Massachusetts", "United States", "Hampden", 153606),
+    _geo("Kovel", 51.21526, 24.70867, "Europe/Kyiv", "Volyn", "Ukraine", "", 68597),
+    _geo("Kovilpatti", 9.17167, 77.86989, "Asia/Kolkata", "Tamil Nadu", "India", "Thoothukudi", 95057),
+    _geo('<img src=x onerror="window.__pwned=1">Evil', 10.0, 10.0, "Africa/Lagos", "<b>Bold</b>", "Nowhere"),
+]
+
+PLACE_ITEMS = "() => [...document.querySelectorAll('#suggestions div[data-idx]')].map(d => d.textContent.replace(/\\s+/g, ' ').trim())"
+
+
+@needs_browser
+class PlaceSearch(unittest.TestCase):
+    """The place box finds any city, town or village through the online GeoNames search, with its time zone;
+    the built-in list still answers at once and when offline."""
+
+    def test_any_town_from_the_online_search(self):
+        r = run_page("""
+            const asked = await mockGeo(opts.places);
+            await setBirth('1975-02-22', '16:30');
+            await page.type('#f-place', 'Huns');
+            await page.waitForFunction(() => document.querySelector('#suggestions div[data-idx]')?.textContent.includes('Hunsur'));
+            const out = {items: await page.evaluate(%s)};
+            await page.evaluate(() => document.querySelector('#suggestions div[data-idx]').dispatchEvent(new MouseEvent('mousedown', {bubbles: true})));
+            out.tz = await page.inputValue('#f-tz');
+            out.hint = await page.textContent('#place-hint');
+            await generate();
+            out.meta = await page.textContent('#r-meta');
+            out.asked = asked[asked.length - 1];
+            out.lat = await page.evaluate(() => selectedCity[2]);
+            return out;
+        """ % PLACE_ITEMS, places=GEO_PLACES)
+        self.assertEqual(r["items"], ["Hunsur · Mysuru, Karnataka, India"])
+        self.assertEqual((r["asked"]["name"], r["asked"]["count"], r["asked"]["language"]), ("Huns", "10", "en"))
+        self.assertEqual(r["tz"], "5.5")
+        self.assertIn("Asia/Kolkata", r["hint"])
+        self.assertIn("lat 12.3036", r["hint"])
+        self.assertIn("Hunsur, Mysuru, Karnataka, India", r["meta"])
+        self.assertAlmostEqual(r["lat"], 12.30359, places=4)
+
+    def test_same_named_towns_are_told_apart(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await setBirth('1990-01-15', '10:00');
+            await page.type('#f-place', 'Springf');
+            await page.waitForFunction(() => document.querySelectorAll('#suggestions div[data-idx]').length === 2);
+            const items = await page.evaluate(%s);
+            await page.evaluate(() => [...document.querySelectorAll('#suggestions div[data-idx]')].find(d => d.textContent.includes('Massachusetts'))
+              .dispatchEvent(new MouseEvent('mousedown', {bubbles: true})));
+            return {items, tz: await page.inputValue('#f-tz'), hint: await page.textContent('#place-hint')};
+        """ % PLACE_ITEMS, places=GEO_PLACES)
+        self.assertEqual(sorted(r["items"]), ["Springfield · Hampden, Massachusetts, United States",
+                                              "Springfield · Sangamon, Illinois, United States"])
+        self.assertEqual(r["tz"], "-5")
+        self.assertIn("America/New_York", r["hint"])
+
+    def test_a_built_in_town_is_not_listed_twice(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await page.type('#f-place', 'Nanjan');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            return await page.evaluate(%s);
+        """ % PLACE_ITEMS, places=GEO_PLACES)
+        self.assertEqual(len([x for x in r if x.startswith("Nanjangud")]), 1, r)
+
+    def test_offline_the_built_in_list_still_answers(self):
+        r = run_page("""
+            await page.type('#f-place', 'Mysu');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'failed');
+            return {items: await page.evaluate(%s),
+                    note: await page.evaluate(() => document.querySelector('#suggestions .sug-note')?.textContent || '')};
+        """ % PLACE_ITEMS)
+        self.assertIn("Mysuru · Karnataka, India", r["items"])
+        self.assertIn("built-in", r["note"])
+
+    def test_names_from_the_search_are_shown_as_text(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await setBirth('1990-01-15', '10:00');
+            await page.type('#f-place', '<img');
+            await page.waitForFunction(() => document.querySelector('#suggestions div[data-idx]'));
+            const out = {imgs: await page.evaluate(() => document.querySelectorAll('#suggestions img, #suggestions b').length)};
+            await page.evaluate(() => document.querySelector('#suggestions div[data-idx]').dispatchEvent(new MouseEvent('mousedown', {bubbles: true})));
+            await generate();
+            out.hintImgs = await page.evaluate(() => document.querySelectorAll('#place-hint img, #r-meta img').length);
+            out.pwned = await page.evaluate(() => window.__pwned || 0);
+            out.meta = await page.textContent('#r-meta');
+            return out;
+        """, places=GEO_PLACES)
+        self.assertEqual((r["imgs"], r["hintImgs"], r["pwned"]), (0, 0, 0))
+        self.assertIn("<img", r["meta"])
+
+    def test_a_late_answer_does_not_replace_a_newer_one(self):
+        r = run_page("""
+            await mockGeo(opts.places, {kov: 1500});
+            await page.type('#f-place', 'Kov');
+            await page.waitForTimeout(600);                    // the 'Kov' search is sent, and answers late
+            await page.type('#f-place', 'i');
+            await page.waitForFunction(() => document.querySelector('#suggestions div[data-idx]')?.textContent.includes('Kovilpatti'));
+            await page.waitForTimeout(1500);                   // the late 'Kov' answer arrives
+            return await page.evaluate(%s);
+        """ % PLACE_ITEMS, places=GEO_PLACES)
+        self.assertEqual(r, ["Kovilpatti · Thoothukudi, Tamil Nadu, India"])
+
+    def test_a_typed_name_counts_when_only_one_place_has_it(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await setBirth('1975-02-22', '16:30');
+            await page.type('#f-place', 'Gundlupet');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            await generate();                                  // not picked from the list: the one exact match is used
+            const out = {meta: await page.textContent('#r-meta')};
+            await page.fill('#f-place', '');
+            await page.type('#f-place', 'Springfield');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            await page.click('#btn-generate');
+            out.msg = await page.textContent('#msg');
+            await page.fill('#f-place', '');
+            await page.type('#f-place', 'Springfield, Massachusetts');   // the state says which one
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            await generate();
+            out.meta2 = await page.textContent('#r-meta');
+            return out;
+        """, places=GEO_PLACES)
+        self.assertIn("Gundlupet, Chamarajanagar, Karnataka, India", r["meta"])
+        self.assertIn("pick", r["msg"].lower())
+        self.assertIn("Springfield, Hampden, Massachusetts, United States", r["meta2"])
+
+    def test_a_saved_online_place_comes_back(self):
+        saved = ["Hunsur", "Mysuru, Karnataka, India", 12.30359, 76.29275, 5.5, "Asia/Kolkata"]
+        r = run_page("return await page.textContent('#place-hint');",
+                     storage={"dob": "1975-02-22", "tob": "16:30", "place": "Hunsur", "selectedCity": saved})
+        self.assertIn("Hunsur, Mysuru, Karnataka, India", r)
+        self.assertIn("Asia/Kolkata", r)
+
+    def test_the_hint_credits_the_search(self):
+        r = run_page("return await page.innerHTML('#place-hint');")
+        self.assertIn("open-meteo.com", r)
+        self.assertIn("GeoNames", r)
+
+    def test_current_location_can_be_any_town(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await pickCurCity('Gundlupet');
+            return await page.evaluate(() => ({value: document.getElementById('f-curcity').value,
+              rahu: document.getElementById('pane-rahukaal').textContent,
+              choghadiya: document.getElementById('choghadiya-body').textContent}));
+        """, places=GEO_PLACES, clock="2026-10-10T09:00:00+05:30")
+        self.assertEqual(r["value"], "Gundlupet")
+        self.assertIn("Rāhu Kaalam — Gundlupet", r["rahu"])
+        self.assertIn("Choughadiya — Gundlupet", r["choghadiya"])

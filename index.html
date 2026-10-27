@@ -205,6 +205,8 @@ body {
 }
 .suggestions div:hover, .suggestions div.active { background: #faecd0; }
 .suggestions div small { color: var(--muted); font-style: italic; }
+.suggestions div.sug-note { cursor: default; font-size: 13px; color: var(--muted); font-style: italic; }
+.suggestions div.sug-note:hover { background: none; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; margin-top: 22px; align-items: center; }
 .btn {
@@ -1210,7 +1212,7 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
         <label for="f-place">Place of Birth</label>
         <input id="f-place" type="text" placeholder="e.g. Mumbai, Maharashtra, India" autocomplete="off" />
         <div id="suggestions" class="suggestions"></div>
-        <span class="hint" id="place-hint">Type 2+ letters — auto-suggestions from built-in city database.</span>
+        <span class="hint" id="place-hint">Type 3+ letters — any city, town or village worldwide. Place search by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> from <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a> data; the main cities also work offline.</span>
       </div>
       <div class="field wide">
         <label for="f-tz">Birth timezone (UTC offset, hours)</label>
@@ -1248,7 +1250,10 @@ body { overflow-x: hidden; overflow-x: clip; }   /* clip, not hidden: the body m
       <div class="field wide">
         <label for="f-curcity">Current location — for Muhūrta timings</label>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <select id="f-curcity" style="flex:1 1 200px; min-width:180px;"></select>
+          <div class="places-wrap" style="flex:1 1 200px; min-width:180px;">
+            <input id="f-curcity" type="text" autocomplete="off" placeholder="Type a city or town" style="width:100%;" />
+            <div id="cur-suggestions" class="suggestions"></div>
+          </div>
           <input id="f-curdate" type="date" style="flex:0 0 auto;" />
         </div>
         <span class="hint">Where you are <em>now</em> and the date — used only for today's Rāhu Kāla, Abhijit &amp; muhūrta windows in the report, not for the birth chart.</span>
@@ -3749,7 +3754,7 @@ function fmtDate(d, time, placeName) {
 
 /* Summary cards at top of report */
 function renderSummaryStrip(name, dob, tob, placeName, lagnaR, moonR, sunR) {
-  const meta = `<strong>${name || "(no name)"}</strong>  |  DOB: ${fmtDate(dob, tob, placeName)}`;
+  const meta = `<strong>${_esc(name || "(no name)")}</strong>  |  DOB: ${_esc(fmtDate(dob, tob, placeName))}`;
   document.getElementById("r-title").textContent = `Horoscope Analysis Report`;
   document.getElementById("r-meta").innerHTML = meta;
 
@@ -5282,12 +5287,23 @@ let currentChart = null;
 let selectedCity = null;
 let tzTouched = false;   // true once the user types a UTC offset for the chosen city
 
-/* The city the place box names: the picked suggestion, else an exact name match. */
+/* The city the place box names: the picked suggestion, else an exact name match in the built-in list, else the one
+   place of that name in the latest online answer (several of that name: none — the user picks). The name may be
+   followed by part of its region: "Springfield, Massachusetts". */
 function currentBirthCity(){
   if (selectedCity) return selectedCity;
-  const place = (document.getElementById("f-place").value || "").trim().toLowerCase();
-  return place ? (CITIES.find(c => c[0].toLowerCase() === place) || null) : null;
+  const text = (document.getElementById("f-place").value || "").trim();
+  if (!text) return null;
+  const local = _placesNamed(text, CITIES);
+  if (local.length) return local[0];
+  const online = _placesNamed(text, birthPlaceOnline);
+  return online.length === 1 ? online[0] : null;
 }
+function _placesNamed(text, list){
+  const q = _placeQuery(text), name = q.name.toLowerCase();
+  return list.filter(c => c[0].toLowerCase() === name && (!q.within || c[1].toLowerCase().includes(q.within)));
+}
+let birthPlaceOnline = [];   // the places the online search last returned for the birth place box
 /* Birth date/time from the form as numbers (time defaults to noon while blank). */
 function birthWallTime(){
   const dob = (document.getElementById("f-dob").value || "").split("-").map(Number);
@@ -5297,11 +5313,11 @@ function birthWallTime(){
 }
 /* Fill the UTC-offset box from the city's zone for the birth date, unless the
    user has typed their own value; describe the result under the place box. */
-const PLACE_HINT_DEFAULT = "Type 2+ letters — auto-suggestions from built-in city database.";
+const PLACE_HINT_DEFAULT = 'Type 3+ letters — any city, town or village worldwide. Place search by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> from <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a> data; the main cities also work offline.';
 function refreshCityTz(keepBox){
   if (document.getElementById("latLonRow").classList.contains("show")) return;
   const c = currentBirthCity(), hint = document.getElementById("place-hint"), tzf = document.getElementById("f-tz");
-  if (!c) { if (hint) hint.textContent = PLACE_HINT_DEFAULT; return; }
+  if (!c) { if (hint) hint.innerHTML = PLACE_HINT_DEFAULT; return; }
   const wt = birthWallTime();
   const info = wt ? cityUtcInfo(c, ...wt) : { offset: c[4], std: c[4], zone: c[5] || "", kind: "standard" };
   if (!tzTouched && tzf && !keepBox) tzf.value = String(Math.round(info.offset * 1e6) / 1e6);
@@ -5396,7 +5412,10 @@ function generate() {
     // from the city's zone on the birth date unless the user typed one for it.
     const city = currentBirthCity();
     if (!city) {
-      showMsg(`Place "${place}" not found in built-in database. Click "Use manual lat/lon" and enter coordinates &amp; UTC offset.`, true);
+      const same = _placesNamed(place, birthPlaceOnline).length;
+      showMsg(same > 1
+        ? `Several places are called "${_escTz(place)}" — pick the right one from the suggestions under the place box.`
+        : `Place "${_escTz(place)}" not found. Type 3 or more letters and pick it from the suggestions (any city, town or village; the online search needs internet), or click "Use manual lat/lon".`, true);
       return;
     }
     lat = city[2]; lon = city[3];
@@ -5514,83 +5533,159 @@ function generate() {
   showLoader(false);
 }
 
-/* Suggestion handling */
-function setupPlaceAutocomplete() {
-  const input = document.getElementById("f-place");
-  const sug = document.getElementById("suggestions");
-  let activeIdx = -1;
-  let currentList = [];
+/* ---- Place search ----
+   Like the big astrology sites, places come from GeoNames, the open world gazetteer: every city, town and village,
+   with its IANA time zone. They are looked up as you type through Open-Meteo's free GeoNames search (no key; free
+   for non-commercial use, credited under the place box), so the page keeps no atlas of its own. The built-in list
+   answers at once and when the search is out of reach. A place is [name, region, lat, lon, standard offset, zone]. */
+const GEO_SEARCH_URL = "https://geocoding-api.open-meteo.com/v1/search";
+function _zoneStdOffset(zone){         // the zone's standard (winter) offset this year, in hours
+  try {
+    const y = new Date().getUTCFullYear();
+    return Math.min(_zoneOffsetAtUtc(zone, Date.UTC(y, 0, 1)), _zoneOffsetAtUtc(zone, Date.UTC(y, 6, 1)));
+  } catch (e) { return NaN; }
+}
+function placeFromGeo(r){
+  const name = String(r.name || ""), seen = new Set([name.toLowerCase()]), region = [];
+  for (const part of [r.admin2, r.admin1, r.country]) {
+    const t = String(part || "").trim();
+    if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); region.push(t); }
+  }
+  const lat = Math.round(+r.latitude * 1e4) / 1e4, lon = Math.round(+r.longitude * 1e4) / 1e4;
+  const zone = typeof r.timezone === "string" ? r.timezone : "", std = zone ? _zoneStdOffset(zone) : NaN;
+  if (isNaN(std))                                              // no usable zone: local mean time, nearest half hour
+    return [name, region.join(", "), lat, lon, Math.round(lon / 7.5) / 2, ""];
+  return [name, region.join(", "), lat, lon, std, zone];
+}
+/* The built-in places whose name starts with (first) or contains the text. */
+function builtinPlaces(q){
+  const ql = q.toLowerCase(), starts = [], contains = [];
+  if (ql.length < 2) return [];
+  for (const c of CITIES) {
+    const n = c[0].toLowerCase();
+    if (n === ql) starts.unshift(c);
+    else if (n.startsWith(ql)) starts.push(c);
+    else if (n.includes(ql)) contains.push(c);
+  }
+  return starts.concat(contains);
+}
+/* Online places first (the search ranks them), then the built-in ones it did not already give. */
+function mergePlaces(online, builtin){
+  const out = online.slice();
+  for (const c of builtin)
+    if (!out.some(o => o[0].toLowerCase() === c[0].toLowerCase() && Math.abs(o[2] - c[2]) < 0.1 && Math.abs(o[3] - c[3]) < 0.1))
+      out.push(c);
+  return out;
+}
+/* "Hunsur, Karnataka": the name to search for, and the rest to narrow the answer. */
+function _placeQuery(text){
+  const k = text.indexOf(",");
+  return k < 0 ? { name: text.trim(), within: "" } : { name: text.slice(0, k).trim(), within: text.slice(k + 1).trim().toLowerCase() };
+}
+function _narrow(list, within){
+  if (!within) return list;
+  const hit = list.filter(c => c[1].toLowerCase().includes(within));
+  return hit.length ? hit : list;
+}
+
+/* A text box that suggests places. opts.onType(): the text changed; opts.onPick(place); opts.onOnline(places): an
+   online answer for the current text arrived. The list's data-online says how the online search went. */
+function setupPlaceSearch(input, sug, opts) {
+  let list = [], online = [], activeIdx = -1, note = "", seq = 0, timer = null, ctl = null;
+  const cache = new Map();
 
   const render = () => {
-    if (currentList.length === 0) { sug.classList.remove("show"); return; }
-    sug.innerHTML = currentList.slice(0, 20).map((c, i) =>
+    const items = list.slice(0, 20).map((c, i) =>
       `<div data-idx="${i}" class="${i === activeIdx ? "active" : ""}">
-         ${c[0]} <small>· ${c[1]}</small>
+         ${_escTz(c[0])} <small>· ${_escTz(c[1])}</small>
        </div>`).join("");
-    sug.classList.add("show");
+    sug.innerHTML = items + (note ? `<div class="sug-note">${note}</div>` : "");
+    sug.classList.toggle("show", !!(items || note));
   };
-
-  const filter = (q) => {
-    if (!q || q.length < 2) return [];
-    const ql = q.toLowerCase();
-    const starts = [], contains = [];
-    for (const c of CITIES) {
-      const n = c[0].toLowerCase();
-      if (n === ql) starts.unshift(c);          // exact match first
-      else if (n.startsWith(ql)) starts.push(c);
-      else if (n.includes(ql)) contains.push(c);
-    }
-    return starts.concat(contains);
-  };
-
-  input.addEventListener("input", () => {
-    selectedCity = null;
-    tzTouched = false;
-    refreshCityTz();
-    currentList = filter(input.value);
+  const cancel = () => { seq++; clearTimeout(timer); if (ctl) { try { ctl.abort(); } catch (e) {} ctl = null; } };
+  const show = (q, places, state) => {
+    online = places;
+    list = mergePlaces(_narrow(places, q.within), _narrow(builtinPlaces(q.name), q.within));
+    sug.dataset.online = state;
+    note = state === "searching" ? "Searching all cities, towns and villages…"
+         : state === "failed" ? "Online place search unavailable — showing the built-in list only."
+         : state === "done" && !list.length ? "No place of that name — check the spelling, or use manual lat/lon." : "";
     activeIdx = -1;
     render();
-  });
-  input.addEventListener("focus", () => {
-    if (input.value.length >= 2) { currentList = filter(input.value); render(); }
-  });
-  input.addEventListener("blur", () => {
-    setTimeout(() => sug.classList.remove("show"), 200);
-  });
+    if (opts.onOnline && state === "done") opts.onOnline(places);
+  };
+  const update = () => {
+    cancel();
+    const q = _placeQuery(input.value);
+    if (q.name.length < 3 || typeof fetch !== "function") { online = []; show(q, [], ""); return; }
+    const key = q.name.toLowerCase();
+    if (cache.has(key)) { show(q, cache.get(key), "done"); return; }
+    show(q, [], "searching");
+    const my = seq;
+    timer = setTimeout(() => {
+      ctl = typeof AbortController === "function" ? new AbortController() : null;
+      fetch(`${GEO_SEARCH_URL}?name=${encodeURIComponent(q.name)}&count=10&language=en&format=json`, ctl ? { signal: ctl.signal } : {})
+        .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(j => {
+          if (my !== seq) return;                               // the text has changed since: a late answer
+          const places = (Array.isArray(j && j.results) ? j.results : [])
+            .filter(r => r && r.name && isFinite(r.latitude) && isFinite(r.longitude)).map(placeFromGeo);
+          cache.set(key, places);
+          show(q, places, "done");
+        })
+        .catch(() => { if (my === seq) show(q, [], "failed"); });
+    }, 250);
+  };
+  const pick = (i) => {
+    const c = list[i];
+    if (!c) return;
+    cancel();
+    sug.classList.remove("show");
+    opts.onPick(c);
+  };
+
+  input.addEventListener("input", () => { if (opts.onType) opts.onType(); update(); });
+  input.addEventListener("focus", () => { if (input.value.trim().length >= 2) update(); });
+  input.addEventListener("blur", () => { setTimeout(() => { sug.classList.remove("show"); if (opts.onLeave) opts.onLeave(); }, 200); });
   input.addEventListener("keydown", (e) => {
-    if (!currentList.length) return;
+    if (!list.length) return;
     if (e.key === "ArrowDown") {
-      activeIdx = Math.min(activeIdx + 1, currentList.length - 1, 19);
+      activeIdx = Math.min(activeIdx + 1, list.length - 1, 19);
       render(); e.preventDefault();
     } else if (e.key === "ArrowUp") {
       activeIdx = Math.max(activeIdx - 1, 0); render(); e.preventDefault();
     } else if (e.key === "Enter" && activeIdx >= 0) {
       pick(activeIdx); e.preventDefault();
     } else if (e.key === "Escape") {
-      sug.classList.remove("show");
+      cancel(); sug.classList.remove("show");
     }
   });
   sug.addEventListener("mousedown", (e) => {
     const div = e.target.closest("div[data-idx]");
     if (div) pick(parseInt(div.dataset.idx));
   });
+}
 
-  function pick(i) {
-    const c = currentList[i];
-    selectedCity = c;
-    tzTouched = false;
-    input.value = c[0];
-    refreshCityTz();
-    if (typeof saveForm === "function") saveForm();
-    sug.classList.remove("show");
+/* The birth place box */
+function setupPlaceAutocomplete() {
+  const input = document.getElementById("f-place");
+  setupPlaceSearch(input, document.getElementById("suggestions"), {
+    onType: () => { selectedCity = null; tzTouched = false; birthPlaceOnline = []; refreshCityTz(); },
+    onOnline: (places) => { birthPlaceOnline = places; refreshCityTz(); },
+    onPick: (c) => {
+      selectedCity = c;
+      tzTouched = false;
+      input.value = c[0];
+      refreshCityTz();
+      if (typeof saveForm === "function") saveForm();
+    }
+  });
+  // initial sync (a restored or default value)
+  if (!selectedCity) {
+    const init = builtinPlaces(input.value);
+    if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) selectedCity = init[0];
   }
-
-  // initial sync (default value)
-  const init = filter(input.value);
-  if (init.length && init[0][0].toLowerCase() === input.value.toLowerCase()) {
-    selectedCity = init[0];
-    refreshCityTz();
-  }
+  if (selectedCity) refreshCityTz();
 }
 
 /* Manual lat/lon toggle */
@@ -5666,7 +5761,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-10-23 · KP as True Astrology Pro gives it (its ayanamsa and Lagna)";
+const TOOL_VERSION = "2026-10-27 · place search: any city, town or village worldwide (GeoNames via Open-Meteo)";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -6014,8 +6109,8 @@ function rahuKaalFor(c, y, mo, d){
 function renderRahukaalPane(){
   const el=document.getElementById("pane-rahukaal"); if(!el) return;
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
-  const c=CITIES[parseInt(sel && sel.value)] || CITIES[0];
+  const di=document.getElementById("f-curdate");
+  const c=currentLocationCity();
   let p=((di && di.value)||"").split("-").map(Number);
   if(p.length!==3 || p.some(isNaN)){ const n=cityNow(c); p=[n.y,n.m,n.d]; }
   const today=rahuKaalFor(c,p[0],p[1],p[2]);
@@ -6137,8 +6232,8 @@ function _dmy(y,mo,d){ return String(d).padStart(2,'0')+"-"+String(mo).padStart(
 
 function computeMhPanchanga(){
   const box=document.getElementById("mh-panchanga"); if(!box) return;
-  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate"); if(!sel||!di) return;
-  const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-");
+  const di=document.getElementById("f-curdate"); if(!di) return;
+  const c=currentLocationCity(); const p=(di.value||"").split("-");
   if(!c || p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0], mo=+p[1], d=+p[2];
   const tz=cityUtcOffset(c,y,mo,d,12,0,0);   // the city's own offset that day (DST-aware, read at noon)
@@ -6179,8 +6274,8 @@ const CHOG_NIGHT_START=[5,1,4,0,3,6,2];  // Sun..Sat, night steps -2 through the
 function _chogVerdict(cls){ return cls==='good'?['#1a7f37','Auspicious']:cls==='bad'?['#9a3b1b','Avoid']:['#9a6b00','Neutral']; }
 function computeChoghadiya(){
   const box=document.getElementById("choghadiya-body"); if(!box) return;
-  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate"); if(!sel||!di) return;
-  const c=CITIES[parseInt(sel.value)]; const p=(di.value||"").split("-"); if(!c||p.length!==3){ box.innerHTML=""; return; }
+  const di=document.getElementById("f-curdate"); if(!di) return;
+  const c=currentLocationCity(); const p=(di.value||"").split("-"); if(!c||p.length!==3){ box.innerHTML=""; return; }
   const y=+p[0],mo=+p[1],d=+p[2];
   const tz=cityUtcOffset(c,y,mo,d,12,0,0);   // the city's own clock that day
   const st=sunTimes(c[2],c[3],tz,y,mo,d);
@@ -7632,22 +7727,31 @@ function cityPanchangaDate(c){
   const d=new Date(Date.UTC(n.y,n.m-1,n.d) - ((st && n.min<st.rise) ? 86400000 : 0));
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
 }
+/* Where the user is now (for the muhūrta panes): any place, searched like the birth place; at first the birth place,
+   else Bengaluru. */
+let curCity = null;
+function currentLocationCity(){ return curCity || CITIES[0]; }
 function setupCurrentLocation(){
-  const sel=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
-  if(sel && !sel.options.length){
-    const birth=(typeof selectedCity!=='undefined' && selectedCity)?selectedCity[0]:null;
-    let def=0;
-    CITIES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${c[0]} — ${c[1]}`; sel.appendChild(o); if(birth && c[0]===birth) def=i; });
-    sel.value=def;
-    sel.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
+  const inp=document.getElementById("f-curcity"), di=document.getElementById("f-curdate");
+  const refresh=()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} };
+  if(inp && !inp.dataset.ready){
+    inp.dataset.ready="1";
+    curCity=(typeof selectedCity!=='undefined' && selectedCity) || CITIES[0];
+    inp.value=curCity[0];
+    setupPlaceSearch(inp, document.getElementById("cur-suggestions"), {
+      onPick: c => {
+        curCity=c; inp.value=c[0];
+        // until a date is picked by hand, follow the place's own day (see cityPanchangaDate)
+        if(di && di.dataset.auto==="1") di.value=cityPanchangaDate(c);
+        refresh();
+      },
+      onLeave: () => { if(inp.value!==currentLocationCity()[0]) inp.value=currentLocationCity()[0]; }   // not picked: keep the last place
+    });
   }
   if(di){
-    // Until a date is picked by hand, follow the selected city's own day (see cityPanchangaDate).
-    if(!di.value){ di.value=cityPanchangaDate(CITIES[parseInt(sel && sel.value)] || CITIES[0]); di.dataset.auto="1"; }
-    if(sel) sel.addEventListener("change", ()=>{ if(di.dataset.auto==="1"){ di.value=cityPanchangaDate(CITIES[parseInt(sel.value)] || CITIES[0]);
-      try{ computeMhPanchanga(); computeChoghadiya(); renderRahukaalPane(); }catch(e){} } });
+    if(!di.value){ di.value=cityPanchangaDate(currentLocationCity()); di.dataset.auto="1"; }
     di.addEventListener("input", ()=>{ di.dataset.auto="0"; });
-    di.addEventListener("change", ()=>{ try{ if(typeof computeMhPanchanga==='function') computeMhPanchanga(); }catch(e){} try{ if(typeof computeChoghadiya==='function') computeChoghadiya(); }catch(e){} try{ renderRahukaalPane(); }catch(e){} });
+    di.addEventListener("change", refresh);
   }
 }
 setupCurrentLocation();
