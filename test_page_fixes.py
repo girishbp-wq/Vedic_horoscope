@@ -2466,3 +2466,62 @@ class PlaceSearch(unittest.TestCase):
         self.assertEqual(r["value"], "Gundlupet")
         self.assertIn("Rāhu Kaalam — Gundlupet", r["rahu"])
         self.assertIn("Choughadiya — Gundlupet", r["choghadiya"])
+
+
+@needs_browser
+class PlaceSearchReviewFixes(unittest.TestCase):
+    """Review of the place search: leaving the box, a typed place kept, "Name, State", no time zone, re-typing."""
+
+    def test_a_late_answer_does_not_reopen_the_list_after_leaving(self):
+        r = run_page("""
+            await mockGeo(opts.places, {huns: 800});
+            await page.type('#f-place', 'Huns');
+            await page.click('#f-name');
+            await page.waitForTimeout(1500);
+            return await page.evaluate(() => document.getElementById('suggestions').classList.contains('show'));
+        """, places=GEO_PLACES)
+        self.assertFalse(r)
+
+    def test_a_typed_place_is_kept_like_a_picked_one(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await setBirth('1975-02-22', '16:30');
+            await page.type('#f-place', 'Gundlupet');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            await generate();
+            return await page.evaluate(() => JSON.parse(localStorage.getItem('vh_form_v1')).selectedCity);
+        """, places=GEO_PLACES)
+        self.assertEqual(r[0], "Gundlupet")
+        self.assertEqual(r[5], "Asia/Kolkata")
+
+    def test_a_state_asks_for_more_places_and_says_when_it_matches_none(self):
+        r = run_page("""
+            const asked = await mockGeo(opts.places);
+            await page.type('#f-place', 'Springfield, Vermont');
+            await page.waitForFunction(() => document.querySelector('#suggestions')?.dataset.online === 'done');
+            return {count: asked[asked.length - 1].count, items: await page.evaluate(%s),
+                    note: await page.evaluate(() => document.querySelector('#suggestions .sug-note')?.textContent || '')};
+        """ % PLACE_ITEMS, places=GEO_PLACES)
+        self.assertEqual(r["count"], "100")
+        self.assertIn("Vermont", r["note"])
+        self.assertEqual(len(r["items"]), 2)                     # the places of that name are still offered
+
+    def test_a_place_without_a_time_zone_warns(self):
+        place = dict(GEO_PLACES[0], name="Notz", timezone=None)
+        r = run_page("""
+            await mockGeo(opts.places);
+            await setBirth('1975-02-22', '16:30');
+            await pickCity('Notz');
+            return await page.textContent('#place-hint');
+        """, places=[place])
+        self.assertIn("time zone", r.lower())
+        self.assertIn("check", r.lower())
+
+    def test_clicking_the_current_location_selects_it_for_retyping(self):
+        r = run_page("""
+            await mockGeo(opts.places);
+            await page.click('#f-curcity');
+            await page.keyboard.type('Gund');
+            return await page.inputValue('#f-curcity');
+        """, places=GEO_PLACES)
+        self.assertEqual(r, "Gund")

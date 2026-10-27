@@ -5323,6 +5323,7 @@ function refreshCityTz(keepBox){
   if (!tzTouched && tzf && !keepBox) tzf.value = String(Math.round(info.offset * 1e6) / 1e6);
   let note = "";
   if (tzTouched) note = ` · your typed offset ${fmtUtcOffset(parseFloat(tzf.value))} is used`;
+  else if (!c[5]) note = " · ⚠ time zone not known for this place — check the UTC offset (local mean time is used)";
   else if (!wt) note = " · standard time (enter the birth date for daylight saving)";
   else if (info.kind === "skipped") note = " · ⚠ this clock time was skipped by a daylight-saving change — check the birth time";
   else if (info.kind === "repeated") note = " · ⚠ this clock time occurred twice (clocks went back) — the first, daylight-saving one is used";
@@ -5419,6 +5420,7 @@ function generate() {
       return;
     }
     lat = city[2]; lon = city[3];
+    if (selectedCity !== city) { selectedCity = city; if (typeof saveForm === "function") saveForm(); }   // kept for next time
     const typed = parseFloat(document.getElementById("f-tz").value);
     tz = (tzTouched && !isNaN(typed)) ? typed : cityUtcOffset(city, ...birthWallTime());
     placeName = `${city[0]}, ${city[1]}`;
@@ -5577,10 +5579,12 @@ function mergePlaces(online, builtin){
       out.push(c);
   return out;
 }
-/* "Hunsur, Karnataka": the name to search for, and the rest to narrow the answer. */
+/* "Hunsur, Karnataka": the name to search for, and the rest to narrow the answer (lower case, and as typed). */
 function _placeQuery(text){
   const k = text.indexOf(",");
-  return k < 0 ? { name: text.trim(), within: "" } : { name: text.slice(0, k).trim(), within: text.slice(k + 1).trim().toLowerCase() };
+  if (k < 0) return { name: text.trim(), within: "", withinText: "" };
+  const rest = text.slice(k + 1).trim();
+  return { name: text.slice(0, k).trim(), within: rest.toLowerCase(), withinText: rest };
 }
 function _narrow(list, within){
   if (!within) return list;
@@ -5607,24 +5611,26 @@ function setupPlaceSearch(input, sug, opts) {
     online = places;
     list = mergePlaces(_narrow(places, q.within), _narrow(builtinPlaces(q.name), q.within));
     sug.dataset.online = state;
+    const missed = state === "done" && q.within && places.length && !places.some(c => c[1].toLowerCase().includes(q.within));
     note = state === "searching" ? "Searching all cities, towns and villages…"
          : state === "failed" ? "Online place search unavailable — showing the built-in list only."
+         : missed ? `None of these is in “${_escTz(q.withinText)}” — showing every place of that name.`
          : state === "done" && !list.length ? "No place of that name — check the spelling, or use manual lat/lon." : "";
     activeIdx = -1;
-    render();
+    if (document.activeElement === input) render(); else sug.classList.remove("show");   // left the box: stay closed
     if (opts.onOnline && state === "done") opts.onOnline(places);
   };
   const update = () => {
     cancel();
     const q = _placeQuery(input.value);
     if (q.name.length < 3 || typeof fetch !== "function") { online = []; show(q, [], ""); return; }
-    const key = q.name.toLowerCase();
+    const count = q.within ? 100 : 10, key = q.name.toLowerCase() + "|" + count;
     if (cache.has(key)) { show(q, cache.get(key), "done"); return; }
     show(q, [], "searching");
     const my = seq;
     timer = setTimeout(() => {
       ctl = typeof AbortController === "function" ? new AbortController() : null;
-      fetch(`${GEO_SEARCH_URL}?name=${encodeURIComponent(q.name)}&count=10&language=en&format=json`, ctl ? { signal: ctl.signal } : {})
+      fetch(`${GEO_SEARCH_URL}?name=${encodeURIComponent(q.name)}&count=${count}&language=en&format=json`, ctl ? { signal: ctl.signal } : {})
         .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
         .then(j => {
           if (my !== seq) return;                               // the text has changed since: a late answer
@@ -5645,8 +5651,10 @@ function setupPlaceSearch(input, sug, opts) {
   };
 
   input.addEventListener("input", () => { if (opts.onType) opts.onType(); update(); });
-  input.addEventListener("focus", () => { if (input.value.trim().length >= 2) update(); });
-  input.addEventListener("blur", () => { setTimeout(() => { sug.classList.remove("show"); if (opts.onLeave) opts.onLeave(); }, 200); });
+  input.addEventListener("focus", () => { input.select(); if (input.value.trim().length >= 2) update(); });
+  input.addEventListener("blur", () => { setTimeout(() => {
+    if (document.activeElement === input) return;
+    cancel(); sug.classList.remove("show"); if (opts.onLeave) opts.onLeave(); }, 200); });
   input.addEventListener("keydown", (e) => {
     if (!list.length) return;
     if (e.key === "ArrowDown") {
