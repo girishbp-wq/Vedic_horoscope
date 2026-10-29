@@ -334,6 +334,64 @@ def strength(rules, ctx, planet):
     return strength_detail(rules, ctx, planet)["word"]
 
 
+WITH_MALEFICS = ("Saturn", "Mars", "Ketu")      # class of 29 Oct 2026: with these (or Rahu, S29) a planet is weak
+
+
+def _house_strength_phrase(rules, lagna, house):
+    kendra, trikona = house in class_houses(rules, "Kendra", lagna), house in class_houses(rules, "Trikona", lagna)
+    if kendra and trikona:
+        return f"in the {ordinal(house)} (Kendra and Trikoṇa)"
+    if kendra or trikona:
+        return f"in a {'Kendra' if kendra else 'Trikoṇa'} (the {ordinal(house)})"
+    return ""
+
+
+def strength_overall(rules, ctx, planet):
+    """Session 29's strength with the factors of the class of 29 Oct 2026, as {word, stronger, weaker}. Her answer: a
+    planet is strong in its own, exalted, Mūlatrikoṇa or friend's sign, in a Kendra or Trikoṇa, or with or aspected
+    by a benefic; weak in an enemy's sign or debilitated, or with Saturn, Mars, Rāhu or Ketu; weaker in a duṣthāna.
+    Weak outright: Session 29's weakness (debilitated, enemy's sign, combust, with Rāhu) or with Saturn, Mars or Ketu;
+    otherwise strong with only stronger factors, mixed with both, weak with only weaker ones (a duṣthāna, a malefic's
+    aspect), depends with none (a neutral sign, nothing else). Session 29's own word (strength_detail) still chooses
+    Session 29's texts: her deck gives "strong" texts for a lord in a duṣthāna, which the house factor would hide."""
+    lagna, sg = ctx["lagna"], ctx["signs"]
+    sign, house = sg[planet], house_of(lagna, sg[planet])
+    s29 = strength_detail(rules, ctx, planet)
+    label = dignity(rules, planet, sign, ctx["degs"].get(planet))["label"]
+    stronger = [label] if label in STRONG_LABELS else []
+    weaker = list(s29["reasons"]) if s29["word"] == "weak" else []
+    phrase = _house_strength_phrase(rules, lagna, house)
+    stronger += [phrase] if phrase else []
+    company = [p for p in PLANET_ORDER if p != planet and sg.get(p) == sign]
+    stronger += [f"with {p}" for p in company if p in BENEFICS]
+    outright = [f"with {p}" for p in company if p in WITH_MALEFICS]
+    weaker += outright
+    if house in class_houses(rules, "Dusthana", lagna):
+        weaker.append(f"in a duṣthāna (the {ordinal(house)})")
+    for a in aspects_on(rules, ctx, sign):
+        if a["by"] != planet:
+            if a["by"] in BENEFICS:
+                stronger.append(f"aspected by {a['by']}")
+            elif a["by"] in STRENGTH_MALEFICS:
+                weaker.append(f"aspected by {a['by']}")
+    if s29["word"] == "weak" or outright:
+        word = "weak"
+    else:
+        word = "mixed" if stronger and weaker else "strong" if stronger else "weak" if weaker else "depends"
+    return {"word": word, "stronger": stronger, "weaker": weaker}
+
+
+def strength_points(rules, ctx, planet):
+    """Her points for a weak or a strong planet in its house (class of 29 Oct 2026: S23_GrahaInBhava IfWeak and
+    IfStrong), by the overall strength: weak — the IfWeak points; strong — the IfStrong points; mixed or depends —
+    both, the strong ones first (as Session 29 shows its rows). [{"when": "weak" | "strong", "text"}]."""
+    house = house_of(ctx["lagna"], ctx["signs"][planet])
+    cell = next(x for x in rules["graha_in_bhava"] if x["planet"] == planet and x["house"] == house)
+    word = strength_overall(rules, ctx, planet)["word"]
+    return ([{"when": "strong", "text": t} for t in cell.get("if_strong", []) if word != "weak"]
+            + [{"when": "weak", "text": t} for t in cell.get("if_weak", []) if word != "strong"])
+
+
 def lords_houses(rules, lagna, planet):
     return [h for h in range(1, 13) if house_lord(rules, lagna, h) == planet]
 
@@ -743,12 +801,12 @@ MARS_REMEDY_HOUSES = (2, 7, 8, 12)     # class of 22 Oct 2026: the 8th "irrespec
 
 
 def planet_remedies(rules, planet, house):
-    """Her remedies for this planet in this house (S23_Remedies), each {text, source}: the "Mars" rows for Mars in the
-    2nd, 7th, 8th or 12th; [] otherwise ("otherwise it is not required"). The "Kuja" rows are not here: they show in the page's Kuja Doṣa
-    section, which knows whether the doṣa is cancelled (user's ruling, 23 Oct 2026)."""
-    if planet != "Mars" or house not in MARS_REMEDY_HOUSES:
-        return []
-    return [{"text": r["text"], "source": r["source"]} for r in rules["remedies"] if r["topic"] == "Mars"]
+    """Her remedies for this planet in this house (S23_Remedies), each {text, source}: the rows of its topic whose
+    Houses include the house — the Mars rows 2, 7, 8, 12 (class of 22 Oct 2026), Mercury's and Jupiter's by house
+    (class of 29 Oct). A row with no Houses is a general remedy, never on a card. The "Kuja" rows are not here: they
+    show in the page's Kuja Doṣa section, which knows whether the doṣa is cancelled (user's ruling, 23 Oct 2026)."""
+    return [{"text": r["text"], "source": r["source"]} for r in rules["remedies"]
+            if r["topic"] == planet and house in r.get("houses", [])]
 
 
 def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
@@ -775,6 +833,7 @@ def graha_bhava(rules, lagna, signs, planet, deg, waxing, ctx=None):
             "extra": cell["extra"], "dignity": dig, "dignity_line": dignity_line, "dignity_status": dignity_status,
             "twelfth_line": twelfth_line(rules, house), "nature_lines": bhava_nature_lines(rules, planet, house),
             "remedies": planet_remedies(rules, planet, house),
+            "overall": strength_overall(rules, ctx, planet), "strength_points": strength_points(rules, ctx, planet),
             "digbala_line": digbala_line, "digbala_status": row["status"] if dg else None,
             "classes": reading["classes"], "class_texts": reading["texts"],
             "degree_stage": degree_stage(rules, planet, deg, ctx["age"]),
@@ -1099,7 +1158,7 @@ def planet_facts(rules, ctx, planet):
             "roles": planet_roles(rules, lagna, sg).get(planet, []), "dignity": g["dignity"],
             "dignity_effect": eff["text"] if eff else "", "dignity_status": g["dignity_status"],
             "digbala": (dg or "") if row else None, "digbala_text": text, "digbala_status": g["digbala_status"],
-            "strength": strength_detail(rules, ctx, planet), "class_texts": g["class_texts"]}
+            "strength": strength_detail(rules, ctx, planet), "overall": g["overall"], "class_texts": g["class_texts"]}
 
 
 def bhava_reading(rules, ctx, house, layer2=None):
@@ -1132,7 +1191,7 @@ def bhava_reading(rules, ctx, house, layer2=None):
                           "moon_strength": g["moon_strength"], "nature_lines": g["nature_lines"],
                           "twelfth_line": g["twelfth_line"], "degree_stage": g["degree_stage"],
                           "conditions": [c for c in conds if c["planet"] == p], "readings": g["readings"],
-                          "remedies": g["remedies"],
+                          "remedies": g["remedies"], "strength_points": g["strength_points"],
                           "graha_rashi": {k: x[k] for k in ("text", "status", "tatwa", "direction", "varna", "mode")},
                           "dignity_line": g["dignity_line"], "dignity_status": g["dignity_status"]})
     lord_p, lord, company = house_lord(rules, lagna, house), None, []

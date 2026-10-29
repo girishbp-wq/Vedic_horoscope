@@ -755,7 +755,8 @@ class MarsRemedies(unittest.TestCase):
         self.assertEqual(self.gb("Saturn", 7)["remedies"], [])
 
     def test_a_row_added_on_the_sheet_shows_too(self):
-        rules = dict(RULES, remedies=RULES["remedies"] + [dict(topic="Mars", text="My own Mars remedy.", source="me")])
+        rules = dict(RULES, remedies=RULES["remedies"] + [dict(topic="Mars", text="My own Mars remedy.", source="me",
+                                                               houses=[2, 7, 8, 12])])        # Houses as on the sheet
         mine = {"text": "My own Mars remedy.", "source": "me"}             # each row keeps its own source
         self.assertEqual(self.gb("Mars", 8, rules)["remedies"][-1], mine)
         self.assertEqual(br.planet_remedies(rules, "Mars", 8)[-1], mine)
@@ -1509,3 +1510,112 @@ class BhavaReading(unittest.TestCase):
             for h, t in want:
                 if t:
                     self.assertIn(t, text[h], (n, h, t[:60]))
+
+
+class Session25Class(unittest.TestCase):
+    """The class of 29 Oct 2026: remedies by the Houses column, the overall strength (Session 29 plus her house and
+    company factors), and her points for a weak or a strong planet."""
+
+    def ctx(self, lagna, signs):
+        return br.context(lagna, signs)
+
+    def overall(self, lagna, signs, planet):
+        return br.strength_overall(RULES, self.ctx(lagna, signs), planet)
+
+    # remedies -------------------------------------------------------------
+    def card(self, planet, house, rules=RULES):
+        sign = (LAGNA + house - 1) % 12
+        return br.graha_bhava(rules, LAGNA, dict(SIGNS, **{planet: sign}), planet, None, True)
+
+    def texts(self, topic, house):
+        return [r["text"] for r in RULES["remedies"] if r["topic"] == topic and house in r["houses"]]
+
+    def test_remedies_follow_the_houses_column(self):
+        self.assertEqual([x["text"] for x in self.card("Mercury", 2)["remedies"]], self.texts("Mercury", 2))
+        self.assertEqual(len(self.card("Mercury", 2)["remedies"]), 3)
+        self.assertEqual(self.card("Mercury", 3)["remedies"], [])            # no remedy of hers for the 3rd
+        self.assertEqual(len(self.card("Jupiter", 9)["remedies"]), 2)
+        for h in (2, 7, 8, 12):
+            self.assertEqual(len(self.card("Mars", h)["remedies"]), 7, h)       # the Mars rule, now in the data
+        self.assertEqual(self.card("Mars", 4)["remedies"], [])
+
+    def test_a_general_remedy_is_never_on_a_card(self):
+        general = next(r["text"] for r in RULES["remedies"] if r["topic"] == "Mercury" and not r["houses"]
+                       and "universal" in r["text"])
+        for h in range(1, 13):
+            self.assertNotIn(general, [x["text"] for x in self.card("Mercury", h)["remedies"]])
+
+    def test_a_row_the_user_adds_shows(self):
+        import copy
+        rules = copy.deepcopy(RULES)
+        rules["remedies"].append({"topic": "Venus", "text": "My Venus remedy.", "source": "me", "houses": [6]})
+        self.assertEqual(self.card("Venus", 6, rules)["remedies"], [{"text": "My Venus remedy.", "source": "me"}])
+        self.assertEqual(self.card("Venus", 5, rules)["remedies"], [])
+
+    # overall strength -----------------------------------------------------
+    def test_own_sign_in_a_kendra_is_strong(self):
+        self.assertEqual(self.overall(0, {"Venus": 6}, "Venus"),                 # Mesha Lagna, Venus in Tula (the 7th)
+                         {"word": "strong", "stronger": ["Own (Moolatrikona)", "in a Kendra (the 7th)"], "weaker": []})
+
+    def test_own_sign_in_a_dusthana_is_mixed(self):
+        self.assertEqual(self.overall(1, {"Venus": 6}, "Venus"),                 # Vrishabha Lagna: Tula is the 6th
+                         {"word": "mixed", "stronger": ["Own (Moolatrikona)"], "weaker": ["in a duṣthāna (the 6th)"]})
+
+    def test_neutral_sign_in_a_kendra_is_strong(self):
+        self.assertEqual(self.overall(11, {"Saturn": 8}, "Saturn"),              # Meena Lagna, Saturn in Dhanu (the 10th)
+                         {"word": "strong", "stronger": ["in a Kendra (the 10th)"], "weaker": []})
+
+    def test_nothing_either_way_depends(self):
+        self.assertEqual(self.overall(6, {"Saturn": 8}, "Saturn"),               # Tula Lagna: Dhanu is the 3rd
+                         {"word": "depends", "stronger": [], "weaker": []})
+
+    def test_with_saturn_is_weak_even_in_a_good_sign(self):
+        got = self.overall(6, {"Sun": 8, "Saturn": 8}, "Sun")                    # the Sun in Dhanu, a friend's sign
+        self.assertEqual(got, {"word": "weak", "stronger": ["Friend's House"], "weaker": ["with Saturn"]})
+
+    def test_benefic_company_and_aspect_strengthen(self):
+        self.assertEqual(self.overall(6, {"Saturn": 8, "Jupiter": 2}, "Saturn"),     # Jupiter's 7th from Mithuna
+                         {"word": "strong", "stronger": ["aspected by Jupiter"], "weaker": []})
+        self.assertEqual(self.overall(6, {"Saturn": 8, "Venus": 8}, "Saturn"),
+                         {"word": "strong", "stronger": ["with Venus"], "weaker": []})
+
+    def test_malefic_aspect_weakens(self):
+        self.assertEqual(self.overall(6, {"Saturn": 8, "Mars": 2}, "Saturn"),
+                         {"word": "weak", "stronger": [], "weaker": ["aspected by Mars"]})
+
+    def test_the_first_house_is_kendra_and_trikona(self):
+        self.assertEqual(self.overall(8, {"Saturn": 8}, "Saturn")["stronger"], ["in the 1st (Kendra and Trikoṇa)"])
+        self.assertEqual(self.overall(4, {"Saturn": 8}, "Saturn")["stronger"], ["in a Trikoṇa (the 5th)"])
+
+    def test_session_29_weakness_comes_first(self):
+        got = self.overall(0, {"Jupiter": 9, "Saturn": 9}, "Jupiter")           # Jupiter debilitated in Makara, the 10th
+        self.assertEqual(got, {"word": "weak", "stronger": ["in a Kendra (the 10th)"], "weaker": ["Debilitated", "with Saturn"]})
+
+    def test_nodes(self):
+        self.assertEqual(self.overall(3, {"Rahu": 1, "Ketu": 7, "Saturn": 1}, "Rahu")["word"], "weak")   # exalted, with Saturn
+        self.assertNotIn("with Ketu", self.overall(3, {"Rahu": 1, "Ketu": 7}, "Rahu")["weaker"])
+
+    def test_session_29_word_unchanged(self):
+        c = self.ctx(1, {"Venus": 6})
+        self.assertEqual(br.strength(RULES, c, "Venus"), "strong")               # S29: own sign, no malefic aspect
+
+    # strength points ------------------------------------------------------
+    def test_points_by_the_overall_word(self):
+        import session25_class_texts as t
+        weak = br.strength_points(RULES, self.ctx(0, {"Mercury": 1, "Saturn": 1}), "Mercury")        # 2nd, with Saturn
+        self.assertEqual(weak, [{"when": "weak", "text": x} for x in t.IF_WEAK[("Mercury", 2)]])
+        strong = br.strength_points(RULES, self.ctx(8, {"Jupiter": 8}), "Jupiter")                   # own sign in the 1st
+        self.assertEqual(strong, [{"when": "strong", "text": x} for x in t.IF_STRONG[("Jupiter", 1)]])
+        both = br.strength_points(RULES, self.ctx(7, {"Jupiter": 0}), "Jupiter")                     # Mesha (friend), 6th
+        self.assertEqual(both, [{"when": "strong", "text": x} for x in t.IF_STRONG[("Jupiter", 6)]]
+                         + [{"when": "weak", "text": x} for x in t.IF_WEAK[("Jupiter", 6)]])
+        self.assertEqual(br.strength_points(RULES, self.ctx(0, {"Sun": 0}), "Sun"), [])              # none for the Sun
+
+    def test_card_and_facts_carry_them(self):
+        c = self.ctx(7, {"Jupiter": 0})
+        g = br.graha_bhava(RULES, 7, c["signs"], "Jupiter", None, None, ctx=c)
+        self.assertEqual(g["overall"], br.strength_overall(RULES, c, "Jupiter"))
+        self.assertEqual(g["strength_points"], br.strength_points(RULES, c, "Jupiter"))
+        self.assertEqual(br.planet_facts(RULES, c, "Jupiter")["overall"], g["overall"])
+        occ = br.bhava_reading(RULES, c, 6)["occupants"][0]
+        self.assertEqual((occ["planet"], occ["strength_points"]), ("Jupiter", g["strength_points"]))
