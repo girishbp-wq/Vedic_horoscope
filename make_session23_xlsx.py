@@ -1646,11 +1646,21 @@ PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 
 def shipped_versions():
     """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply), then
-    Sessions 28-29 (apply_s28_29)."""
+    Sessions 28-29 (apply_s28_29), then the class of 22 Oct 2026 (apply_s24_class)."""
     import apply_teacher_slides as a
     first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
     s23_27 = a.apply(first)
-    return [first, s23_27, a.apply_s28_29(s23_27)]
+    s28_29 = a.apply_s28_29(s23_27)
+    return [first, s23_27, s28_29, a.apply_s24_class(s28_29)]
+
+
+def _from_before_new_columns(name, row, missing):
+    """A row of the user's own from before a column existed, read as the code read it then: a Mars remedy row was for
+    Mars in the 2nd, 7th, 8th and 12th (until the class of 29 Oct 2026 put that rule in the Houses column)."""
+    if name == PREFIX + "Remedies" and 3 in missing and _norm_cell(row[0]) == "Mars" and row[3] in (None, ""):
+        row = list(row)
+        row[3] = "2, 7, 8, 12"
+    return row
 
 
 def _norm_cell(v):
@@ -1712,6 +1722,27 @@ def _shipped_rows(previous):
     return b23.rules_to_rows(prev)
 
 
+def _installed_release(wb, shipped_rows):
+    """The release this workbook was installed from (an index into `shipped_rows`), so that a row of a later release
+    the workbook lacks is added — it was never installed — and not counted as deleted. A release counts as installed
+    when all its sheets are there and the workbook holds, as shipped, a row that release brought or changed (two
+    releases can have the same sheets: Sessions 28-29 and the class of 22 Oct 2026)."""
+    user = {name: dict(_keyed(name, _sheet_rows(wb[name], len(header))))
+            for name, header in b23.SHEETS.items() if name in wb.sheetnames}
+    for i in range(len(shipped_rows) - 1, 0, -1):
+        rows = shipped_rows[i]
+        if not all(n in wb.sheetnames for n, r in rows.items() if r):
+            continue
+        before = shipped_rows[i - 1]
+        for name, r in rows.items():
+            if name not in user:
+                continue
+            old = dict(_keyed(name, before.get(name, [])))
+            if any(old.get(k) != row and user[name].get(k) == row for k, row in _keyed(name, r)):
+                return i
+    return 0
+
+
 def upgrade_data_sheets(wb, rules, previous):
     """Bring the S23_ data sheets of `wb` up to `rules`, keeping what the user changed.
 
@@ -1721,9 +1752,7 @@ def upgrade_data_sheets(wb, rules, previous):
     sheets are written whole."""
     versions = previous if isinstance(previous, list) else [previous]
     new_rows, shipped_rows = b23.rules_to_rows(rules), [_shipped_rows(v) for v in versions]
-    # the release this workbook was installed from: the latest one whose sheets are all there (a row of a later
-    # release that the workbook lacks was never installed, so it is added, not counted as deleted)
-    level = max((i for i, rows in enumerate(shipped_rows) if all(n in wb.sheetnames for n, r in rows.items() if r)), default=0)
+    level = _installed_release(wb, shipped_rows)
     report = {"updated": 0, "added": 0, "kept": [], "deleted": [], "new_sheets": []}
     for name, header in b23.SHEETS.items():
         if name not in wb.sheetnames:
@@ -1767,7 +1796,7 @@ def upgrade_data_sheets(wb, rules, previous):
                                if isinstance(out[i][0], tuple) and out[i][0][0] == k[0]), None)
                 if at is None:
                     at = len(out) if before is not None else 0
-                out.insert(at, (k, raw[k]))
+                out.insert(at, (k, _from_before_new_columns(name, raw[k], missing)))
                 if (name, k) not in report["kept"]:
                     report["kept"].append((name, k))
             before = k

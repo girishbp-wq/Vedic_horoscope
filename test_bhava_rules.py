@@ -736,7 +736,7 @@ class MarsRemedies(unittest.TestCase):
         return g
 
     def test_the_rows_are_in_the_rules(self):
-        self.assertEqual((len(self.mars), len(self.kuja)), (7, 2))
+        self.assertEqual((len(self.mars), len(self.kuja)), (7, 3))                   # + the 29 Oct row for a child
         self.assertEqual(br.MARS_REMEDY_HOUSES, (2, 7, 8, 12))
 
     def test_mars_in_the_8th_2nd_and_12th(self):

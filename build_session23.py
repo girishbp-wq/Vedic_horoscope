@@ -62,7 +62,7 @@ SHEETS = {
     PREFIX + "DignityEffect": ["Label", "Band", "Text", "Status", "Slide"],
     PREFIX + "Digbala": ["Planet", "StrongHouse", "LostHouse", "Status", "Source"],
     PREFIX + "DashaRoleText": ["Role", "Kind", "Text", "Slide"],
-    PREFIX + "GrahaInBhava": ["Planet", "House", "Points", "Extra", "Status", "Source"],
+    PREFIX + "GrahaInBhava": ["Planet", "House", "Points", "Extra", "Status", "Source", "IfWeak", "IfStrong"],
     PREFIX + "GrahaPair": ["A", "B", "Conjunction", "Aspect", "Status", "Source"],
     PREFIX + "BhavaLordIn": ["LordOf", "SitsIn", "Text", "Status", "Source", "Condition", "Exchange"],
     PREFIX + "GrahaRashi": ["Planet", "Rashi", "Text", "Status", "Source"],
@@ -70,11 +70,12 @@ SHEETS = {
     PREFIX + "AspectMeaning": ["Planet", "Aspect", "FromHouse", "Text", "Status", "Source"],
     PREFIX + "LifeAreas": ["No", "Area", "Houses", "Karaka", "KarakaFemale", "Link", "Source"],
     PREFIX + "Conditions": ["Key", "Planet", "House", "Text", "Status", "Source"],
-    PREFIX + "Remedies": ["Topic", "Text", "Source"],
+    PREFIX + "Remedies": ["Topic", "Text", "Source", "Houses"],
     PREFIX + "ChartReadings": ["Kind", "Planet", "With", "House", "Condition", "Text", "Status", "Source"],
     PREFIX + "DegreeStages": ["From", "To", "Stage", "Applies", "AfterAge", "Text", "Source"],
 }
-LONG_COLUMNS = ("Nature", "Rule", "Text", "Points", "Extra", "Conjunction", "Aspect", "Source", "OtherNames")
+LONG_COLUMNS = ("Nature", "Rule", "Text", "Points", "Extra", "Conjunction", "Aspect", "Source", "OtherNames", "IfWeak",
+                "IfStrong")
 
 README_LINES = [
     "Session 23 rules — editable source of truth (sheets whose names start with S23_)",
@@ -93,9 +94,11 @@ README_LINES = [
     "Condition is blank, exalted or debilitated. S23_DegreeStages holds the degree bands (From up to, not including, To; "
     "Applies any or malefic; AfterAge the age from which an early-degree planet gives its results). In S23_ClassRules, "
     "When 'not weak' shows a rule only for a planet that is not weak.",
-    "Class of 22 Oct 2026: the Moon's and Mars's Extra cells on S23_GrahaInBhava hold her class points. In S23_Remedies, "
-    "Topic is a planet, Kuja or Tip; the Mars rows show for Mars in the 2nd, 7th, 8th or 12th house (S23_Predict_Calc, "
-    "Remedies column); the Kuja rows show on the page's Kuja Dosha section when the dosha is present and not cancelled.",
+    "Classes of 22 and 29 Oct 2026: the Sun's, Moon's, Mars's, Mercury's and Jupiter's Extra cells on S23_GrahaInBhava "
+    "hold her class points; IfWeak and IfStrong hold her points for a weak or a strong planet (shown by its overall "
+    "strength). In S23_Remedies, Topic is a planet, Kuja or Tip, and Houses is a comma list: a planet's card lists the "
+    "rows of its topic whose Houses include its house (S23_Predict_Calc, Remedies column); a blank Houses is a general "
+    "remedy. The Kuja rows show on the page's Kuja Dosha section when the dosha is present and not cancelled.",
 ]
 
 
@@ -119,7 +122,8 @@ def rules_to_rows(rules):
         PREFIX + "DignityEffect": [[k, v["band"], v["text"], v["status"], v["slide"]] for k, v in rules["dignity_effect"].items()],
         PREFIX + "Digbala": [[p, v["strong"], v["lost"], v["status"], v["source"]] for p, v in rules["digbala"].items()],
         PREFIX + "DashaRoleText": [[k, v["kind"], v["text"], v["slide"]] for k, v in rules["dasha_role_text"].items()],
-        PREFIX + "GrahaInBhava": [[r["planet"], r["house"], "\n\n".join(r["points"]), "\n".join(r["extra"]), r["status"], r["source"]]
+        PREFIX + "GrahaInBhava": [[r["planet"], r["house"], "\n\n".join(r["points"]), "\n".join(r["extra"]), r["status"], r["source"],
+                                   "\n".join(r.get("if_weak", [])), "\n".join(r.get("if_strong", []))]
                                   for r in rules["graha_in_bhava"]],
         PREFIX + "GrahaPair": [[r["a"], r["b"], r["conjunction"], r["aspect"], r["status"], r["source"]] for r in rules["graha_pair"]],
         PREFIX + "BhavaLordIn": [[r["lord_of"], r["sits_in"], r["text"], r["status"], r["source"], r["condition"],
@@ -131,7 +135,7 @@ def rules_to_rows(rules):
         PREFIX + "LifeAreas": [[r["no"], r["area"], _join_ints(r["houses"]), ", ".join(r["karakas"]), r["karaka_female"], r["link"],
                                 r["source"]] for r in rules["life_areas"]],
         PREFIX + "Conditions": [[r["key"], r["planet"], r["house"], r["text"], r["status"], r["source"]] for r in rules["conditions"]],
-        PREFIX + "Remedies": [[r["topic"], r["text"], r["source"]] for r in rules["remedies"]],
+        PREFIX + "Remedies": [[r["topic"], r["text"], r["source"], _join_ints(r.get("houses", []))] for r in rules["remedies"]],
         PREFIX + "ChartReadings": [[r["kind"], r["planet"], r["with"], r["house"], r["condition"], r["text"], r["status"],
                                     r["source"]] for r in rules.get("chart_readings", [])],
         PREFIX + "DegreeStages": [[r["from"], r["to"], r["stage"], r["applies"], r["after_age"], r["text"], r["source"]]
@@ -250,6 +254,24 @@ class _Sheets:
             self.bad(sheet, row, f"{col} {v!r} is not one of {', '.join(x or '(blank)' for x in allowed)}")
         return v
 
+    def house_list(self, sheet, row, col, v):
+        """A comma list of houses 1-12 (blank: none), as S23_Remedies' Houses."""
+        out = []
+        for part in _s(v).replace(";", ",").split(","):
+            part = part.strip()
+            try:
+                n = float(part)
+                ok = n == int(n) and 1 <= n <= 12
+            except ValueError:
+                ok = False
+            if not part:
+                continue
+            if not ok:
+                self.bad(sheet, row, f"{col} {_s(v)!r} is not a list of houses 1-12")
+                return []
+            out.append(int(n))
+        return out
+
     def opt_num(self, sheet, row, col, v, lo=1, hi=12):
         return None if v in (None, "") else self.num(sheet, row, col, v, lo, hi)
 
@@ -264,6 +286,11 @@ class _Sheets:
 
 def _s(v):
     return "" if v is None else str(v)
+
+
+def _lines(v):
+    """A one-line-each cell (Extra, IfWeak, IfStrong) as its non-blank lines."""
+    return [p for p in _s(v).split("\n") if p.strip()]
 
 
 def has_session23_sheets(wb):
@@ -345,8 +372,9 @@ def read_workbook(path_or_wb):
         if not points:
             rd.bad(sh, i, "Points is empty")
         out["graha_in_bhava"].append(dict(planet=rd.pick(sh, i, "Planet", r[0], PLANETS), house=rd.num(sh, i, "House", r[1]),
-                                          points=points, extra=[p for p in _s(r[3]).split("\n") if p.strip()],
-                                          status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
+                                          points=points, extra=_lines(r[3]),
+                                          status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5]),
+                                          if_weak=_lines(r[6]), if_strong=_lines(r[7])))
     _expect(rd, PREFIX + "GrahaInBhava", [(x["planet"], x["house"]) for x in out["graha_in_bhava"]],
             [(p, h) for p in PLANETS for h in range(1, 13)], lambda k: f"{k[0]} in house {k[1]}")
 
@@ -423,7 +451,7 @@ def read_workbook(path_or_wb):
     out["remedies"] = []
     for sh, i, r in rd.rows("Remedies"):
         out["remedies"].append(dict(topic=rd.pick(sh, i, "Topic", r[0], REMEDY_TOPICS), text=rd.text(sh, i, "Text", r[1]),
-                                    source=_s(r[2])))
+                                    source=_s(r[2]), houses=rd.house_list(sh, i, "Houses", r[3])))
     out["chart_readings"] = []
     for sh, i, r in rd.rows("ChartReadings"):
         kind = rd.pick(sh, i, "Kind", _s(r[0]), READING_KINDS)

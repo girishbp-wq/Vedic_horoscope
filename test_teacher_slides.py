@@ -181,6 +181,66 @@ class S28_29Texts(unittest.TestCase):
             self.assertNotIn(" .", text)
 
 
+class S25ClassTexts(unittest.TestCase):
+    """The class of 29 Oct 2026: Mercury and Jupiter in the 12 bhāvas (recording points, points for a weak or a strong
+    planet), her remedies by placement."""
+
+    @classmethod
+    def setUpClass(cls):
+        import session25_class_texts as t
+        cls.t = t
+
+    def check_points(self, table):
+        for key, points in table.items():
+            self.assertTrue(1 <= len(points) <= 8, key)
+            for x in points:
+                self.assertEqual(x, x.strip(), key)
+                self.assertTrue(x and x[0].isupper() and x.endswith((".", ")")), (key, x))
+                self.assertNotIn("\n", x, key)
+
+    def test_points_for_mercury_and_jupiter_in_every_house(self):
+        self.assertEqual(sorted(self.t.GRAHA_IN_BHAVA_EXTRA),
+                         sorted((p, h) for p in ("Mercury", "Jupiter") for h in range(1, 13)))
+        self.check_points(self.t.GRAHA_IN_BHAVA_EXTRA)
+        self.assertTrue(self.t.GRAHA_IN_BHAVA_EXTRA[("Mercury", 1)][0].startswith("Mercury is the prince"))
+        self.assertTrue(self.t.GRAHA_IN_BHAVA_EXTRA[("Jupiter", 1)][0].startswith("Jupiter is the biggest planet"))
+
+    def test_weak_and_strong_points(self):
+        for table in (self.t.IF_WEAK, self.t.IF_STRONG):
+            self.assertTrue(set(table) <= set(self.t.GRAHA_IN_BHAVA_EXTRA))
+            self.check_points(table)
+        self.assertIn("stammer", self.t.IF_WEAK[("Mercury", 2)][0])
+        self.assertIn("court case", self.t.IF_STRONG[("Jupiter", 6)][0])
+
+    def test_respect_lines_for_the_six_bhavas_she_named(self):
+        has = {h for (p, h), pts in self.t.GRAHA_IN_BHAVA_EXTRA.items()
+               if p == "Jupiter" and any(x.startswith("Jupiter's keyword is respect") for x in pts)}
+        self.assertEqual(has, {2, 3, 5, 7, 9, 10})
+
+    def test_remedy_rows(self):
+        topics = [r[0] for r in self.t.REMEDIES]
+        self.assertEqual((topics.count("Mercury"), topics.count("Jupiter"), topics.count("Kuja")), (12, 12, 1))
+        self.assertEqual(len(topics), 25)
+        self.assertEqual({r[3] for r in self.t.REMEDIES}, {"Class 29 Oct 2026"})
+        for topic, text, houses, _ in self.t.REMEDIES:
+            self.assertTrue(set(houses) <= set(range(1, 13)), text)
+            self.assertEqual(houses, sorted(houses), text)
+        by_house = {}
+        for topic, _, houses, _ in self.t.REMEDIES:
+            for h in houses:
+                by_house.setdefault(topic, set()).add(h)
+        self.assertEqual(by_house, {"Mercury": {2, 6, 8, 10, 11, 12}, "Jupiter": {8, 9, 10, 11, 12}})
+        self.assertEqual([r[2] for r in self.t.REMEDIES if r[0] == "Kuja"], [[]])
+
+    def test_no_editorial_marks_left(self):
+        t = self.t
+        texts = [x for tab in (t.GRAHA_IN_BHAVA_EXTRA, t.IF_WEAK, t.IF_STRONG) for v in tab.values() for x in v] \
+            + [r[1] for r in t.REMEDIES]
+        for text in texts:
+            for mark in ("[", "TODO", " ,", " .", "  "):
+                self.assertNotIn(mark, text, text)
+
+
 class S24ClassTexts(unittest.TestCase):
     """The class of 22 Oct 2026: the Moon and Mars in the 12 bhāvas (recording points), her remedies."""
 

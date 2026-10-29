@@ -138,11 +138,13 @@ class CuratedContent(unittest.TestCase):
     def test_every_graha_bhava_row_is_taught(self):
         import session23_teacher_slides as ts
         import session24_class_texts as t24
+        import session25_class_texts as t25
         for x in rules()["graha_in_bhava"]:
             self.assertEqual(x["status"], "taught", (x["planet"], x["house"]))
             if x["planet"] != "Sun":
                 src, text = ts.GRAHA_IN_BHAVA[(x["planet"], x["house"])]
-                extra = t24.GRAHA_IN_BHAVA_EXTRA.get((x["planet"], x["house"]), [])     # the Moon's and Mars's class points
+                key = (x["planet"], x["house"])               # the class points: the Moon's and Mars's, Mercury's, Jupiter's
+                extra = t24.GRAHA_IN_BHAVA_EXTRA.get(key, t25.GRAHA_IN_BHAVA_EXTRA.get(key, []))
                 self.assertEqual(("\n\n".join(x["points"]), x["source"], x["extra"]), (text, src, extra), (x["planet"], x["house"]))
 
     def test_no_two_rows_share_text(self):
@@ -222,8 +224,10 @@ class TeacherRows(unittest.TestCase):
         self.assertEqual(r["conditions"], [dict(key=k, planet=p, house=h, text=t, status="taught", source=s)
                                            for k, p, h, t, s in ts.CONDITIONS])
         import session24_class_texts as t24
-        before_class = [x for x in r["remedies"] if x["source"] != t24.SOURCE]   # the class of 22 Oct 2026 adds rows among them
-        self.assertEqual(before_class[:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s) for t, x, s in ts.REMEDIES])
+        import session25_class_texts as t25
+        # the classes of 22 and 29 Oct 2026 add rows among them; the 29 Oct class gave every row its Houses
+        before_class = [x for x in r["remedies"] if x["source"] not in (t24.SOURCE, t25.SOURCE)]
+        self.assertEqual(before_class[:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s, houses=[]) for t, x, s in ts.REMEDIES])
 
     def test_lord_in_and_graha_rashi_rows_follow_the_shipped_ones(self):
         import session23_teacher_slides as ts
@@ -240,7 +244,8 @@ class TeacherRows(unittest.TestCase):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
         both = apply_teacher_slides.apply_all(prev)
-        self.assertEqual(both, apply_teacher_slides.apply_s24_class(apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))))
+        self.assertEqual(both, apply_teacher_slides.apply_s25_class(apply_teacher_slides.apply_s24_class(
+            apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev)))))
         # the reference tables come from the master workbook's own sheets, not from the slides
         drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
         self.assertEqual(drop(both), drop(rules()))
@@ -262,11 +267,31 @@ class TeacherRows(unittest.TestCase):
             elif row["planet"] == "Sun":
                 self.assertTrue(row["extra"], key)                             # the Session 23 class points stay
         topics = [x["topic"] for x in r["remedies"]]
-        new = [dict(topic=a, text=b, source=c) for a, b, c in t.REMEDIES]
+        new = [dict(topic=a, text=b, source=c, houses=[2, 7, 8, 12] if a == "Mars" else []) for a, b, c in t.REMEDIES]
         moon_end = max(i for i, x in enumerate(topics) if x == "Moon")
         self.assertEqual(r["remedies"][moon_end - 2:moon_end + 1], new[:3])      # her Q&A rows close the Moon's list
         self.assertEqual(r["remedies"][moon_end + 1:moon_end + 10], new[3:])     # then Mars and Kuja, before Mercury
-        self.assertEqual(topics[moon_end + 10], "Mercury")
+        self.assertEqual(topics[moon_end + 10:moon_end + 12], ["Kuja", "Mercury"])   # (the 29 Oct class's Kuja row)
+
+    def test_s25_class_rows_present(self):
+        import session25_class_texts as t
+        r = rules()
+        for row in r["graha_in_bhava"]:
+            key = (row["planet"], row["house"])
+            self.assertEqual(row["if_weak"], t.IF_WEAK.get(key, []), key)
+            self.assertEqual(row["if_strong"], t.IF_STRONG.get(key, []), key)
+            if key in t.GRAHA_IN_BHAVA_EXTRA:
+                self.assertEqual(row["extra"], t.GRAHA_IN_BHAVA_EXTRA[key], key)
+        rem = r["remedies"]
+        self.assertTrue(all(isinstance(x["houses"], list) for x in rem))
+        self.assertEqual({tuple(x["houses"]) for x in rem if x["topic"] == "Mars"}, {(2, 7, 8, 12)})
+        self.assertEqual({tuple(x["houses"]) for x in rem if x["topic"] not in ("Mars", "Mercury", "Jupiter")}, {()})
+        new = [dict(topic=a, text=b, source=d, houses=c) for a, b, c, d in t.REMEDIES]
+        topics = [x["topic"] for x in rem]
+        merc = topics.index("Mercury")                                       # the slides' Mercury row, then hers
+        self.assertEqual(rem[merc + 1:merc + 25], new[:24])
+        kuja_end = max(i for i, x in enumerate(topics) if x == "Kuja")
+        self.assertEqual(rem[kuja_end], new[24])                             # the child's row closes the Kuja rows
 
     def test_round1_rows_present(self):
         import session28_29_teacher_texts as t
@@ -281,7 +306,7 @@ class TeacherRows(unittest.TestCase):
                                               for f, to, st, a, ag, x, s in t.DEGREE_STAGES])
         whens = {(c["class"], c["applies"]): c["when"] for c in r["class_rules"] if c["when"]}
         self.assertEqual(whens, {("Dusthana", "malefic"): "not weak"})
-        self.assertEqual(r["remedies"][-1], dict(topic="Tip", text=t.REMEDIES[0][1], source="S29 p.50"))
+        self.assertEqual(r["remedies"][-1], dict(topic="Tip", text=t.REMEDIES[0][1], source="S29 p.50", houses=[]))
         keys = list(r)
         self.assertLess(keys.index("chart_readings"), keys.index("degree_stages"))
         self.assertLess(keys.index("degree_stages"), keys.index("reference"))
@@ -599,6 +624,7 @@ class SheetValidation(unittest.TestCase):
             wb["S23_LifeAreas"].cell(row=3, column=4, value="Jupitor")
             wb["S23_Conditions"].cell(row=2, column=1, value="saturn_maturs")
             wb["S23_Remedies"].cell(row=2, column=1, value="Moom")
+            wb["S23_Remedies"].cell(row=3, column=4, value="2, 13")
             wb["S23_BhavaLordIn"].cell(row=2, column=6, value="strng")
             wb["S23_BhavaLordIn"].cell(row=3, column=7, value="maybe")
             self.saturn_row = self.find(wb, "AspectMeaning", 1, "Saturn")
@@ -608,6 +634,7 @@ class SheetValidation(unittest.TestCase):
         self.assertIn("S23_LifeAreas row 3: Karaka 'Jupitor'", msg)
         self.assertIn("S23_Conditions row 2: Key 'saturn_maturs'", msg)
         self.assertIn("S23_Remedies row 2: Topic 'Moom'", msg)
+        self.assertIn("S23_Remedies row 3: Houses '2, 13' is not a list of houses 1-12", msg)
         self.assertIn("S23_BhavaLordIn row 2: Condition 'strng' is not one of (blank), strong, weak", msg)
         self.assertIn("S23_BhavaLordIn row 3: Exchange 'maybe' is not one of (blank), yes", msg)
 

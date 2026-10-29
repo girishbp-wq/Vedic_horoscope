@@ -4,9 +4,9 @@
     python apply_teacher_slides.py
 
 Reads session23_rules.previous.json (the rules as shipped before these sessions), adds the rows from
-session23_teacher_slides.py (Sessions 23-27), session28_29_teacher_texts.py (Sessions 28-29) and
-session24_class_texts.py (the class of 22 Oct 2026), and writes session23_rules.json and the SESSION23-DATA block of
-index.html.
+session23_teacher_slides.py (Sessions 23-27), session28_29_teacher_texts.py (Sessions 28-29),
+session24_class_texts.py (the class of 22 Oct 2026) and session25_class_texts.py (the class of 29 Oct 2026), and
+writes session23_rules.json and the SESSION23-DATA block of index.html.
 On the user's PC the same rows reach the master workbook through `make_session23_xlsx.py --install`.
 """
 import copy
@@ -17,6 +17,7 @@ import sys
 import build_session23 as b23
 import session23_teacher_slides as ts
 import session24_class_texts as t24
+import session25_class_texts as t25
 import session28_29_teacher_texts as t28
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -106,9 +107,33 @@ def apply_s24_class(rules):
     return rules
 
 
+def apply_s25_class(rules):
+    """A copy of `rules` (as apply_s24_class() returns them) with the class of 29 Oct 2026: the recording points of
+    Mercury and Jupiter in each bhāva, the points for a weak or a strong planet (every row gains if_weak and
+    if_strong), and her remedies by house — every remedy row gains `houses` (the Mars rows 2, 7, 8, 12, the rule the
+    code applied until now; the others none), her Mercury and Jupiter rows follow the slides' Mercury row, and her row
+    for a child closes the Kuja rows."""
+    rules = copy.deepcopy(rules)
+    for row in rules["graha_in_bhava"]:
+        key = (row["planet"], row["house"])
+        if key in t25.GRAHA_IN_BHAVA_EXTRA:
+            row["extra"] = list(t25.GRAHA_IN_BHAVA_EXTRA[key])
+        row["if_weak"] = list(t25.IF_WEAK.get(key, []))
+        row["if_strong"] = list(t25.IF_STRONG.get(key, []))
+    rem = rules["remedies"]
+    for r in rem:
+        r["houses"] = [2, 7, 8, 12] if r["topic"] == "Mars" else []
+    new = [dict(topic=t, text=x, source=s, houses=list(h)) for t, x, h, s in t25.REMEDIES]
+    kuja_end = max(i for i, r in enumerate(rem) if r["topic"] == "Kuja") + 1
+    rem[kuja_end:kuja_end] = [r for r in new if r["topic"] == "Kuja"]
+    after_mercury = max(i for i, r in enumerate(rem) if r["topic"] == "Mercury") + 1
+    rem[after_mercury:after_mercury] = [r for r in new if r["topic"] != "Kuja"]
+    return rules
+
+
 def apply_all(previous):
     """Every release step on `previous`, in order: what session23_rules.json holds (bar the reference tables)."""
-    return apply_s24_class(apply_s28_29(apply(previous)))
+    return apply_s25_class(apply_s24_class(apply_s28_29(apply(previous))))
 
 
 def main():
