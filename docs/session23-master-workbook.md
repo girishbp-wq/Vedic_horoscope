@@ -82,6 +82,39 @@ rows ("For Kuja doṣa: …") show, with the `Mars` rows, only in the page's Kuj
 present and not cancelled — so the card never lists a Kuja remedy for a doṣa the section has cancelled ("Remedies to
 strengthen a graha" lists them under their own name, Kuja doṣa). Every row shows its source. A row you add on
 `S23_Remedies` with topic `Mars` shows in all of these, one with topic `Kuja` with the Kuja rows, each with your source.
+(Since the class of 29 Oct, below, a `Mars` row needs its Houses filled to show on the card.)
+
+## Session 25 class (29 Oct 2026) — one-time update
+1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
+2. Run `python make_session23_xlsx.py --install`. It upgrades your `S23_` data sheets as described above:
+   - `S23_GrahaInBhava` gains two columns, **IfWeak** and **IfStrong** (one point per line, like `Extra`). Mercury's and
+     Jupiter's 24 rows get the points she made in class: in `Extra` the points that hold whatever the planet's
+     strength (Jupiter's "respect" line in the 2nd, 3rd, 5th, 7th, 9th and 10th), in `IfWeak` and `IfStrong` the
+     ones for a weak or a strong planet. A row you edited is kept and listed.
+   - `S23_Remedies` gains a **Houses** column: a comma list such as `2, 7, 8, 12`; blank means a general remedy.
+     The `Mars` rows get `2, 7, 8, 12` — also a `Mars` row you edited or added before this release, which is what
+     the page did for them. Her Mercury and Jupiter remedies by house, a general Mercury remedy and a `Kuja` row for
+     a child are added.
+
+   It also rebuilds the calculator sheets: `S23_Predict_Calc` gains **Overall strength**, **Stronger**, **Weaker**
+   and **Her points by strength**, and its Remedies column now goes by Houses; `S23_Bhava_Calc` gains the same four.
+3. Open the workbook in Excel, save once, close it, and run `publish.bat` — it should report no changes.
+
+How the page and the calculator read them:
+- **Remedies by house.** A remedy row shows on a planet's card (both views of the Prediction, `S23_Predict_Calc`
+  and `S23_Bhava_Calc`) when its Topic is that planet and its Houses include the planet's house from the Lagna. A
+  row with blank Houses is a general remedy: it shows only in "Remedies to strengthen a graha", where every row says
+  the houses it is for. A row you add with topic `Venus` and Houses `6` shows for Venus in the 6th.
+- **Strength.** The card shows two lines. **Strength (S29)** is the Session 29 word, unchanged; it still chooses
+  Session 29's own texts (the lord-in-house rows, the class rule for a planet that is not weak, the life-area
+  kārakas). **Overall, with the class of 29 Oct** adds her class: a planet is weak outright when the Session 29 word
+  is weak or it sits with Saturn, Mars or Ketu; otherwise it is made stronger by a good sign (exalted,
+  Mūlatrikoṇa, own or a friend's), by a Kendra or Trikoṇa, by a benefic with it (Jupiter, Venus, Mercury, the Moon)
+  or aspecting it, and weaker by a duṣthāna (6, 8, 12) or a malefic's aspect (Sun, Mars, Saturn, Rāhu, Ketu) —
+  strong, weak, mixed (both) or depends (neither). The line lists what made it so.
+- **Her points by strength.** `IfWeak` shows under "As Mercury is weak:" when the overall word is weak, `IfStrong`
+  under "As Mercury is strong:" when it is strong; when it is mixed or depends both show, under "If Mercury is
+  strong:" and "If Mercury is weak:".
 
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
