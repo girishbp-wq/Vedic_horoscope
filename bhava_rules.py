@@ -796,10 +796,6 @@ def twelfth_line(rules, house):
     return next((r["text"] for r in rules["conditions"] if r["key"] == "twelfth_house"), "")
 
 
-MARS_REMEDY_HOUSES = (2, 7, 8, 12)     # class of 22 Oct 2026: the 8th "irrespective of the planet with Mars"; the 2nd and
-#                                        12th "the same remedies"; the 7th, Kuja doṣa
-
-
 def planet_remedies(rules, planet, house):
     """Her remedies for this planet in this house (S23_Remedies), each {text, source}: the rows of its topic whose
     Houses include the house — the Mars rows 2, 7, 8, 12 (class of 22 Oct 2026), Mercury's and Jupiter's by house

@@ -1799,7 +1799,7 @@ class BhavaView(unittest.TestCase):
         self.assertIn("its lord Mars is the Badhakādhipati", n["badhaka"])
         self.assertEqual(n["occupants"], ["Sun", "Mars", "Mercury"])
         for dts in n["occupantDts"]:
-            self.assertEqual(dts[:5], ["House", "Roles", "Dignity", "Digbala", "Strength"])
+            self.assertEqual(dts[:6], ["House", "Roles", "Dignity", "Digbala", "Strength (S29)", "Overall, with the class of 29 Oct"])
         self.assertEqual([x["planet"] for x in n["lord"]], ["Mars"])
         self.assertNotIn("Class rules", n["lord"][0]["dts"])
         self.assertEqual(n["areas"], [12, 15])
@@ -2034,7 +2034,7 @@ class Session24Remedies(unittest.TestCase):
             await page.click('.s23-view-btn[data-view="bhava"]');
             out.phoneBhava = await cut('#s23-view-bhava');
             out.phone = await page.evaluate(() => document.documentElement.scrollWidth);
-            await page.evaluate(() => S23.remedies.push({topic: "Mars", text: "My own Mars remedy.", source: "me"}));
+            await page.evaluate(() => S23.remedies.push({topic: "Mars", text: "My own Mars remedy.", source: "me", houses: [8]}));
             out.userRow = await marsIn(340);
             return out;
         """ % json.dumps(base))
@@ -2075,7 +2075,7 @@ class Session24Remedies(unittest.TestCase):
         self.assertTrue(mars["found"] and kuja["found"])
         self.assertRows(mars["items"], self.mars)
         self.assertRows(kuja["items"], self.kuja)
-        self.assertIn("2nd, 7th, 8th or 12th", mars["when"])
+        self.assertTrue(all("for Mars in the 2nd, 7th, 8th or 12th house" in i for i in mars["items"]), mars["items"])
         self.assertIn("Kuja Doṣa section", kuja["when"])
 
     def test_kuja_section_lists_them_only_when_present_and_not_cancelled(self):
@@ -2086,6 +2086,178 @@ class Session24Remedies(unittest.TestCase):
         self.assertLessEqual(self.r["phone"], 375)
         self.assertTrue(self.r["phoneLayer"]["shown"])                  # the Mars card with its remedies is on screen
         self.assertEqual((self.r["phoneLayer"]["cut"], self.r["phoneBhava"]), ([], []))
+
+
+# The class of 29 Oct 2026, as Python reads them: (Lagna index, sidereal longitudes, the planet looked at).
+S25_CASES = {
+    "strong": (4, {"Sun": 10, "Moon": 10, "Mercury": 255, "Jupiter": 130, "Venus": 12, "Saturn": 5, "Rahu": 38, "Ketu": 218, "Mars": 3}, "Mercury"),
+    "weak": (4, {"Sun": 10, "Moon": 10, "Mercury": 165, "Jupiter": 130, "Venus": 12, "Saturn": 5, "Rahu": 8, "Ketu": 188, "Mars": 153}, "Mercury"),
+    "mixed": (4, {"Sun": 10, "Moon": 10, "Mercury": 45, "Jupiter": 130, "Venus": 12, "Saturn": 5, "Rahu": 8, "Ketu": 188, "Mars": 183}, "Mercury"),
+    "both": (3, {"Sun": 130, "Moon": 70, "Mercury": 140, "Jupiter": 15, "Venus": 160, "Saturn": 35, "Rahu": 38, "Ketu": 218, "Mars": 33}, "Jupiter"),
+    "depends": (10, {"Sun": 50, "Moon": 40, "Mercury": 15, "Jupiter": 45, "Venus": 42, "Saturn": 35, "Rahu": 98, "Ketu": 278, "Mars": 33}, "Mercury"),
+}
+
+
+@needs_browser
+class Session25Class(unittest.TestCase):
+    """The class of 29 Oct 2026: the planet card and the bhāva view show the Session 29 strength and the overall one, the
+    strength points under "As … is weak:" (or strong), or "If …" when the overall word is mixed or depends; the remedies
+    by house; "Remedies to strengthen a graha" says the houses each row is for; her Kuja row for a child."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            const cases = %s, out = {};
+            const look = async ([lg, sid, planet]) => {
+              await page.evaluate(([s, l]) => renderS23Sections(s, l, {retro: {Rahu: true, Ketu: true}}), [sid, lg + 1]);
+              return page.evaluate(planet => {
+                const groups = el => el ? [...el.querySelectorAll('.s23-strength-points > p.s23-sub')].map(p =>
+                  [p.textContent, [...p.nextElementSibling.querySelectorAll('li')].map(li => li.textContent)]) : null;
+                const card = document.querySelector(`#s23-view-layer .s23-gb[data-planet="${planet}"]`);
+                const occ = document.querySelector(`#s23-view-bhava .s23-bv-planet[data-role="occupant"][data-planet="${planet}"]`);
+                const txt = el => el ? el.textContent : null;
+                const dd = name => { const d = [...occ.querySelectorAll('dl.s23-bv-facts dt')].find(x => x.textContent === name);
+                                     return d ? d.nextElementSibling.textContent : null; };
+                return {s29: txt(card.querySelector('.s23-s29-line')), overall: txt(card.querySelector('.s23-overall-line')),
+                        groups: groups(card), bvGroups: groups(occ), bvS29: dd('Strength (S29)'),
+                        bvOverall: dd('Overall, with the class of 29 Oct'),
+                        remedies: [...card.querySelectorAll('ul.s23-remedies li')].map(li => li.textContent),
+                        bvRemedies: [...occ.querySelectorAll('ul.s23-remedies li')].map(li => li.textContent),
+                        bold: card.querySelectorAll('.s23-strength-points b').length};
+              }, planet);
+            };
+            for (const k in cases) out[k] = await look(cases[k]);
+            await page.evaluate(() => {
+              const cell = S23.graha_in_bhava.find(x => x.planet === "Mercury" && x.house === 2);
+              cell.if_weak = ['Mind <b>"this"</b> & that'].concat(cell.if_weak);
+            });
+            out.escaped = await look(cases.weak);
+            await page.evaluate(() => renderGrahaReference());
+            out.ref = await page.evaluate(() => {
+              const box = document.getElementById('akshara-body');
+              const entry = name => {
+                const head = [...box.querySelectorAll('p strong')].find(s => s.textContent === name);
+                const ul = head && head.closest('p').nextElementSibling;
+                return ul ? [...ul.querySelectorAll('li')].map(li => li.textContent) : [];
+              };
+              return {Mercury: entry('Mercury'), Jupiter: entry('Jupiter'), Mars: entry('Mars'),
+                      note: [...box.querySelectorAll('.akshara-note')].map(n => n.textContent).find(t => t.includes('Remedies are given')) || ""};
+            });
+            out.kuja = await page.evaluate(() => {
+              renderKujaSection({Mars: 7, Venus: 3, Moon: 1, Saturn: 2}, 1, '1990-01-01', {Mars: 190, Moon: 15});
+              return [...document.querySelectorAll('#kuja-remedies li')].map(li => li.textContent);
+            });
+            await page.setViewportSize({width: 375, height: 800});
+            await look(cases.both);
+            const wide = () => page.evaluate(() => {
+              const vw = document.documentElement.clientWidth, found = [];
+              for (const el of document.querySelectorAll('.s23-strength-points *, .s23-overall-line *, .s23-s29-line *, dl.s23-bv-facts *')) {
+                if (!el.offsetParent) continue;
+                const r = el.getBoundingClientRect();
+                if (r.width && r.right > vw + 1) found.push(el.tagName + ' ' + Math.round(r.right));
+              }
+              return {scroll: document.documentElement.scrollWidth, found: found.slice(0, 5)};
+            });
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            out.phoneBhava = await wide();
+            await page.click('.s23-view-btn[data-view="layer"]');
+            out.phoneLayer = await wide();
+            return out;
+        """ % json.dumps(S25_CASES))
+        import bhava_rules as br
+        cls.br, cls.rules = br, br.load_rules()
+
+    def python(self, key):
+        lg, sid, planet = S25_CASES[key]
+        ctx = self.br.context(lg, {p: int(v // 30) for p, v in sid.items()}, {p: v % 30 for p, v in sid.items()}, True)
+        return planet, ctx
+
+    def want_groups(self, key):
+        planet, ctx = self.python(key)
+        word, pts = self.br.strength_overall(self.rules, ctx, planet)["word"], self.br.strength_points(self.rules, ctx, planet)
+        out = []
+        for when in ("strong", "weak"):
+            texts = [p["text"] for p in pts if p["when"] == when]
+            if texts:
+                out.append([f"{'As' if word == when else 'If'} {planet} is {when}:", texts])
+        return out
+
+    def test_the_words_are_the_ones_these_cases_stand_for(self):
+        for key, word in [("strong", "strong"), ("weak", "weak"), ("mixed", "mixed"), ("both", "mixed"), ("depends", "depends")]:
+            planet, ctx = self.python(key)
+            self.assertEqual(self.br.strength_overall(self.rules, ctx, planet)["word"], word, key)
+
+    def test_card_shows_both_strength_lines(self):
+        for key in S25_CASES:
+            planet, ctx = self.python(key)
+            s29, o = self.br.strength_detail(self.rules, ctx, planet), self.br.strength_overall(self.rules, ctx, planet)
+            got = self.r[key]
+            self.assertTrue(got["s29"].startswith(f"Strength (S29): {s29['word']}"), (key, got["s29"]))
+            self.assertTrue(got["overall"].startswith(f"Overall, with the class of 29 Oct: {o['word']}"), (key, got["overall"]))
+            for phrase in o["stronger"] + o["weaker"]:
+                self.assertIn(phrase, got["overall"], key)
+            self.assertIn(o["word"], got["bvOverall"], key)
+            self.assertTrue(got["bvS29"].startswith(s29["word"]), (key, got["bvS29"]))
+
+    def test_depends_says_nothing_tips_it(self):
+        self.assertIn("nothing in the chart makes it stronger or weaker", self.r["depends"]["overall"])
+
+    def test_points_are_labelled_by_the_overall_word(self):
+        for key in S25_CASES:
+            want = self.want_groups(key)
+            self.assertTrue(want, key)
+            self.assertEqual(self.r[key]["groups"], want, key)
+            self.assertEqual(self.r[key]["bvGroups"], want, key)
+        self.assertEqual([g[0] for g in self.r["both"]["groups"]], ["If Jupiter is strong:", "If Jupiter is weak:"])
+        self.assertEqual([g[0] for g in self.r["weak"]["groups"]], ["As Mercury is weak:"])
+        self.assertEqual([g[0] for g in self.r["strong"]["groups"]], ["As Mercury is strong:"])
+        self.assertEqual([g[0] for g in self.r["depends"]["groups"]], ["If Mercury is weak:"])
+
+    def test_remedies_by_house_on_the_card(self):
+        for key in S25_CASES:
+            planet, ctx = self.python(key)
+            want = self.br.planet_remedies(self.rules, planet, self.br.house_of(ctx["lagna"], ctx["signs"][planet]))
+            for got in (self.r[key]["remedies"], self.r[key]["bvRemedies"]):
+                self.assertEqual(len(got), len(want), key)
+                for g, w in zip(got, want):
+                    g = " ".join(g.split())
+                    self.assertTrue(g.startswith(" ".join(w["text"].split())) and g.endswith(w["source"]), (g, w))
+        self.assertEqual(len(self.r["weak"]["remedies"]), 3)                  # her three for Mercury in the 2nd
+
+    def test_point_text_is_escaped(self):
+        got = self.r["escaped"]
+        self.assertEqual(got["bold"], 0)
+        self.assertEqual(got["groups"][0][1][0], 'Mind <b>"this"</b> & that')
+
+    def test_graha_remedies_list_says_the_houses(self):
+        ref = self.r["ref"]
+        for planet in ("Mercury", "Jupiter", "Mars"):
+            for row in [x for x in self.rules["remedies"] if x["topic"] == planet]:
+                text = " ".join(row["text"].split())
+                li = [" ".join(i.split()) for i in ref[planet] if " ".join(i.split()).startswith(text)]
+                self.assertEqual(len(li), 1, (planet, text))
+                hs = [self.br.ordinal(h) for h in row["houses"]]
+                if hs:
+                    where = hs[0] if len(hs) == 1 else ", ".join(hs[:-1]) + " or " + hs[-1]
+                    self.assertIn(f"for {planet} in the {where} house", li[0])
+                else:
+                    self.assertNotIn(f"for {planet} in the", li[0])
+                self.assertTrue(li[0].endswith(row["source"]), li[0])
+        self.assertIn("for Mars in the 2nd, 7th, 8th or 12th house", " ".join(ref["Mars"]))
+        self.assertIn("Mercury and Jupiter", ref["note"])
+
+    def test_kuja_section_has_her_row_for_a_child(self):
+        child = [x for x in self.rules["remedies"] if x["topic"] == "Kuja" and "child" in x["text"]]
+        self.assertEqual(len(child), 1)
+        self.assertTrue(any(" ".join(li.split()).startswith(" ".join(child[0]["text"].split())) for li in self.r["kuja"]))
+
+    def test_phone_wraps_the_new_blocks(self):
+        for k in ("phoneBhava", "phoneLayer"):
+            self.assertLessEqual(self.r[k]["scroll"], 375, k)
+            self.assertEqual(self.r[k]["found"], [], k)
 
 
 # Sidereal positions from the Swiss Ephemeris 2.10 (pyswisseph, Moshier ephemeris, calc_ut with SEFLG_SIDEREAL):

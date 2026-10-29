@@ -6,7 +6,7 @@ were; they show on the page as "From the recording". Her examples from real char
 
 The remedies: she gave the Mars remedy for Mars in the 8th ("irrespective of the planet with Mars"), said the 2nd and
 the 12th take the same, and gave the Kuja rows for Kuja doṣa (Mars in the 7th); "otherwise it is not required".
-bhava_rules.MARS_REMEDY_HOUSES carries that rule for the "Mars" rows; the "Kuja" rows show only in the page's Kuja Doṣa
+The "Mars" rows carry that rule in their Houses (2, 7, 8, 12; S23_Remedies, class of 29 Oct); the "Kuja" rows show only in the page's Kuja Doṣa
 section, when the doṣa is present and not cancelled (the user's ruling of 23 Oct 2026). The three Moon rows are her
 answer for an emotional mind.
 

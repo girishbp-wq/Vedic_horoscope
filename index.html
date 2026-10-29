@@ -586,7 +586,8 @@ details.section[open] > summary::after { content: "−"; }
 .s23-chip.lost { background: #fde0e0; color: #8a1e22; border-color: #e3a2a4; }
 .s23-chip.s23-nature.benefic { background: #e8f3ea; color: #2d6a3a; border-color: #a9d1b2; }
 .s23-chip.s23-nature.malefic, .s23-chip.s23-nature.mild-malefic { background: #f7ece4; color: #7a3b16; border-color: #dcb79c; }
-.s23-points, .s23-extra, .s23-class-texts, .s23-nature-lines, .s23-remedies { margin: 2px 0 6px; padding-left: 18px; }
+.s23-points, .s23-extra, .s23-class-texts, .s23-nature-lines, .s23-remedies, .s23-if-list { margin: 2px 0 6px; padding-left: 18px; }
+.s23-strength-line { margin: 4px 0; font-size: 13.5px; overflow-wrap: anywhere; }
 .s23-src { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 8px; background: #efe9f7; color: #5a3d7a; border: 1px solid #d6c8ea; white-space: nowrap; }
 .s23-twelfth-line { font-style: italic; }
 .s23-conds { margin: 2px 0 6px; padding-left: 18px; }
@@ -616,7 +617,7 @@ details.section[open] > summary::after { content: "−"; }
 tr.s23-subrow td { font-size: 12.5px; background: var(--parchment-2); }
 tr.s23-subrow.now td { font-weight: 600; }
 @media print { .s23-open { display: none; } }
-.s23-points li, .s23-extra li, .s23-class-texts li, .s23-nature-lines li, .s23-conds li, .s23-remedies li { margin: 4px 0; font-size: 13.5px; }
+.s23-points li, .s23-extra li, .s23-class-texts li, .s23-nature-lines li, .s23-conds li, .s23-remedies li, .s23-if-list li { margin: 4px 0; font-size: 13.5px; }
 .s23-sub { font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--saffron); margin: 8px 0 2px; }
 .s23-pairs { padding-left: 18px; margin: 4px 0 12px; }
 .s23-pairs li { margin: 8px 0; font-size: 13.5px; }
@@ -5104,17 +5105,23 @@ function renderGrahaReference() {
   // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-25 (S23.remedies, from the S23_Remedies sheet)
   const s23Rem = p => S23.remedies.filter(r=>r.topic===p);
   // "Kuja" is a topic of S23_Remedies, not a graha: its rows show under their own name, after Mars's
-  const remedyWhen = {Moon: "for a debilitated or an afflicted Moon", Mars: "for Mars in the 2nd, 7th, 8th or 12th house",
+  const remedyWhen = {Moon: "for a debilitated or an afflicted Moon",
     Kuja: "with Mars's, in the Kuja Doṣa section when the doṣa is present and not cancelled"};
+  // a row's Houses (S23_Remedies): it shows on the planet's card when the planet sits in one of them
+  const remedyHouses = (p, hs) => {
+    if(!hs || !hs.length) return "";
+    const n=hs.map(ord), list=n.length===1 ? n[0] : n.slice(0,-1).join(", ")+" or "+n[n.length-1];
+    return ` <span class="dig-note s23-rem-houses">— for ${p} in the ${list} house</span>`;
+  };
   const remedyName = {Kuja: "Kuja doṣa"};
   for (const p of ["Moon","Mars","Kuja","Mercury","Jupiter","Venus","Saturn"]) {
     const old = GRAHA_REMEDIES[p] || [], taught = s23Rem(p);
     if (!old.length && !taught.length) continue;
     html += `<p style="margin:10px 0 4px;"><strong>${remedyName[p]||p}</strong>${remedyWhen[p]?` <span class="dig-note">${remedyWhen[p]}</span>`:""}</p>
-      <ul>${old.map(r=>`<li>${r}</li>`).join("")}${taught.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
+      <ul>${old.map(r=>`<li>${r}</li>`).join("")}${taught.map(r=>`<li>${s23Para(r.text)}${remedyHouses(p, r.houses)}${s23Src(r.source)}</li>`).join("")}</ul>`;
     if (p==="Saturn") html += `<p class="dig-note">${SATURN_GREATEST_REMEDY}</p>`;
   }
-  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn, and in class for Mars; other grahas will be added as they are taught.</p>`;
+  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn, and in class for Mars (22 Oct 2026), Mercury and Jupiter (29 Oct 2026); other grahas will be added as they are taught. A remedy for a house shows on the planet's card when the planet sits there.</p>`;
   const tips = s23Rem("Tip");
   if (tips.length) html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Tips of the day</h4>`
     +`<ul class="s23-tips">${tips.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
@@ -6680,6 +6687,41 @@ function s23StrengthDetail(ctx, p){
   return {word:"depends", reasons:[label]};
 }
 function s23Strength(ctx, p){ return s23StrengthDetail(ctx, p).word; }
+/* Overall strength with the class of 29 Oct 2026 (spec D4): mirrors strength_overall() and strength_points().
+   The Session 29 word above still chooses Session 29's own texts. */
+const S23_WITH_MALEFICS = ["Saturn","Mars","Ketu"];
+function s23HouseStrengthPhrase(lg, house){
+  const kendra=s23ClassHousesAt("Kendra", lg).includes(house), trikona=s23ClassHousesAt("Trikona", lg).includes(house);
+  if(kendra && trikona) return `in the ${ord(house)} (Kendra and Trikoṇa)`;
+  if(kendra || trikona) return `in a ${kendra ? "Kendra" : "Trikoṇa"} (the ${ord(house)})`;
+  return "";
+}
+function s23StrengthOverall(ctx, p){
+  const lg=ctx.lagna, sg=ctx.signs, sign=sg[p], house=s23HouseOf(lg, sign);
+  const s29=s23StrengthDetail(ctx, p), label=planetDignity(p, sign+1, ctx.degs[p]).label;
+  const stronger=S23_STRONG_LABELS.includes(label) ? [label] : [];
+  const weaker=s29.word==="weak" ? s29.reasons.slice() : [];
+  const phrase=s23HouseStrengthPhrase(lg, house);
+  if(phrase) stronger.push(phrase);
+  const company=S23_PLANETS.filter(q=>q!==p && sg[q]!==undefined && sg[q]===sign);
+  stronger.push(...company.filter(q=>S23_BENEFICS.includes(q)).map(q=>`with ${q}`));
+  const outright=company.filter(q=>S23_WITH_MALEFICS.includes(q)).map(q=>`with ${q}`);
+  weaker.push(...outright);
+  if(s23ClassHousesAt("Dusthana", lg).includes(house)) weaker.push(`in a duṣthāna (the ${ord(house)})`);
+  for(const a of s23AspectsOn(ctx, sign)) if(a.by!==p){
+    if(S23_BENEFICS.includes(a.by)) stronger.push(`aspected by ${a.by}`);
+    else if(S23_STRENGTH_MALEFICS.includes(a.by)) weaker.push(`aspected by ${a.by}`);
+  }
+  const word=(s29.word==="weak" || outright.length) ? "weak"
+    : stronger.length && weaker.length ? "mixed" : stronger.length ? "strong" : weaker.length ? "weak" : "depends";
+  return {word, stronger, weaker};
+}
+function s23StrengthPoints(ctx, p){
+  const house=s23HouseOf(ctx.lagna, ctx.signs[p]);
+  const cell=S23.graha_in_bhava.find(x=>x.planet===p && x.house===house), word=s23StrengthOverall(ctx, p).word;
+  return (word!=="weak" ? (cell.if_strong||[]).map(t=>({when:"strong", text:t})) : [])
+    .concat(word!=="strong" ? (cell.if_weak||[]).map(t=>({when:"weak", text:t})) : []);
+}
 function s23LordsHouses(lg, p){ const out=[]; for(let h=1;h<=12;h++) if(s23HouseLord(lg,h)===p) out.push(h); return out; }
 function s23RuledPhrase(hs){
   if(!hs.length) return "";
@@ -6893,12 +6935,11 @@ function s23TwelfthLine(house){
   const r=S23.conditions.find(x=>x.key==="twelfth_house");
   return r ? r.text : "";
 }
-/* Her Mars remedy (class of 22 Oct 2026) — twin of bhava_rules.MARS_REMEDY_HOUSES / planet_remedies(). The "Kuja" rows
-   show only in the Kuja Doṣa section, which knows whether the doṣa is cancelled. */
-const S23_MARS_REMEDY_HOUSES=[2,7,8,12];
+/* Her remedies by house (classes of 22 and 29 Oct 2026) — twin of planet_remedies(): the rows of the planet's topic
+   whose Houses include its house (blank Houses = a general remedy). The "Kuja" rows show only in the Kuja Doṣa
+   section, which knows whether the doṣa is cancelled. */
 function s23PlanetRemedies(planet, house){
-  if(planet!=="Mars" || !S23_MARS_REMEDY_HOUSES.includes(house)) return [];
-  return S23.remedies.filter(r=>r.topic==="Mars").map(r=>({text:r.text, source:r.source}));
+  return S23.remedies.filter(r=>r.topic===planet && (r.houses||[]).includes(house)).map(r=>({text:r.text, source:r.source}));
 }
 function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
   ctx=ctx||s23Ctx(lagnaN, pbr, deg!=null ? {[planet]:deg} : {}, moonWaxing);
@@ -6915,6 +6956,7 @@ function s23GrahaBhava(lagnaN, pbr, planet, deg, moonWaxing, ctx){
     status:cell.status, source:cell.source, points:cell.points, extra:cell.extra,
     dignity:{label:dig.label, flag:dig.flag, bala:dig.bala, note:dig.note}, dignity_line:dignityLine, dignity_status:dignityStatus,
     twelfth_line:s23TwelfthLine(house), nature_lines:s23BhavaNatureLines(planet, house), remedies:s23PlanetRemedies(planet, house),
+    overall:s23StrengthOverall(ctx, planet), strength_points:s23StrengthPoints(ctx, planet),
     digbala_line:digbalaLine, digbala_status: dg ? row.status : null, classes:reading.classes, class_texts:reading.texts,
     degree_stage:s23DegreeStage(planet, deg, ctx.age),
     readings:s23ChartReadings(ctx).filter(x=>(x.kind==="in" && x.on.includes(planet)) || (x.kind==="aspects planet" && x.with.includes(planet))).map(x=>x.text)};
@@ -7176,7 +7218,7 @@ function s23PlanetFacts(ctx, planet){
     classes:s23HouseClassMatrix(lg+1)[house-1].classes, roles:s23RolesAt(lg, sg)[planet] || [], dignity:g.dignity,
     dignity_effect: eff ? eff.text : "", dignity_status:g.dignity_status,
     digbala: row ? (dg || "") : null, digbala_text:text, digbala_status:g.digbala_status,
-    strength:s23StrengthDetail(ctx, planet), class_texts:g.class_texts};
+    strength:s23StrengthDetail(ctx, planet), overall:g.overall, class_texts:g.class_texts};
 }
 function s23BhavaReading(ctx, house, layer2){
   const lg=ctx.lagna, sg=ctx.signs, pbr=s23PbrOf(ctx);
@@ -7193,7 +7235,7 @@ function s23BhavaReading(ctx, house, layer2){
     const g=s23GrahaBhava(lg+1, pbr, p, ctx.degs[p], ctx.waxing, ctx), x=gr[p];
     return {planet:p, nature:s23NatureAt(p), facts:s23PlanetFacts(ctx, p), text:g.points.join("\n\n"), status:g.status, source:g.source,
       extra:g.extra, moon_strength:g.moon_strength, nature_lines:g.nature_lines, twelfth_line:g.twelfth_line, degree_stage:g.degree_stage,
-      conditions:conds.filter(c=>c.planet===p), readings:g.readings, remedies:g.remedies,
+      conditions:conds.filter(c=>c.planet===p), readings:g.readings, remedies:g.remedies, strength_points:g.strength_points,
       graha_rashi:{text:x.text, status:x.status, tatwa:x.tatwa, direction:x.direction, varna:x.varna, mode:x.mode},
       dignity_line:g.dignity_line, dignity_status:g.dignity_status};
   });
@@ -7337,6 +7379,27 @@ function s23StrengthChip(st){
   const cls={strong:"strong", weak:"lost", mixed:"active", depends:""}[st.word];
   return `<span class="s23-chip s23-strength ${cls}" title="Strength (Session 29)">${st.word} — ${_esc(st.reasons.join(", "))}${tag}</span>`;
 }
+/* The class of 29 Oct 2026 (spec D4): the overall word with what makes the planet stronger or weaker, and her points
+   for the planet in this house under the word that chose them. */
+function s23OverallText(o){
+  const cls={strong:"strong", weak:"lost", mixed:"active", depends:""}[o.word];
+  const why=[o.stronger.length?`stronger: ${o.stronger.join(", ")}`:"", o.weaker.length?`weaker: ${o.weaker.join(", ")}`:""].filter(Boolean);
+  return `<span class="s23-chip s23-overall ${cls}" title="Overall strength, with the class of 29 Oct 2026">${o.word}</span> — `
+    +_esc(why.length ? why.join("; ") : "nothing in the chart makes it stronger or weaker");
+}
+function s23StrengthLines(st, o){
+  return `<p class="s23-strength-line s23-s29-line"><strong>Strength (S29):</strong> ${s23StrengthChip(st)}</p>`
+    +`<p class="s23-strength-line s23-overall-line"><strong>Overall, with the class of 29 Oct:</strong> ${s23OverallText(o)}</p>`;
+}
+function s23StrengthPointsList(planet, word, pts){
+  let h="";
+  for(const when of ["strong","weak"]){
+    const texts=pts.filter(x=>x.when===when).map(x=>x.text);
+    if(texts.length) h+=`<p class="s23-sub">${word===when?"As":"If"} ${planet} is ${when}:</p>`
+      +`<ul class="s23-if-list s23-if-${when}">${texts.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`;
+  }
+  return h ? `<div class="s23-strength-points">${h}</div>` : "";
+}
 function s23DegreeLine(ds, deg){
   if(!ds) return "";
   return `<p class="s23-degree"><strong>${_esc(ds.stage)}</strong> (${Math.floor(deg)}° in the sign) — ${ds.lines.map(_esc).join(" ")}`
@@ -7376,7 +7439,7 @@ function s23BuildLayerView(sid, lagnaN, extra){
       +`<span class="s23-chip">${g.classes.join(" · ")||"—"}</span></p>`
       +`<ul class="s23-points">${g.points.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>${s23Src(g.source)}`
       +(g.extra.length?`<p class="s23-sub">From the recording</p><ul class="s23-extra">${g.extra.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`:"")
-      +`<p class="s23-sub">Strength</p>`
+      +`<p class="s23-sub">Strength</p>`+s23StrengthLines(st, g.overall)+s23StrengthPointsList(p, g.overall.word, g.strength_points)
       +(g.dignity_line?`<p><span class="s23-dig-line">${_esc(g.dignity_line)}</span> ${s23Tag(g.dignity_status)}</p>`:"")
       +(g.twelfth_line?`<p class="s23-twelfth"><span class="s23-twelfth-line">${_esc(g.twelfth_line)}</span> ${s23Tag("taught")}</p>`:"")
       +(g.digbala_line?`<p><span class="s23-digbala-line">${_esc(g.digbala_line)}</span> ${s23Tag(g.digbala_status)}</p>`:"")
@@ -7474,7 +7537,8 @@ function s23BvFacts(f, full){
       +(f.dignity.note?` <span class="s23-bv-meta">${_esc(f.dignity.note)}</span>`:"")
       +(full && f.dignity_effect?`<br>${_esc(f.dignity_effect)} ${s23Tag(f.dignity_status)}`:"")+`</dd>`
     +`<dt>Digbala</dt><dd><span class="s23-chip ${f.digbala||""}">${{strong:"gains", lost:"loses"}[f.digbala]||"—"}</span> ${_esc(f.digbala_text)}${f.digbala_status?" "+s23Tag(f.digbala_status):""}</dd>`
-    +`<dt>Strength</dt><dd>${s23StrengthChip(f.strength)}</dd>`
+    +`<dt>Strength (S29)</dt><dd>${s23StrengthChip(f.strength)}</dd>`
+    +`<dt>Overall, with the class of 29 Oct</dt><dd>${s23OverallText(f.overall)}</dd>`
     +(full && f.class_texts.length ? `<dt>Class rules</dt><dd><ul class="s23-bv-side">${f.class_texts.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul></dd>` : "")
     +`</dl>`;
 }
@@ -7488,6 +7552,7 @@ function s23BvOccupant(o){
     +(o.moon_strength?`<p class="s23-bv-note">${_esc(o.moon_strength)}</p>`:"")
     +`<div class="s23-bv-text">${s23BvRest(o.text)}${s23Src(o.source)}</div>`
     +(o.extra.length?`<p class="s23-sub">From the recording</p><ul class="s23-bv-side">${o.extra.map(t=>`<li>${s23Para(t)}</li>`).join("")}</ul>`:"")
+    +s23StrengthPointsList(o.planet, o.facts.overall.word, o.strength_points)
     +(side.length?`<ul class="s23-bv-side">${side.map(x=>`<li>${x}</li>`).join("")}</ul>`:"")
     +s23RemedyList(o.remedies)
     +s23ReadingList(o.readings, "s23-readings", "Her example chart (Session 28)")+`</div>`;

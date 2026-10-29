@@ -737,7 +737,7 @@ class MarsRemedies(unittest.TestCase):
 
     def test_the_rows_are_in_the_rules(self):
         self.assertEqual((len(self.mars), len(self.kuja)), (7, 3))                   # + the 29 Oct row for a child
-        self.assertEqual(br.MARS_REMEDY_HOUSES, (2, 7, 8, 12))
+        self.assertEqual({tuple(r["houses"]) for r in RULES["remedies"] if r["topic"] == "Mars"}, {(2, 7, 8, 12)})
 
     def test_mars_in_the_8th_2nd_and_12th(self):
         for h in (2, 8, 12):

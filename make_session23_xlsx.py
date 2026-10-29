@@ -76,8 +76,10 @@ PREDICT_ROW0 = 3                             # Predict_Calc (header row 2); 9 pl
 PREDICT_COLS = dict(planet=1, house=2, nature=3, status=4, points=5, dignity=6, dignity_line=7,
                     digbala_line=8, classes=9, class_texts=10, extra=11,
                     moon_strength=15, nature_lines=16, twelfth_line=17, conditions=18, active=19,
-                    strength=23, reasons=24, degree_stage=25, age_note=26, readings=27, remedies=32)
+                    strength=23, reasons=24, degree_stage=25, age_note=26, readings=27, remedies=32,
+                    overall=33, stronger=34, weaker=35, strength_points=36)
 COMBUST_COL, AFFLICTED_COL, MILD_COL = 20, 21, 22   # Predict_Calc helper columns
+OUTRIGHT_COL = 37                            # Predict_Calc helper: ", with Mars" … (Saturn, Mars or Ketu in its sign)
 REM_SLOTS = 299                              # Predict_Calc: S23_Remedies rows 2-300 feed the Remedies column
 ASPECT_COL0, MALEFIC_COL = 28, 31            # Predict_Calc helpers: signs the planet's aspects fall on (3); malefics aspecting it
 FLAG_ROW0 = 16                               # Predict_Calc: class-rule flags, one row per planet (header row 15)
@@ -514,7 +516,8 @@ def _predict_sheet(ws, rules):
             ws.cell(row=fr, column=2 + m, value=f)
     _predict_s24_27(ws, rules)
     _predict_s28_29(ws, rules)
-    _predict_s24_class(ws)
+    _predict_s25_class(ws, rules)
+    _predict_remedies(ws)
     for c, w in zip("ABCDEFGHIJK", (12, 7, 9, 10, 60, 20, 50, 50, 28, 60, 60)):
         ws.column_dimensions[c].width = w
     for c in "OPQRS":
@@ -627,30 +630,86 @@ def _predict_s24_27(ws, rules):
         ws.cell(row=r, column=19, value=f"=MID({keys},3,32000)")
 
 
-def _predict_s24_class(ws):
-    """The class of 22 Oct 2026 on S23_Predict_Calc: her remedies for Mars in the 2nd, 7th, 8th or 12th (the S23_Remedies
-    rows of topic Mars) — twin of bhava_rules.planet_remedies. A helper block below the sheet's other blocks runs
-    through the S23_Remedies rows, one slot each, joining the Mars rows' texts in order."""
+def _predict_remedies(ws):
+    """Her remedies by house (classes of 22 and 29 Oct 2026) on S23_Predict_Calc — twin of bhava_rules.planet_remedies:
+    the S23_Remedies rows of the planet's topic whose Houses include its house. A helper block below the sheet's other
+    blocks runs through the S23_Remedies rows, one slot each, joining each planet's texts in order."""
     col = PREDICT_COLS["remedies"]
-    c = ws.cell(row=2, column=col, value="Remedies (class 22 Oct 2026)")
+    c = ws.cell(row=2, column=col, value="Remedies (classes of 22 and 29 Oct 2026)")
     c.fill, c.font = HEAD_FILL, HEAD_FONT
     r0 = ws.max_row + 3
-    ws.cell(row=r0 - 2, column=1, value="Remedy rows (S23_Remedies), each topic's texts joined in order").font = Font(bold=True, color="6B1D2B")
-    _head(ws, r0 - 1, ["Topic", "Text", "Mars rows so far"])
+    ws.cell(row=r0 - 2, column=1, value="Remedy rows (S23_Remedies), each planet's texts for its house joined in order").font = Font(bold=True, color="6B1D2B")
+    _head(ws, r0 - 1, ["Topic", "Text", "Houses"] + [f"{p} rows so far" for p in br.PLANET_ORDER])
     for m in range(REM_SLOTS):
         r, b = r0 + m, 2 + m
         # INDEX into a fixed range, not $A$b: rows the user inserts on S23_Remedies are picked up in place, and after a
         # deletion (the range shrinks) the slots past its end read "" instead of #REF!
         ws.cell(row=r, column=1, value=f'=IFERROR(TRIM(INDEX(S23_Remedies!$A$1:$A$300,{b})&""),"")')   # as Python strips
         ws.cell(row=r, column=2, value=f'=IFERROR(INDEX(S23_Remedies!$B$1:$B$300,{b})&"","")')
-        prev = f"C{r - 1}&" if m else ""
-        ws.cell(row=r, column=3, value=f'={prev}IF($A{r}="Mars",CHAR(10)&$B{r},"")')
+        # Houses as ",2,7,8,12," (spaces dropped, ";" read as ","), so a house is found as ",8,"
+        ws.cell(row=r, column=3, value=f'=IFERROR(","&SUBSTITUTE(SUBSTITUTE(INDEX(S23_Remedies!$D$1:$D$300,{b})&""," ",""),";",",")&",",",,")')
+        for k, p in enumerate(br.PLANET_ORDER):
+            prev = f"{L(4 + k)}{r - 1}&" if m else ""
+            ws.cell(row=r, column=4 + k, value=(f'={prev}IF(AND($A{r}="{p}",ISNUMBER(SEARCH(","&$B${PREDICT_ROW0 + k}&",",$C{r}))),'
+                                                 f'CHAR(10)&$B{r},"")'))
     last = r0 + REM_SLOTS - 1
-    houses = ",".join(f"$B{{r}}={h}" for h in br.MARS_REMEDY_HOUSES)
     for k in range(len(br.PLANET_ORDER)):
-        r = PREDICT_ROW0 + k
-        ws.cell(row=r, column=col, value=f'=IF(AND($A{r}="Mars",OR({houses.format(r=r)})),MID($C${last},2,32000),"")')
+        ws.cell(row=PREDICT_ROW0 + k, column=col, value=f"=MID(${L(4 + k)}${last},2,32000)")
     ws.column_dimensions[L(col)].width = 50
+
+
+def _predict_s25_class(ws, rules):
+    """The class of 29 Oct 2026 on S23_Predict_Calc (spec D4) — twin of bhava_rules.strength_overall and
+    strength_points: the overall word, what makes the planet stronger and weaker, and her points for it in this house
+    (S23_GrahaInBhava IfStrong / IfWeak) under the word that chose them, as strength_points_text() writes them."""
+    P = lambda name: PREDICT_ROW0 + br.PLANET_ORDER.index(name)
+    chart_sign = lambda k: f"S23_Chart!$D${PLANET_ROW0 + k}"
+    cls = lambda name, r: f'INDEX({LA_MATRIX},$B{r},MATCH("{name}",S23_Ref_Calc!$AE$3:$AE$12,0))=1'
+    col = lambda name: L(PREDICT_COLS[name])
+    for name, c in (("Overall strength (class 29 Oct)", PREDICT_COLS["overall"]), ("Stronger", PREDICT_COLS["stronger"]),
+                    ("Weaker", PREDICT_COLS["weaker"]), ("Her points by strength (class 29 Oct)", PREDICT_COLS["strength_points"]),
+                    ("With Saturn, Mars or Ketu", OUTRIGHT_COL)):
+        cell = ws.cell(row=2, column=c, value=name)
+        cell.fill, cell.font = HEAD_FILL, HEAD_FONT
+    for k, p in enumerate(br.PLANET_ORDER):
+        r, sign, o = PREDICT_ROW0 + k, chart_sign(k), _ord(f"$B{PREDICT_ROW0 + k}")
+        others = [(j, q) for j, q in enumerate(br.PLANET_ORDER) if q != p]
+        aspects = lambda q: "OR(" + ",".join(f"${L(ASPECT_COL0 + sl)}${P(q)}={sign}"
+                                             for sl in range(len(rules["reference"]["SPECIAL_ASPECTS"][q]))) + ")"
+        strong_label = "OR(" + ",".join(f'$F{r}="{x}"' for x in br.STRONG_LABELS) + ")"
+        stronger = (f'IF({strong_label},", "&$F{r},"")'
+                    f'&IF(AND({cls("Kendra", r)},{cls("Trikona", r)}),", in the "&{o}&" (Kendra and Trikoṇa)",'
+                    f'IF({cls("Kendra", r)},", in a Kendra (the "&{o}&")",IF({cls("Trikona", r)},", in a Trikoṇa (the "&{o}&")","")))'
+                    + "".join(f'&IF({chart_sign(j)}={sign},", with {q}","")' for j, q in others if q in br.BENEFICS)
+                    + "".join(f'&IF({aspects(q)},", aspected by {q}","")' for j, q in others if q in br.BENEFICS))
+        ws.cell(row=r, column=OUTRIGHT_COL,
+                value='=""' + "".join(f'&IF({chart_sign(j)}={sign},", with {q}","")' for j, q in others if q in br.WITH_MALEFICS))
+        weaker = (f'IF(${col("strength")}{r}="weak",", "&${col("reasons")}{r},"")&${L(OUTRIGHT_COL)}{r}'
+                  f'&IF({cls("Dusthana", r)},", in a duṣthāna (the "&{o}&")","")&${L(MALEFIC_COL)}{r}')
+        ws.cell(row=r, column=PREDICT_COLS["stronger"], value=f"=MID({stronger},3,999)")
+        ws.cell(row=r, column=PREDICT_COLS["weaker"], value=f"=MID({weaker},3,999)")
+        sr, wr, w = f'${col("stronger")}{r}', f'${col("weaker")}{r}', f'${col("overall")}{r}'
+        ws.cell(row=r, column=PREDICT_COLS["overall"],
+                value=(f'=IF(OR(${col("strength")}{r}="weak",${L(OUTRIGHT_COL)}{r}<>""),"weak",IF(AND({sr}<>"",{wr}<>""),"mixed",'
+                       f'IF({sr}<>"","strong",IF({wr}<>"","weak","depends"))))'))
+        texts = {when: f'INDEX(S23_GrahaInBhava!${c}$1:${c}$300,$L{r})&""' for when, c in (("strong", "H"), ("weak", "G"))}
+        part = {when: (f'IF(AND({w}<>"{other}",{texts[when]}<>""),IF({w}="{when}","As","If")&" {p} is {when}:"&CHAR(10)&{texts[when]},"")')
+                for when, other in (("strong", "weak"), ("weak", "strong"))}
+        ws.cell(row=r, column=PREDICT_COLS["strength_points"],
+                value=f'={part["strong"]}&IF(AND({part["strong"]}<>"",{part["weak"]}<>""),CHAR(10)&CHAR(10),"")&{part["weak"]}')
+    for c in ("stronger", "weaker", "strength_points"):
+        ws.column_dimensions[col(c)].width = 50
+
+
+def strength_points_text(planet, word, points):
+    """How S23_Predict_Calc and S23_Bhava_Calc write bhava_rules.strength_points: the strong points, then the weak ones,
+    each group under "As <planet> is weak:" (or strong), or "If …" when the overall word is mixed or depends."""
+    groups = []
+    for when in ("strong", "weak"):
+        texts = [x["text"] for x in points if x["when"] == when]
+        if texts:
+            groups.append(f"{'As' if word == when else 'If'} {planet} is {when}:\n" + "\n".join(texts))
+    return "\n\n".join(groups)
 
 
 def _predict_s28_29(ws, rules):
@@ -820,7 +879,7 @@ BV_FACT_COLS = dict(planet=1, house=2, classes=3, roles=4, dignity=5, dignity_ef
                     strength=9, reasons=10, class_texts=11, gr_text=12, gr_status=13, tatwa=14, direction=15, varna=16,
                     mode=17, text=18, status=19, extra=20, moon_strength=21, nature_lines=22, twelfth_line=23,
                     degree_stage=24, age_note=25, conditions=26, active=27, readings=28, dignity_line=29, gr_row=30,
-                    remedies=31)
+                    remedies=31, overall=32, stronger=33, weaker=34, strength_points=35)
 BV_BLOCK_ROW0 = 44                            # Bhava_Calc: the house block (header row 43)
 BV_KARAKA_ROW0 = BV_BLOCK_ROW0 + BLOCK_ROWS + 1
 BV_KLINE_ROW0 = BV_KARAKA_ROW0 + 3
@@ -1403,7 +1462,8 @@ def _bhava_sheet(ws, rules):
         cell(r, fc["digbala_text"], (f'=IF({pc("digbala_line")}<>"",{pc("digbala_line")},IF({strong}=0,"{br.DIGBALA_NODE_TEXT}",'
                                      f'"{DIGBALA_NEITHER}"&{_ord(strong)}&", weakest in the "&{_ord(lost)}))'))
         for name in ("strength", "reasons", "class_texts", "moon_strength", "nature_lines", "twelfth_line", "degree_stage",
-                     "age_note", "conditions", "active", "readings", "dignity_line", "remedies"):
+                     "age_note", "conditions", "active", "readings", "dignity_line", "remedies", "overall", "stronger",
+                     "weaker", "strength_points"):
             cell(r, fc[name], f'={pc(name)}&""')
         for name, col in (("text", "C"), ("extra", "D"), ("status", "E")):          # straight from her row: a blank stays ""
             cell(r, fc[name], f'=INDEX(S23_GrahaInBhava!${col}$1:${col}$300,S23_Predict_Calc!$L${pr})&""')
@@ -1498,7 +1558,8 @@ def bhava_from_sheet(ws):
         return {"house": num(r, fc["house"]), "classes": split(f(p, "classes")), "roles": split(f(p, "roles")),
                 "dignity": f(p, "dignity"), "dignity_effect": f(p, "dignity_effect"), "digbala": f(p, "digbala"),
                 "digbala_text": f(p, "digbala_text"), "strength": f(p, "strength"), "reasons": split(f(p, "reasons")),
-                "class_texts": f(p, "class_texts")}
+                "class_texts": f(p, "class_texts"), "overall": f(p, "overall"), "stronger": split(f(p, "stronger")),
+                "weaker": split(f(p, "weaker"))}
 
     b0 = BV_BLOCK_ROW0
     r = b0 + 1
@@ -1510,7 +1571,7 @@ def bhava_from_sheet(ws):
                         "extra": f(p, "extra"), "moon_strength": f(p, "moon_strength"), "nature_lines": f(p, "nature_lines"),
                         "twelfth_line": f(p, "twelfth_line"), "degree_stage": f(p, "degree_stage"), "age_note": f(p, "age_note"),
                         "conditions": f(p, "conditions"), "active": f(p, "active"), "readings": f(p, "readings"),
-                        "remedies": f(p, "remedies"),
+                        "remedies": f(p, "remedies"), "strength_points": f(p, "strength_points"),
                         "graha_rashi": {"text": f(p, "gr_text"), "status": f(p, "gr_status"), "tatwa": f(p, "tatwa"),
                                         "direction": f(p, "direction"), "varna": f(p, "varna"), "mode": f(p, "mode")},
                         "dignity_line": f(p, "dignity_line")})
@@ -1572,7 +1633,8 @@ def bhava_sheet_view(reading):
     def facts(f):
         return {"house": f["house"], "classes": f["classes"], "roles": f["roles"], "dignity": f["dignity"]["label"],
                 "dignity_effect": f["dignity_effect"], "digbala": f["digbala"] or "", "digbala_text": f["digbala_text"],
-                "strength": f["strength"]["word"], "reasons": f["strength"]["reasons"], "class_texts": "\n".join(f["class_texts"])}
+                "strength": f["strength"]["word"], "reasons": f["strength"]["reasons"], "class_texts": "\n".join(f["class_texts"]),
+                "overall": f["overall"]["word"], "stronger": f["overall"]["stronger"], "weaker": f["overall"]["weaker"]}
 
     def occupant(o):
         ds, act = o["degree_stage"], [c["key"] for c in o["conditions"] if c["active"]]
@@ -1582,7 +1644,8 @@ def bhava_sheet_view(reading):
                 "degree_stage": " ".join(ds["lines"]) if ds else "", "age_note": ds["age_note"] if ds else "",
                 "conditions": "\n".join(c["text"] for c in o["conditions"]), "active": ", ".join(act),
                 "readings": "\n\n".join(shown(o["readings"])), "graha_rashi": o["graha_rashi"], "dignity_line": o["dignity_line"],
-                "remedies": "\n".join(x["text"] for x in o["remedies"])}
+                "remedies": "\n".join(x["text"] for x in o["remedies"]),
+                "strength_points": strength_points_text(o["planet"], o["facts"]["overall"]["word"], o["strength_points"])}
 
     lord = reading["lord"]
     return dict(reading, occupants=[occupant(o) for o in reading["occupants"]],

@@ -129,6 +129,8 @@ function extra(c, lg, pbr){
     conditions: s23ChartConditions(ctx), condition_keys: S23_CONDITION_KEYS,
     life_areas: s23LifeAreas(ctx),
     strength_detail: Object.fromEntries(placed.map(p => [p, s23StrengthDetail(ctx, p)])),
+    strength_overall: Object.fromEntries(placed.map(p => [p, s23StrengthOverall(ctx, p)])),
+    strength_points: Object.fromEntries(placed.map(p => [p, s23StrengthPoints(ctx, p)])),
     chart_readings: s23ChartReadings(ctx),
     degree_stages: Object.fromEntries(placed.map(p => [p, s23DegreeStage(p, c.degs[p], ctx.age)])),
   };
@@ -168,6 +170,8 @@ def python_extra(c):
         "conditions": br.chart_conditions(RULES, ctx), "condition_keys": list(br.CONDITION_KEYS),
         "life_areas": br.life_areas(RULES, ctx),
         "strength_detail": {p: br.strength_detail(RULES, ctx, p) for p in placed},
+        "strength_overall": {p: br.strength_overall(RULES, ctx, p) for p in placed},
+        "strength_points": {p: br.strength_points(RULES, ctx, p) for p in placed},
         "chart_readings": br.chart_readings(RULES, ctx),
         "degree_stages": {p: br.degree_stage(RULES, p, c["degs"].get(p), ctx["age"]) for p in placed},
     }
@@ -310,6 +314,8 @@ class JsEngine(unittest.TestCase):
             for (const p of PL) if (c.signs[p] !== undefined) pbr[p] = c.signs[p] + 1;
             const ctx = ctxOf(c, lg, pbr), placed = PL.filter(p => ctx.signs[p] !== undefined);
             return {strength: fp(Object.fromEntries(placed.map(p => [p, s23StrengthDetail(ctx, p)]))),
+                    overall: fp(Object.fromEntries(placed.map(p => [p, s23StrengthOverall(ctx, p)]))),
+                    points: fp(Object.fromEntries(placed.map(p => [p, s23StrengthPoints(ctx, p)]))),
                     readings: fp(s23ChartReadings(ctx)), bhava_bhava: fp(s23BhavaBhava(ctx)),
                     degrees: fp(Object.fromEntries(placed.map(p => [p, s23DegreeStage(p, c.degs[p], ctx.age)]))),
                     life_areas: fp(s23LifeAreas(ctx))};
@@ -320,11 +326,26 @@ class JsEngine(unittest.TestCase):
             ctx = ctx_of(c)
             placed = [p for p in br.PLANET_ORDER if p in ctx["signs"]]
             mine = {"strength": {p: br.strength_detail(RULES, ctx, p) for p in placed},
+                    "overall": {p: br.strength_overall(RULES, ctx, p) for p in placed},
+                    "points": {p: br.strength_points(RULES, ctx, p) for p in placed},
                     "readings": br.chart_readings(RULES, ctx), "bhava_bhava": br.bhava_bhava(RULES, ctx),
                     "degrees": {p: br.degree_stage(RULES, p, c["degs"].get(p), ctx["age"]) for p in placed},
                     "life_areas": br.life_areas(RULES, ctx)}
             bad += [(i, k) for k, v in mine.items() if fingerprint(v) != g[k]]
         self.assertEqual(bad, [])
+
+    def test_remedies_follow_the_houses_column(self):
+        """Class of 29 Oct (D3): a planet's card lists the rows of its topic whose Houses include its house; a row the
+        user adds (Venus, Houses 6) shows on Venus in the 6th only, as in Python."""
+        mine = {"topic": "Venus", "text": "My own Venus remedy.", "source": "me", "houses": [6]}
+        rules = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+        rules["remedies"].append(mine)
+        keys = [(p, h) for p in br.PLANET_ORDER for h in range(1, 13)]
+        got = run_page("S23.remedies.push(job.row); return job.keys.map(([p, h]) => s23PlanetRemedies(p, h));",
+                       {"row": mine, "keys": keys}, self.tmp)
+        self.assertEqual(got, [br.planet_remedies(rules, p, h) for p, h in keys])
+        self.assertIn({"text": mine["text"], "source": "me"}, got[keys.index(("Venus", 6))])
+        self.assertTrue(got[keys.index(("Mercury", 2))])                  # her Mercury-in-the-2nd rows
 
     def test_dignity_claims_equal_python(self):
         """Her dignity sentences (spec 2026-10-13): the page's rules equal Python's, and the probe charts read the same."""
@@ -1192,9 +1213,10 @@ class ExcelSession23(unittest.TestCase):
                 self.assertEqual(got["class_texts"] or "", "\n".join(want["class_texts"]), (i, p))
 
     def test_remedies_column_equals_python(self):
-        """Her Mars remedies (class of 22 Oct 2026) on S23_Predict_Calc, in sheet order, for Mars in the 2nd/7th/8th/12th."""
+        """Her remedies by house (classes of 22 and 29 Oct 2026) on S23_Predict_Calc, in sheet order: the rows of the
+        planet's topic whose Houses include its house."""
         mx = self.mx
-        seen = set()
+        seen, planets = set(), set()
         for i, c, wb in self.each():
             ws = wb[mx.PREFIX + "Predict_Calc"]
             for k, p in enumerate(br.PLANET_ORDER):
@@ -1204,8 +1226,31 @@ class ExcelSession23(unittest.TestCase):
                                  "\n".join(x["text"] for x in g["remedies"]), (i, p))
                 if g["remedies"]:
                     seen.add(g["house"])
+                    planets.add(p)
         self.assertIn(7, seen)                                   # the 7th (no Kuja rows on the card) …
         self.assertTrue(seen & {2, 8, 12}, seen)                 # … and the other houses were exercised
+        self.assertEqual(planets, {"Mars", "Mercury", "Jupiter"})
+
+    def test_overall_strength_columns_equal_python(self):
+        """The class of 29 Oct 2026 on S23_Predict_Calc: the overall word, what makes the planet stronger and weaker,
+        and her points for it in this house under the word that chose them."""
+        mx = self.mx
+        words, labels = set(), set()
+        for i, c, wb in self.each():
+            ws = wb[mx.PREFIX + "Predict_Calc"]
+            ctx = self.ctx_of(c)
+            for k, p in enumerate(br.PLANET_ORDER):
+                r = mx.PREDICT_ROW0 + k
+                got = {n: ws.cell(row=r, column=mx.PREDICT_COLS[n]).value or ""
+                       for n in ("overall", "stronger", "weaker", "strength_points")}
+                o, pts = br.strength_overall(RULES, ctx, p), br.strength_points(RULES, ctx, p)
+                want = {"overall": o["word"], "stronger": ", ".join(o["stronger"]), "weaker": ", ".join(o["weaker"]),
+                        "strength_points": mx.strength_points_text(p, o["word"], pts)}
+                self.assertEqual(got, want, (i, p))
+                words.add(o["word"])
+                labels |= {ln for ln in want["strength_points"].split("\n") if ln.endswith(" is weak:") or ln.endswith(" is strong:")}
+        self.assertEqual(words, {"strong", "weak", "mixed", "depends"})
+        self.assertTrue({x.split()[0] for x in labels} == {"As", "If"}, labels)
 
     def test_new_layer_one_lines_equal_python(self):
         mx = self.mx
@@ -1447,9 +1492,10 @@ class ExcelLifeAreas(unittest.TestCase):
 
 @unittest.skipUnless(SOFFICE and openpyxl, "LibreOffice and openpyxl are needed for the Excel checks")
 class ExcelUserRemedyRow(unittest.TestCase):
-    """A Mars remedy row the user adds on S23_Remedies reaches S23_Predict_Calc and S23_Bhava_Calc, as on the page."""
+    """Remedy rows the user adds on S23_Remedies reach S23_Predict_Calc and S23_Bhava_Calc by their Houses, as on the
+    page: a Mars row for the 8th, a Venus row for the 6th (and a Venus row for the 5th, which does not show)."""
 
-    def test_added_row_shows_for_mars_in_the_8th(self):
+    def test_added_rows_show_for_their_houses(self):
         import datetime
         import tempfile
         import make_session23_xlsx as mx
@@ -1462,23 +1508,29 @@ class ExcelUserRemedyRow(unittest.TestCase):
             ws = wb[mx.PREFIX + "Remedies"]
             for n in range(80):                                            # a long list: the row lands past row 100
                 ws.append(["Tip", f"Tip {n}.", "me"])
-            ws.append(["Mars ", "My own Mars remedy.", "me"])              # a stray space, as Python's reader tolerates
-            signs = dict(tb.SIMHA_SIGNS, Mars=11)                          # Meena = the 8th from Simha
+            ws.append(["Mars ", "My own Mars remedy.", "me", "8"])         # a stray space, as Python's reader tolerates
+            ws.append(["Venus", "My own Venus remedy.", "me", 6])            # a number, as Excel stores a typed 6
+            ws.append(["Venus", "My Venus remedy for the 5th.", "me", "5, 11"])
+            signs = dict(tb.SIMHA_SIGNS, Mars=11, Venus=9)                 # Meena = the 8th, Makara = the 6th from Simha
             c = dict(lagna=4, signs=signs, degs=dict(tb.SIMHA_DEGS), retro={"Rahu": True, "Ketu": True},
                      birth=datetime.datetime(1968, 4, 25, 8, 57), gender=None, waxing=True)
             mx.set_inputs(wb, c, datetime.datetime(2026, 10, 8, 12, 0, 0))
-            wb[mx.PREFIX + "Bhava_Calc"][mx.BHAVA_CELL] = 8
             src, out = tmp / "in", tmp / "out"
             src.mkdir()
             out.mkdir()
-            wb.save(src / "c.xlsx")
-            _lo_recalc([src / "c.xlsx"], out)
-            got = openpyxl.load_workbook(out / "c.xlsx", data_only=True)
-            mars = [x["text"] for x in RULES["remedies"] if x["topic"] == "Mars"] + ["My own Mars remedy."]
-            r = mx.PREDICT_ROW0 + br.PLANET_ORDER.index("Mars")
-            self.assertEqual(got[mx.PREFIX + "Predict_Calc"].cell(row=r, column=mx.PREDICT_COLS["remedies"]).value, "\n".join(mars))
-            occ = next(o for o in mx.bhava_from_sheet(got[mx.PREFIX + "Bhava_Calc"])["occupants"] if o["planet"] == "Mars")
-            self.assertEqual(occ["remedies"], "\n".join(mars))
+            for h in (6, 8):
+                wb[mx.PREFIX + "Bhava_Calc"][mx.BHAVA_CELL] = h
+                wb.save(src / f"c{h}.xlsx")
+            _lo_recalc([src / "c6.xlsx", src / "c8.xlsx"], out)
+            want = {"Mars": [x["text"] for x in RULES["remedies"] if x["topic"] == "Mars"] + ["My own Mars remedy."],
+                    "Venus": ["My own Venus remedy."]}
+            for p, h in (("Mars", 8), ("Venus", 6)):
+                got = openpyxl.load_workbook(out / f"c{h}.xlsx", data_only=True)
+                r = mx.PREDICT_ROW0 + br.PLANET_ORDER.index(p)
+                self.assertEqual(got[mx.PREFIX + "Predict_Calc"].cell(row=r, column=mx.PREDICT_COLS["remedies"]).value,
+                                 "\n".join(want[p]))
+                occ = next(o for o in mx.bhava_from_sheet(got[mx.PREFIX + "Bhava_Calc"])["occupants"] if o["planet"] == p)
+                self.assertEqual(occ["remedies"], "\n".join(want[p]))
 
 
 _UNO_EDIT = r"""
@@ -1545,7 +1597,7 @@ class ExcelRemedySheetEdits(unittest.TestCase):
             mars = [r["text"] for r in RULES["remedies"] if r["topic"] == "Mars"]
             second_mars = 2 + topics.index("Mars") + 1                       # the sheet row of the second Mars row
             plan = {"row": mx.PREDICT_ROW0 + br.PLANET_ORDER.index("Mars"), "col": mx.PREDICT_COLS["remedies"],
-                    "edits": [{"op": "insert", "row": second_mars, "values": ["Mars", "My inserted Mars remedy.", "me"]},
+                    "edits": [{"op": "insert", "row": second_mars, "values": ["Mars", "My inserted Mars remedy.", "me", "2, 7, 8, 12"]},
                               {"op": "delete", "row": 2 + len(topics) - 1},                    # the last Tip
                               {"op": "delete", "row": 2}]}                                     # the first Moon row
             done = subprocess.run([sys.executable, "-c", _UNO_EDIT, str(path), json.dumps(plan), SOFFICE],
@@ -1636,6 +1688,24 @@ class ExcelBhava(unittest.TestCase):
         self.assertEqual(got["life_areas"], [{"no": 12, "area": "Father"}, {"no": 15, "area": "Foreign travel"}])
         jup = got["karakas"][1]["facts"]
         self.assertEqual((jup["digbala"], jup["digbala_text"]), ("strong", "Jupiter gains directional strength (digbala) in the 1st house."))
+
+    def test_overall_and_strength_points_on_the_sheet(self):
+        words = set()
+        for c, h, name in self.cases:
+            got = self.read(name)
+            d = br.dasha_now(RULES, c["signs"]["Moon"] * 30 + c["degs"]["Moon"], c["birth"], self.now)
+            ctx = br.context(c["lagna"], c["signs"], c["degs"], c["waxing"], c.get("retro"), c.get("gender"),
+                             d["age"], d["maha"], d["bhukti"])
+            want = br.bhava_reading(RULES, ctx, h)
+            self.assertEqual(len(got["occupants"]), len(want["occupants"]), name)
+            for g, o in zip(got["occupants"], want["occupants"]):
+                ov = o["facts"]["overall"]
+                self.assertEqual((g["facts"]["overall"], g["facts"]["stronger"], g["facts"]["weaker"]),
+                                 (ov["word"], ov["stronger"], ov["weaker"]), (name, o["planet"]))
+                self.assertEqual(g["strength_points"], self.mx.strength_points_text(o["planet"], ov["word"], o["strength_points"]),
+                                 (name, o["planet"]))
+                words.add(ov["word"])
+        self.assertTrue({"weak", "mixed"} <= words, words)
 
     def test_parivartana_shows_on_both_houses(self):
         got = {h: self.read(n) for c, h, n in self.cases if c.get("name") == "chart3" and h in (4, 7, 8, 12)}
