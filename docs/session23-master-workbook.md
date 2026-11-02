@@ -111,7 +111,8 @@ How the page and the calculator read them:
   is weak or it sits with Saturn, Mars or Ketu; otherwise it is made stronger by a good sign (exalted,
   Mūlatrikoṇa, own or a friend's), by a Kendra or Trikoṇa, by a benefic with it (Jupiter, Venus, Mercury, the Moon)
   or aspecting it, and weaker by a duṣthāna (6, 8, 12) or a malefic's aspect (Sun, Mars, Saturn, Rāhu, Ketu) —
-  strong, weak, mixed (both) or depends (neither). The line lists what made it so.
+  strong, weak, mixed (both) or depends (neither). The line lists what made it so. For the Moon its pakṣa counts
+  too (since 2 Nov 2026): waxing (Shukla Pakṣa) makes it stronger, waning (Kṛṣṇa Pakṣa) weaker.
 - **Her points by strength.** `IfWeak` shows under "As Mercury is weak:" when the overall word is weak, `IfStrong`
   under "As Mercury is strong:" when it is strong; when it is mixed or depends both show, under "If Mercury is
   strong:" and "If Mercury is weak:".

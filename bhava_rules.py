@@ -334,6 +334,7 @@ def strength(rules, ctx, planet):
     return strength_detail(rules, ctx, planet)["word"]
 
 
+PAKSHA_PHRASE = {True: "waxing (Shukla Pakṣa)", False: "waning (Kṛṣṇa Pakṣa)"}   # the Moon's, in strength_overall
 WITH_MALEFICS = ("Saturn", "Mars", "Ketu")      # class of 29 Oct 2026: with these (or Rahu, S29) a planet is weak
 
 
@@ -353,13 +354,17 @@ def strength_overall(rules, ctx, planet):
     Weak outright: Session 29's weakness (debilitated, enemy's sign, combust, with Rāhu) or with Saturn, Mars or Ketu;
     otherwise strong with only stronger factors, mixed with both, weak with only weaker ones (a duṣthāna, a malefic's
     aspect), depends with none (a neutral sign, nothing else). Session 29's own word (strength_detail) still chooses
-    Session 29's texts: her deck gives "strong" texts for a lord in a duṣthāna, which the house factor would hide."""
+    Session 29's texts: her deck gives "strong" texts for a lord in a duṣthāna, which the house factor would hide.
+    The Moon's pakṣa (Sessions 12, 26; the user's ruling of 2 Nov 2026) follows the sign: waxing is stronger, waning
+    weaker, nothing when it is not known."""
     lagna, sg = ctx["lagna"], ctx["signs"]
     sign, house = sg[planet], house_of(lagna, sg[planet])
     s29 = strength_detail(rules, ctx, planet)
     label = dignity(rules, planet, sign, ctx["degs"].get(planet))["label"]
     stronger = [label] if label in STRONG_LABELS else []
     weaker = list(s29["reasons"]) if s29["word"] == "weak" else []
+    if planet == "Moon" and ctx["waxing"] is not None:
+        (stronger if ctx["waxing"] else weaker).append(PAKSHA_PHRASE[ctx["waxing"]])
     phrase = _house_strength_phrase(rules, lagna, house)
     stronger += [phrase] if phrase else []
     company = [p for p in PLANET_ORDER if p != planet and sg.get(p) == sign]

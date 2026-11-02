@@ -660,8 +660,9 @@ def _predict_remedies(ws):
 
 def _predict_s25_class(ws, rules):
     """The class of 29 Oct 2026 on S23_Predict_Calc (spec D4) — twin of bhava_rules.strength_overall and
-    strength_points: the overall word, what makes the planet stronger and weaker, and her points for it in this house
-    (S23_GrahaInBhava IfStrong / IfWeak) under the word that chose them, as strength_points_text() writes them."""
+    strength_points: the overall word, what makes the planet stronger and weaker (for the Moon also its pakṣa), and her
+    points for it in this house (S23_GrahaInBhava IfStrong / IfWeak) under the word that chose them, as
+    strength_points_text() writes them."""
     P = lambda name: PREDICT_ROW0 + br.PLANET_ORDER.index(name)
     chart_sign = lambda k: f"S23_Chart!$D${PLANET_ROW0 + k}"
     cls = lambda name, r: f'INDEX({LA_MATRIX},$B{r},MATCH("{name}",S23_Ref_Calc!$AE$3:$AE$12,0))=1'
@@ -677,14 +678,18 @@ def _predict_s25_class(ws, rules):
         aspects = lambda q: "OR(" + ",".join(f"${L(ASPECT_COL0 + sl)}${P(q)}={sign}"
                                              for sl in range(len(rules["reference"]["SPECIAL_ASPECTS"][q]))) + ")"
         strong_label = "OR(" + ",".join(f'$F{r}="{x}"' for x in br.STRONG_LABELS) + ")"
-        stronger = (f'IF({strong_label},", "&$F{r},"")'
+        waxing = f"S23_Chart!${WAXING_CELL[0]}${WAXING_CELL[1:]}"
+        # the Moon's pakṣa follows its sign (user's ruling, 2 Nov 2026)
+        paksha = {w: (f'&IF({"" if w else "NOT("}{waxing}{"" if w else ")"},", {br.PAKSHA_PHRASE[w]}","")' if p == "Moon" else "")
+                  for w in (True, False)}
+        stronger = (f'IF({strong_label},", "&$F{r},""){paksha[True]}'
                     f'&IF(AND({cls("Kendra", r)},{cls("Trikona", r)}),", in the "&{o}&" (Kendra and Trikoṇa)",'
                     f'IF({cls("Kendra", r)},", in a Kendra (the "&{o}&")",IF({cls("Trikona", r)},", in a Trikoṇa (the "&{o}&")","")))'
                     + "".join(f'&IF({chart_sign(j)}={sign},", with {q}","")' for j, q in others if q in br.BENEFICS)
                     + "".join(f'&IF({aspects(q)},", aspected by {q}","")' for j, q in others if q in br.BENEFICS))
         ws.cell(row=r, column=OUTRIGHT_COL,
                 value='=""' + "".join(f'&IF({chart_sign(j)}={sign},", with {q}","")' for j, q in others if q in br.WITH_MALEFICS))
-        weaker = (f'IF(${col("strength")}{r}="weak",", "&${col("reasons")}{r},"")&${L(OUTRIGHT_COL)}{r}'
+        weaker = (f'IF(${col("strength")}{r}="weak",", "&${col("reasons")}{r},""){paksha[False]}&${L(OUTRIGHT_COL)}{r}'
                   f'&IF({cls("Dusthana", r)},", in a duṣthāna (the "&{o}&")","")&${L(MALEFIC_COL)}{r}')
         ws.cell(row=r, column=PREDICT_COLS["stronger"], value=f"=MID({stronger},3,999)")
         ws.cell(row=r, column=PREDICT_COLS["weaker"], value=f"=MID({weaker},3,999)")

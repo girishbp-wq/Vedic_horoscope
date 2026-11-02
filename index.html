@@ -5776,7 +5776,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-10-29 · Session 25 class: Mercury and Jupiter, remedies by house, overall strength";
+const TOOL_VERSION = "2026-11-02 · the Moon's pakṣa in its overall strength";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -6688,8 +6688,9 @@ function s23StrengthDetail(ctx, p){
 }
 function s23Strength(ctx, p){ return s23StrengthDetail(ctx, p).word; }
 /* Overall strength with the class of 29 Oct 2026 (spec D4): mirrors strength_overall() and strength_points().
-   The Session 29 word above still chooses Session 29's own texts. */
+   The Session 29 word above still chooses Session 29's own texts. The Moon's pakṣa follows its sign. */
 const S23_WITH_MALEFICS = ["Saturn","Mars","Ketu"];
+const S23_PAKSHA_PHRASE = {true:"waxing (Shukla Pakṣa)", false:"waning (Kṛṣṇa Pakṣa)"};   // the Moon's (user's ruling, 2 Nov 2026)
 function s23HouseStrengthPhrase(lg, house){
   const kendra=s23ClassHousesAt("Kendra", lg).includes(house), trikona=s23ClassHousesAt("Trikona", lg).includes(house);
   if(kendra && trikona) return `in the ${ord(house)} (Kendra and Trikoṇa)`;
@@ -6701,6 +6702,7 @@ function s23StrengthOverall(ctx, p){
   const s29=s23StrengthDetail(ctx, p), label=planetDignity(p, sign+1, ctx.degs[p]).label;
   const stronger=S23_STRONG_LABELS.includes(label) ? [label] : [];
   const weaker=s29.word==="weak" ? s29.reasons.slice() : [];
+  if(p==="Moon" && ctx.waxing!=null) (ctx.waxing ? stronger : weaker).push(S23_PAKSHA_PHRASE[ctx.waxing]);
   const phrase=s23HouseStrengthPhrase(lg, house);
   if(phrase) stronger.push(phrase);
   const company=S23_PLANETS.filter(q=>q!==p && sg[q]!==undefined && sg[q]===sign);

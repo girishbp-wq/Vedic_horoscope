@@ -64,6 +64,38 @@ def lord_sits(c, house):
     return br.house_of(c["lagna"], c["signs"][lord])
 
 
+class S23Deck2024MoonIn6th(unittest.TestCase):
+    """S23-2024 p.11, her example chart for the Moon in the 6th (Vrishabha Lagna, the Moon 18° Tula): the maternal uncle
+    (6th) loves to travel, is a foodie fond of milk products and is into business (the Moon: food, travel); the Moon in
+    Tula, a sign of balance, makes the native's approach to life very balanced."""
+
+    def setUp(self):
+        c = CHARTS["S23_2024_B"]
+        sun, moon = c["signs"]["Sun"] * 30 + c["degs"]["Sun"], c["signs"]["Moon"] * 30 + c["degs"]["Moon"]
+        self.waxing = (moon - sun) % 360 < 180
+        self.ctx = ctx("S23_2024_B", waxing=self.waxing)
+        self.g = br.graha_bhava(RULES, c["lagna"], c["signs"], "Moon", c["degs"]["Moon"], self.waxing, ctx=self.ctx)
+
+    def test_the_moon_is_in_the_6th_of_the_maternal_uncle(self):
+        self.assertEqual(self.g["house"], 6)
+        self.assertIn("maternal uncle", br.bhava_reading(RULES, self.ctx, 6)["people"])
+
+    def test_her_three_conclusions_about_the_uncle(self):
+        said = " ".join(self.g["points"] + self.g["extra"])
+        for words in ("maternal uncle", "travels a lot", "fond of dairy", "businessman"):
+            self.assertIn(words, said)
+
+    def test_tula_gives_a_balanced_approach(self):
+        moon = next(x for x in br.graha_rashi(RULES, CHARTS["S23_2024_B"]["lagna"], CHARTS["S23_2024_B"]["signs"],
+                                              CHARTS["S23_2024_B"]["degs"]) if x["planet"] == "Moon")
+        self.assertEqual((moon["rashi"], moon["status"]), ("Tula", "taught"))
+        self.assertIn("approach towards life is very balanced", moon["text"])
+
+    def test_a_waxing_moon_counts_as_stronger(self):
+        self.assertTrue(self.waxing)                                   # 166° ahead of the Sun: Shukla Chaturdashi
+        self.assertIn("waxing (Shukla Pakṣa)", self.g["overall"]["stronger"])
+
+
 class S27Chart1(unittest.TestCase):
     def test_lord_list_p8(self):
         c = CHARTS["S23_2024_C"]

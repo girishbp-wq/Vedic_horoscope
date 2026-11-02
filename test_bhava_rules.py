@@ -1599,6 +1599,31 @@ class Session25Class(unittest.TestCase):
         c = self.ctx(1, {"Venus": 6})
         self.assertEqual(br.strength(RULES, c, "Venus"), "strong")               # S29: own sign, no malefic aspect
 
+    # the Moon's pakṣa (user's ruling, 2 Nov 2026) -------------------------
+    def moon(self, lagna, signs, waxing):
+        return br.strength_overall(RULES, br.context(lagna, signs, None, waxing), "Moon")
+
+    def test_waxing_moon_is_stronger_waning_weaker(self):
+        # Tula Lagna, the Moon in Dhanu (the 3rd): a neutral sign, alone and unaspected, so only its pakṣa counts
+        self.assertEqual(self.moon(6, {"Moon": 8}, True), {"word": "strong", "stronger": ["waxing (Shukla Pakṣa)"], "weaker": []})
+        self.assertEqual(self.moon(6, {"Moon": 8}, False), {"word": "weak", "stronger": [], "weaker": ["waning (Kṛṣṇa Pakṣa)"]})
+        self.assertEqual(self.moon(6, {"Moon": 8}, None), {"word": "depends", "stronger": [], "weaker": []})   # not known
+
+    def test_paksha_comes_right_after_the_sign(self):
+        self.assertEqual(self.moon(0, {"Moon": 3}, True)["stronger"],                # Mesha Lagna, own sign Karka (the 4th)
+                         ["Own House", "waxing (Shukla Pakṣa)", "in a Kendra (the 4th)"])
+        self.assertEqual(self.moon(0, {"Moon": 7, "Saturn": 7}, False),               # debilitated in Vrischika (the 8th)
+                         {"word": "weak", "stronger": [],
+                          "weaker": ["Debilitated", "waning (Kṛṣṇa Pakṣa)", "with Saturn", "in a duṣthāna (the 8th)"]})
+
+    def test_paksha_is_the_moons_alone(self):
+        for waxing in (True, False):
+            self.assertEqual(br.strength_overall(RULES, br.context(6, {"Saturn": 8, "Moon": 0}, None, waxing), "Saturn"),
+                             {"word": "depends", "stronger": [], "weaker": []})
+
+    def test_session_29_word_ignores_paksha(self):
+        self.assertEqual(br.strength_detail(RULES, br.context(6, {"Moon": 8}, None, False), "Moon")["word"], "depends")
+
     # strength points ------------------------------------------------------
     def test_points_by_the_overall_word(self):
         import session25_class_texts as t

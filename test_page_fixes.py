@@ -2095,6 +2095,8 @@ S25_CASES = {
     "mixed": (4, {"Sun": 10, "Moon": 10, "Mercury": 45, "Jupiter": 130, "Venus": 12, "Saturn": 5, "Rahu": 8, "Ketu": 188, "Mars": 183}, "Mercury"),
     "both": (3, {"Sun": 130, "Moon": 70, "Mercury": 140, "Jupiter": 15, "Venus": 160, "Saturn": 35, "Rahu": 38, "Ketu": 218, "Mars": 33}, "Jupiter"),
     "depends": (10, {"Sun": 50, "Moon": 40, "Mercury": 15, "Jupiter": 45, "Venus": 42, "Saturn": 35, "Rahu": 98, "Ketu": 278, "Mars": 33}, "Mercury"),
+    # S23-2024 p.11, her example chart for the Moon in the 6th: the Moon 166° ahead of the Sun, waxing
+    "moon": (1, {"Sun": 32, "Moon": 198, "Mercury": 42, "Jupiter": 26, "Venus": 25, "Saturn": 27, "Rahu": 93, "Ketu": 273, "Mars": 45}, "Moon"),
 }
 
 
@@ -2202,13 +2204,18 @@ class Session25Class(unittest.TestCase):
             self.assertIn(o["word"], got["bvOverall"], key)
             self.assertTrue(got["bvS29"].startswith(s29["word"]), (key, got["bvS29"]))
 
+    def test_the_moons_paksha_counts(self):
+        got = self.r["moon"]["overall"]
+        self.assertTrue(got.startswith("Overall, with the class of 29 Oct: mixed — stronger: waxing (Shukla Pakṣa), "), got)
+        self.assertIn("weaker: in a duṣthāna (the 6th)", got)
+
     def test_depends_says_nothing_tips_it(self):
         self.assertIn("nothing in the chart makes it stronger or weaker", self.r["depends"]["overall"])
 
     def test_points_are_labelled_by_the_overall_word(self):
         for key in S25_CASES:
             want = self.want_groups(key)
-            self.assertTrue(want, key)
+            self.assertTrue(want or key == "moon", key)                       # her points are Mercury's and Jupiter's
             self.assertEqual(self.r[key]["groups"], want, key)
             self.assertEqual(self.r[key]["bvGroups"], want, key)
         self.assertEqual([g[0] for g in self.r["both"]["groups"]], ["If Jupiter is strong:", "If Jupiter is weak:"])
