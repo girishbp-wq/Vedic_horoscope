@@ -63,7 +63,7 @@ SHEETS = {
     PREFIX + "Digbala": ["Planet", "StrongHouse", "LostHouse", "Status", "Source"],
     PREFIX + "DashaRoleText": ["Role", "Kind", "Text", "Slide"],
     PREFIX + "GrahaInBhava": ["Planet", "House", "Points", "Extra", "Status", "Source", "IfWeak", "IfStrong"],
-    PREFIX + "GrahaPair": ["A", "B", "Conjunction", "Aspect", "Status", "Source"],
+    PREFIX + "GrahaPair": ["A", "B", "Conjunction", "Aspect", "Status", "Source", "Relation"],
     PREFIX + "BhavaLordIn": ["LordOf", "SitsIn", "Text", "Status", "Source", "Condition", "Exchange"],
     PREFIX + "GrahaRashi": ["Planet", "Rashi", "Text", "Status", "Source"],
     PREFIX + "BhavaNature": ["House", "Nature", "Planet", "Text", "Status", "Source"],
@@ -75,7 +75,7 @@ SHEETS = {
     PREFIX + "DegreeStages": ["From", "To", "Stage", "Applies", "AfterAge", "Text", "Source"],
 }
 LONG_COLUMNS = ("Nature", "Rule", "Text", "Points", "Extra", "Conjunction", "Aspect", "Source", "OtherNames", "IfWeak",
-                "IfStrong")
+                "IfStrong", "Relation")
 
 README_LINES = [
     "Session 23 rules — editable source of truth (sheets whose names start with S23_)",
@@ -94,11 +94,12 @@ README_LINES = [
     "Condition is blank, exalted or debilitated. S23_DegreeStages holds the degree bands (From up to, not including, To; "
     "Applies any or malefic; AfterAge the age from which an early-degree planet gives its results). In S23_ClassRules, "
     "When 'not weak' shows a rule only for a planet that is not weak.",
-    "Classes of 22 and 29 Oct 2026: the Sun's, Moon's, Mars's, Mercury's and Jupiter's Extra cells on S23_GrahaInBhava "
-    "hold her class points; IfWeak and IfStrong hold her points for a weak or a strong planet (shown by its overall "
-    "strength). In S23_Remedies, Topic is a planet, Kuja or Tip, and Houses is a comma list: a planet's card lists the "
-    "rows of its topic whose Houses include its house (S23_Predict_Calc, Remedies column); a blank Houses is a general "
-    "remedy. The Kuja rows show on the page's Kuja Dosha section when the dosha is present and not cancelled.",
+    "Classes of 22 Oct to Nov 2026: the Extra cells on S23_GrahaInBhava hold her class points (the Sun, Moon, Mars, "
+    "Mercury, Jupiter, Venus, Saturn and Ketu); IfWeak and IfStrong hold her points for a weak or a strong planet "
+    "(shown by its overall strength). In S23_Remedies, Topic is a planet, Kuja or Tip, and Houses is a comma list: a "
+    "planet's card lists the rows of its topic whose Houses include its house (S23_Predict_Calc, Remedies column); a "
+    "blank Houses is a general remedy. The Kuja rows show on the page's Kuja Dosha section when the dosha is present "
+    "and not cancelled. S23_GrahaPair's Relation is her line for the two planets in one bhava (friends, or not).",
 ]
 
 
@@ -125,7 +126,8 @@ def rules_to_rows(rules):
         PREFIX + "GrahaInBhava": [[r["planet"], r["house"], "\n\n".join(r["points"]), "\n".join(r["extra"]), r["status"], r["source"],
                                    "\n".join(r.get("if_weak", [])), "\n".join(r.get("if_strong", []))]
                                   for r in rules["graha_in_bhava"]],
-        PREFIX + "GrahaPair": [[r["a"], r["b"], r["conjunction"], r["aspect"], r["status"], r["source"]] for r in rules["graha_pair"]],
+        PREFIX + "GrahaPair": [[r["a"], r["b"], r["conjunction"], r["aspect"], r["status"], r["source"], r.get("relation", "")]
+                               for r in rules["graha_pair"]],
         PREFIX + "BhavaLordIn": [[r["lord_of"], r["sits_in"], r["text"], r["status"], r["source"], r["condition"],
                                   "yes" if r["exchange"] else ""] for r in rules["bhava_lord_in"]],
         PREFIX + "GrahaRashi": [[r["planet"], r["rashi"], r["text"], r["status"], r["source"]] for r in rules["graha_rashi"]],
@@ -386,7 +388,7 @@ def read_workbook(path_or_wb):
         elif a in PLANETS and b in PLANETS and PLANETS.index(a) > PLANETS.index(b):
             a, b = b, a                       # the engines look pairs up in planet order (Sun … Ketu)
         out["graha_pair"].append(dict(a=a, b=b, conjunction=_s(r[2]), aspect=_s(r[3]),
-                                      status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5])))
+                                      status=rd.pick(sh, i, "Status", r[4], STATUSES), source=_s(r[5]), relation=_s(r[6])))
     _expect(rd, PREFIX + "GrahaPair", [frozenset((x["a"], x["b"])) for x in out["graha_pair"]],
             [frozenset((a, b)) for k, a in enumerate(PLANETS) for b in PLANETS[k + 1:]],
             lambda k: " and ".join(sorted(k, key=PLANETS.index)))

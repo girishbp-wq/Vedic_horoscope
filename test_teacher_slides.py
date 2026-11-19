@@ -241,6 +241,90 @@ class S25ClassTexts(unittest.TestCase):
                 self.assertNotIn(mark, text, text)
 
 
+def _check_points(case, table):
+    for key, points in table.items():
+        case.assertTrue(1 <= len(points) <= 8, key)
+        for x in points:
+            case.assertEqual(x, x.strip(), key)
+            case.assertTrue(x and x[0].isupper() and x.endswith((".", ")")), (key, x))
+            case.assertNotIn("\n", x, key)
+            for mark in ("[", "TODO", " ,", " .", "  "):
+                case.assertNotIn(mark, x, x)
+
+
+def _check_remedies(case, rows, source):
+    for topic, text, houses, src in rows:
+        case.assertEqual(src, source, text)
+        case.assertTrue(set(houses) <= set(range(1, 13)), text)
+        case.assertEqual(houses, sorted(houses), text)
+        case.assertTrue(text[0].isupper() and text.endswith("."), text)
+        if topic == "Tip":
+            case.assertEqual(houses, [], text)
+
+
+class S26ClassTexts(unittest.TestCase):
+    """The class of 4 Nov 2026: Venus and Saturn in the 12 bhāvas, her remedies and answers."""
+
+    @classmethod
+    def setUpClass(cls):
+        import session26_class_texts as t
+        cls.t = t
+
+    def test_points_for_venus_and_saturn_in_every_house(self):
+        self.assertEqual(sorted(self.t.GRAHA_IN_BHAVA_EXTRA), sorted((p, h) for p in ("Venus", "Saturn") for h in range(1, 13)))
+        _check_points(self, self.t.GRAHA_IN_BHAVA_EXTRA)
+        self.assertTrue(self.t.GRAHA_IN_BHAVA_EXTRA[("Venus", 1)][0].startswith("Venus is pleasantness"))
+        self.assertTrue(self.t.GRAHA_IN_BHAVA_EXTRA[("Saturn", 1)][0].startswith("Saturn is the karma kāraka"))
+        self.assertIn("Upachaya houses (3, 6, 10, 11)", self.t.SATURN_RULE)
+
+    def test_weak_and_strong_points(self):
+        for table in (self.t.IF_WEAK, self.t.IF_STRONG):
+            self.assertTrue(set(table) <= set(self.t.GRAHA_IN_BHAVA_EXTRA))
+            _check_points(self, table)
+        self.assertIn("debilitated Saturn in the 4th", self.t.IF_WEAK[("Saturn", 4)][0])
+        self.assertIn("exalted Saturn in the 8th", self.t.IF_STRONG[("Saturn", 8)][0])
+        self.assertIn("diabetes", self.t.IF_WEAK[("Venus", 2)][0])
+
+    def test_remedy_rows(self):
+        _check_remedies(self, self.t.REMEDIES, "Class 4 Nov 2026")
+        topics = [r[0] for r in self.t.REMEDIES]
+        self.assertEqual((topics.count("Venus"), topics.count("Saturn"), topics.count("Tip")), (12, 3, 1))
+        by_house = {}
+        for topic, _, houses, _ in self.t.REMEDIES:
+            for h in houses:
+                by_house.setdefault(topic, set()).add(h)
+        self.assertEqual(by_house, {"Venus": {1, 2, 6, 8, 11}, "Saturn": {8}})
+
+    def test_relation_texts(self):
+        for text in (self.t.RELATION_FRIENDS, self.t.RELATION_ENEMIES):
+            self.assertIn("{a} and {b}", text)
+        self.assertIn("smoother", self.t.RELATION_FRIENDS)
+        self.assertIn("two contrasting energies", self.t.RELATION_ENEMIES)
+
+
+class S27ClassTexts(unittest.TestCase):
+    """Class 27 (Nov 2026): Ketu in the 6th to 12th bhāvas, her remedies and answers."""
+
+    @classmethod
+    def setUpClass(cls):
+        import session27_class_texts as t
+        cls.t = t
+
+    def test_points_for_ketu(self):
+        self.assertEqual(sorted(self.t.GRAHA_IN_BHAVA_EXTRA), [("Ketu", h) for h in (1, 5, 6, 7, 8, 9, 10, 11, 12)])
+        _check_points(self, self.t.GRAHA_IN_BHAVA_EXTRA)
+        self.assertEqual(self.t.GRAHA_IN_BHAVA_EXTRA[("Ketu", 1)], [self.t.KETU_RULE])
+
+    def test_remedy_rows(self):
+        _check_remedies(self, self.t.REMEDIES, "Class 27, Nov 2026")
+        topics = [r[0] for r in self.t.REMEDIES]
+        self.assertEqual((topics.count("Ketu"), topics.count("Rahu"), topics.count("Tip")), (10, 2, 7))
+        ketu = {h for t, _, hs, _ in self.t.REMEDIES if t == "Ketu" for h in hs}
+        self.assertEqual(ketu, set(range(5, 13)))
+        self.assertEqual([hs for t, _, hs, _ in self.t.REMEDIES if t == "Rahu"], [[], [8]])
+        self.assertTrue(any("25%" in r[1] for r in self.t.REMEDIES if r[0] == "Tip"))
+
+
 class S24ClassTexts(unittest.TestCase):
     """The class of 22 Oct 2026: the Moon and Mars in the 12 bhāvas (recording points), her remedies."""
 

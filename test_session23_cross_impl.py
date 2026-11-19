@@ -1960,7 +1960,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual(up["kept"], [("S23_GrahaInBhava", ("Moon", 1))])
-        self.assertEqual((up["updated"], up["added"], up["deleted"]), (47, 37, []))     # both classes' rows
+        self.assertEqual((up["updated"], up["added"], up["deleted"]), (95, 72, []))     # the four classes' rows
         got = b23.read_workbook(self.master)
         want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
         self.assertEqual(got["remedies"], want["remedies"])
@@ -1987,7 +1987,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         import build_session23 as b23
         import session25_class_texts as t
         self.install_s24_release()
-        self.assertEqual(len(self.mx.shipped_versions()), 4)
+        self.assertEqual(len(self.mx.shipped_versions()), 5)
         wb = openpyxl.load_workbook(self.master)
         ws = wb["S23_Remedies"]
         mars = next(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=1).value == "Mars")
@@ -1996,7 +1996,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual(up["kept"], [("S23_Remedies", ("Mars", "My own wording of her Mars remedy.", 0))])
-        self.assertEqual((up["added"], up["deleted"]), (25, [("S23_Remedies", ("Mars", hers, 0))]))
+        self.assertEqual((up["added"], up["deleted"]), (60, [("S23_Remedies", ("Mars", hers, 0))]))   # 25 + November's 35
         wb = openpyxl.load_workbook(self.master)
         self.assertEqual([c.value for c in wb["S23_GrahaInBhava"][1]][6:8], ["IfWeak", "IfStrong"])
         self.assertEqual(wb["S23_Remedies"].cell(row=1, column=4).value, "Houses")
@@ -2010,6 +2010,45 @@ class MasterWorkbookInstall(unittest.TestCase):
             key = (row["planet"], row["house"])
             if key in t.GRAHA_IN_BHAVA_EXTRA:
                 self.assertEqual((row["extra"], row["if_weak"]), (t.GRAHA_IN_BHAVA_EXTRA[key], t.IF_WEAK.get(key, [])))
+        again = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((again["updated"], again["added"]), (0, 0))
+
+    def install_s25_release(self):
+        """The master as the class-of-29-Oct release left it: every data sheet, but GrahaPair without Relation."""
+        import apply_teacher_slides as a
+        import build_session23 as b23
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, a.apply_s25_class(a.apply_s24_class(a.apply_s28_29(a.apply(prev)))))
+        wb["S23_GrahaPair"].delete_cols(7)
+        wb.save(self.master)
+
+    def test_upgrade_from_s25_release_brings_the_classes_of_november(self):
+        import build_session23 as b23
+        import session26_class_texts as t26
+        import session27_class_texts as t27
+        self.install_s25_release()
+        self.assertEqual(len(self.mx.shipped_versions()), 5)
+        wb = openpyxl.load_workbook(self.master)
+        ws = wb["S23_GrahaPair"]
+        vs = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value)
+                  == ("Venus", "Saturn"))
+        ws.cell(row=vs, column=3, value="My own note on Venus with Saturn.")
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["kept"], [("S23_GrahaPair", ("Venus", "Saturn"))])
+        self.assertEqual(up["added"], len(t26.REMEDIES) + len(t27.REMEDIES))
+        wb = openpyxl.load_workbook(self.master)
+        self.assertEqual(wb["S23_GrahaPair"].cell(row=1, column=7).value, "Relation")
+        got = b23.read_workbook(self.master)
+        mine = next(r for r in got["graha_pair"] if (r["a"], r["b"]) == ("Venus", "Saturn"))
+        self.assertEqual((mine["conjunction"], mine["relation"]),                  # the edit kept; the new column filled
+                         ("My own note on Venus with Saturn.", t26.RELATION_FRIENDS.format(a="Venus", b="Saturn")))
+        want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
+        self.assertEqual(got["graha_in_bhava"], want["graha_in_bhava"])
+        self.assertEqual(got["remedies"], want["remedies"])
+        self.assertEqual([r for r in got["graha_pair"] if r is not mine],
+                         [r for r in want["graha_pair"] if (r["a"], r["b"]) != ("Venus", "Saturn")])
         again = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual((again["updated"], again["added"]), (0, 0))
 
@@ -2027,14 +2066,15 @@ class MasterWorkbookInstall(unittest.TestCase):
         ws.append(["Mars", "My own Mars remedy.", "me"])
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
-        self.assertEqual((up["updated"], up["added"]), (48, 37))
+        self.assertEqual((up["updated"], up["added"]), (96, 72))
         self.assertEqual(sorted(k[1] for sheet, k in up["kept"] if sheet == "S23_Remedies"),
                          ["My own Mars remedy.", "My own Moon remedy."])
         got = [(r["topic"], r["text"]) for r in b23.read_workbook(self.master)["remedies"]]
         hers = [(r["topic"], r["text"]) for r in RULES["remedies"]]
         self.assertEqual([x for x in got if x not in (("Moon", "My own Moon remedy."), ("Mars", "My own Mars remedy."))], hers)
         self.assertEqual(got.index(("Moon", "My own Moon remedy.")), 8)          # still right after the Moon rows it followed
-        self.assertEqual(got[-1], ("Mars", "My own Mars remedy."))
+        s29_tip = next((r["topic"], r["text"]) for r in RULES["remedies"] if r["source"] == "S29 p.50")
+        self.assertEqual(got.index(("Mars", "My own Mars remedy.")), got.index(s29_tip) + 1)   # still after the row it followed
         again = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual((again["updated"], again["added"]), (0, 0))
 

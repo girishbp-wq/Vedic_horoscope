@@ -1714,12 +1714,14 @@ PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 
 def shipped_versions():
     """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply), then
-    Sessions 28-29 (apply_s28_29), then the class of 22 Oct 2026 (apply_s24_class)."""
+    Sessions 28-29 (apply_s28_29), then the classes of 22 Oct 2026 (apply_s24_class) and 29 Oct 2026
+    (apply_s25_class)."""
     import apply_teacher_slides as a
     first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
     s23_27 = a.apply(first)
     s28_29 = a.apply_s28_29(s23_27)
-    return [first, s23_27, s28_29, a.apply_s24_class(s28_29)]
+    s24 = a.apply_s24_class(s28_29)
+    return [first, s23_27, s28_29, s24, a.apply_s25_class(s24)]
 
 
 def _from_before_new_columns(name, row, missing):

@@ -1548,9 +1548,9 @@ class Session25Class(unittest.TestCase):
     def test_a_row_the_user_adds_shows(self):
         import copy
         rules = copy.deepcopy(RULES)
-        rules["remedies"].append({"topic": "Venus", "text": "My Venus remedy.", "source": "me", "houses": [6]})
-        self.assertEqual(self.card("Venus", 6, rules)["remedies"], [{"text": "My Venus remedy.", "source": "me"}])
-        self.assertEqual(self.card("Venus", 5, rules)["remedies"], [])
+        rules["remedies"].append({"topic": "Venus", "text": "My Venus remedy.", "source": "me", "houses": [5]})
+        self.assertEqual(self.card("Venus", 5, rules)["remedies"], [{"text": "My Venus remedy.", "source": "me"}])
+        self.assertNotIn({"text": "My Venus remedy.", "source": "me"}, self.card("Venus", 6, rules)["remedies"])
 
     # overall strength -----------------------------------------------------
     def test_own_sign_in_a_kendra_is_strong(self):

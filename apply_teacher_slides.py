@@ -18,6 +18,8 @@ import build_session23 as b23
 import session23_teacher_slides as ts
 import session24_class_texts as t24
 import session25_class_texts as t25
+import session26_class_texts as t26
+import session27_class_texts as t27
 import session28_29_teacher_texts as t28
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -131,9 +133,66 @@ def apply_s25_class(rules):
     return rules
 
 
+# S23_Remedies keeps each topic's rows together in this order, the tips last
+REMEDY_TOPIC_ORDER = ["Sun", "Moon", "Mars", "Kuja", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu", "Tip"]
+
+
+def _insert_remedies(rem, rows):
+    """Put each new row after the last row of its topic, or of the nearest topic before it in REMEDY_TOPIC_ORDER."""
+    for row in rows:
+        before = set(REMEDY_TOPIC_ORDER[:REMEDY_TOPIC_ORDER.index(row["topic"]) + 1])
+        at = max((i for i, r in enumerate(rem) if r["topic"] in before), default=-1) + 1
+        rem.insert(at, row)
+
+
+def _apply_class(rules, t):
+    """The points of a class module `t` (Extra, and IfWeak / IfStrong where it has them) and its remedy rows."""
+    for row in rules["graha_in_bhava"]:
+        key = (row["planet"], row["house"])
+        if key in t.GRAHA_IN_BHAVA_EXTRA:
+            row["extra"] = list(t.GRAHA_IN_BHAVA_EXTRA[key])
+            if hasattr(t, "IF_WEAK"):
+                row["if_weak"] = list(t.IF_WEAK.get(key, []))
+                row["if_strong"] = list(t.IF_STRONG.get(key, []))
+    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=d, houses=list(c)) for a, b, c, d in t.REMEDIES])
+
+
+def relation(rules, a, b):
+    """Her answer of 4 Nov 2026 for two planets in one bhāva: friends (each counts the other a natural friend) work
+    smoothly, planets of which one counts the other an enemy are two contrasting energies; otherwise, or for a node,
+    nothing."""
+    fr = rules["reference"]["NATURAL_FRIENDS"]
+    if a not in fr or b not in fr:
+        return ""
+    if b in fr[a]["friend"] and a in fr[b]["friend"]:
+        return t26.RELATION_FRIENDS.format(a=a, b=b)
+    if b in fr[a]["enemy"] or a in fr[b]["enemy"]:
+        return t26.RELATION_ENEMIES.format(a=a, b=b)
+    return ""
+
+
+def apply_s26_class(rules):
+    """A copy of `rules` (as apply_s25_class() returns them) with the class of 4 Nov 2026: the recording points of
+    Venus and Saturn in each bhāva and her points for a weak or a strong planet, her remedies by house and her answer
+    as a tip, and every S23_GrahaPair row's `relation` (her answer on conjunct planets' friendship)."""
+    rules = copy.deepcopy(rules)
+    _apply_class(rules, t26)
+    for row in rules["graha_pair"]:
+        row["relation"] = relation(rules, row["a"], row["b"])
+    return rules
+
+
+def apply_s27_class(rules):
+    """A copy of `rules` (as apply_s26_class() returns them) with class 27: Ketu's rule and the recording points of
+    Ketu in the 5th to 12th, her Ketu and Rāhu remedies and her answers as tips."""
+    rules = copy.deepcopy(rules)
+    _apply_class(rules, t27)
+    return rules
+
+
 def apply_all(previous):
     """Every release step on `previous`, in order: what session23_rules.json holds (bar the reference tables)."""
-    return apply_s25_class(apply_s24_class(apply_s28_29(apply(previous))))
+    return apply_s27_class(apply_s26_class(apply_s25_class(apply_s24_class(apply_s28_29(apply(previous))))))
 
 
 def main():

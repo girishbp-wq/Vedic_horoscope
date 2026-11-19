@@ -139,12 +139,14 @@ class CuratedContent(unittest.TestCase):
         import session23_teacher_slides as ts
         import session24_class_texts as t24
         import session25_class_texts as t25
+        import session26_class_texts as t26
+        import session27_class_texts as t27
         for x in rules()["graha_in_bhava"]:
             self.assertEqual(x["status"], "taught", (x["planet"], x["house"]))
             if x["planet"] != "Sun":
                 src, text = ts.GRAHA_IN_BHAVA[(x["planet"], x["house"])]
-                key = (x["planet"], x["house"])               # the class points: the Moon's and Mars's, Mercury's, Jupiter's
-                extra = t24.GRAHA_IN_BHAVA_EXTRA.get(key, t25.GRAHA_IN_BHAVA_EXTRA.get(key, []))
+                key = (x["planet"], x["house"])               # the class points of the classes of 22 Oct to Nov 2026
+                extra = next((t.GRAHA_IN_BHAVA_EXTRA[key] for t in (t24, t25, t26, t27) if key in t.GRAHA_IN_BHAVA_EXTRA), [])
                 self.assertEqual(("\n\n".join(x["points"]), x["source"], x["extra"]), (text, src, extra), (x["planet"], x["house"]))
 
     def test_no_two_rows_share_text(self):
@@ -225,8 +227,10 @@ class TeacherRows(unittest.TestCase):
                                            for k, p, h, t, s in ts.CONDITIONS])
         import session24_class_texts as t24
         import session25_class_texts as t25
-        # the classes of 22 and 29 Oct 2026 add rows among them; the 29 Oct class gave every row its Houses
-        before_class = [x for x in r["remedies"] if x["source"] not in (t24.SOURCE, t25.SOURCE)]
+        # the classes of 22 Oct to Nov 2026 add rows among them; the 29 Oct class gave every row its Houses
+        import session26_class_texts as t26
+        import session27_class_texts as t27
+        before_class = [x for x in r["remedies"] if x["source"] not in (t24.SOURCE, t25.SOURCE, t26.SOURCE, t27.SOURCE)]
         self.assertEqual(before_class[:len(ts.REMEDIES)], [dict(topic=t, text=x, source=s, houses=[]) for t, x, s in ts.REMEDIES])
 
     def test_lord_in_and_graha_rashi_rows_follow_the_shipped_ones(self):
@@ -244,8 +248,9 @@ class TeacherRows(unittest.TestCase):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
         both = apply_teacher_slides.apply_all(prev)
-        self.assertEqual(both, apply_teacher_slides.apply_s25_class(apply_teacher_slides.apply_s24_class(
-            apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev)))))
+        self.assertEqual(both, apply_teacher_slides.apply_s27_class(apply_teacher_slides.apply_s26_class(
+            apply_teacher_slides.apply_s25_class(apply_teacher_slides.apply_s24_class(
+                apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev)))))))
         # the reference tables come from the master workbook's own sheets, not from the slides
         drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
         self.assertEqual(drop(both), drop(rules()))
@@ -275,9 +280,12 @@ class TeacherRows(unittest.TestCase):
 
     def test_s25_class_rows_present(self):
         import session25_class_texts as t
+        import session26_class_texts as t26
         r = rules()
         for row in r["graha_in_bhava"]:
             key = (row["planet"], row["house"])
+            if row["planet"] in ("Venus", "Saturn"):
+                continue                                                       # the class of 4 Nov's (below)
             self.assertEqual(row["if_weak"], t.IF_WEAK.get(key, []), key)
             self.assertEqual(row["if_strong"], t.IF_STRONG.get(key, []), key)
             if key in t.GRAHA_IN_BHAVA_EXTRA:
@@ -285,13 +293,47 @@ class TeacherRows(unittest.TestCase):
         rem = r["remedies"]
         self.assertTrue(all(isinstance(x["houses"], list) for x in rem))
         self.assertEqual({tuple(x["houses"]) for x in rem if x["topic"] == "Mars"}, {(2, 7, 8, 12)})
-        self.assertEqual({tuple(x["houses"]) for x in rem if x["topic"] not in ("Mars", "Mercury", "Jupiter")}, {()})
+        self.assertEqual({tuple(x["houses"]) for x in rem if x["topic"] in ("Moon", "Kuja", "Tip")}, {()})
         new = [dict(topic=a, text=b, source=d, houses=c) for a, b, c, d in t.REMEDIES]
         topics = [x["topic"] for x in rem]
         merc = topics.index("Mercury")                                       # the slides' Mercury row, then hers
         self.assertEqual(rem[merc + 1:merc + 25], new[:24])
         kuja_end = max(i for i, x in enumerate(topics) if x == "Kuja")
         self.assertEqual(rem[kuja_end], new[24])                             # the child's row closes the Kuja rows
+
+    def test_s26_s27_class_rows_present(self):
+        import session26_class_texts as t26
+        import session27_class_texts as t27
+        r = rules()
+        for row in r["graha_in_bhava"]:
+            key = (row["planet"], row["house"])
+            for t in (t26, t27):
+                if key in t.GRAHA_IN_BHAVA_EXTRA:
+                    self.assertEqual(row["extra"], t.GRAHA_IN_BHAVA_EXTRA[key], key)
+            if row["planet"] in ("Venus", "Saturn"):
+                self.assertEqual((row["if_weak"], row["if_strong"]), (t26.IF_WEAK.get(key, []), t26.IF_STRONG.get(key, [])), key)
+        rem = r["remedies"]
+        topics = [x["topic"] for x in rem]
+        for t in (t26, t27):
+            for topic, text, houses, src in t.REMEDIES:
+                self.assertIn(dict(topic=topic, text=text, source=src, houses=houses), rem, text)
+        # each topic's rows stay together, in planet order, the tips last
+        order = ["Moon", "Mars", "Kuja", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu", "Tip"]
+        blocks = [x for k, x in enumerate(topics) if k == 0 or topics[k - 1] != x]
+        self.assertEqual(blocks, order)
+        saturn = [x for x in rem if x["topic"] == "Saturn"]
+        self.assertEqual(saturn[0]["source"], "S25 p.42")                       # the slides' Saturn row stays first
+
+    def test_relation_column(self):
+        import session26_class_texts as t
+        rel = {(x["a"], x["b"]): x["relation"] for x in rules()["graha_pair"]}
+        self.assertEqual(rel[("Venus", "Saturn")], t.RELATION_FRIENDS.format(a="Venus", b="Saturn"))
+        self.assertEqual(rel[("Sun", "Saturn")], t.RELATION_ENEMIES.format(a="Sun", b="Saturn"))
+        self.assertEqual(rel[("Moon", "Mercury")], t.RELATION_ENEMIES.format(a="Moon", b="Mercury"))  # Mercury counts the Moon an enemy
+        self.assertEqual(rel[("Mercury", "Saturn")], "")                     # Saturn's friend, but neutral to Mercury
+        self.assertEqual({v for (a, b), v in rel.items() if "Rahu" in (a, b) or "Ketu" in (a, b)}, {""})
+        self.assertEqual((sum(v.endswith("smoother.") for v in rel.values()), sum("contrasting" in v for v in rel.values()),
+                          sum(v == "" for v in rel.values())), (6, 9, 21))       # 21: 6 neither-nor pairs and the nodes' 15
 
     def test_round1_rows_present(self):
         import session28_29_teacher_texts as t
@@ -306,7 +348,8 @@ class TeacherRows(unittest.TestCase):
                                               for f, to, st, a, ag, x, s in t.DEGREE_STAGES])
         whens = {(c["class"], c["applies"]): c["when"] for c in r["class_rules"] if c["when"]}
         self.assertEqual(whens, {("Dusthana", "malefic"): "not weak"})
-        self.assertEqual(r["remedies"][-1], dict(topic="Tip", text=t.REMEDIES[0][1], source="S29 p.50", houses=[]))
+        tips = [x for x in r["remedies"] if x["topic"] == "Tip"]
+        self.assertIn(dict(topic="Tip", text=t.REMEDIES[0][1], source="S29 p.50", houses=[]), tips)   # later classes' tips follow
         keys = list(r)
         self.assertLess(keys.index("chart_readings"), keys.index("degree_stages"))
         self.assertLess(keys.index("degree_stages"), keys.index("reference"))
