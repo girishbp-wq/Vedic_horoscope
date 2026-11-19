@@ -588,6 +588,7 @@ details.section[open] > summary::after { content: "−"; }
 .s23-chip.s23-nature.malefic, .s23-chip.s23-nature.mild-malefic { background: #f7ece4; color: #7a3b16; border-color: #dcb79c; }
 .s23-points, .s23-extra, .s23-class-texts, .s23-nature-lines, .s23-remedies, .s23-if-list { margin: 2px 0 6px; padding-left: 18px; }
 .s23-strength-line { margin: 4px 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.s23-relation { font-style: italic; color: var(--muted); overflow-wrap: anywhere; }
 .s23-src { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 8px; background: #efe9f7; color: #5a3d7a; border: 1px solid #d6c8ea; white-space: nowrap; }
 .s23-twelfth-line { font-style: italic; }
 .s23-conds { margin: 2px 0 6px; padding-left: 18px; }
@@ -5102,7 +5103,7 @@ function renderGrahaReference() {
 
   /* "Tip of the Day" remedies to strengthen a graha. */
   html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Remedies to Strengthen a Graha</h4>`;
-  // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-25 (S23.remedies, from the S23_Remedies sheet)
+  // Sessions 9-10 (GRAHA_REMEDIES) and Sessions 23-27 (S23.remedies, from the S23_Remedies sheet)
   const s23Rem = p => S23.remedies.filter(r=>r.topic===p);
   // "Kuja" is a topic of S23_Remedies, not a graha: its rows show under their own name, after Mars's
   const remedyWhen = {Moon: "for a debilitated or an afflicted Moon",
@@ -5114,14 +5115,14 @@ function renderGrahaReference() {
     return ` <span class="dig-note s23-rem-houses">— for ${p} in the ${list} house</span>`;
   };
   const remedyName = {Kuja: "Kuja doṣa"};
-  for (const p of ["Moon","Mars","Kuja","Mercury","Jupiter","Venus","Saturn"]) {
+  for (const p of ["Moon","Mars","Kuja","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]) {
     const old = GRAHA_REMEDIES[p] || [], taught = s23Rem(p);
     if (!old.length && !taught.length) continue;
     html += `<p style="margin:10px 0 4px;"><strong>${remedyName[p]||p}</strong>${remedyWhen[p]?` <span class="dig-note">${remedyWhen[p]}</span>`:""}</p>
       <ul>${old.map(r=>`<li>${r}</li>`).join("")}${taught.map(r=>`<li>${s23Para(r.text)}${remedyHouses(p, r.houses)}${s23Src(r.source)}</li>`).join("")}</ul>`;
     if (p==="Saturn") html += `<p class="dig-note">${SATURN_GREATEST_REMEDY}</p>`;
   }
-  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn, and in class for Mars (22 Oct 2026), Mercury and Jupiter (29 Oct 2026); other grahas will be added as they are taught. A remedy for a house shows on the planet's card when the planet sits there.</p>`;
+  html += `<p class="akshara-note">Remedies are given in the course decks for the Moon, Mercury, Jupiter, Venus and Saturn, and in class for Mars (22 Oct 2026), Mercury and Jupiter (29 Oct 2026), Venus and Saturn (4 Nov 2026), Ketu and Rāhu (class 27, Nov 2026). A remedy for a house shows on the planet's card when the planet sits there. A remedy is needed only when there is a problem in that area of life.</p>`;
   const tips = s23Rem("Tip");
   if (tips.length) html += `<h4 style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--maroon);margin:22px 0 8px;">Tips of the day</h4>`
     +`<ul class="s23-tips">${tips.map(r=>`<li>${s23Para(r.text)}${s23Src(r.source)}</li>`).join("")}</ul>`;
@@ -5776,7 +5777,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-11-02 · the Moon's pakṣa in its overall strength";
+const TOOL_VERSION = "2026-11-19 · classes of 4 Nov and 27: Venus, Saturn, Ketu, Upachaya, friends";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -6042,7 +6043,7 @@ function renderTransitPane(natalSid, natalMoonR, lagnaN){
   h+=`<h4 class="pane-h">Transit aspects on natal planets</h4>`;
   h+= rows.length ? `<ul class="rlist">${rows.map(r=>`<li>${r.html}</li>`).join("")}</ul>`
                   : `<p>No transit planet currently aspects a natal planet.</p>`;
-  h+=`<p class="rnote">Transit positions for now (UTC), same ayanāṁśa as the birth chart. Gochara is read primarily from the natal Moon (Chandra Lagna).</p>`;
+  h+=`<p class="rnote">Transit positions for now (UTC), same ayanāṁśa as the birth chart. Gochara is read primarily from the natal Moon (Chandra Lagna). Transit gives about 25% of the effect; the birth chart is stronger (class 27, Nov 2026).</p>`;
   el.innerHTML=h;
 }
 
@@ -6688,7 +6689,8 @@ function s23StrengthDetail(ctx, p){
 }
 function s23Strength(ctx, p){ return s23StrengthDetail(ctx, p).word; }
 /* Overall strength with the class of 29 Oct 2026 (spec D4): mirrors strength_overall() and strength_points().
-   The Session 29 word above still chooses Session 29's own texts. The Moon's pakṣa follows its sign. */
+   The Session 29 word above still chooses Session 29's own texts. The Moon's pakṣa follows its sign; a malefic in an
+   Upachaya house counts as stronger (class of 4 Nov 2026). */
 const S23_WITH_MALEFICS = ["Saturn","Mars","Ketu"];
 const S23_PAKSHA_PHRASE = {true:"waxing (Shukla Pakṣa)", false:"waning (Kṛṣṇa Pakṣa)"};   // the Moon's (user's ruling, 2 Nov 2026)
 function s23HouseStrengthPhrase(lg, house){
@@ -6705,6 +6707,8 @@ function s23StrengthOverall(ctx, p){
   if(p==="Moon" && ctx.waxing!=null) (ctx.waxing ? stronger : weaker).push(S23_PAKSHA_PHRASE[ctx.waxing]);
   const phrase=s23HouseStrengthPhrase(lg, house);
   if(phrase) stronger.push(phrase);
+  // class of 4 Nov 2026: "for all the malefic planets, the Upachaya houses are good"
+  if(s23NatureClass(p)==="malefic" && s23ClassHousesAt("Upachaya", lg).includes(house)) stronger.push(`a malefic in an Upachaya (the ${ord(house)})`);
   const company=S23_PLANETS.filter(q=>q!==p && sg[q]!==undefined && sg[q]===sign);
   stronger.push(...company.filter(q=>S23_BENEFICS.includes(q)).map(q=>`with ${q}`));
   const outright=company.filter(q=>S23_WITH_MALEFICS.includes(q)).map(q=>`with ${q}`);
@@ -7180,7 +7184,8 @@ function s23GrahaGraha(lagnaN, pbr, degs){
           if(combust) note=`${b} is within ${COMBUST_ORB}° of the Sun (combust): ${PLANET_PROFILE[b]["Combustion Effect"]}.`;
         } else combust=null;
       }
-      conjunctions.push({a, b, house:s23HouseOf(lg,sg[a]), text:row.conjunction, status:row.status, combust, combust_note:note});
+      conjunctions.push({a, b, house:s23HouseOf(lg,sg[a]), text:row.conjunction, status:row.status, combust, combust_note:note,
+        relation:row.relation||""});
     }
   });
   for(const p of placed) for(const h of SPECIAL_ASPECTS[p]){
@@ -7389,6 +7394,10 @@ function s23OverallText(o){
   return `<span class="s23-chip s23-overall ${cls}" title="Overall strength, with the class of 29 Oct 2026">${o.word}</span> — `
     +_esc(why.length ? why.join("; ") : "nothing in the chart makes it stronger or weaker");
 }
+/* Her line for two planets in one bhāva (S23_GrahaPair Relation, class of 4 Nov 2026): friends, or not. */
+function s23RelationLine(c){
+  return c.relation ? `<br><span class="s23-relation" title="Her answer in the class of 4 Nov 2026">${_esc(c.relation)}</span>` : "";
+}
 function s23StrengthLines(st, o){
   return `<p class="s23-strength-line s23-s29-line"><strong>Strength (S29):</strong> ${s23StrengthChip(st)}</p>`
     +`<p class="s23-strength-line s23-overall-line"><strong>Overall, with the class of 29 Oct:</strong> ${s23OverallText(o)}</p>`;
@@ -7491,7 +7500,7 @@ function s23BuildLayerView(sid, lagnaN, extra){
   h+=gg.conjunctions.length
     ? `<ul class="s23-pairs" id="s23-conj">${gg.conjunctions.map(c=>`<li data-a="${c.a}" data-b="${c.b}" data-house="${c.house}" data-status="${c.status}" data-combust="${c.combust===null?"":c.combust}">`
         +`<strong>${GLYPH9[c.a]} ${c.a} + ${GLYPH9[c.b]} ${c.b}</strong> in the ${ord(c.house)} house ${s23Tag(c.status)}<br><span class="s23-text">${_esc(c.text)}</span>`
-        +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+`</li>`).join("")}</ul>`
+        +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+s23RelationLine(c)+`</li>`).join("")}</ul>`
     : `<ul class="s23-pairs" id="s23-conj"><li class="rnote">No two planets share a rāśi in this chart.</li></ul>`;
   h+=`<h5 class="s23-class-head">Aspects (special drishti, as in the Graha Drishti section)</h5>`;
   h+=gg.aspects.length
@@ -7593,7 +7602,7 @@ function s23BvHouse(b){
   let l4="";
   if(b.conjunctions.length) l4+=`<p class="s23-sub">Planets meeting here</p><ul class="s23-bv-pairs">${b.conjunctions.map(c=>`<li data-a="${c.a}" data-b="${c.b}">`
     +`<strong>${GLYPH9[c.a]} ${c.a} + ${GLYPH9[c.b]} ${c.b}</strong> ${s23Tag(c.status)}<br>${_esc(c.text)}`
-    +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+`</li>`).join("")}</ul>`;
+    +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+s23RelationLine(c)+`</li>`).join("")}</ul>`;
   if(b.planet_aspects.length) l4+=`<p class="s23-sub">Aspects onto the planets here</p><ul class="s23-bv-pairs">${b.planet_aspects.map(a=>`<li data-by="${a.by}" data-to="${a.to}">`
     +`<strong>${GLYPH9[a.by]} ${a.by} → ${GLYPH9[a.to]} ${a.to}</strong> (${aspectOrd(a.by, a.house_aspect)} aspect) ${s23Tag(a.status)}`
     +(a.jupiter_flag?` <span class="section-flag flag-exalted flag-deep s23-jup">Aspect &gt; placement</span>`:"")

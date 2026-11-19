@@ -1563,25 +1563,43 @@ class Session25Class(unittest.TestCase):
 
     def test_neutral_sign_in_a_kendra_is_strong(self):
         self.assertEqual(self.overall(11, {"Saturn": 8}, "Saturn"),              # Meena Lagna, Saturn in Dhanu (the 10th)
-                         {"word": "strong", "stronger": ["in a Kendra (the 10th)"], "weaker": []})
+                         {"word": "strong", "stronger": ["in a Kendra (the 10th)", "a malefic in an Upachaya (the 10th)"],
+                          "weaker": []})
 
     def test_nothing_either_way_depends(self):
-        self.assertEqual(self.overall(6, {"Saturn": 8}, "Saturn"),               # Tula Lagna: Dhanu is the 3rd
+        self.assertEqual(self.overall(7, {"Saturn": 8}, "Saturn"),               # Vrischika Lagna: Dhanu is the 2nd
                          {"word": "depends", "stronger": [], "weaker": []})
 
     def test_with_saturn_is_weak_even_in_a_good_sign(self):
-        got = self.overall(6, {"Sun": 8, "Saturn": 8}, "Sun")                    # the Sun in Dhanu, a friend's sign
+        got = self.overall(7, {"Sun": 8, "Saturn": 8}, "Sun")                    # the Sun in Dhanu, a friend's sign
         self.assertEqual(got, {"word": "weak", "stronger": ["Friend's House"], "weaker": ["with Saturn"]})
 
     def test_benefic_company_and_aspect_strengthen(self):
-        self.assertEqual(self.overall(6, {"Saturn": 8, "Jupiter": 2}, "Saturn"),     # Jupiter's 7th from Mithuna
+        self.assertEqual(self.overall(7, {"Saturn": 8, "Jupiter": 2}, "Saturn"),     # Jupiter's 7th from Mithuna
                          {"word": "strong", "stronger": ["aspected by Jupiter"], "weaker": []})
-        self.assertEqual(self.overall(6, {"Saturn": 8, "Venus": 8}, "Saturn"),
+        self.assertEqual(self.overall(7, {"Saturn": 8, "Venus": 8}, "Saturn"),
                          {"word": "strong", "stronger": ["with Venus"], "weaker": []})
 
     def test_malefic_aspect_weakens(self):
-        self.assertEqual(self.overall(6, {"Saturn": 8, "Mars": 2}, "Saturn"),
+        self.assertEqual(self.overall(7, {"Saturn": 8, "Mars": 2}, "Saturn"),
                          {"word": "weak", "stronger": [], "weaker": ["aspected by Mars"]})
+
+    # the Upachaya houses for a malefic (class of 4 Nov 2026) -------------
+    def test_a_malefic_in_an_upachaya_is_stronger(self):
+        self.assertEqual(self.overall(6, {"Saturn": 8}, "Saturn"),               # Tula Lagna: Dhanu is the 3rd
+                         {"word": "strong", "stronger": ["a malefic in an Upachaya (the 3rd)"], "weaker": []})
+        self.assertEqual(self.overall(3, {"Saturn": 8}, "Saturn"),               # Karka Lagna: the 6th, a duṣthāna too
+                         {"word": "mixed", "stronger": ["a malefic in an Upachaya (the 6th)"],
+                          "weaker": ["in a duṣthāna (the 6th)"]})
+        self.assertEqual(self.overall(1, {"Rahu": 11, "Ketu": 5}, "Rahu")["stronger"], ["a malefic in an Upachaya (the 11th)"])
+
+    def test_the_sun_counts_as_a_mild_malefic(self):
+        self.assertEqual(self.overall(3, {"Sun": 0}, "Sun")["stronger"],          # Karka Lagna: Mesha is the 10th
+                         ["Exalted", "in a Kendra (the 10th)", "a malefic in an Upachaya (the 10th)"])
+
+    def test_a_benefic_in_an_upachaya_gets_nothing_for_it(self):
+        self.assertEqual(self.overall(6, {"Jupiter": 8}, "Jupiter"),             # own sign, the 3rd
+                         {"word": "strong", "stronger": ["Own (Moolatrikona)"], "weaker": []})
 
     def test_the_first_house_is_kendra_and_trikona(self):
         self.assertEqual(self.overall(8, {"Saturn": 8}, "Saturn")["stronger"], ["in the 1st (Kendra and Trikoṇa)"])
@@ -1618,11 +1636,22 @@ class Session25Class(unittest.TestCase):
 
     def test_paksha_is_the_moons_alone(self):
         for waxing in (True, False):
-            self.assertEqual(br.strength_overall(RULES, br.context(6, {"Saturn": 8, "Moon": 0}, None, waxing), "Saturn"),
+            self.assertEqual(br.strength_overall(RULES, br.context(7, {"Saturn": 8, "Moon": 0}, None, waxing), "Saturn"),
                              {"word": "depends", "stronger": [], "weaker": []})
 
     def test_session_29_word_ignores_paksha(self):
         self.assertEqual(br.strength_detail(RULES, br.context(6, {"Moon": 8}, None, False), "Moon")["word"], "depends")
+
+    # conjunct planets' friendship (class of 4 Nov 2026) ------------------
+    def test_conjunctions_carry_the_relation(self):
+        import session26_class_texts as t
+        conj = br.graha_graha(RULES, 0, {"Venus": 4, "Saturn": 4, "Sun": 4, "Rahu": 4, "Ketu": 10})["conjunctions"]
+        rel = {(c["a"], c["b"]): c["relation"] for c in conj}
+        self.assertEqual(rel[("Venus", "Saturn")], t.RELATION_FRIENDS.format(a="Venus", b="Saturn"))
+        self.assertEqual(rel[("Sun", "Saturn")], t.RELATION_ENEMIES.format(a="Sun", b="Saturn"))
+        self.assertEqual(rel[("Saturn", "Rahu")], "")                            # a node: nothing
+        reading = br.bhava_reading(RULES, br.context(0, {"Venus": 4, "Saturn": 4}), 5)
+        self.assertEqual([c["relation"] for c in reading["conjunctions"]], [rel[("Venus", "Saturn")]])
 
     # strength points ------------------------------------------------------
     def test_points_by_the_overall_word(self):

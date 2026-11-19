@@ -1229,7 +1229,7 @@ class ExcelSession23(unittest.TestCase):
                     planets.add(p)
         self.assertIn(7, seen)                                   # the 7th (no Kuja rows on the card) …
         self.assertTrue(seen & {2, 8, 12}, seen)                 # … and the other houses were exercised
-        self.assertEqual(planets, {"Mars", "Mercury", "Jupiter"})
+        self.assertTrue({"Mars", "Mercury", "Jupiter", "Venus"} <= planets, planets)   # and the classes of November
 
     def test_overall_strength_columns_equal_python(self):
         """The class of 29 Oct 2026 on S23_Predict_Calc: the overall word, what makes the planet stronger and weaker,
@@ -1523,7 +1523,8 @@ class ExcelUserRemedyRow(unittest.TestCase):
                 wb.save(src / f"c{h}.xlsx")
             _lo_recalc([src / "c6.xlsx", src / "c8.xlsx"], out)
             want = {"Mars": [x["text"] for x in RULES["remedies"] if x["topic"] == "Mars"] + ["My own Mars remedy."],
-                    "Venus": ["My own Venus remedy."]}
+                    "Venus": [x["text"] for x in RULES["remedies"] if x["topic"] == "Venus" and 6 in x["houses"]]
+                    + ["My own Venus remedy."]}                                  # hers for the 6th (4 Nov 2026), then mine
             for p, h in (("Mars", 8), ("Venus", 6)):
                 got = openpyxl.load_workbook(out / f"c{h}.xlsx", data_only=True)
                 r = mx.PREDICT_ROW0 + br.PLANET_ORDER.index(p)

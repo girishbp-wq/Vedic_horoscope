@@ -685,6 +685,8 @@ def _predict_s25_class(ws, rules):
         stronger = (f'IF({strong_label},", "&$F{r},""){paksha[True]}'
                     f'&IF(AND({cls("Kendra", r)},{cls("Trikona", r)}),", in the "&{o}&" (Kendra and Trikoṇa)",'
                     f'IF({cls("Kendra", r)},", in a Kendra (the "&{o}&")",IF({cls("Trikona", r)},", in a Trikoṇa (the "&{o}&")","")))'
+                    # class of 4 Nov 2026: a malefic (the Sun a mild one) in an Upachaya house
+                    f'&IF(AND($C{r}<>"benefic",{cls("Upachaya", r)}),", a malefic in an Upachaya (the "&{o}&")","")'
                     + "".join(f'&IF({chart_sign(j)}={sign},", with {q}","")' for j, q in others if q in br.BENEFICS)
                     + "".join(f'&IF({aspects(q)},", aspected by {q}","")' for j, q in others if q in br.BENEFICS))
         ws.cell(row=r, column=OUTRIGHT_COL,
@@ -1500,7 +1502,7 @@ def _bhava_sheet(ws, rules):
     pair_row = lambda a, b: (f"SUMPRODUCT((S23_GrahaPair!$A$2:$A$300=\"{a}\")*(S23_GrahaPair!$B$2:$B$300=\"{b}\")"
                              f"*ROW(S23_GrahaPair!$A$2:$A$300))")
     orb = ref["COMBUST_ORB"]
-    _head(ws, BV_CONJ_ROW0 - 1, ["A", "B", "Here?", "Conjunction", "Status", "Combust note", "Row in GrahaPair"])
+    _head(ws, BV_CONJ_ROW0 - 1, ["A", "B", "Here?", "Conjunction", "Status", "Combust note", "Row in GrahaPair", "Relation"])
     for i, (a, b) in enumerate(BV_PAIRS):
         r = BV_CONJ_ROW0 + i
         cell(r, 1, a)
@@ -1509,6 +1511,7 @@ def _bhava_sheet(ws, rules):
         cell(r, 7, f"={pair_row(a, b)}")
         cell(r, 4, f'=INDEX(S23_GrahaPair!$C$1:$C$300,$G{r})&""')
         cell(r, 5, f'=INDEX(S23_GrahaPair!$E$1:$E$300,$G{r})&""')
+        cell(r, 8, f'=INDEX(S23_GrahaPair!$G$1:$G$300,$G{r})&""')            # her line: friends, or not (4 Nov 2026)
         if a == "Sun" and b in ref["COMBUST_PLANETS"]:
             cell(r, 6, (f'=IF(ABS({deg(a)}-{deg(b)})<={orb},"{b} is within {orb}° of the Sun (combust): "'
                         f'&{planet_ref(2, br.PLANET_ORDER.index(b))}&".","")'))
@@ -1613,7 +1616,7 @@ def bhava_from_sheet(ws):
                             "malefic_aspects": [x for x in txt(r, 11).split(", ") if x], "facts": facts(txt(r, 2))})
     supports = [txt(x, SUPPORT_COL) for x in range(b0, BV_KLINE_ROW0 + 2 * KLINE_ROWS) if txt(x, SUPPORT_COL)]
     pressure = [txt(x, PRESSURE_COL) for x in range(b0, BV_KLINE_ROW0 + 2 * KLINE_ROWS) if txt(x, PRESSURE_COL)]
-    conj = [{"a": txt(r, 1), "b": txt(r, 2), "text": txt(r, 4), "status": txt(r, 5), "combust_note": txt(r, 6)}
+    conj = [{"a": txt(r, 1), "b": txt(r, 2), "text": txt(r, 4), "status": txt(r, 5), "combust_note": txt(r, 6), "relation": txt(r, 8)}
             for r in range(BV_CONJ_ROW0, BV_CONJ_ROW0 + len(BV_PAIRS)) if yes(r, 3)]
     pasp, r = [], BV_PASP_ROW0
     while txt(r, 1):
@@ -1656,7 +1659,7 @@ def bhava_sheet_view(reading):
     return dict(reading, occupants=[occupant(o) for o in reading["occupants"]],
                 aspecting=[dict(a, readings=shown(a["readings"])) for a in reading["aspecting"]],
                 lord=None if lord is None else {**{k: v for k, v in lord.items() if k != "source"}, "facts": facts(lord["facts"])},
-                conjunctions=[{k: c[k] for k in ("a", "b", "text", "status", "combust_note")} for c in reading["conjunctions"]],
+                conjunctions=[{k: c[k] for k in ("a", "b", "text", "status", "combust_note", "relation")} for c in reading["conjunctions"]],
                 planet_aspects=[{k: a[k] for k in ("by", "to", "text", "status")} for a in reading["planet_aspects"]],
                 lord_company=[dict(w, readings=shown(w["readings"])) for w in reading["lord_company"]],
                 karakas=[dict(k, facts=facts(k["facts"])) for k in reading["karakas"]])

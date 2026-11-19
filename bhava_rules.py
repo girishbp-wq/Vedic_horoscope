@@ -356,7 +356,8 @@ def strength_overall(rules, ctx, planet):
     aspect), depends with none (a neutral sign, nothing else). Session 29's own word (strength_detail) still chooses
     Session 29's texts: her deck gives "strong" texts for a lord in a duṣthāna, which the house factor would hide.
     The Moon's pakṣa (Sessions 12, 26; the user's ruling of 2 Nov 2026) follows the sign: waxing is stronger, waning
-    weaker, nothing when it is not known."""
+    weaker, nothing when it is not known. Her answer of 4 Nov 2026, "for all the malefic planets, the Upachaya houses
+    are good", makes a malefic (the Sun a mild one) in the 3rd, 6th, 10th or 11th stronger."""
     lagna, sg = ctx["lagna"], ctx["signs"]
     sign, house = sg[planet], house_of(lagna, sg[planet])
     s29 = strength_detail(rules, ctx, planet)
@@ -367,6 +368,8 @@ def strength_overall(rules, ctx, planet):
         (stronger if ctx["waxing"] else weaker).append(PAKSHA_PHRASE[ctx["waxing"]])
     phrase = _house_strength_phrase(rules, lagna, house)
     stronger += [phrase] if phrase else []
+    if nature_class(planet) == "malefic" and house in class_houses(rules, "Upachaya", lagna):
+        stronger.append(f"a malefic in an Upachaya (the {ordinal(house)})")     # class of 4 Nov 2026
     company = [p for p in PLANET_ORDER if p != planet and sg.get(p) == sign]
     stronger += [f"with {p}" for p in company if p in BENEFICS]
     outright = [f"with {p}" for p in company if p in WITH_MALEFICS]
@@ -1264,7 +1267,8 @@ def graha_graha(rules, lagna, signs, degs=None):
                 else:
                     combust = None
             conjunctions.append({"a": a, "b": b, "house": house_of(lagna, signs[a]), "text": row["conjunction"],
-                                 "status": row["status"], "combust": combust, "combust_note": note})
+                                 "status": row["status"], "combust": combust, "combust_note": note,
+                                 "relation": row.get("relation", "")})
     aspects = []
     for p in placed:
         for h in ref["SPECIAL_ASPECTS"][p]:

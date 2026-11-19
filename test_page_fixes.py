@@ -2267,6 +2267,112 @@ class Session25Class(unittest.TestCase):
             self.assertEqual(self.r[k]["found"], [], k)
 
 
+@needs_browser
+class Classes26And27(unittest.TestCase):
+    """The class of 4 Nov 2026 and class 27: conjunct planets carry her friendship line (none for a node); a malefic in
+    an Upachaya counts as stronger; the Venus, Saturn, Rāhu and Ketu remedies, her tips, the transit note."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Mesha Lagna: Venus, Saturn and Ketu in Kumbha (the 11th), Mars in Mithuna (the 3rd)
+        sid = {"Sun": 10, "Moon": 200, "Mars": 70, "Mercury": 40, "Jupiter": 250, "Venus": 305, "Saturn": 310,
+               "Rahu": 125, "Ketu": 305.5}
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            const out = {};
+            out.transit = await page.evaluate(() => document.getElementById('pane-transit').textContent);
+            const render = () => page.evaluate(s => renderS23Sections(s, 1, {}), SID);
+            const look = () => page.evaluate(() => {
+              const rel = (root, a, b) => { const li = root.querySelector(`li[data-a="${a}"][data-b="${b}"]`);
+                                            const x = li && li.querySelector('.s23-relation'); return li ? (x ? x.textContent : "") : null; };
+              const layer = document.getElementById('s23-view-layer'), bv = document.getElementById('s23-bv-h11');
+              const card = p => layer.querySelector(`.s23-gb[data-planet="${p}"]`);
+              return {layerVS: rel(layer, 'Venus', 'Saturn'), layerVK: rel(layer, 'Venus', 'Ketu'), bvVS: rel(bv, 'Venus', 'Saturn'),
+                      bold: layer.querySelectorAll('#s23-conj .s23-relation b').length,
+                      mars: card('Mars').querySelector('.s23-overall-line').textContent,
+                      saturnExtra: [...card('Saturn').querySelectorAll('ul.s23-extra li')].map(li => li.textContent),
+                      venusRemedies: [...card('Venus').querySelectorAll('ul.s23-remedies li')].map(li => li.textContent)};
+            });
+            await render();
+            out.first = await look();
+            await page.evaluate(() => { S23.graha_pair.find(x => x.a === 'Venus' && x.b === 'Saturn').relation = 'Mine <b>"bold"</b> & more.'; });
+            await render();
+            out.escaped = await look();
+            await page.evaluate(() => renderGrahaReference());
+            out.ref = await page.evaluate(() => {
+              const box = document.getElementById('akshara-body');
+              const entry = name => {
+                const head = [...box.querySelectorAll('p strong')].find(s => s.textContent === name);
+                const ul = head && head.closest('p').nextElementSibling;
+                return ul ? [...ul.querySelectorAll('li')].map(li => li.textContent) : [];
+              };
+              return {Venus: entry('Venus'), Rahu: entry('Rahu'), Ketu: entry('Ketu'),
+                      tips: [...box.querySelectorAll('ul.s23-tips li')].map(li => li.textContent)};
+            });
+            await page.setViewportSize({width: 375, height: 800});
+            await page.evaluate(() => { S23.graha_pair.find(x => x.a === 'Venus' && x.b === 'Saturn').relation = 'Venus and Saturn are friends.'; });
+            await render();
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            await page.click('.s23-view-btn[data-view="layer"]');
+            out.phone = await page.evaluate(() => {
+              const vw = document.documentElement.clientWidth;
+              const wide = [...document.querySelectorAll('#s23-conj *')].filter(el => el.offsetParent && el.getBoundingClientRect().right > vw + 1);
+              return {scroll: document.documentElement.scrollWidth, wide: wide.length};
+            });
+            return out;
+        """.replace("SID", json.dumps(sid)))
+        import bhava_rules as br
+        import session26_class_texts as t26
+        import session27_class_texts as t27
+        cls.rules, cls.t26, cls.t27 = br.load_rules(), t26, t27
+
+    def test_conjunction_shows_her_relation_line(self):
+        want = self.t26.RELATION_FRIENDS.format(a="Venus", b="Saturn")
+        self.assertEqual((self.r["first"]["layerVS"], self.r["first"]["bvVS"]), (want, want))
+        self.assertEqual(self.r["first"]["layerVK"], "")                       # a node: no line
+
+    def test_relation_text_is_escaped(self):
+        self.assertEqual(self.r["escaped"]["layerVS"], 'Mine <b>"bold"</b> & more.')
+        self.assertEqual(self.r["escaped"]["bold"], 0)
+
+    def test_malefic_in_an_upachaya_on_the_card(self):
+        self.assertIn("a malefic in an Upachaya (the 3rd)", self.r["first"]["mars"])
+
+    def test_saturn_card_has_her_class_points(self):
+        self.assertEqual(self.r["first"]["saturnExtra"], self.t26.GRAHA_IN_BHAVA_EXTRA[("Saturn", 11)])
+
+    def test_venus_card_lists_her_remedies_for_the_11th(self):
+        want = [r for r in self.rules["remedies"] if r["topic"] == "Venus" and 11 in r["houses"]]
+        self.assertEqual(len(self.r["first"]["venusRemedies"]), len(want))
+        self.assertEqual(len(want), 2)
+        for got, w in zip(self.r["first"]["venusRemedies"], want):
+            self.assertTrue(" ".join(got.split()).startswith(" ".join(w["text"].split())), got)
+
+    def test_graha_remedies_list_has_rahu_and_ketu(self):
+        ref = self.r["ref"]
+        for topic in ("Rahu", "Ketu"):
+            rows = [r for r in self.rules["remedies"] if r["topic"] == topic]
+            self.assertTrue(rows)
+            for r in rows:
+                self.assertTrue(any(" ".join(li.split()).startswith(" ".join(r["text"].split())) for li in ref[topic]), r["text"])
+        self.assertTrue(any("for Venus in the 1st house" in li for li in ref["Venus"]))
+
+    def test_tips_include_her_answers(self):
+        tips = " ".join(self.r["ref"]["tips"])
+        for topic, text, _, _ in self.t27.REMEDIES + self.t26.REMEDIES:
+            if topic == "Tip":
+                self.assertIn(" ".join(text.split()), " ".join(tips.split()))
+
+    def test_transit_note(self):
+        self.assertIn("about 25% of the effect", self.r["transit"])
+
+    def test_phone_width(self):
+        self.assertLessEqual(self.r["phone"]["scroll"], 375)
+        self.assertEqual(self.r["phone"]["wide"], 0)
+
+
 # Sidereal positions from the Swiss Ephemeris 2.10 (pyswisseph, Moshier ephemeris, calc_ut with SEFLG_SIDEREAL):
 # 60 random moments 1900-2100 in Lahiri, and Kusuma's chart (22 Feb 1975 16:30 IST) in Lahiri and KP-New, whose Mars
 # sits 57" short of Capricorn in KP-New.

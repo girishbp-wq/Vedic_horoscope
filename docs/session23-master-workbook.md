@@ -117,6 +117,30 @@ How the page and the calculator read them:
   under "As Mercury is strong:" when it is strong; when it is mixed or depends both show, under "If Mercury is
   strong:" and "If Mercury is weak:".
 
+## Classes of 4 Nov 2026 and class 27 (Nov 2026) — one-time update
+1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
+2. Run `python make_session23_xlsx.py --install`. It upgrades your `S23_` data sheets as described above:
+   - `S23_GrahaInBhava`: Venus's and Saturn's 24 rows get her class points (`Extra`) and her points for a weak or a
+     strong planet (`IfWeak`, `IfStrong`); Ketu's rows get her rule (the 1st) and her points for the 5th to 12th. A
+     row you edited is kept and listed.
+   - `S23_Remedies`: her Venus remedies (1st, 2nd, 6th, 8th, 11th), Saturn remedies (8th), Ketu remedies (general and
+     5th to 12th), Rāhu remedies (general and 8th), and her answers as `Tip` rows.
+   - `S23_GrahaPair` gains a **Relation** column: her line for two planets in one bhāva — friends "work together …
+     easier and smoother", planets that are not friends are "two contrasting energies … some stress". It is filled
+     from the natural friendships (Rāhu and Ketu have none, so their rows stay blank); you can edit it.
+
+   It also rebuilds the calculator sheets: `S23_Bhava_Calc` shows the Relation of each pair of planets in the house.
+3. Open the workbook in Excel, save once, close it, and run `publish.bat` — it should report no changes.
+
+Two of her answers are rules, on the page, in Python and on the calculator:
+- **Upachaya for malefics.** "For all the malefic planets, the Upachaya houses are good. 3, 6, 10, 11." A malefic
+  (Saturn, Mars, Rāhu, Ketu, and the Sun as a mild malefic) in the 3rd, 6th, 10th or 11th now counts as stronger in
+  the overall strength ("a malefic in an Upachaya (the 6th)"). The 6th is a duṣthāna too, so a malefic there is
+  usually mixed.
+- **Friends or not.** A conjunction shows the pair's Relation line under its reading.
+
+The recording of class 27 starts in the middle of Ketu in the 6th, so Rāhu and Ketu in the 1st to 5th are not in it.
+
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`
