@@ -167,6 +167,16 @@ Three of her rules are now part of every bhāva lord's placement line (the page,
 
 The slides she used, "MASTER COPY - Session 28", are the Session 26 and 27 decks, which the app already holds.
 
+## The "Data Validation extension" warning
+`publish.bat` and `--install` read the workbook with openpyxl, which cannot read a drop-down whose list sits on another
+sheet (Excel saves those in a newer form) and prints "Data Validation extension is not supported and will be removed".
+Since 20 Nov 2026 the `S23_` drop-downs list cells on their own sheet (hidden columns `S23_Chart!H` and
+`S23_LifeArea_Calc!BW`), so after the next `--install`, then a save in Excel, they no longer cause it.
+
+If `publish.bat` still prints the warning after that, one of your own sheets has such a drop-down. `publish.bat` only
+reads, so nothing is lost there, but `--install` saves the workbook and would drop that drop-down: check your sheets
+after an install, and copy it back from the copy in `backups\` if it went.
+
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`

@@ -62,6 +62,8 @@ MOON_LON_CELL, SUN_LON_CELL, WAXING_CELL = "B15", "B16", "B17"
 BIRTH_CELL, NOW_CELL = "B18", "B19"
 GENDER_CELL, AGE_CELL = "B20", "B21"          # Chart: Male / Female / blank; age in years at "Now"
 RETRO_COL = 6                                # Chart: column F, "yes" for a retrograde planet (rows 5-13)
+SIGN_LIST_COL = 8                            # Chart: hidden column H, rows 3-14 — the signs for the drop-downs
+AREA_LIST_COL = 75                           # LifeArea_Calc: hidden column BW, from row 2 — the areas for the drop-down
 DASHA_RUNNING_CELL = "B11"                   # Dasha_Calc: TRUE when "Now" falls inside the 120-year span
 CLASS_ROW0, CLASS_ROWS = 4, 33               # Classes_Calc: class tables (header row 3)
 BADHAKA_ROW = 40                             # B mode, C house, D rāśi, E lord, F occupants (header row 39)
@@ -251,7 +253,13 @@ def _chart_sheet(ws, rules):
                          errorTitle="Retrograde", error="Type yes for a retrograde planet, or leave the cell empty.")
     ws.add_data_validation(yes)
     yes.add(f"{L(RETRO_COL)}{PLANET_ROW0}:{L(RETRO_COL)}{PLANET_ROW0 + 8}")
-    dv = DataValidation(type="list", formula1="=S23_Ref_Calc!$B$3:$B$14", allow_blank=False,
+    # the drop-downs list cells on their own sheet: a list on another sheet is saved by Excel in a form openpyxl
+    # cannot read ("Data Validation extension is not supported"), so each sheet keeps a hidden copy of its list
+    for i in range(12):
+        ws.cell(row=3 + i, column=SIGN_LIST_COL, value=f"=S23_Ref_Calc!$B${3 + i}")
+    ws.column_dimensions[L(SIGN_LIST_COL)].hidden = True
+    signs = f"${L(SIGN_LIST_COL)}$3:${L(SIGN_LIST_COL)}$14"
+    dv = DataValidation(type="list", formula1=f"={signs}", allow_blank=False,
                         showErrorMessage=True, errorTitle="Pick a rashi from the list",
                         error="Choose the sign from the drop-down — the list's spelling is the one the formulas look up.")
     ws.add_data_validation(dv)
@@ -1264,7 +1272,12 @@ def _life_area_sheet(ws, rules):
             cell(r, 2, f)
     ws[AREA_CELL] = rules["life_areas"][7]["area"]
     ws[AREA_CELL].fill = INPUT_FILL
-    dv = DataValidation(type="list", formula1=f"=S23_LifeAreas!$B$2:$B${1 + len(rules['life_areas'])}", allow_blank=False)
+    n_areas = len(rules["life_areas"])
+    for i in range(n_areas):                                   # a hidden copy of the areas: see _chart_sheet
+        ws.cell(row=2 + i, column=AREA_LIST_COL, value=f'=S23_LifeAreas!$B${2 + i}&""')
+    ws.column_dimensions[L(AREA_LIST_COL)].hidden = True
+    col = L(AREA_LIST_COL)
+    dv = DataValidation(type="list", formula1=f"=${col}$2:${col}${1 + n_areas}", allow_blank=False)
     ws.add_data_validation(dv)
     dv.add(AREA_CELL)
     best = lambda key, planet, house: [f"SUMPRODUCT(({CK}={key})*({CP}={pl})*({CH}={hh})*ROW({CK}))"

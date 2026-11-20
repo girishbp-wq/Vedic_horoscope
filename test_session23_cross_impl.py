@@ -1797,6 +1797,33 @@ class ExcelDasha(unittest.TestCase):
 class ExcelFormulaLimits(unittest.TestCase):
     """Every calculator formula runs in Excel 2007: no newer functions, at most 8,192 characters."""
 
+    def test_drop_downs_list_cells_on_their_own_sheet(self):
+        # a list drop-down that points at another sheet is saved by Excel in a form openpyxl cannot read, which made
+        # publish.bat warn "Data Validation extension is not supported" (user's ruling of 20 Nov 2026, option D)
+        import tempfile
+        import make_session23_xlsx as mx
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp, "b.xlsx")
+            mx.build_workbook(path)
+            wb = openpyxl.load_workbook(path)
+            lists = {}
+            for name in mx.CALC_SHEETS:
+                for dv in wb[name].data_validations.dataValidation:
+                    if dv.type == "list":
+                        self.assertNotIn("!", dv.formula1, (name, str(dv.sqref)))
+                        lists[(name, str(dv.sqref))] = dv.formula1
+            chart = wb[mx.PREFIX + "Chart"]
+            rng = lists[(mx.PREFIX + "Chart", f"B3 B{mx.PLANET_ROW0}:B{mx.PLANET_ROW0 + 8}")].lstrip("=").replace("$", "")
+            cells = [c for row in chart[rng] for c in row]
+            self.assertEqual([c.value for c in cells], [f"=S23_Ref_Calc!$B${3 + i}" for i in range(12)])
+            self.assertTrue(chart.column_dimensions[cells[0].column_letter].hidden)
+            area = wb[mx.PREFIX + "LifeArea_Calc"]
+            rng = lists[(mx.PREFIX + "LifeArea_Calc", mx.AREA_CELL)].lstrip("=").replace("$", "")
+            cells = [c for row in area[rng] for c in row]
+            n = len(RULES["life_areas"])
+            self.assertEqual([c.value for c in cells], [f'=S23_LifeAreas!$B${2 + i}&""' for i in range(n)])
+            self.assertTrue(area.column_dimensions[cells[0].column_letter].hidden)
+
     def test_formula_lengths(self):
         import re
         import tempfile
