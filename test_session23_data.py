@@ -217,11 +217,16 @@ class TeacherRows(unittest.TestCase):
     def test_new_keys_equal_the_teacher_module(self):
         import session23_teacher_slides as ts
         r = rules()
-        self.assertEqual(r["bhava_nature"], [dict(house=h, nature=n, planet=p, text=t, status="taught", source=s)
-                                             for h, n, p, t, s in ts.BHAVA_NATURE])
-        self.assertEqual(r["aspect_meaning"], [dict(planet=p, aspect=a, from_house=f, text=t, status="taught", source=s)
+        self.assertEqual(r["bhava_nature"][:len(ts.BHAVA_NATURE)],               # the class of 19 Nov 2026 adds a row after
+                         [dict(house=h, nature=n, planet=p, text=t, status="taught", source=s) for h, n, p, t, s in ts.BHAVA_NATURE])
+        import session28_class_texts as t28c                                    # her class of 19 Nov 2026 explains six
+        add = lambda p, a, f: t28c.ASPECT_ADD.get((p, a)) if f is None else None
+        self.assertEqual(r["aspect_meaning"], [dict(planet=p, aspect=a, from_house=f, text=t + (" " + add(p, a, f) if add(p, a, f) else ""),
+                                                    status="taught", source=s + ("; " + t28c.SOURCE if add(p, a, f) else ""))
                                                for p, a, f, t, s in ts.ASPECT_MEANING])
-        self.assertEqual(r["life_areas"], [dict(no=n, area=a, houses=list(h), karakas=list(k), karaka_female=kf, link=l, source=s)
+        self.assertEqual(r["life_areas"], [dict(no=n, area=a, houses=list(h), karakas=list(k),
+                                                karaka_female=t28c.KARAKA_FEMALE.get(n, kf), link=l,
+                                                source=s + ("; " + t28c.SOURCE if n in t28c.KARAKA_FEMALE else ""))
                                            for n, a, h, k, kf, l, s in ts.LIFE_AREAS])
         self.assertEqual(r["conditions"], [dict(key=k, planet=p, house=h, text=t, status="taught", source=s)
                                            for k, p, h, t, s in ts.CONDITIONS])
@@ -248,9 +253,9 @@ class TeacherRows(unittest.TestCase):
         import apply_teacher_slides
         prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
         both = apply_teacher_slides.apply_all(prev)
-        self.assertEqual(both, apply_teacher_slides.apply_s27_class(apply_teacher_slides.apply_s26_class(
-            apply_teacher_slides.apply_s25_class(apply_teacher_slides.apply_s24_class(
-                apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev)))))))
+        self.assertEqual(both, apply_teacher_slides.apply_s28_class(apply_teacher_slides.apply_s27_class(
+            apply_teacher_slides.apply_s26_class(apply_teacher_slides.apply_s25_class(apply_teacher_slides.apply_s24_class(
+                apply_teacher_slides.apply_s28_29(apply_teacher_slides.apply(prev))))))))
         # the reference tables come from the master workbook's own sheets, not from the slides
         drop = lambda r: {k: v for k, v in r.items() if k != "reference"}
         self.assertEqual(drop(both), drop(rules()))
@@ -324,6 +329,25 @@ class TeacherRows(unittest.TestCase):
         saturn = [x for x in rem if x["topic"] == "Saturn"]
         self.assertEqual(saturn[0]["source"], "S25 p.42")                       # the slides' Saturn row stays first
 
+    def test_s28_class_rows_present(self):
+        import session28_class_texts as t
+        r = rules()
+        self.assertEqual(r["bhava_lord_in"][-len(t.LORD_IN):],
+                         [dict(lord_of=a, sits_in=b, text=x, status="taught", source=t.SOURCE, condition="", exchange=False)
+                          for a, b, x in t.LORD_IN])
+        for (p, a), add in t.ASPECT_ADD.items():
+            row = next(x for x in r["aspect_meaning"] if (x["planet"], x["aspect"], x["from_house"]) == (p, a, None))
+            self.assertTrue(row["text"].endswith(" " + add), row)
+            self.assertTrue(row["source"].endswith("; " + t.SOURCE), row)
+        self.assertEqual(next(x for x in r["life_areas"] if x["no"] == 11)["karaka_female"], "Jupiter")
+        for h, n, p, x in t.BHAVA_NATURE:
+            self.assertIn(dict(house=h, nature=n, planet=p, text=x, status="taught", source=t.SOURCE), r["bhava_nature"])
+        rel = {(x["a"], x["b"]): x["relation"] for x in r["graha_pair"]}
+        for k, add in t.RELATION_ADD.items():
+            self.assertTrue(rel[k].endswith(" " + add), rel[k])
+        tips = [x for x in r["remedies"] if x["topic"] == "Tip"]
+        self.assertEqual(tips[-len(t.REMEDIES):], [dict(topic=a, text=b, source=d, houses=c) for a, b, c, d in t.REMEDIES])
+
     def test_relation_column(self):
         import session26_class_texts as t
         rel = {(x["a"], x["b"]): x["relation"] for x in rules()["graha_pair"]}
@@ -338,7 +362,9 @@ class TeacherRows(unittest.TestCase):
     def test_round1_rows_present(self):
         import session28_29_teacher_texts as t
         r = rules()
-        self.assertEqual(r["bhava_lord_in"][-len(t.LORD_IN):],
+        import session28_class_texts as t28c
+        end = len(r["bhava_lord_in"]) - len(t28c.LORD_IN)                     # the class of 19 Nov 2026's rows follow
+        self.assertEqual(r["bhava_lord_in"][end - len(t.LORD_IN):end],
                          [dict(lord_of=a, sits_in=b, text=x, status="taught", source=s, condition=c, exchange=e)
                           for a, b, c, e, x, s in t.LORD_IN])
         self.assertEqual(r["chart_readings"], [dict(kind=k, planet=p, **{"with": w}, house=h, condition=c, text=x,

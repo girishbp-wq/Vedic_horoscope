@@ -2822,7 +2822,7 @@
    "aspect": "When the Moon and Saturn look at each other, the mind is tested by restraint: caution, worry and isolation are possible, but so are discipline, endurance and depth.",
    "status": "curated",
    "source": "KARAKATWAS[Moon, Saturn: qualities, signifies] + PLANET_PROFILE[Moon, Saturn: Nature]",
-   "relation": "Moon and Saturn are not friends: two contrasting energies work in that bhāva, so that area of life sees some stress."
+   "relation": "Moon and Saturn are not friends: two contrasting energies work in that bhāva, so that area of life sees some stress. Together they give a kind of melancholy: the Moon is affected by Saturn's coldness."
   },
   {
    "a": "Moon",
@@ -2876,7 +2876,7 @@
    "aspect": "When Mars and Saturn look at each other, impulse meets caution: there are tests of patience, delays and tensions, and the result can be sustained, disciplined effort.",
    "status": "curated",
    "source": "KARAKATWAS[Mars, Saturn: qualities, signifies] + PLANET_PROFILE[Mars, Saturn: Nature]",
-   "relation": "Mars and Saturn are not friends: two contrasting energies work in that bhāva, so that area of life sees some stress."
+   "relation": "Mars and Saturn are not friends: two contrasting energies work in that bhāva, so that area of life sees some stress. One pulls slow and the other fast, so there is confusion about which direction to take."
   },
   {
    "a": "Mars",
@@ -3302,6 +3302,87 @@
    "source": "S28 p.15",
    "condition": "",
    "exchange": false
+  },
+  {
+   "lord_of": 2,
+   "sits_in": 11,
+   "text": "The 2nd lord (money) in the 11th (gains, friends): earnings grow, with gains through a good circle of friends.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 3,
+   "sits_in": 2,
+   "text": "The 3rd lord in the 2nd: the person puts a lot of effort into earning money.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 3,
+   "sits_in": 5,
+   "text": "The 3rd lord in the 5th: the person puts effort into higher learning.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 3,
+   "sits_in": 10,
+   "text": "The 3rd lord in the 10th: the person puts a lot of effort into the profession, which may be connected with communication; the younger sibling may work with them.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 4,
+   "sits_in": 8,
+   "text": "The 4th lord in the 8th: the family atmosphere, or property, becomes the source of tension.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 5,
+   "sits_in": 11,
+   "text": "The 5th lord (pūrva puṇya) in the 11th (fulfilment of desires): the desires are fulfilled thanks to the pūrva puṇya.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 7,
+   "sits_in": 8,
+   "text": "The 7th lord in the 8th: the marriage is the source of tension, problems and suffering — difficulties and struggles in married life.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 10,
+   "sits_in": 8,
+   "text": "The 10th lord in the 8th: the profession is the source of tension; difficulties in the job.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
+  },
+  {
+   "lord_of": 12,
+   "sits_in": 7,
+   "text": "The 12th lord in the 7th: the spouse may be spiritual; expenditure in marriage; sleeplessness.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026",
+   "condition": "",
+   "exchange": false
   }
  ],
  "graha_rashi": [
@@ -3557,6 +3638,14 @@
    "text": "A malefic in the 12 th house will give struggle and tension in the 12 th house karakatwas. The person will be worried due to his expenditures, he may find it difficult to go abroad. Lots of unnecessary expenditures he may also incur losses. He may suffer from sleeplessness",
    "status": "taught",
    "source": "S26 p.14"
+  },
+  {
+   "house": 4,
+   "nature": "malefic",
+   "planet": null,
+   "text": "With a malefic in the 4th, spending time near water — sitting by a river or a lake — gives peace of mind.",
+   "status": "taught",
+   "source": "Class 19 Nov 2026"
   }
  ],
  "aspect_meaning": [
@@ -3572,17 +3661,17 @@
    "planet": "Jupiter",
    "aspect": 5,
    "from_house": null,
-   "text": "Jupiters 5 th aspect indicates your punya or good deeds of previous life times",
+   "text": "Jupiters 5 th aspect indicates your punya or good deeds of previous life times In class: thanks to that pūrva puṇya, the bhāva Jupiter's 5th aspect falls on grows and prospers (abhivṛddhi).",
    "status": "taught",
-   "source": "S27 p.2"
+   "source": "S27 p.2; Class 19 Nov 2026"
   },
   {
    "planet": "Jupiter",
    "aspect": 9,
    "from_house": null,
-   "text": "The 9 th aspect indicates luck.",
+   "text": "The 9 th aspect indicates luck. In class: luck operates in the bhāva Jupiter's 9th aspect falls on — things come there by grace, without effort, even when not worked for.",
    "status": "taught",
-   "source": "S27 p.2"
+   "source": "S27 p.2; Class 19 Nov 2026"
   },
   {
    "planet": "Saturn",
@@ -3596,33 +3685,33 @@
    "planet": "Saturn",
    "aspect": 3,
    "from_house": null,
-   "text": "3 rd aspect tells about effort required",
+   "text": "3 rd aspect tells about effort required In class: on the bhāva Saturn's 3rd aspect falls on you have to put in a lot of effort (where Jupiter's 9th brings things by luck).",
    "status": "taught",
-   "source": "S27 p.3"
+   "source": "S27 p.3; Class 19 Nov 2026"
   },
   {
    "planet": "Saturn",
    "aspect": 10,
    "from_house": null,
-   "text": "10 th aspect tells about your karmic responsibility.",
+   "text": "10 th aspect tells about your karmic responsibility. In class: on the bhāva Saturn's 10th aspect falls on you are karmically bound to take responsibility, and cannot run away from it (on the 10th: responsibility at work).",
    "status": "taught",
-   "source": "S27 p.3"
+   "source": "S27 p.3; Class 19 Nov 2026"
   },
   {
    "planet": "Mars",
    "aspect": 4,
    "from_house": null,
-   "text": "Mars 4 th aspect means you will be protective towards that bhava and conflicts due to that house.",
+   "text": "Mars 4 th aspect means you will be protective towards that bhava and conflicts due to that house. In class: protective of that bhāva and its people, and ready to fight for them (her example: friends and elder siblings).",
    "status": "taught",
-   "source": "S27 p.4"
+   "source": "S27 p.4; Class 19 Nov 2026"
   },
   {
    "planet": "Mars",
    "aspect": 8,
    "from_house": null,
-   "text": "Mars 8 th aspects signifies transformation required in that bhava.",
+   "text": "Mars 8 th aspects signifies transformation required in that bhava. In class: a change is needed in that bhāva, or there will be disputes (on the Lagna: the person must change).",
    "status": "taught",
-   "source": "S27 p.4"
+   "source": "S27 p.4; Class 19 Nov 2026"
   },
   {
    "planet": "Jupiter",
@@ -4061,9 +4150,9 @@
    "karakas": [
     "Venus"
    ],
-   "karaka_female": "Mars",
+   "karaka_female": "Jupiter",
    "link": "",
-   "source": "S27 p.13"
+   "source": "S27 p.13; Class 19 Nov 2026"
   },
   {
    "no": 12,
@@ -5086,6 +5175,42 @@
    "topic": "Tip",
    "text": "The 6th is the house of disease; the 8th of chronic, long-lasting disease.",
    "source": "Class 12 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "Benefic or malefic is a quick snapshot: a benefic in a bhāva brings its matters with ease, a malefic with struggle and effort — it does not deny them.",
+   "source": "Class 19 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "When a benefic and a malefic share a bhāva both act: there is more struggle in the malefic's daśā–bhukti and more ease in the benefic's; the stronger planet (exalted, own or a friend's sign) speaks louder, like the loudest voice in a classroom.",
+   "source": "Class 19 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "Her measure of a planet's results by dignity: exalted 100%, Mūlatrikoṇa 90%, own house 75%; a debilitated planet still gives results, only weaker.",
+   "source": "Class 19 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "Even a combust Jupiter's aspect works, at about 80% of its effect.",
+   "source": "Class 19 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "For a woman's chart the husband's karaka is Jupiter in Parāśara, which this course follows (the Nāḍī system takes Mars); Venus is the wife's. Kuja doṣa is a separate concept, read from Mars for both.",
+   "source": "Class 19 Nov 2026",
+   "houses": []
+  },
+  {
+   "topic": "Tip",
+   "text": "Zero in on the bhāva the question is about and follow the seven steps; one placement alone never gives the answer — see the chart in totality.",
+   "source": "Class 19 Nov 2026",
    "houses": []
   }
  ],

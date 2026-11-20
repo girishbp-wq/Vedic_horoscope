@@ -20,6 +20,7 @@ import session24_class_texts as t24
 import session25_class_texts as t25
 import session26_class_texts as t26
 import session27_class_texts as t27
+import session28_class_texts as t28c
 import session28_29_teacher_texts as t28
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -193,9 +194,37 @@ def apply_s27_class(rules, source=None):
     return rules
 
 
+def apply_s28_class(rules):
+    """A copy of `rules` (as apply_s27_class() returns them) with the class of 19 Nov 2026 (Session 28): her worked
+    lord-in-bhāva examples as new S23_BhavaLordIn rows, her explanation of the Jupiter, Saturn and Mars aspects after
+    the slides' lines, Jupiter as the husband's karaka (Parāśara), her line for a malefic in the 4th, her lines on two
+    pairs of planets, and her answers as tips."""
+    rules = copy.deepcopy(rules)
+    t = t28c
+    rules["bhava_lord_in"] += [dict(lord_of=a, sits_in=b, text=x, status="taught", source=t.SOURCE, condition="",
+                                    exchange=False) for a, b, x in t.LORD_IN]
+    for row in rules["aspect_meaning"]:
+        add = t.ASPECT_ADD.get((row["planet"], row["aspect"])) if row["from_house"] is None else None
+        if add:
+            row["text"] += " " + add
+            row["source"] += "; " + t.SOURCE
+    for row in rules["life_areas"]:
+        if row["no"] in t.KARAKA_FEMALE:
+            row["karaka_female"] = t.KARAKA_FEMALE[row["no"]]
+            row["source"] += "; " + t.SOURCE
+    rules["bhava_nature"] += [dict(house=h, nature=n, planet=p, text=x, status="taught", source=t.SOURCE)
+                              for h, n, p, x in t.BHAVA_NATURE]
+    for row in rules["graha_pair"]:
+        add = t.RELATION_ADD.get((row["a"], row["b"]))
+        if add:
+            row["relation"] = (row["relation"] + " " + add).strip()
+    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=d, houses=list(c)) for a, b, c, d in t.REMEDIES])
+    return rules
+
+
 def apply_all(previous):
     """Every release step on `previous`, in order: what session23_rules.json holds (bar the reference tables)."""
-    return apply_s27_class(apply_s26_class(apply_s25_class(apply_s24_class(apply_s28_29(apply(previous))))))
+    return apply_s28_class(apply_s27_class(apply_s26_class(apply_s25_class(apply_s24_class(apply_s28_29(apply(previous)))))))
 
 
 def main():

@@ -1126,7 +1126,10 @@ def _house_block(ws, rules, blk, b0, house_cell, lr_row0):
     cell(lr, 24, f'=IF({B}="","",{kt})')
     cell(lr, 6, (f'=IF({B}="","",IF({C}={hb},"The lord sits in its own bhava, so the matters of this house are protected and strengthened.",'
                  f'"Placed in the "&{_ord(C)}&" house"&IF($W${lr}<>"",", a "&$W${lr}&" bhava","")&"."'
-                 f'&$X${lr}&IF(OR({C}=6,{C}=8,{C}=12)," A difficult placement.","")))'))
+                 f'&$X${lr}&IF(OR({C}=6,{C}=8,{C}=12)," A difficult placement.","")'
+                 # class of 19 Nov 2026: where the Lagna lord and the 3rd lord sit; a lord in the 8th
+                 f'&IF({hb}=1," {br.LAGNA_LORD_RULE}","")&IF({hb}=3," {br.THIRD_LORD_RULE}","")'
+                 f'&IF({C}=8," The 8th is tension, problems and suffering: the matters of the "&{_ord(hb)}&" house become the source of tension.","")))'))
     cell(lr, 7, f'=IF({B}="","",{hf(H_DIG, B)})')
     cell(lr, 8, f'=IF({B}="","",{hf(H_STRENGTH, B)})')
     lord_y = f"INDEX({lords},{C})"
@@ -1718,14 +1721,16 @@ PREVIOUS_JSON = ROOT / "session23_rules.previous.json"
 def shipped_versions():
     """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply), then
     Sessions 28-29 (apply_s28_29), then the classes of 22 Oct 2026 (apply_s24_class) and 29 Oct 2026
-    (apply_s25_class), then the classes of 4 and 12 Nov 2026 as first shipped, with class 27 not yet dated."""
+    (apply_s25_class), then the classes of 4 and 12 Nov 2026 as first shipped, with class 27 not yet dated, and
+    as dated (apply_s26_class, apply_s27_class)."""
     import apply_teacher_slides as a
     first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
     s23_27 = a.apply(first)
     s28_29 = a.apply_s28_29(s23_27)
     s24 = a.apply_s24_class(s28_29)
     s25 = a.apply_s25_class(s24)
-    return [first, s23_27, s28_29, s24, s25, a.apply_s27_class(a.apply_s26_class(s25), source="Class 27, Nov 2026")]
+    s26 = a.apply_s26_class(s25)
+    return [first, s23_27, s28_29, s24, s25, a.apply_s27_class(s26, source="Class 27, Nov 2026"), a.apply_s27_class(s26)]
 
 
 def _from_before_new_columns(name, row, missing):

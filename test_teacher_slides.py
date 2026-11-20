@@ -302,6 +302,39 @@ class S26ClassTexts(unittest.TestCase):
         self.assertIn("two contrasting energies", self.t.RELATION_ENEMIES)
 
 
+class S28ClassTexts(unittest.TestCase):
+    """The class of 19 Nov 2026: her lord-in-bhāva examples, the aspects explained, the husband's karaka, her answers."""
+
+    @classmethod
+    def setUpClass(cls):
+        import session28_class_texts as t
+        cls.t = t
+
+    def test_lord_in_rows_are_new_keys(self):
+        import session23_teacher_slides as ts
+        import session28_29_teacher_texts as t28
+        old = {(r[0], r[1]) for r in ts.LORD_IN} | {(r[0], r[1]) for r in t28.LORD_IN} | {(2, 7)}
+        keys = [(a, b) for a, b, _ in self.t.LORD_IN]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertFalse(set(keys) & old)
+        for a, b, text in self.t.LORD_IN:
+            self.assertTrue(1 <= a <= 12 and 1 <= b <= 12 and a != b)
+            self.assertTrue(text.startswith(f"The {('1st 2nd 3rd ' + ' '.join(f'{n}th' for n in range(4, 13))).split()[a - 1]} lord"), text)
+
+    def test_aspect_additions_explain_her_slides(self):
+        import session23_teacher_slides as ts
+        slide = {(p, a) for p, a, f, _, _ in ts.ASPECT_MEANING if f is None}
+        self.assertEqual(set(self.t.ASPECT_ADD), {("Jupiter", 5), ("Jupiter", 9), ("Saturn", 3), ("Saturn", 10), ("Mars", 4), ("Mars", 8)})
+        self.assertTrue(set(self.t.ASPECT_ADD) <= slide)
+        self.assertTrue(all(x.startswith("In class: ") and x.endswith(".") for x in self.t.ASPECT_ADD.values()))
+
+    def test_husband_karaka_and_tips(self):
+        self.assertEqual(self.t.KARAKA_FEMALE, {11: "Jupiter"})
+        _check_remedies(self, self.t.REMEDIES, "Class 19 Nov 2026")
+        self.assertEqual({r[0] for r in self.t.REMEDIES}, {"Tip"})
+        self.assertEqual(set(self.t.RELATION_ADD), {("Moon", "Saturn"), ("Mars", "Saturn")})
+
+
 class S27ClassTexts(unittest.TestCase):
     """The class of 12 Nov 2026 (class 27): Ketu in the 6th to 12th bhāvas, her remedies and answers."""
 

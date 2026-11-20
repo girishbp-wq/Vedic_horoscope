@@ -143,6 +143,30 @@ The recording of the class of 12 Nov (Session 27) starts in the middle of Ketu i
 1st to 5th are not in it; their slide text is on the cards as before. If you installed the release of 19 Nov, which
 labelled that class's rows "Class 27, Nov 2026", `--install` gives them the date.
 
+## Class of 19 Nov 2026 — one-time update
+1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
+2. Run `python make_session23_xlsx.py --install`. It upgrades your `S23_` data sheets as described above:
+   - `S23_BhavaLordIn`: nine rows from her worked examples of a lord in a bhāva (2nd lord in the 11th, 3rd lord in
+     the 2nd, 5th and 10th, 4th, 7th and 10th lords in the 8th, 5th lord in the 11th, 12th lord in the 7th).
+   - `S23_AspectMeaning`: her explanation in class follows the slides' line for Jupiter's 5th and 9th, Saturn's 3rd
+     and 10th, and Mars's 4th and 8th aspects.
+   - `S23_LifeAreas`: Marriage and Spouse takes **Jupiter** as the husband's karaka for a woman's chart (Parāśara,
+     which the course follows; she noted that the Nāḍī system takes Mars). Kuja doṣa still reads Mars for both.
+   - `S23_BhavaNature`: her line for a malefic in the 4th (time near water gives peace of mind).
+   - `S23_GrahaPair`: her lines on the Moon with Saturn (melancholy) and Mars with Saturn (slow and fast pulling
+     against each other) follow their Relation.
+   - `S23_Remedies`: her answers as `Tip` rows.
+
+   It also rebuilds the calculator sheets. A row you edited is kept and listed.
+3. Open the workbook in Excel, save once, close it, and run `publish.bat` — it should report no changes.
+
+Three of her rules are now part of every bhāva lord's placement line (the page, Python and the calculator):
+- wherever the **Lagna lord** sits, that bhāva becomes important in the person's life — their focus goes there;
+- wherever the **3rd lord** sits, in that area of life the person puts in effort;
+- a lord in the **8th** makes its own bhāva "the source of tension" (the 7th lord in the 8th: the marriage).
+
+The slides she used, "MASTER COPY - Session 28", are the Session 26 and 27 decks, which the app already holds.
+
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
 It checks that the folder is on `main` and pulls it, runs `scripts\build_data.py`, then `build_session23.py`

@@ -850,11 +850,17 @@ def _short_name(nm):
 
 
 PLACEMENT_CLASSES = ("Kendra", "Trikona", "Dusthana", "Badhaka")
+# class of 19 Nov 2026: where the Lagna lord and the 3rd lord sit
+LAGNA_LORD_RULE = ("Wherever the Lagna lord sits, that bhāva becomes important in the person's life: their focus and "
+                   "attention go there.")
+THIRD_LORD_RULE = "Wherever the 3rd lord sits, in that area of life the person puts in effort."
 
 
 def placement(rules, lagna, lord_of, sits_in):
     """S27 p.6: the classes of the house the lord sits in, and the sentence for them. A lord in the 6th, 8th or 12th
-    is 'a difficult placement'."""
+    is 'a difficult placement'. The class of 19 Nov 2026 adds three rules: wherever the Lagna lord sits the person's
+    focus goes, wherever the 3rd lord sits the person puts in effort, and a lord in the 8th makes its own bhāva the
+    source of tension."""
     if lord_of == sits_in:
         return [], "The lord sits in its own bhava, so the matters of this house are protected and strengthened."
     classes = [c for c in PLACEMENT_CLASSES if sits_in in class_houses(rules, c, lagna)]
@@ -865,6 +871,12 @@ def placement(rules, lagna, lord_of, sits_in):
         line += " " + " ".join(texts)
     if sits_in in (6, 8, 12):
         line += " A difficult placement."
+    if lord_of == 1:
+        line += " " + LAGNA_LORD_RULE
+    if lord_of == 3:
+        line += " " + THIRD_LORD_RULE
+    if sits_in == 8:
+        line += f" The 8th is tension, problems and suffering: the matters of the {ordinal(lord_of)} house become the source of tension."
     return classes, line
 
 

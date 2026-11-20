@@ -1961,7 +1961,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual(up["kept"], [("S23_GrahaInBhava", ("Moon", 1))])
-        self.assertEqual((up["updated"], up["added"], up["deleted"]), (95, 72, []))     # the four classes' rows
+        self.assertEqual((up["updated"], up["added"], up["deleted"]), (102, 88, []))     # the five classes' rows
         got = b23.read_workbook(self.master)
         want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
         self.assertEqual(got["remedies"], want["remedies"])
@@ -1988,7 +1988,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         import build_session23 as b23
         import session25_class_texts as t
         self.install_s24_release()
-        self.assertEqual(len(self.mx.shipped_versions()), 6)
+        self.assertEqual(len(self.mx.shipped_versions()), 7)
         wb = openpyxl.load_workbook(self.master)
         ws = wb["S23_Remedies"]
         mars = next(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=1).value == "Mars")
@@ -1997,7 +1997,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual(up["kept"], [("S23_Remedies", ("Mars", "My own wording of her Mars remedy.", 0))])
-        self.assertEqual((up["added"], up["deleted"]), (60, [("S23_Remedies", ("Mars", hers, 0))]))   # 25 + November's 35
+        self.assertEqual((up["added"], up["deleted"]), (76, [("S23_Remedies", ("Mars", hers, 0))]))   # 25 + November's 51
         wb = openpyxl.load_workbook(self.master)
         self.assertEqual([c.value for c in wb["S23_GrahaInBhava"][1]][6:8], ["IfWeak", "IfStrong"])
         self.assertEqual(wb["S23_Remedies"].cell(row=1, column=4).value, "Houses")
@@ -2029,7 +2029,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         import session26_class_texts as t26
         import session27_class_texts as t27
         self.install_s25_release()
-        self.assertEqual(len(self.mx.shipped_versions()), 6)
+        self.assertEqual(len(self.mx.shipped_versions()), 7)
         wb = openpyxl.load_workbook(self.master)
         ws = wb["S23_GrahaPair"]
         vs = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value)
@@ -2038,7 +2038,9 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual(up["kept"], [("S23_GrahaPair", ("Venus", "Saturn"))])
-        self.assertEqual(up["added"], len(t26.REMEDIES) + len(t27.REMEDIES))
+        import session28_class_texts as t28c
+        self.assertEqual(up["added"], len(t26.REMEDIES) + len(t27.REMEDIES)
+                         + len(t28c.LORD_IN) + len(t28c.BHAVA_NATURE) + len(t28c.REMEDIES))
         wb = openpyxl.load_workbook(self.master)
         self.assertEqual(wb["S23_GrahaPair"].cell(row=1, column=7).value, "Relation")
         got = b23.read_workbook(self.master)
@@ -2063,13 +2065,41 @@ class MasterWorkbookInstall(unittest.TestCase):
         wb = openpyxl.load_workbook(self.master)
         b23.write_data_sheets(wb, a.apply_s27_class(a.apply_s26_class(s25), source="Class 27, Nov 2026"))
         wb.save(self.master)
-        self.assertEqual(len(self.mx.shipped_versions()), 6)
+        self.assertEqual(len(self.mx.shipped_versions()), 7)
         up = self.mx.install_in_master(self.master)["upgrade"]
-        self.assertEqual((up["kept"], up["added"]), ([], 0))
-        self.assertEqual(up["updated"], len(t27.REMEDIES))                      # each row takes the date
+        import session28_class_texts as t28c
+        new = len(t28c.LORD_IN) + len(t28c.BHAVA_NATURE) + len(t28c.REMEDIES)
+        self.assertEqual((up["kept"], up["added"]), ([], new))                  # the class of 19 Nov's rows
+        self.assertEqual(up["updated"], len(t27.REMEDIES) + len(t28c.ASPECT_ADD) + len(t28c.KARAKA_FEMALE)
+                         + len(t28c.RELATION_ADD))                                 # class 27 takes its date
         got = b23.read_workbook(self.master)
         self.assertEqual(got["remedies"], RULES["remedies"])
         self.assertNotIn("Class 27, Nov 2026", {r["source"] for r in got["remedies"]})
+
+    def test_upgrade_from_the_12_nov_release_brings_the_class_of_19_nov(self):
+        import apply_teacher_slides as a
+        import build_session23 as b23
+        import session28_class_texts as t28c
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        s27 = a.apply_s27_class(a.apply_s26_class(a.apply_s25_class(a.apply_s24_class(a.apply_s28_29(a.apply(prev))))))
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, s27)
+        ws = wb["S23_AspectMeaning"]
+        r = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value) == ("Mars", 8))
+        ws.cell(row=r, column=4, value="My own note on Mars's 8th aspect.")
+        wb.save(self.master)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual(up["kept"], [("S23_AspectMeaning", ("Mars", 8, ""))])
+        self.assertEqual(up["added"], len(t28c.LORD_IN) + len(t28c.BHAVA_NATURE) + len(t28c.REMEDIES))
+        self.assertEqual(up["updated"], len(t28c.ASPECT_ADD) - 1 + len(t28c.KARAKA_FEMALE) + len(t28c.RELATION_ADD))
+        got = b23.read_workbook(self.master)
+        want = {k: v for k, v in RULES.items() if k not in ("reference", "meta")}
+        for k in ("bhava_lord_in", "life_areas", "bhava_nature", "remedies", "graha_pair"):
+            self.assertEqual(got[k], want[k], k)
+        mars8 = next(x for x in got["aspect_meaning"] if (x["planet"], x["aspect"], x["from_house"]) == ("Mars", 8, None))
+        self.assertEqual(mars8["text"], "My own note on Mars's 8th aspect.")          # kept as edited
+        again = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((again["updated"], again["added"]), (0, 0))
 
     def test_user_remedy_rows_do_not_hide_her_new_rows(self):
         # her rows join existing topics (the Moon) and a topic the user may already use (Mars): a row the user added
@@ -2085,7 +2115,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         ws.append(["Mars", "My own Mars remedy.", "me"])
         wb.save(self.master)
         up = self.mx.install_in_master(self.master)["upgrade"]
-        self.assertEqual((up["updated"], up["added"]), (96, 72))
+        self.assertEqual((up["updated"], up["added"]), (103, 88))
         self.assertEqual(sorted(k[1] for sheet, k in up["kept"] if sheet == "S23_Remedies"),
                          ["My own Mars remedy.", "My own Moon remedy."])
         got = [(r["topic"], r["text"]) for r in b23.read_workbook(self.master)["remedies"]]

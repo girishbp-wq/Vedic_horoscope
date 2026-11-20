@@ -1032,11 +1032,11 @@ class LifeAreas(unittest.TestCase):
     def test_marriage_karaka_without_gender(self):
         k = br.life_area(RULES, self.ctx(), 11)["karakas"]
         self.assertEqual([x["planet"] for x in k], ["Venus"])
-        self.assertEqual(k[0]["note"], "For a woman's chart the husband's karaka is Mars.")
+        self.assertEqual(k[0]["note"], "For a woman's chart the husband's karaka is Jupiter.")   # Parāśara (19 Nov 2026)
 
-    def test_marriage_karaka_female_is_mars_with_jupiter_note(self):
+    def test_marriage_karaka_female_is_jupiter(self):
         k = br.life_area(RULES, self.ctx(gender="Female"), 11)["karakas"]
-        self.assertEqual([x["planet"] for x in k], ["Mars"])
+        self.assertEqual([x["planet"] for x in k], ["Jupiter"])
         self.assertIn("Jupiter also represents Husband", k[0]["note"])
 
     def test_marriage_karaka_male_notes_where_he_meets_his_wife(self):
@@ -1641,6 +1641,30 @@ class Session25Class(unittest.TestCase):
 
     def test_session_29_word_ignores_paksha(self):
         self.assertEqual(br.strength_detail(RULES, br.context(6, {"Moon": 8}, None, False), "Moon")["word"], "depends")
+
+    # the lords' placement lines (class of 19 Nov 2026) --------------------
+    def test_lagna_lord_shows_the_focus(self):
+        line = br.placement(RULES, 0, 1, 5)[1]
+        self.assertIn("Wherever the Lagna lord sits, that bhāva becomes important in the person's life", line)
+        self.assertNotIn("Lagna lord", br.placement(RULES, 0, 2, 5)[1])
+
+    def test_third_lord_shows_the_effort(self):
+        self.assertIn("Wherever the 3rd lord sits, in that area of life the person puts in effort.", br.placement(RULES, 0, 3, 10)[1])
+
+    def test_a_lord_in_the_8th_is_the_source_of_tension(self):
+        line = br.placement(RULES, 0, 7, 8)[1]
+        self.assertTrue(line.endswith(" A difficult placement. The 8th is tension, problems and suffering: the matters of "
+                                      "the 7th house become the source of tension."), line)
+        self.assertEqual(br.placement(RULES, 0, 8, 8)[1],
+                         "The lord sits in its own bhava, so the matters of this house are protected and strengthened.")
+
+    def test_her_lord_in_rows_read(self):
+        import session28_class_texts as t
+        signs = dict(SIGNS)
+        # Mesha Lagna: the 7th lord Venus in Vrischika (the 8th)
+        ctx = br.context(0, dict(signs, Venus=7))
+        entry = next(e for e in br.bhava_bhava(RULES, ctx) if e["lord_of"] == 7)
+        self.assertEqual((entry["sits_in"], entry["status"], entry["text"]), (8, "taught", dict(((a, b), x) for a, b, x in t.LORD_IN)[(7, 8)]))
 
     # conjunct planets' friendship (class of 4 Nov 2026) ------------------
     def test_conjunctions_carry_the_relation(self):
