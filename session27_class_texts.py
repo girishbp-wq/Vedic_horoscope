@@ -1,4 +1,4 @@
-"""Class 27 (Nov 2026; the recording gives no date): Ketu in the 6th to 12th bhāvas, her remedies, her Q&A.
+"""The class of 12 Nov 2026 (Session 27): Ketu in the 6th to 12th bhāvas, her remedies, her Q&A.
 
 The recording starts in the middle of Ketu in the 6th, so Rāhu and Ketu in the 1st to 5th are not here; Ketu's
 general rule (detachment, obstruction) opens the 1st-house row, as each planet's rule does. Her slide text for these
@@ -11,7 +11,7 @@ placements is already in session23_teacher_slides.py (deck S25 pp. 17-41).
 apply_teacher_slides.apply_s27_class() turns these into the S23_ rows of session23_rules.json.
 """
 
-SOURCE = "Class 27, Nov 2026"
+SOURCE = "Class 12 Nov 2026"
 
 KETU_RULE = ("Ketu is detachment, as Rāhu is attachment: a headless, blind planet. Wherever Ketu sits there is "
              "detachment from that bhāva, confusion and obstruction — the results come late — but also spirituality "

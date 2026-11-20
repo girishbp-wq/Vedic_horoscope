@@ -1988,7 +1988,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         import build_session23 as b23
         import session25_class_texts as t
         self.install_s24_release()
-        self.assertEqual(len(self.mx.shipped_versions()), 5)
+        self.assertEqual(len(self.mx.shipped_versions()), 6)
         wb = openpyxl.load_workbook(self.master)
         ws = wb["S23_Remedies"]
         mars = next(i for i in range(2, ws.max_row + 1) if ws.cell(row=i, column=1).value == "Mars")
@@ -2029,7 +2029,7 @@ class MasterWorkbookInstall(unittest.TestCase):
         import session26_class_texts as t26
         import session27_class_texts as t27
         self.install_s25_release()
-        self.assertEqual(len(self.mx.shipped_versions()), 5)
+        self.assertEqual(len(self.mx.shipped_versions()), 6)
         wb = openpyxl.load_workbook(self.master)
         ws = wb["S23_GrahaPair"]
         vs = next(i for i in range(2, ws.max_row + 1) if (ws.cell(row=i, column=1).value, ws.cell(row=i, column=2).value)
@@ -2052,6 +2052,24 @@ class MasterWorkbookInstall(unittest.TestCase):
                          [r for r in want["graha_pair"] if (r["a"], r["b"]) != ("Venus", "Saturn")])
         again = self.mx.install_in_master(self.master)["upgrade"]
         self.assertEqual((again["updated"], again["added"]), (0, 0))
+
+    def test_upgrade_from_the_release_that_had_no_date_for_class_27(self):
+        # the release of 19 Nov 2026 labelled class 27's rows "Class 27, Nov 2026"; the class was on 12 Nov 2026
+        import apply_teacher_slides as a
+        import build_session23 as b23
+        import session27_class_texts as t27
+        prev = json.loads((ROOT / "session23_rules.previous.json").read_text(encoding="utf-8"))
+        s25 = a.apply_s25_class(a.apply_s24_class(a.apply_s28_29(a.apply(prev))))
+        wb = openpyxl.load_workbook(self.master)
+        b23.write_data_sheets(wb, a.apply_s27_class(a.apply_s26_class(s25), source="Class 27, Nov 2026"))
+        wb.save(self.master)
+        self.assertEqual(len(self.mx.shipped_versions()), 6)
+        up = self.mx.install_in_master(self.master)["upgrade"]
+        self.assertEqual((up["kept"], up["added"]), ([], 0))
+        self.assertEqual(up["updated"], len(t27.REMEDIES))                      # each row takes the date
+        got = b23.read_workbook(self.master)
+        self.assertEqual(got["remedies"], RULES["remedies"])
+        self.assertNotIn("Class 27, Nov 2026", {r["source"] for r in got["remedies"]})
 
     def test_user_remedy_rows_do_not_hide_her_new_rows(self):
         # her rows join existing topics (the Moon) and a topic the user may already use (Mars): a row the user added

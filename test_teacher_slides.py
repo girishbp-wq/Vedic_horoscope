@@ -303,7 +303,7 @@ class S26ClassTexts(unittest.TestCase):
 
 
 class S27ClassTexts(unittest.TestCase):
-    """Class 27 (Nov 2026): Ketu in the 6th to 12th bhāvas, her remedies and answers."""
+    """The class of 12 Nov 2026 (class 27): Ketu in the 6th to 12th bhāvas, her remedies and answers."""
 
     @classmethod
     def setUpClass(cls):
@@ -316,7 +316,7 @@ class S27ClassTexts(unittest.TestCase):
         self.assertEqual(self.t.GRAHA_IN_BHAVA_EXTRA[("Ketu", 1)], [self.t.KETU_RULE])
 
     def test_remedy_rows(self):
-        _check_remedies(self, self.t.REMEDIES, "Class 27, Nov 2026")
+        _check_remedies(self, self.t.REMEDIES, "Class 12 Nov 2026")
         topics = [r[0] for r in self.t.REMEDIES]
         self.assertEqual((topics.count("Ketu"), topics.count("Rahu"), topics.count("Tip")), (10, 2, 7))
         ketu = {h for t, _, hs, _ in self.t.REMEDIES if t == "Ketu" for h in hs}

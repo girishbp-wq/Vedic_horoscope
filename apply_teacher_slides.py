@@ -145,8 +145,9 @@ def _insert_remedies(rem, rows):
         rem.insert(at, row)
 
 
-def _apply_class(rules, t):
-    """The points of a class module `t` (Extra, and IfWeak / IfStrong where it has them) and its remedy rows."""
+def _apply_class(rules, t, source=None):
+    """The points of a class module `t` (Extra, and IfWeak / IfStrong where it has them) and its remedy rows (with
+    `source` in place of the module's own, to rebuild an earlier release)."""
     for row in rules["graha_in_bhava"]:
         key = (row["planet"], row["house"])
         if key in t.GRAHA_IN_BHAVA_EXTRA:
@@ -154,7 +155,8 @@ def _apply_class(rules, t):
             if hasattr(t, "IF_WEAK"):
                 row["if_weak"] = list(t.IF_WEAK.get(key, []))
                 row["if_strong"] = list(t.IF_STRONG.get(key, []))
-    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=d, houses=list(c)) for a, b, c, d in t.REMEDIES])
+    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=source or d, houses=list(c))
+                                         for a, b, c, d in t.REMEDIES])
 
 
 def relation(rules, a, b):
@@ -182,11 +184,12 @@ def apply_s26_class(rules):
     return rules
 
 
-def apply_s27_class(rules):
-    """A copy of `rules` (as apply_s26_class() returns them) with class 27: Ketu's rule and the recording points of
-    Ketu in the 5th to 12th, her Ketu and Rāhu remedies and her answers as tips."""
+def apply_s27_class(rules, source=None):
+    """A copy of `rules` (as apply_s26_class() returns them) with the class of 12 Nov 2026 (Session 27): Ketu's rule and
+    the recording points of Ketu in the 5th to 12th, her Ketu and Rāhu remedies and her answers as tips. `source`
+    rebuilds the release of 19 Nov 2026, which labelled the rows "Class 27, Nov 2026" before the date was known."""
     rules = copy.deepcopy(rules)
-    _apply_class(rules, t27)
+    _apply_class(rules, t27, source)
     return rules
 
 

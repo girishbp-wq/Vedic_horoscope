@@ -117,7 +117,7 @@ How the page and the calculator read them:
   under "As Mercury is strong:" when it is strong; when it is mixed or depends both show, under "If Mercury is
   strong:" and "If Mercury is weak:".
 
-## Classes of 4 Nov 2026 and class 27 (Nov 2026) — one-time update
+## Classes of 4 and 12 Nov 2026 — one-time update
 1. Pull the latest `main` in GitHub Desktop and close the workbook in Excel.
 2. Run `python make_session23_xlsx.py --install`. It upgrades your `S23_` data sheets as described above:
    - `S23_GrahaInBhava`: Venus's and Saturn's 24 rows get her class points (`Extra`) and her points for a weak or a
@@ -139,7 +139,9 @@ Two of her answers are rules, on the page, in Python and on the calculator:
   usually mixed.
 - **Friends or not.** A conjunction shows the pair's Relation line under its reading.
 
-The recording of class 27 starts in the middle of Ketu in the 6th, so Rāhu and Ketu in the 1st to 5th are not in it.
+The recording of the class of 12 Nov (Session 27) starts in the middle of Ketu in the 6th, so Rāhu and Ketu in the
+1st to 5th are not in it; their slide text is on the cards as before. If you installed the release of 19 Nov, which
+labelled that class's rows "Class 27, Nov 2026", `--install` gives them the date.
 
 ## Every day
 Edit a text or rule on an `S23_` data sheet, save, close Excel, double-click `publish.bat`.
