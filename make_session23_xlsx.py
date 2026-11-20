@@ -1722,7 +1722,8 @@ def shipped_versions():
     """The data each earlier release shipped: Session 23, then Sessions 23-27 (apply_teacher_slides.apply), then
     Sessions 28-29 (apply_s28_29), then the classes of 22 Oct 2026 (apply_s24_class) and 29 Oct 2026
     (apply_s25_class), then the classes of 4 and 12 Nov 2026 as first shipped, with class 27 not yet dated, and
-    as dated (apply_s26_class, apply_s27_class)."""
+    as dated (apply_s26_class, apply_s27_class), then the class of 19 Nov 2026 as first shipped, with the tip
+    since withdrawn (apply_s28_class)."""
     import apply_teacher_slides as a
     first = json.loads(PREVIOUS_JSON.read_text(encoding="utf-8"))
     s23_27 = a.apply(first)
@@ -1730,7 +1731,9 @@ def shipped_versions():
     s24 = a.apply_s24_class(s28_29)
     s25 = a.apply_s25_class(s24)
     s26 = a.apply_s26_class(s25)
-    return [first, s23_27, s28_29, s24, s25, a.apply_s27_class(s26, source="Class 27, Nov 2026"), a.apply_s27_class(s26)]
+    s27 = a.apply_s27_class(s26)
+    return [first, s23_27, s28_29, s24, s25, a.apply_s27_class(s26, source="Class 27, Nov 2026"), s27,
+            a.apply_s28_class(s27, withdrawn=True)]
 
 
 def _from_before_new_columns(name, row, missing):

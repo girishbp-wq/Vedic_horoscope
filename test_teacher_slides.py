@@ -334,6 +334,12 @@ class S28ClassTexts(unittest.TestCase):
         self.assertEqual({r[0] for r in self.t.REMEDIES}, {"Tip"})
         self.assertEqual(set(self.t.RELATION_ADD), {("Moon", "Saturn"), ("Mars", "Saturn")})
 
+    def test_her_qa_dignity_figures_are_withdrawn(self):
+        # the user's ruling of 20 Nov 2026: the earlier sessions' Sthāna Bala stands; her Q&A figures are not shown
+        self.assertFalse([r for r in self.t.REMEDIES if "90%" in r[1] or "Mūlatrikoṇa" in r[1]])
+        self.assertEqual([r[0] for r in self.t.WITHDRAWN], ["Tip"])
+        self.assertIn("Mūlatrikoṇa 90%", self.t.WITHDRAWN[0][1])
+
 
 class S27ClassTexts(unittest.TestCase):
     """The class of 12 Nov 2026 (class 27): Ketu in the 6th to 12th bhāvas, her remedies and answers."""

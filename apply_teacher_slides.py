@@ -194,11 +194,12 @@ def apply_s27_class(rules, source=None):
     return rules
 
 
-def apply_s28_class(rules):
+def apply_s28_class(rules, withdrawn=False):
     """A copy of `rules` (as apply_s27_class() returns them) with the class of 19 Nov 2026 (Session 28): her worked
     lord-in-bhāva examples as new S23_BhavaLordIn rows, her explanation of the Jupiter, Saturn and Mars aspects after
     the slides' lines, Jupiter as the husband's karaka (Parāśara), her line for a malefic in the 4th, her lines on two
-    pairs of planets, and her answers as tips."""
+    pairs of planets, and her answers as tips. `withdrawn` rebuilds the release of 20 Nov 2026, which also carried
+    the tips taken out at the user's ruling (session28_class_texts.WITHDRAWN)."""
     rules = copy.deepcopy(rules)
     t = t28c
     rules["bhava_lord_in"] += [dict(lord_of=a, sits_in=b, text=x, status="taught", source=t.SOURCE, condition="",
@@ -218,7 +219,8 @@ def apply_s28_class(rules):
         add = t.RELATION_ADD.get((row["a"], row["b"]))
         if add:
             row["relation"] = (row["relation"] + " " + add).strip()
-    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=d, houses=list(c)) for a, b, c, d in t.REMEDIES])
+    tips = t.REMEDIES[:2] + t.WITHDRAWN + t.REMEDIES[2:] if withdrawn else t.REMEDIES      # in the order first shipped
+    _insert_remedies(rules["remedies"], [dict(topic=a, text=b, source=d, houses=list(c)) for a, b, c, d in tips])
     return rules
 
 

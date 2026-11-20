@@ -9,7 +9,8 @@ the meaning of the Jupiter, Saturn and Mars aspects, the seven steps and the Rea
   KARAKA_FEMALE  life area no -> the karaka for a woman's chart (her answer: Parāśara's Jupiter for the husband);
   BHAVA_NATURE   (house, nature, planet, text): S23_BhavaNature rows;
   RELATION_ADD   (a, b) -> her line on that pair, added to the S23_GrahaPair Relation;
-  REMEDIES       (topic, text, houses, source): her general answers as tips.
+  REMEDIES       (topic, text, houses, source): her general answers as tips;
+  WITHDRAWN      tips shipped on 20 Nov 2026 and taken out at the user's ruling (kept to rebuild that release).
 
 Three of her rules are code, in the placement line of a bhāva lord (bhava_rules.placement and its twins): wherever the
 Lagna lord sits the person's focus goes; wherever the 3rd lord sits the person puts in effort; a lord in the 8th makes
@@ -75,12 +76,17 @@ REMEDIES = [
     ("Tip", "When a benefic and a malefic share a bhāva both act: there is more struggle in the malefic's daśā–bhukti "
             "and more ease in the benefic's; the stronger planet (exalted, own or a friend's sign) speaks louder, like "
             "the loudest voice in a classroom.", [], SOURCE),
-    ("Tip", "Her measure of a planet's results by dignity: exalted 100%, Mūlatrikoṇa 90%, own house 75%; a "
-            "debilitated planet still gives results, only weaker.", [], SOURCE),
     ("Tip", "Even a combust Jupiter's aspect works, at about 80% of its effect.", [], SOURCE),
     ("Tip", "For a woman's chart the husband's karaka is Jupiter in Parāśara, which this course follows (the Nāḍī "
             "system takes Mars); Venus is the wife's. Kuja doṣa is a separate concept, read from Mars for both.", [],
      SOURCE),
     ("Tip", "Zero in on the bhāva the question is about and follow the seven steps; one placement alone never gives "
             "the answer — see the chart in totality.", [], SOURCE),
+]
+
+# Shipped on 20 Nov 2026, withdrawn the same day at the user's ruling: what she taught in the earlier sessions and decks
+# stands, and her figures in the Q&A for a planet's results by dignity are not shown (the page's Sthāna Bala tiers stay).
+WITHDRAWN = [
+    ("Tip", "Her measure of a planet's results by dignity: exalted 100%, Mūlatrikoṇa 90%, own house 75%; a "
+            "debilitated planet still gives results, only weaker.", [], SOURCE),
 ]
