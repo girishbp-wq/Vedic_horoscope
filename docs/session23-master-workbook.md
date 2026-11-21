@@ -217,6 +217,14 @@ kāraka(s) and the life areas that read it. Every planet carries a box with its 
 digbala and strength. **By layer** shows the four layers for every planet, as before. Nothing in the texts changed;
 they are the same rows, arranged by house.
 
+**7 steps** (her steps of the class of 19 Nov 2026): pick a house from the row of twelve, and its reading follows her
+order — 1 identify the bhāva (classes, significations, people, body), 2 the planets in it (and any meeting there),
+3 the rāśi of the bhāva (its line, and each planet in that rāśi), 4 the planets aspecting it, 5 where its lord sits
+(Kendra, Trikoṇa, Duṣthāna or Bādhaka, with her lord-in text), 6 the planets with or aspecting the lord, 7 the bhāva
+kāraka and its strength — then Supports and Pressure. It is the same reading as By bhāva, in her order, one house at
+a time; the page remembers the house picked when the chart is redrawn. Only the page has this view: on the workbook,
+`S23_Bhava_Calc` with the house in **B2** holds the same facts.
+
 `S23_Bhava_Calc` does the same for the house picked in **B2** (1–12):
 - rows 3–16: the house's rāśi, names, significations, people, body, sign line, kārakas, Supports, Pressure and
   classes;

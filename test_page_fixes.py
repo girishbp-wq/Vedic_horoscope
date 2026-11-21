@@ -2373,6 +2373,95 @@ class Classes26And27(unittest.TestCase):
         self.assertEqual(self.r["phone"]["wide"], 0)
 
 
+@needs_browser
+class SevenSteps(unittest.TestCase):
+    """The class of 19 Nov 2026: a "7 steps" view in Bhāva Analysis — pick any house, and its reading follows her seven
+    steps in order (the bhāva, planets in it, its rāśi, planets aspecting it, the lord, planets with or aspecting the
+    lord, the bhāva karaka), each from the same s23BhavaReading the other views use."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r = run_page("""
+            await setBirth('1990-05-15', '06:30');
+            await pickCity('Bengaluru');
+            await generate();
+            await page.click('#reportNav button:has-text("Bhāvas")');
+            const render = () => page.evaluate(sid => renderS23Sections(sid, 5, {retro: {Rahu: true, Ketu: true}}), SID);
+            await render();
+            const out = {};
+            out.views = await page.evaluate(() => [...document.querySelectorAll('.s23-view-btn')].map(b => b.textContent));
+            await page.click('.s23-view-btn[data-view="steps"]');
+            const read = h => page.evaluate(h => {
+              const pane = document.getElementById('s23-step-h' + h), t = el => el ? el.textContent : "";
+              const want = (() => { const {pbr, degs, waxing} = s23Inputs(SIDS); const ctx = s23Ctx(5, pbr, degs, waxing, {retro: {Rahu: true, Ketu: true}});
+                                    return s23BhavaReading(ctx, h); })();
+              const steps = [...pane.querySelectorAll(':scope > ol.s23-7steps > li')];
+              const planets = (li, role) => [...li.querySelectorAll(`.s23-bv-planet[data-role="${role}"]`)].map(x => x.dataset.planet);
+              return {shown: getComputedStyle(pane).display !== 'none',
+                      visible: [...document.querySelectorAll('.s23-step-pane')].filter(p => getComputedStyle(p).display !== 'none').map(p => +p.dataset.house),
+                      titles: steps.map(li => t(li.querySelector('.s23-step-title'))),
+                      occupants: planets(steps[1], 'occupant'), wantOcc: want.occupants.map(o => o.planet),
+                      rashi: t(steps[2]), wantSign: want.sign_line, wantRashi: want.rashi,
+                      aspecting: planets(steps[3], 'aspect'), wantAsp: want.aspecting.map(a => a.by),
+                      lord: planets(steps[4], 'lord'), lordText: t(steps[4]), wantLord: want.lord ? want.lord.planet : null,
+                      wantPlacement: want.lord ? want.lord.placement_line : "",
+                      company: planets(steps[5], 'company'), wantCompany: want.lord_company.map(w => w.planet),
+                      karakas: planets(steps[6], 'karaka'), wantKarakas: want.karakas.map(k => k.planet),
+                      sums: [...pane.querySelectorAll('.s23-bv-supports li:not(.s23-bv-none), .s23-bv-pressure li:not(.s23-bv-none)')].length,
+                      wantSums: want.supports.length + want.pressure.length};
+            }, h);
+            out.first = await read(1);
+            await page.click('.s23-step-btn[data-house="7"]');
+            out.seventh = await read(7);
+            await page.click('.s23-step-btn[data-house="8"]');
+            out.eighth = await read(8);
+            await render();
+            out.persist = await page.evaluate(() => ({view: getComputedStyle(document.getElementById('s23-view-steps')).display,
+              house: [...document.querySelectorAll('.s23-step-pane')].filter(p => getComputedStyle(p).display !== 'none').map(p => +p.dataset.house)}));
+            await page.setViewportSize({width: 375, height: 800});
+            await render();
+            out.phone = await page.evaluate(() => {
+              const vw = document.documentElement.clientWidth;
+              const wide = [...document.querySelectorAll('#s23-view-steps *')].filter(el => el.offsetParent && el.getBoundingClientRect().right > vw + 1);
+              return {scroll: document.documentElement.scrollWidth, wide: wide.slice(0, 3).map(el => el.tagName + '.' + el.className)};
+            });
+            return out;
+        """.replace("SIDS", json.dumps(SIMHA_SID)).replace("SID", json.dumps(SIMHA_SID)))
+
+    def test_a_third_view(self):
+        self.assertEqual(self.r["views"], ["By bhāva", "By layer", "7 steps"])
+
+    def test_her_seven_steps_in_order(self):
+        self.assertEqual(self.r["seventh"]["titles"], [
+            "Identify the bhāva", "The planets in it", "The rāśi of the bhāva", "The planets aspecting it",
+            "Where its lord sits", "Planets with or aspecting the lord", "The bhāva karaka and its strength"])
+
+    def test_each_step_shows_the_reading(self):
+        for key in ("first", "seventh", "eighth"):
+            got = self.r[key]
+            self.assertEqual(got["occupants"], got["wantOcc"], key)
+            self.assertIn(got["wantSign"], got["rashi"], key)
+            self.assertEqual(got["aspecting"], got["wantAsp"], key)
+            self.assertEqual(got["lord"], [got["wantLord"]] if got["wantLord"] else [], key)
+            self.assertIn(got["wantPlacement"], got["lordText"], key)
+            self.assertEqual(got["company"], got["wantCompany"], key)
+            self.assertEqual(got["karakas"], got["wantKarakas"], key)
+            self.assertEqual(got["sums"], got["wantSums"], key)
+
+    def test_the_house_buttons_switch_the_pane(self):
+        self.assertEqual(self.r["first"]["visible"], [1])
+        self.assertEqual(self.r["seventh"]["visible"], [7])
+        self.assertEqual(self.r["eighth"]["visible"], [8])               # the 8th too, which no Life area reads
+        self.assertTrue(self.r["eighth"]["shown"])
+
+    def test_view_and_house_stay_chosen_after_a_rerender(self):
+        self.assertEqual(self.r["persist"], {"view": "block", "house": [8]})
+
+    def test_phone_width(self):
+        self.assertLessEqual(self.r["phone"]["scroll"], 375)
+        self.assertEqual(self.r["phone"]["wide"], [])
+
+
 # Sidereal positions from the Swiss Ephemeris 2.10 (pyswisseph, Moshier ephemeris, calc_ut with SEFLG_SIDEREAL):
 # 60 random moments 1900-2100 in Lahiri, and Kusuma's chart (22 Feb 1975 16:30 IST) in Lahiri and KP-New, whose Mars
 # sits 57" short of Capricorn in KP-New.

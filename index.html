@@ -514,9 +514,9 @@ details.section[open] > summary::after { content: "−"; }
 .south-cell .sc-planet .sc-deg { color: var(--muted); font-size: 0.82em; font-weight: 500; margin-left: 1px; }
 /* Predictive & Remedies report tabs */
 .report-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
-.rtab, .s23-area-btn, .s23-view-btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 13px; border: 1px solid var(--line); border-radius: 16px; background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s; }
-.rtab:hover, .s23-area-btn:hover, .s23-view-btn:hover { border-color: var(--saffron); }
-.rtab.active, .s23-area-btn.active, .s23-view-btn.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
+.rtab, .s23-area-btn, .s23-view-btn, .s23-step-btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 13px; border: 1px solid var(--line); border-radius: 16px; background: var(--parchment-2); color: var(--maroon); cursor: pointer; transition: all .15s; }
+.rtab:hover, .s23-area-btn:hover, .s23-view-btn:hover, .s23-step-btn:hover { border-color: var(--saffron); }
+.rtab.active, .s23-area-btn.active, .s23-view-btn.active, .s23-step-btn.active { background: var(--maroon); color: var(--parchment-2); border-color: var(--maroon); }
 .rtable { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
 .rtable th, .rtable td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
 .rtable th { background: var(--parchment); font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--maroon); }
@@ -637,6 +637,12 @@ tr.s23-subrow.now td { font-weight: 600; }
 .maha-head .s23-role { margin-left: 4px; }
 /* Prediction read bhāva by bhāva (spec 2026-10-13): two views, a planet table, a sticky row of the twelve houses, one panel per house. */
 .s23-view-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 14px; }
+.s23-step-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+ol.s23-7steps { padding-left: 22px; margin: 6px 0 12px; }
+ol.s23-7steps > li { margin: 10px 0 14px; overflow-wrap: anywhere; }
+.s23-step-title { font-weight: 700; color: var(--maroon); margin: 0 0 2px; }
+.s23-step-hint { font-size: 13px; color: var(--muted); font-style: italic; margin: 0 0 6px; }
+.s23-bv-step-rashi { margin: 6px 0; font-size: 14px; }
 .s23-bv-planets td, .s23-bv-planets th { white-space: nowrap; }
 .s23-bv-jump { position: sticky; top: 0; z-index: 40; background: var(--parchment); display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; padding: 6px 0; margin: 12px 0; border-bottom: 1px solid var(--line); }
@@ -691,7 +697,7 @@ tr.s23-subrow.now td { font-weight: 600; }
   .s23-bv-house { padding: 10px; scroll-margin-top: 104px; }
 }
 @media print {
-  .s23-view-btns, .s23-bv-jump, .s23-bv-top { display: none !important; }
+  .s23-view-btns, .s23-step-btns, .s23-bv-jump, .s23-bv-top { display: none !important; }
   .s23-bv-planet, .s23-bv-facts { break-inside: avoid; page-break-inside: avoid; }
 }
 /* On paper nothing can scroll: fit every Session 23 table to the A4 page (English sign names only). */
@@ -5777,7 +5783,7 @@ normalizeCoordField("f-lat","lat");   // fix any decimal restored from a previou
 normalizeCoordField("f-lon","lon");
 
 /* ---- build stamp: set by `build_session23.py --stamp "what changed"` (publish.bat does it when the page changes) ---- */
-const TOOL_VERSION = "2026-11-20 · Q&A dignity tip withdrawn";
+const TOOL_VERSION = "2026-11-21 · 7-step view";
 (function(){
   try { console.log("%cJyotisha — build " + TOOL_VERSION, "color:#6b1d2b;font-weight:700"); } catch(e){}
   function _setBadge(){ var _b = document.getElementById("buildBadge"); if(_b) _b.textContent = "build " + TOOL_VERSION; }
@@ -7432,8 +7438,10 @@ function s23BuildPredictions(sid, lagnaN, extra){
     +`Below, the four layers are worked for your chart: graha + bhāva, bhāva + bhāva, graha + rāśi and graha + graha (conjunctions and aspects). Aspects link to the <em>Graha Drishti</em> section. `
     +`<strong>By bhāva</strong> reads them house by house, as Session 28 does; <strong>By layer</strong> shows each layer for every planet.</p>`;
   h+=s23TagLegend();
-  h+=`<div class="s23-view-btns">`+[["bhava","By bhāva"],["layer","By layer"]].map(([v,t])=>`<button type="button" class="s23-view-btn${s23ViewShown===v?" active":""}" data-view="${v}">${t}</button>`).join("")+`</div>`;
-  h+=`<div class="s23-view-pane" id="s23-view-bhava"${s23ViewShown==="bhava"?"":` style="display:none"`}>${s23BuildBhavaView(ctx)}</div>`;
+  h+=`<div class="s23-view-btns">`+[["bhava","By bhāva"],["layer","By layer"],["steps","7 steps"]].map(([v,t])=>`<button type="button" class="s23-view-btn${s23ViewShown===v?" active":""}" data-view="${v}">${t}</button>`).join("")+`</div>`;
+  const layer2=s23BhavaBhava(ctx), houses=[1,2,3,4,5,6,7,8,9,10,11,12].map(x=>s23BhavaReading(ctx, x, layer2));
+  h+=`<div class="s23-view-pane" id="s23-view-bhava"${s23ViewShown==="bhava"?"":` style="display:none"`}>${s23BuildBhavaView(ctx, houses)}</div>`;
+  h+=`<div class="s23-view-pane" id="s23-view-steps"${s23ViewShown==="steps"?"":` style="display:none"`}>${s23BuildStepsView(houses)}</div>`;
   h+=`<div class="s23-view-pane" id="s23-view-layer"${s23ViewShown==="layer"?"":` style="display:none"`}>${s23BuildLayerView(sid, lagnaN, extra)}</div>`;
   return h;
 }
@@ -7625,8 +7633,7 @@ function s23BvHouse(b){
     +b.life_areas.map(a=>`<a href="#s23-area-${a.no}" class="s23-bv-area" data-area="${a.no}">${_esc(a.area)}</a>`).join(" · ")+`</p>`;
   return h+`<a class="s23-bv-top" href="#s23-view-bhava">↑ Houses</a></section>`;
 }
-function s23BuildBhavaView(ctx){
-  const layer2=s23BhavaBhava(ctx), houses=[1,2,3,4,5,6,7,8,9,10,11,12].map(h=>s23BhavaReading(ctx, h, layer2));
+function s23BuildBhavaView(ctx, houses){
   const rows=S23_PLANETS.filter(p=>ctx.signs[p]!==undefined).map(p=>{ const f=s23PlanetFacts(ctx, p);
     return `<tr data-planet="${p}"><td data-label="Planet">${GLYPH9[p]} ${p}${f.retro?" ℞":""}</td><td data-label="Rāśi">${f.rashi}</td>`
       +`<td data-label="Degree">${s23BvDeg(f.deg)||"—"}</td><td data-label="House">${f.house}</td><td data-label="Dignity">${_esc(f.dignity.label)}</td>`
@@ -7636,6 +7643,49 @@ function s23BuildBhavaView(ctx){
     +`<nav class="s23-bv-jump" id="s23-bv-jump" aria-label="Houses">${houses.map(b=>`<a href="#s23-bv-h${b.house}"><b>${b.house}</b><small>${b.rashi}</small></a>`).join("")}</nav>`
     +houses.map(s23BvHouse).join("");
 }
+/* ---- 7 steps (class of 19 Nov 2026; S27 pp.5-7): pick a bhāva, then her seven steps in order, from s23BhavaReading ---- */
+let s23StepHouse = 1;
+function s23Step(title, hint, inner){
+  return `<li><p class="s23-step-title">${title}</p><p class="s23-step-hint">${hint}</p>${inner}</li>`;
+}
+function s23StepsPane(b){
+  const H=ord(b.house), L=b.lord, none=t=>`<p class="s23-bv-none">${t}</p>`;
+  const meet=b.conjunctions.length ? `<p class="s23-sub">Planets meeting here</p><ul class="s23-bv-pairs">${b.conjunctions.map(c=>`<li data-a="${c.a}" data-b="${c.b}">`
+    +`<strong>${GLYPH9[c.a]} ${c.a} + ${GLYPH9[c.b]} ${c.b}</strong> ${s23Tag(c.status)}<br>${_esc(c.text)}`
+    +(c.combust_note?`<br><span class="s23-combust">${_esc(c.combust_note)}</span>`:"")+s23RelationLine(c)+`</li>`).join("")}</ul>` : "";
+  const rashi=`<p class="s23-bv-note">${_esc(b.sign_line)}</p>`+b.occupants.map(o=>{ const g=o.graha_rashi;
+    return `<div class="s23-bv-step-rashi" data-planet="${o.planet}"><span class="s23-bv-lbl">${GLYPH9[o.planet]} ${o.planet} in ${b.rashi}</span> ${s23Tag(g.status)} ${s23Para(g.text)}</div>`; }).join("");
+  const lord=L ? `<div class="s23-bv-planet" data-planet="${L.planet}" data-role="lord">${s23BvHead(L.facts)}${s23BvFacts(L.facts, false)}`
+      +`<p class="s23-bv-note">The ${H} lord sits in the ${ord(L.house)} (${L.rashi}).${L.exchange?` <span class="s23-chip s23-exchange">Parivartana with the ${ord(L.exchange)}</span>`:""} ${_esc(L.placement_line)}</p>`
+      +`<div class="s23-bv-text">${s23Tag(L.status)}${s23Src(L.source)}${s23BvRest(L.text)}</div>`
+      +(L.dictum?`<p class="s23-dictum"><strong>${_esc(L.dictum)}</strong></p>`:"")+`</div>` : none("Its lord's sign is not known.");
+  const company=b.lord_company.length ? b.lord_company.map(w=>`<div class="s23-bv-planet" data-planet="${w.planet}" data-role="company">`
+      +`${GLYPH9[w.planet]} <strong>${w.planet}</strong> ${w.how==="with"?"is with the lord":`aspects the lord (${w.aspect} aspect)`}${w.rules.length?" · "+s23RuledPhrase(w.rules):""}`
+      +`${s23MeaningList(w.meanings)}${s23ReadingList(w.readings, "s23-readings")}</div>`).join("") : none(L ? `No planet is with ${L.planet} or aspects it.` : "—");
+  const karaka=b.karakas.length ? b.karakas.map(k=>`<div class="s23-bv-planet" data-planet="${k.planet}" data-role="karaka">${s23BvHead(k.facts)}`
+      +`<p class="s23-bv-note">In the ${ord(k.house)} (${k.rashi}).${k.malefic_aspects.length?` Aspected by ${k.malefic_aspects.join(", ")}.`:""}</p>${s23BvFacts(k.facts, false)}</div>`).join("")
+      : none("Not placed in this chart.");
+  return `<section class="s23-step-pane" id="s23-step-h${b.house}" data-house="${b.house}"${s23StepHouse===b.house?"":` style="display:none"`}>`
+    +`<h4 class="pane-h">${b.house} · ${_esc(b.name)} <small>· ${b.rashi}</small></h4><ol class="s23-7steps">`
+    +s23Step("Identify the bhāva", "Pick the house the question is about.",
+        `<p class="s23-bv-meta">${_esc(b.full_name)} ${s23BvChips(b.classes.map(c=>c.name))}</p>`
+        +`<p class="s23-bv-sig"><span class="s23-bv-lbl">Signifies</span> ${_esc(b.significations)}. <span class="s23-bv-lbl">People</span> ${_esc(b.people)}. <span class="s23-bv-lbl">Body</span> ${_esc(b.body)}.</p>`)
+    +s23Step("The planets in it", "Blend each planet's karakatwas with the bhāva's.",
+        (b.occupants.map(s23BvOccupant).join("") || none("No planet sits here: the lord (step 5) and the aspects (step 4) carry the house."))+meet)
+    +s23Step("The rāśi of the bhāva", "Blend the rāśi's tatwa, nature and direction with the bhāva.", rashi)
+    +s23Step("The planets aspecting it", "An aspect also colours the house, though the placement is stronger.",
+        b.aspecting.map(s23BvAspect).join("") || none("No aspect falls on this house."))
+    +s23Step("Where its lord sits", `The ${H} lord takes the house's matters to the house it sits in: Kendra, Trikoṇa, Duṣthāna or Bādhaka.`, lord)
+    +s23Step("Planets with or aspecting the lord", "Their karakatwas colour the lord.", company)
+    +s23Step("The bhāva karaka and its strength", "Exalted, own sign, a friend's or an enemy's sign, debilitated, combust — how well it can support the house.", karaka)
+    +`</ol><div class="s23-sumgrid"><div class="s23-bv-sup"><p class="s23-sub">Supports</p>${s23BvList(b.supports, "s23-bv-supports")}</div>`
+    +`<div class="s23-bv-pre"><p class="s23-sub">Pressure</p>${s23BvList(b.pressure, "s23-bv-pressure")}</div></div></section>`;
+}
+function s23BuildStepsView(houses){
+  return `<p class="rnote">Session 28 (class of 19 Nov 2026): pick the bhāva the question is about and go through her seven steps in order — one placement alone never gives the answer.</p>`
+    +`<div class="s23-step-btns">${houses.map(b=>`<button type="button" class="s23-step-btn${s23StepHouse===b.house?" active":""}" data-house="${b.house}"><b>${b.house}</b> ${_esc(b.name)}</button>`).join("")}</div>`
+    +houses.map(s23StepsPane).join("");
+}
 function s23WirePredictions(el){
   el.onclick=e=>{
     const v=e.target.closest(".s23-view-btn");
@@ -7643,6 +7693,13 @@ function s23WirePredictions(el){
       s23ViewShown=v.dataset.view;
       el.querySelectorAll(".s23-view-btn").forEach(b=>b.classList.toggle("active", b===v));
       el.querySelectorAll(".s23-view-pane").forEach(p=>p.style.display=(p.id==="s23-view-"+s23ViewShown)?"":"none");
+      return;
+    }
+    const sb=e.target.closest(".s23-step-btn");
+    if(sb){
+      s23StepHouse=+sb.dataset.house;
+      el.querySelectorAll(".s23-step-btn").forEach(b=>b.classList.toggle("active", b===sb));
+      el.querySelectorAll(".s23-step-pane").forEach(p=>p.style.display=(+p.dataset.house===s23StepHouse)?"":"none");
       return;
     }
     const j=e.target.closest(".s23-bv-jump a, a.s23-bv-top");
